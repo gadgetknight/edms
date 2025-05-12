@@ -72,3 +72,16 @@
 2025-05-12 15:14:53,081 - HorseMainScreen - INFO - Loading all horses
 2025-05-12 15:15:08,890 - HorseMainScreen - INFO - Horse selected: ID 1
 2025-05-12 15:15:08,891 - EDSIApplication - INFO - Horse edit requested for ID: 1
+2025-05-12 15:18:27,156 - EDSIApplication - INFO - Initializing database...
+2025-05-12 15:18:27,180 - EDSIApplication - INFO - Database initialized successfully
+2025-05-12 15:18:27,180 - EDSIApplication - INFO - Starting EDSI Veterinary Management System
+2025-05-12 15:18:35,014 - LoginScreen - INFO - User 'ADMIN' logged in successfully
+2025-05-12 15:18:35,014 - EDSIApplication - INFO - User 'ADMIN' logged in successfully
+2025-05-12 15:18:47,419 - EDSIApplication - INFO - Horse review/update selected
+2025-05-12 15:18:47,423 - HorseMainScreen - INFO - Loading all horses
+2025-05-12 15:18:53,383 - HorseMainScreen - INFO - Horse selected: ID 1
+2025-05-12 15:18:53,384 - EDSIApplication - INFO - Horse edit requested for ID: 1
+2025-05-12 15:19:01,814 - HorseController - INFO - Updated horse: test horse (ID: 1)
+2025-05-12 15:19:03,643 - EDSIApplication - INFO - Horse saved with ID: 1
+2025-05-12 15:22:36,621 - EDSIApplication - INFO - Add new horse selected
+2025-05-12 15:25:28,003 - EDSIApplication - INFO - Horse operation cancelled
