@@ -1,0 +1,16 @@
+# Core dependencies - Using PySide6 instead of PyQt6 for better Windows compatibility
+PySide6>=6.6.0
+SQLAlchemy==2.0.23
+sqlalchemy-utils==0.41.1
+
+# Development dependencies
+pytest>=7.4.0
+pytest-qt>=4.2.0
+
+# Additional utilities
+python-dateutil>=2.8.0
+cryptography>=42.0.0
+pillow>=10.0.0
+
+# Logging and debugging
+colorlog>=6.8.0

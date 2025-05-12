@@ -1,0 +1,28 @@
+2025-05-12 13:51:08,008 - EDSIApplication - INFO - Initializing database...
+2025-05-12 13:51:08,099 - EDSIApplication - INFO - Database initialized successfully
+2025-05-12 13:51:08,100 - EDSIApplication - INFO - Starting EDSI Veterinary Management System
+2025-05-12 13:55:33,034 - EDSIApplication - INFO - Initializing database...
+2025-05-12 13:55:33,058 - EDSIApplication - INFO - Database initialized successfully
+2025-05-12 13:55:33,059 - EDSIApplication - INFO - Starting EDSI Veterinary Management System
+2025-05-12 14:00:18,153 - EDSIApplication - INFO - Initializing database...
+2025-05-12 14:00:18,178 - EDSIApplication - INFO - Database initialized successfully
+2025-05-12 14:00:18,178 - EDSIApplication - INFO - Starting EDSI Veterinary Management System
+2025-05-12 14:02:38,689 - EDSIApplication - INFO - Initializing database...
+2025-05-12 14:02:38,715 - EDSIApplication - INFO - Database initialized successfully
+2025-05-12 14:02:38,715 - EDSIApplication - INFO - Starting EDSI Veterinary Management System
+2025-05-12 14:02:55,750 - LoginScreen - INFO - User 'ADMIN' logged in successfully
+2025-05-12 14:02:55,751 - EDSIApplication - INFO - User 'ADMIN' logged in successfully
+2025-05-12 14:07:09,207 - EDSIApplication - INFO - Add new horse selected
+2025-05-12 14:07:12,529 - EDSIApplication - INFO - Horse review/update selected
+2025-05-12 14:07:15,229 - EDSIApplication - INFO - Delete horse selected
+2025-05-12 14:07:17,566 - EDSIApplication - INFO - Table maintenance selected
+2025-05-12 14:07:20,131 - EDSIApplication - INFO - Owners A/R selected
+2025-05-12 14:07:23,627 - EDSIApplication - INFO - Mass update selected
+2025-05-12 14:07:25,777 - EDSIApplication - INFO - Print reports selected
+2025-05-12 14:07:28,450 - EDSIApplication - INFO - System utilities selected
+2025-05-12 14:07:34,732 - MainMenu - INFO - Menu option X selected via keyboard
+2025-05-12 14:07:34,732 - EDSIApplication - INFO - Logoff without exit selected
+2025-05-12 14:07:49,226 - LoginScreen - INFO - User 'ADMIN' logged in successfully
+2025-05-12 14:07:49,226 - EDSIApplication - INFO - User 'ADMIN' logged in successfully
+2025-05-12 14:07:54,569 - EDSIApplication - INFO - Logoff and exit selected
+2025-05-12 14:07:56,760 - EDSIApplication - INFO - Cleaning up and exiting application
