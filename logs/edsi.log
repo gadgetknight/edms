@@ -26,3 +26,49 @@
 2025-05-12 14:07:49,226 - EDSIApplication - INFO - User 'ADMIN' logged in successfully
 2025-05-12 14:07:54,569 - EDSIApplication - INFO - Logoff and exit selected
 2025-05-12 14:07:56,760 - EDSIApplication - INFO - Cleaning up and exiting application
+2025-05-12 14:47:04,504 - EDSIApplication - INFO - Initializing database...
+2025-05-12 14:47:04,529 - EDSIApplication - INFO - Database initialized successfully
+2025-05-12 14:47:04,529 - EDSIApplication - INFO - Starting EDSI Veterinary Management System
+2025-05-12 14:47:16,186 - LoginScreen - INFO - User 'ADMIN' logged in successfully
+2025-05-12 14:47:16,187 - EDSIApplication - INFO - User 'ADMIN' logged in successfully
+2025-05-12 14:47:18,683 - EDSIApplication - INFO - Add new horse selected
+2025-05-12 14:49:53,179 - EDSIApplication - INFO - Initializing database...
+2025-05-12 14:49:53,204 - EDSIApplication - INFO - Database initialized successfully
+2025-05-12 14:49:53,204 - EDSIApplication - INFO - Starting EDSI Veterinary Management System
+2025-05-12 14:50:00,741 - LoginScreen - INFO - User 'ADMIN' logged in successfully
+2025-05-12 14:50:00,741 - EDSIApplication - INFO - User 'ADMIN' logged in successfully
+2025-05-12 14:50:04,630 - EDSIApplication - INFO - Add new horse selected
+2025-05-12 14:50:14,339 - EDSIApplication - INFO - Horse operation cancelled
+2025-05-12 14:50:15,816 - EDSIApplication - INFO - Horse review/update selected
+2025-05-12 14:50:30,046 - EDSIApplication - INFO - Add new horse selected
+2025-05-12 14:50:58,716 - EDSIApplication - INFO - Horse operation cancelled
+2025-05-12 14:52:56,640 - EDSIApplication - INFO - Horse review/update selected
+2025-05-12 14:52:59,280 - EDSIApplication - INFO - Add new horse selected
+2025-05-12 14:53:55,978 - HorseBasicRecord - ERROR - Error saving horse: 'QDate' object has no attribute 'toPython'
+2025-05-12 14:54:40,757 - EDSIApplication - INFO - Horse operation cancelled
+2025-05-12 14:57:22,863 - EDSIApplication - INFO - Initializing database...
+2025-05-12 14:57:22,887 - EDSIApplication - INFO - Database initialized successfully
+2025-05-12 14:57:22,887 - EDSIApplication - INFO - Starting EDSI Veterinary Management System
+2025-05-12 14:57:30,461 - LoginScreen - INFO - User 'ADMIN' logged in successfully
+2025-05-12 14:57:30,461 - EDSIApplication - INFO - User 'ADMIN' logged in successfully
+2025-05-12 14:57:33,599 - EDSIApplication - INFO - Add new horse selected
+2025-05-12 14:58:17,530 - HorseController - INFO - Created new horse: test horse (ID: 1)
+2025-05-12 14:58:19,999 - EDSIApplication - INFO - Horse saved with ID: 1
+2025-05-12 14:58:21,962 - EDSIApplication - INFO - Horse review/update selected
+2025-05-12 15:00:16,336 - EDSIApplication - INFO - Logoff and exit selected
+2025-05-12 15:00:17,947 - EDSIApplication - INFO - Cleaning up and exiting application
+2025-05-12 15:10:42,927 - EDSIApplication - INFO - Initializing database...
+2025-05-12 15:10:42,951 - EDSIApplication - INFO - Database initialized successfully
+2025-05-12 15:10:42,951 - EDSIApplication - INFO - Starting EDSI Veterinary Management System
+2025-05-12 15:10:50,621 - LoginScreen - INFO - User 'ADMIN' logged in successfully
+2025-05-12 15:10:50,621 - EDSIApplication - INFO - User 'ADMIN' logged in successfully
+2025-05-12 15:10:53,318 - EDSIApplication - INFO - Horse review/update selected
+2025-05-12 15:14:41,732 - EDSIApplication - INFO - Initializing database...
+2025-05-12 15:14:41,757 - EDSIApplication - INFO - Database initialized successfully
+2025-05-12 15:14:41,757 - EDSIApplication - INFO - Starting EDSI Veterinary Management System
+2025-05-12 15:14:50,556 - LoginScreen - INFO - User 'ADMIN' logged in successfully
+2025-05-12 15:14:50,556 - EDSIApplication - INFO - User 'ADMIN' logged in successfully
+2025-05-12 15:14:53,074 - EDSIApplication - INFO - Horse review/update selected
+2025-05-12 15:14:53,081 - HorseMainScreen - INFO - Loading all horses
+2025-05-12 15:15:08,890 - HorseMainScreen - INFO - Horse selected: ID 1
+2025-05-12 15:15:08,891 - EDSIApplication - INFO - Horse edit requested for ID: 1
