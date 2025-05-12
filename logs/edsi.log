@@ -87,3 +87,45 @@
 2025-05-12 15:25:28,003 - EDSIApplication - INFO - Horse operation cancelled
 2025-05-12 15:34:38,165 - EDSIApplication - INFO - Logoff and exit selected
 2025-05-12 15:34:40,742 - EDSIApplication - INFO - Cleaning up and exiting application
+2025-05-12 17:35:41,656 - EDSIApplication - INFO - Initializing database...
+2025-05-12 17:35:41,681 - EDSIApplication - INFO - Database initialized successfully
+2025-05-12 17:35:41,681 - EDSIApplication - INFO - Starting EDSI Veterinary Management System
+2025-05-12 17:35:50,549 - LoginScreen - INFO - User 'ADMIN' logged in successfully
+2025-05-12 17:35:50,549 - EDSIApplication - INFO - User 'ADMIN' logged in successfully
+2025-05-12 17:36:22,080 - EDSIApplication - INFO - Logoff and exit selected
+2025-05-12 17:36:23,956 - EDSIApplication - INFO - Cleaning up and exiting application
+2025-05-12 18:40:45,451 - EDSIApplication - INFO - Initializing database...
+2025-05-12 18:40:45,476 - EDSIApplication - INFO - Database initialized successfully
+2025-05-12 18:40:45,476 - EDSIApplication - INFO - Starting EDSI Veterinary Management System
+2025-05-12 18:40:53,011 - LoginScreen - INFO - User 'ADMIN' logged in successfully
+2025-05-12 18:40:53,012 - EDSIApplication - INFO - User 'ADMIN' logged in successfully
+2025-05-12 18:55:37,904 - EDSIApplication - INFO - Initializing database...
+2025-05-12 18:55:37,929 - EDSIApplication - INFO - Database initialized successfully
+2025-05-12 18:55:37,929 - EDSIApplication - INFO - Starting EDSI Veterinary Management System
+2025-05-12 18:55:45,499 - LoginScreen - INFO - User 'ADMIN' logged in successfully
+2025-05-12 18:55:45,500 - EDSIApplication - INFO - User 'ADMIN' logged in successfully
+2025-05-12 18:57:28,334 - EDSIApplication - INFO - Initializing database...
+2025-05-12 18:57:28,359 - EDSIApplication - INFO - Database initialized successfully
+2025-05-12 18:57:28,360 - EDSIApplication - INFO - Starting EDSI Veterinary Management System
+2025-05-12 18:57:36,185 - LoginScreen - INFO - User 'ADMIN' logged in successfully
+2025-05-12 18:57:36,186 - EDSIApplication - INFO - User 'ADMIN' logged in successfully
+2025-05-12 18:57:49,412 - EDSIApplication - INFO - Horse Management selected
+2025-05-12 19:24:06,014 - EDSIApplication - INFO - Initializing database...
+2025-05-12 19:24:06,041 - EDSIApplication - INFO - Database initialized successfully
+2025-05-12 19:24:06,041 - EDSIApplication - INFO - Starting EDSI Veterinary Management System
+2025-05-12 19:24:14,145 - LoginScreen - INFO - User 'ADMIN' logged in successfully
+2025-05-12 19:24:14,146 - EDSIApplication - INFO - User 'ADMIN' logged in successfully
+2025-05-12 19:24:18,090 - EDSIApplication - INFO - Horse Management selected
+2025-05-12 19:27:19,958 - EDSIApplication - INFO - Initializing database...
+2025-05-12 19:27:19,983 - EDSIApplication - INFO - Database initialized successfully
+2025-05-12 19:27:19,983 - EDSIApplication - INFO - Starting EDSI Veterinary Management System
+2025-05-12 19:27:31,417 - LoginScreen - INFO - User 'ADMIN' logged in successfully
+2025-05-12 19:27:31,418 - EDSIApplication - INFO - User 'ADMIN' logged in successfully
+2025-05-12 19:27:34,709 - EDSIApplication - INFO - Horse Management selected
+2025-05-12 19:28:45,465 - EDSIApplication - INFO - Horse management screen exit requested
+2025-05-12 19:29:47,555 - EDSIApplication - INFO - Print reports selected
+2025-05-12 19:29:52,260 - EDSIApplication - INFO - Horse Management selected
+2025-05-12 19:30:05,624 - EDSIApplication - INFO - Horse management screen exit requested
+2025-05-12 19:30:07,941 - EDSIApplication - INFO - Logoff without exit selected
+2025-05-12 19:30:12,167 - EDSIApplication - INFO - Exit requested from login screen
+2025-05-12 19:30:12,167 - EDSIApplication - INFO - Cleaning up and exiting application

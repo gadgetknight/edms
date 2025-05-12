@@ -2,12 +2,18 @@
 
 """
 EDSI Veterinary Management System - Main Application Entry Point
-Version: 1.0.1
+Version: 1.0.2
 Purpose: Manages application lifecycle, authentication flow, and primary navigation.
 Last Updated: May 12, 2025
 Author: Claude Assistant
 
 Changelog:
+- v1.0.2 (2025-05-12): Integrated Unified Horse Management
+  - Added connection to new HorseUnifiedManagement screen
+  - Updated menu to use single horse management option
+  - Removed old horse-related menu items (add, edit, delete separately)
+  - Simplified main menu signal handling for horse operations
+  - Cleaned up old horse screen references and cleanup
 - v1.0.1 (2025-05-12): Added Horse Management functionality
   - Connected "Review/Update Horse Info" to Horse Main Screen
   - Added horse edit workflow (select horse -> edit form)
@@ -57,6 +63,7 @@ class EDSIApplication:
         self.splash_screen = None
         self.login_screen = None
         self.main_menu = None
+        self.horse_management_screen = None
 
     def setup_logging(self):
         """Configure application logging"""
@@ -135,10 +142,8 @@ class EDSIApplication:
         """Display the main menu"""
         self.main_menu = MainMenu(self.current_user)
 
-        # Connect menu signals to handlers
-        self.main_menu.horse_review_update_selected.connect(self.on_horse_review_update)
-        self.main_menu.add_new_horse_selected.connect(self.on_add_new_horse)
-        self.main_menu.delete_horse_selected.connect(self.on_delete_horse)
+        # Connect menu signals to handlers (updated for unified approach)
+        self.main_menu.horse_management_selected.connect(self.on_horse_management)
         self.main_menu.table_maintenance_selected.connect(self.on_table_maintenance)
         self.main_menu.print_reports_selected.connect(self.on_print_reports)
         self.main_menu.owners_ar_selected.connect(self.on_owners_ar)
@@ -149,46 +154,25 @@ class EDSIApplication:
 
         self.main_menu.show()
 
-    # Menu handlers (placeholders for now)
-    def on_horse_review_update(self):
-        """Handle horse review/update selection"""
-        self.logger.info("Horse review/update selected")
+    # Menu handlers
+    def on_horse_management(self):
+        """Handle unified horse management selection"""
+        self.logger.info("Horse Management selected")
 
         # Import here to avoid circular imports
-        from views.horse.horse_main_screen import HorseMainScreen
+        from views.horse.horse_unified_management import HorseUnifiedManagement
 
-        # Create and show the horse main screen
-        self.horse_main_screen = HorseMainScreen(current_user=self.current_user)
-        self.horse_main_screen.horse_edit_requested.connect(
-            self.on_horse_edit_requested
+        # Create and show the unified horse management screen
+        self.horse_management_screen = HorseUnifiedManagement(
+            current_user=self.current_user
         )
-        self.horse_main_screen.exit_requested.connect(self.on_horse_main_exit)
-        self.horse_main_screen.show()
+        self.horse_management_screen.exit_requested.connect(
+            self.on_horse_management_exit
+        )
+        self.horse_management_screen.show()
 
-        # Hide main menu while horse screen is open
+        # Hide main menu while horse management screen is open
         self.main_menu.hide()
-
-    def on_add_new_horse(self):
-        """Handle add new horse selection"""
-        self.logger.info("Add new horse selected")
-
-        # Import here to avoid circular imports
-        from views.horse.horse_basic_record import HorseBasicRecord
-
-        # Create and show the horse basic record screen
-        self.horse_record_screen = HorseBasicRecord(current_user=self.current_user)
-        self.horse_record_screen.horse_saved.connect(self.on_horse_saved)
-        self.horse_record_screen.cancelled.connect(self.on_horse_cancelled)
-        self.horse_record_screen.show()
-
-        # Hide main menu while horse screen is open
-        self.main_menu.hide()
-
-    def on_delete_horse(self):
-        """Handle delete horse selection"""
-        self.logger.info("Delete horse selected")
-        # TODO: Implement delete horse screen
-        self.main_menu.show_info("Not Implemented", "Delete horse feature coming soon!")
 
     def on_table_maintenance(self):
         """Handle table maintenance selection"""
@@ -265,64 +249,21 @@ class EDSIApplication:
             self.login_screen.close()
         if self.splash_screen:
             self.splash_screen.close()
-        # Close horse screens if open
-        if hasattr(self, "horse_record_screen") and self.horse_record_screen:
-            self.horse_record_screen.close()
-        if hasattr(self, "horse_main_screen") and self.horse_main_screen:
-            self.horse_main_screen.close()
+        if self.horse_management_screen:
+            self.horse_management_screen.close()
 
         # Quit application
         self.app.quit()
 
-    # Horse operation callbacks
-    def on_horse_saved(self, horse_id):
-        """Handle horse saved event"""
-        self.logger.info(f"Horse saved with ID: {horse_id}")
-        # Close the horse screen and show main menu
-        if hasattr(self, "horse_record_screen"):
-            self.horse_record_screen.close()
-            self.horse_record_screen.deleteLater()
-            self.horse_record_screen = None
-        self.main_menu.show()
-
-    def on_horse_cancelled(self):
-        """Handle horse operation cancelled"""
-        self.logger.info("Horse operation cancelled")
-        # Close the horse screen and show main menu
-        if hasattr(self, "horse_record_screen"):
-            self.horse_record_screen.close()
-            self.horse_record_screen.deleteLater()
-            self.horse_record_screen = None
-        self.main_menu.show()
-
-    def on_horse_edit_requested(self, horse_id):
-        """Handle horse edit request from Horse Main Screen"""
-        self.logger.info(f"Horse edit requested for ID: {horse_id}")
-
-        # Close the horse main screen
-        if hasattr(self, "horse_main_screen"):
-            self.horse_main_screen.close()
-            self.horse_main_screen.deleteLater()
-            self.horse_main_screen = None
-
-        # Import and show the horse basic record screen for editing
-        from views.horse.horse_basic_record import HorseBasicRecord
-
-        self.horse_record_screen = HorseBasicRecord(
-            horse_id=horse_id, current_user=self.current_user
-        )
-        self.horse_record_screen.horse_saved.connect(self.on_horse_saved)
-        self.horse_record_screen.cancelled.connect(self.on_horse_cancelled)
-        self.horse_record_screen.show()
-
-    def on_horse_main_exit(self):
-        """Handle exit from Horse Main Screen"""
-        self.logger.info("Horse main screen exit requested")
-        # Close the horse main screen and show main menu
-        if hasattr(self, "horse_main_screen"):
-            self.horse_main_screen.close()
-            self.horse_main_screen.deleteLater()
-            self.horse_main_screen = None
+    # Horse management callbacks
+    def on_horse_management_exit(self):
+        """Handle exit from Horse Management screen"""
+        self.logger.info("Horse management screen exit requested")
+        # Close the horse management screen and show main menu
+        if self.horse_management_screen:
+            self.horse_management_screen.close()
+            self.horse_management_screen.deleteLater()
+            self.horse_management_screen = None
         self.main_menu.show()
 
 

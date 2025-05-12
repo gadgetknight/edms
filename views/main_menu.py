@@ -1,5 +1,26 @@
 # views/main_menu.py
 
+"""
+EDSI Veterinary Management System - Main Menu
+Version: 1.0.1
+Purpose: Modern unified main menu with consolidated management screens.
+Last Updated: May 12, 2025
+Author: Claude Assistant
+
+Changelog:
+- v1.0.1 (2025-05-12): Updated for unified management approach
+  - Replaced separate horse operations (Add, Edit, Delete) with single "Horse Management"
+  - Removed horse_review_update_selected, add_new_horse_selected, delete_horse_selected signals
+  - Added horse_management_selected signal for unified interface
+  - Updated menu options to reflect modern management screens
+  - Simplified menu structure for better user experience
+- v1.0.0 (2025-05-12): Initial implementation
+  - Created complete main menu matching COBOL layout
+  - Implemented all menu option signals
+  - Added keyboard navigation support
+  - Included proper styling and layout
+"""
+
 from PyQt6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
@@ -19,17 +40,15 @@ import logging
 
 
 class MainMenu(BaseView):
-    """Primary menu screen - matches the COBOL main menu layout"""
+    """Primary menu screen with unified management approach"""
 
     # Signals for menu selections
-    horse_review_update_selected = pyqtSignal()  # Option 1
-    add_new_horse_selected = pyqtSignal()  # Option 2
-    delete_horse_selected = pyqtSignal()  # Option 3
-    table_maintenance_selected = pyqtSignal()  # Option 4
-    print_reports_selected = pyqtSignal()  # Option 5
-    owners_ar_selected = pyqtSignal()  # Option 6
-    system_utilities_selected = pyqtSignal()  # Option 7
-    mass_update_selected = pyqtSignal()  # Option 8
+    horse_management_selected = pyqtSignal()  # Option 1 - Unified horse operations
+    table_maintenance_selected = pyqtSignal()  # Option 2
+    print_reports_selected = pyqtSignal()  # Option 3
+    owners_ar_selected = pyqtSignal()  # Option 4
+    system_utilities_selected = pyqtSignal()  # Option 5
+    mass_update_selected = pyqtSignal()  # Option 6
     logoff_exit_selected = pyqtSignal()  # Option 9
     logoff_no_exit_selected = pyqtSignal()  # Option X
 
@@ -117,16 +136,14 @@ class MainMenu(BaseView):
         menu_layout.setSpacing(15)
         menu_layout.setContentsMargins(20, 20, 20, 20)
 
-        # Define menu options (number, text, signal)
+        # Define menu options (number, text, signal) - Updated for unified approach
         menu_options = [
-            ("1.", "Review/Update Horse Info", self.horse_review_update_selected),
-            ("2.", "Add New Horse", self.add_new_horse_selected),
-            ("3.", "Delete Horse", self.delete_horse_selected),
-            ("4.", "Table Maintenance", self.table_maintenance_selected),
-            ("5.", "Print Reports & Billing", self.print_reports_selected),
-            ("6.", "Owners A/R", self.owners_ar_selected),
-            ("7.", "System Utilities", self.system_utilities_selected),
-            ("8.", "Mass Update", self.mass_update_selected),
+            ("1.", "Horse Management", self.horse_management_selected),
+            ("2.", "Table Maintenance", self.table_maintenance_selected),
+            ("3.", "Print Reports & Billing", self.print_reports_selected),
+            ("4.", "Owners A/R", self.owners_ar_selected),
+            ("5.", "System Utilities", self.system_utilities_selected),
+            ("6.", "Mass Update", self.mass_update_selected),
             ("9.", "Logoff & Exit", self.logoff_exit_selected),
             ("X.", "Logoff, No Exit", self.logoff_no_exit_selected),
         ]
@@ -234,16 +251,14 @@ class MainMenu(BaseView):
         """Handle keyboard shortcuts for menu options"""
         key = event.text().upper()
 
-        # Map keys to signals
+        # Map keys to signals - Updated for unified approach
         key_mappings = {
-            "1": self.horse_review_update_selected,
-            "2": self.add_new_horse_selected,
-            "3": self.delete_horse_selected,
-            "4": self.table_maintenance_selected,
-            "5": self.print_reports_selected,
-            "6": self.owners_ar_selected,
-            "7": self.system_utilities_selected,
-            "8": self.mass_update_selected,
+            "1": self.horse_management_selected,
+            "2": self.table_maintenance_selected,
+            "3": self.print_reports_selected,
+            "4": self.owners_ar_selected,
+            "5": self.system_utilities_selected,
+            "6": self.mass_update_selected,
             "9": self.logoff_exit_selected,
             "X": self.logoff_no_exit_selected,
         }

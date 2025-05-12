@@ -1,5 +1,23 @@
 # views/base_view.py
 
+"""
+EDSI Veterinary Management System - Base View
+Version: 1.0.1
+Purpose: Base class for all application windows with improved widget initialization.
+Last Updated: May 12, 2025
+Author: Claude Assistant
+
+Changelog:
+- v1.0.1 (2025-05-12): Fixed central widget initialization
+  - Ensured central_widget is created properly in __init__
+  - Added explicit central widget creation for PyQt6 compatibility
+  - Fixed attribute name consistency across all views
+- v1.0.0 (2025-05-12): Initial implementation
+  - Created base class for all application windows
+  - Implemented common UI elements and styling
+  - Added message box helpers and utility methods
+"""
+
 from PyQt6.QtWidgets import (
     QMainWindow,
     QWidget,
@@ -25,16 +43,18 @@ class BaseView(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.logger = logging.getLogger(self.__class__.__name__)
+
+        # Create central widget first
+        self.central_widget = QWidget()
+        self.setCentralWidget(self.central_widget)
+
         self.setup_ui()
         self.apply_styling()
 
     def setup_ui(self):
         """Setup basic UI structure - to be overridden by subclasses"""
-        # Create central widget
-        self.central_widget = QWidget()
-        self.setCentralWidget(self.central_widget)
-
-        # Subclasses can override this method to set their own layouts
+        # Subclasses should override this method to set their own layouts
+        pass
 
     def apply_styling(self):
         """Apply consistent styling to the window"""

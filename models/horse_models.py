@@ -23,7 +23,9 @@ class Horse(BaseModel):
     horse_id = Column(Integer, primary_key=True, autoincrement=True)
     horse_name = Column(String(100), nullable=False)
     account_number = Column(String(20))
-    species_code = Column(String(10), ForeignKey("species.species_code"))
+    species_code = Column(
+        String(10), ForeignKey("species.species_code"), nullable=True
+    )  # Made nullable
     breed = Column(String(50))
     color = Column(String(50))
     sex = Column(String(10))

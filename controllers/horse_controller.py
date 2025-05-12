@@ -1,11 +1,18 @@
 """
 EDSI Veterinary Management System - Horse Controller
-Version: 1.0.0
+Version: 1.0.1
 Purpose: Business logic for horse management operations including CRUD, validation, and data processing.
 Last Updated: May 12, 2025
 Author: Claude Assistant
 
 Changelog:
+- v1.0.1 (2025-05-12): Removed species support for horses-only system
+  - Removed get_species_list() method
+  - Updated create_horse() to not handle species_code
+  - Updated update_horse() to not handle species_code
+  - Simplified search_horses() to remove species loading
+  - Updated get_horse_by_id() to not load species relationship
+  - Simplified validation to not check species-related fields
 - v1.0.0 (2025-05-12): Initial implementation
   - Created HorseController class with CRUD operations
   - Implemented horse validation logic
@@ -22,7 +29,7 @@ from typing import List, Optional, Tuple
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_
 from config.database_config import db_manager
-from models import Horse, Owner, HorseOwner, Location, Species
+from models import Horse, Owner, HorseOwner, Location
 
 
 class HorseController:
@@ -50,11 +57,10 @@ class HorseController:
             if not horse_data.get("horse_name", "").strip():
                 return False, "Horse name is required", None
 
-            # Create horse object
+            # Create horse object (species_code removed)
             horse = Horse(
                 horse_name=horse_data["horse_name"].strip(),
                 account_number=horse_data.get("account_number", "").strip(),
-                species_code=horse_data.get("species_code"),
                 breed=horse_data.get("breed", "").strip(),
                 color=horse_data.get("color", "").strip(),
                 sex=horse_data.get("sex"),
@@ -109,10 +115,9 @@ class HorseController:
             if not horse_data.get("horse_name", "").strip():
                 return False, "Horse name is required"
 
-            # Update fields
+            # Update fields (species_code removed)
             horse.horse_name = horse_data["horse_name"].strip()
             horse.account_number = horse_data.get("account_number", "").strip()
-            horse.species_code = horse_data.get("species_code")
             horse.breed = horse_data.get("breed", "").strip()
             horse.color = horse_data.get("color", "").strip()
             horse.sex = horse_data.get("sex")
@@ -149,8 +154,7 @@ class HorseController:
         try:
             horse = session.query(Horse).filter(Horse.horse_id == horse_id).first()
             if horse:
-                # Eager load related data
-                _ = horse.species  # Load species relationship
+                # Load location relationship (species relationship removed)
                 _ = horse.location  # Load location relationship
             return horse
         except Exception as e:
@@ -190,30 +194,13 @@ class HorseController:
 
             horses = query.order_by(Horse.horse_name).all()
 
-            # Eager load related data for all horses
+            # Load location relationship for all horses (species removed)
             for horse in horses:
-                _ = horse.species
                 _ = horse.location
 
             return horses
         except Exception as e:
             self.logger.error(f"Error searching horses: {str(e)}")
-            return []
-        finally:
-            session.close()
-
-    def get_species_list(self) -> List[Species]:
-        """Get list of all active species"""
-        session = db_manager.get_session()
-        try:
-            return (
-                session.query(Species)
-                .filter(Species.is_active == True)
-                .order_by(Species.species_name)
-                .all()
-            )
-        except Exception as e:
-            self.logger.error(f"Error getting species list: {str(e)}")
             return []
         finally:
             session.close()
