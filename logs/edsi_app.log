@@ -1630,3 +1630,32 @@ AttributeError: 'Owner' object has no attribute 'owner_name'
 2025-05-14 18:43:35,821 - HorseUnifiedManagement - INFO - Loading details for horse ID: 6
 2025-05-14 18:43:35,830 - HorseUnifiedManagement - INFO - Initial data loaded.
 2025-05-14 18:43:35,830 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-14 18:51:58,976 - EDSIApplication - INFO - Logging configured.
+2025-05-14 18:51:59,022 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.0.0
+2025-05-14 18:51:59,022 - EDSIApplication - INFO - Initializing database...
+2025-05-14 18:51:59,049 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-14 18:51:59,049 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-14 18:52:12,988 - LoginScreen - INFO - Password validation successful for user 'TM'.
+2025-05-14 18:52:12,989 - LoginScreen - INFO - User 'TM' logged in successfully
+2025-05-14 18:52:12,989 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-14 18:52:12,999 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-14 18:52:13,094 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_connections') -> True
+2025-05-14 18:52:13,094 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_requested') -> True
+2025-05-14 18:52:13,096 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'exit_requested') -> True
+2025-05-14 18:52:13,096 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-14 18:52:13,105 - HorseUnifiedManagement - INFO - Horse selected: ID 6
+2025-05-14 18:52:13,105 - HorseUnifiedManagement - INFO - Loading details for horse ID: 6
+2025-05-14 18:52:13,114 - HorseUnifiedManagement - INFO - Initial data loaded.
+2025-05-14 18:52:13,115 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-14 18:52:13,154 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-14 18:52:22,333 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-14 18:52:22,333 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-14 18:56:14,092 - HorseUnifiedManagement - INFO - Attempting to create new master owner: Kelly Coile
+2025-05-14 18:56:14,094 - HorseUnifiedManagement - ERROR - Displaying Error: Failed to Create Master Owner - Validation failed: Account Number '000945' already exists.
+2025-05-14 19:15:38,254 - HorseUnifiedManagement - INFO - Log Out action triggered from user menu.
+2025-05-14 19:15:38,254 - EDSIApplication - INFO - Exit requested from Horse Management screen (logoff).
+2025-05-14 19:15:38,266 - EDSIApplication - INFO - User logged off.
+2025-05-14 19:15:40,185 - LoginScreen - INFO - Exit requested from login screen.
+2025-05-14 19:15:40,185 - EDSIApplication - INFO - Initiating application cleanup and exit.
+2025-05-14 19:15:40,187 - EDSIApplication - INFO - Database connection closed.
+2025-05-14 19:15:40,197 - EDSIApplication - INFO - Exiting application.
