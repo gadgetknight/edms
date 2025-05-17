@@ -1,130 +1,137 @@
 # views/auth/splash_screen.py
 
-from PyQt6.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QFont, QPixmap
-from views.base_view import BaseView
+"""
+EDSI Veterinary Management System - Image-Based Splash Screen with Interactive Areas
+Version: 1.3.0
+Purpose: Displays an image-based splash screen with clickable login/exit areas.
+Last Updated: May 16, 2025
+Author: Claude Assistant
+
+Changelog:
+- v1.3.0 (2025-05-16): Implemented interactive image splash screen.
+  - Loads splash_screen.jpg from assets.
+  - Overlays transparent QPushButtons for "Login" and "Exit" areas based on coordinates.
+  - Emits `login_area_clicked` or `exit_area_clicked` signals.
+  - Removed old timer and generic key/mouse press handlers.
+- v1.2.0 (2025-05-15): Attempted image display (placeholder).
+- v1.1.0 (2025-05-12): Original text-based splash screen.
+"""
+
+import os
+import logging
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton
+from PySide6.QtCore import Qt, Signal, QSize, QRect
+from PySide6.QtGui import QPixmap, QPalette, QColor
+
+from views.base_view import (
+    BaseView,
+)  # BaseView might not be ideal if we want a raw QWidget
 from config.app_config import AppConfig
 
 
-class SplashScreen(BaseView):
-    """EDSI splash screen that appears on startup"""
+class SplashScreen(QWidget):  # Changed from BaseView to QWidget for more control
+    """EDSI splash screen that appears on startup, image-based with interactive areas."""
 
-    # Signal emitted when user presses any key or clicks
-    splash_closed = pyqtSignal()
+    login_area_clicked = Signal()
+    exit_area_clicked = Signal()
 
     def __init__(self):
         super().__init__()
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setWindowFlags(
+            Qt.WindowType.SplashScreen
+            | Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.WindowStaysOnTopHint
+        )
+
+        self.pixmap = None
         self.setup_splash_ui()
-        self.setup_timer()
 
     def setup_splash_ui(self):
-        """Setup the splash screen UI"""
-        self.set_title("EDSI Splash Screen")
-        self.resize(600, 400)
+        image_path = os.path.join(
+            AppConfig.get_app_dir(), "assets", "splash_screen.jpg"
+        )
+        self.pixmap = QPixmap(image_path)
 
-        # Center the window on screen
+        if self.pixmap.isNull():
+            self.logger.error(
+                f"CRITICAL: Could not load splash image from {image_path}. Using fallback."
+            )
+            self.resize(300, 100)
+            fallback_label = QLabel("EDSI Loading...", self)
+            fallback_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            fallback_label.setStyleSheet(
+                "background-color: #2b2b2b; color: white; font-size: 18px; padding: 20px;"
+            )
+            main_layout = QVBoxLayout(self)
+            main_layout.addWidget(fallback_label)
+            self.center_on_screen()
+            return
+
+        self.setFixedSize(self.pixmap.size())
         self.center_on_screen()
 
-        # Create splash layout directly
+        # Background label for the image
+        self.image_label = QLabel(self)
+        self.image_label.setPixmap(self.pixmap)
+        self.image_label.setGeometry(0, 0, self.pixmap.width(), self.pixmap.height())
 
-        # Main splash layout
-        splash_layout = QVBoxLayout(self.central_widget)
-        splash_layout.setContentsMargins(20, 20, 20, 20)
-        splash_layout.setSpacing(20)
-        splash_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # Coordinates for buttons (as provided by user)
+        # Login Button: X=460, Y=690, Width=110, Height=40
+        # Exit Button: X=590, Y=690, Width=110, Height=40
 
-        # Create main content frame
-        content_frame = QFrame()
-        content_frame.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Raised)
-        content_frame.setFixedSize(500, 300)
-        content_frame.setStyleSheet(
-            f"""
-            QFrame {{
-                background-color: {AppConfig.SURFACE_COLOR};
-                border: 2px solid {AppConfig.PRIMARY_COLOR};
-                border-radius: 12px;
-            }}
-        """
+        login_coords = QRect(550, 690, 180, 40)
+        exit_coords = QRect(760, 690, 180, 40)
+
+        self.login_button_overlay = QPushButton(
+            self.image_label
+        )  # Parent to image_label
+        self.login_button_overlay.setGeometry(login_coords)
+        self.login_button_overlay.setFlat(True)  # Makes it look less like a button
+        self.login_button_overlay.setStyleSheet(
+            "QPushButton { background-color: transparent; border: none; }"
         )
+        self.login_button_overlay.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.login_button_overlay.clicked.connect(self.login_area_clicked.emit)
+        self.login_button_overlay.setToolTip("Login to EDSI System")
 
-        content_layout = QVBoxLayout(content_frame)
-        content_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        content_layout.setSpacing(20)
-        content_layout.setContentsMargins(30, 30, 30, 30)
-
-        # Application title
-        title_label = QLabel("EDSI")
-        title_font = QFont(AppConfig.DEFAULT_FONT_FAMILY, 36, QFont.Weight.Bold)
-        title_label.setFont(title_font)
-        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title_label.setStyleSheet(f"color: {AppConfig.PRIMARY_COLOR};")
-        content_layout.addWidget(title_label)
-
-        # Subtitle
-        subtitle_label = QLabel("Veterinary Management System")
-        subtitle_font = QFont(AppConfig.DEFAULT_FONT_FAMILY, 18)
-        subtitle_label.setFont(subtitle_font)
-        subtitle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        subtitle_label.setStyleSheet(f"color: {AppConfig.TEXT_COLOR};")
-        content_layout.addWidget(subtitle_label)
-
-        # Version info
-        version_label = QLabel(f"Version {AppConfig.APP_VERSION}")
-        version_font = QFont(AppConfig.DEFAULT_FONT_FAMILY, 12)
-        version_label.setFont(version_font)
-        version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        version_label.setStyleSheet(f"color: {AppConfig.TEXT_SECONDARY};")
-        content_layout.addWidget(version_label)
-
-        # Add some stretch
-        content_layout.addStretch()
-
-        # Press any key message
-        instruction_label = QLabel("Press any key to continue...")
-        instruction_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        instruction_label.setStyleSheet(
-            f"""
-            color: {AppConfig.TEXT_SECONDARY};
-            font-style: italic;
-            font-size: {AppConfig.DEFAULT_FONT_SIZE}pt;
-        """
+        self.exit_button_overlay = QPushButton(
+            self.image_label
+        )  # Parent to image_label
+        self.exit_button_overlay.setGeometry(exit_coords)
+        self.exit_button_overlay.setFlat(True)
+        self.exit_button_overlay.setStyleSheet(
+            "QPushButton { background-color: transparent; border: none; }"
         )
-        content_layout.addWidget(instruction_label)
+        self.exit_button_overlay.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.exit_button_overlay.clicked.connect(self.exit_area_clicked.emit)
+        self.exit_button_overlay.setToolTip("Exit Application")
 
-        # Add content frame to splash layout
-        splash_layout.addWidget(content_frame)
-
-        # Make window modal
-        self.setWindowModality(Qt.WindowModality.ApplicationModal)
+        # No main layout needed if we are just placing buttons on an image label
+        # The image_label itself will be the only child of the SplashScreen QWidget.
+        # However, to ensure image_label fills the SplashScreen QWidget:
+        v_layout = QVBoxLayout(self)
+        v_layout.addWidget(self.image_label)
+        v_layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(v_layout)
 
     def center_on_screen(self):
-        """Center the splash screen on the display"""
-        screen = self.screen().availableGeometry()
-        size = self.geometry()
-        self.move(
-            (screen.width() - size.width()) // 2, (screen.height() - size.height()) // 2
-        )
+        if self.screen():  # Check if screen is available
+            screen_geometry = self.screen().availableGeometry()
+            self.move(
+                (screen_geometry.width() - self.width()) // 2,
+                (screen_geometry.height() - self.height()) // 2,
+            )
+        else:  # Fallback for headless environments or early init
+            self.logger.warning(
+                "Screen not available for centering splash, using default position."
+            )
+            self.move(100, 100)
 
-    def setup_timer(self):
-        """Setup auto-advance timer (optional)"""
-        # Optional: Auto-advance after 3 seconds
-        self.auto_advance_timer = QTimer()
-        self.auto_advance_timer.timeout.connect(self.close_splash)
-        self.auto_advance_timer.setSingleShot(True)
-        self.auto_advance_timer.start(3000)  # 3 seconds
+    # We don't want generic key/mouse presses to close it anymore
+    # def keyPressEvent(self, event):
+    #     pass # Or handle specific keys if needed, e.g. ESC for exit_area_clicked
 
-    def keyPressEvent(self, event):
-        """Handle any key press"""
-        self.close_splash()
-
-    def mousePressEvent(self, event):
-        """Handle mouse click"""
-        self.close_splash()
-
-    def close_splash(self):
-        """Close splash screen and emit signal"""
-        if hasattr(self, "auto_advance_timer"):
-            self.auto_advance_timer.stop()
-        self.splash_closed.emit()
-        self.close()
+    # def mousePressEvent(self, event):
+    #     pass

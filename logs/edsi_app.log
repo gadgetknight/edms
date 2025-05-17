@@ -1659,3 +1659,1072 @@ AttributeError: 'Owner' object has no attribute 'owner_name'
 2025-05-14 19:15:40,185 - EDSIApplication - INFO - Initiating application cleanup and exit.
 2025-05-14 19:15:40,187 - EDSIApplication - INFO - Database connection closed.
 2025-05-14 19:15:40,197 - EDSIApplication - INFO - Exiting application.
+2025-05-14 22:42:53,308 - EDSIApplication - INFO - Logging configured.
+2025-05-14 22:42:53,346 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.0.0
+2025-05-14 22:42:53,346 - EDSIApplication - INFO - Initializing database...
+2025-05-14 22:42:53,387 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-14 22:42:53,387 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-14 22:46:14,843 - LoginScreen - INFO - Password validation successful for user 'TM'.
+2025-05-14 22:46:14,843 - LoginScreen - INFO - User 'TM' logged in successfully
+2025-05-14 22:46:14,844 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-14 22:46:14,855 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-14 22:46:15,454 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_connections') -> True
+2025-05-14 22:46:15,454 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_requested') -> True
+2025-05-14 22:46:15,455 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'exit_requested') -> True
+2025-05-14 22:46:15,456 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-14 22:46:15,476 - HorseUnifiedManagement - INFO - Horse selected: ID 6
+2025-05-14 22:46:15,476 - HorseUnifiedManagement - INFO - Loading details for horse ID: 6
+2025-05-14 22:46:15,485 - HorseUnifiedManagement - INFO - Initial data loaded.
+2025-05-14 22:46:15,485 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-14 22:46:15,504 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-14 22:46:19,047 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-14 22:46:19,047 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-14 22:47:59,254 - HorseUnifiedManagement - INFO - Create and link owner dialog cancelled.
+2025-05-14 22:49:05,729 - HorseUnifiedManagement - INFO - Create and link owner dialog cancelled.
+2025-05-15 18:28:36,871 - EDSIApplication - INFO - Logging configured.
+2025-05-15 18:28:36,891 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.0.0
+2025-05-15 18:28:36,891 - EDSIApplication - INFO - Initializing database...
+2025-05-15 18:28:36,936 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-15 18:28:36,936 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-15 18:28:51,682 - LoginScreen - INFO - Password validation successful for user 'TM'.
+2025-05-15 18:28:51,683 - LoginScreen - INFO - User 'TM' logged in successfully
+2025-05-15 18:28:51,683 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-15 18:28:51,694 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-15 18:28:51,857 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_connections') -> True
+2025-05-15 18:28:51,857 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_requested') -> True
+2025-05-15 18:28:51,857 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'exit_requested') -> True
+2025-05-15 18:28:51,857 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-15 18:28:51,875 - HorseUnifiedManagement - INFO - Horse selected: ID 6
+2025-05-15 18:28:51,875 - HorseUnifiedManagement - INFO - Loading details for horse ID: 6
+2025-05-15 18:28:51,895 - HorseUnifiedManagement - INFO - Initial data loaded.
+2025-05-15 18:28:51,895 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-15 18:28:51,914 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-15 18:28:56,026 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-15 18:28:56,026 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-15 18:35:27,526 - HorseUnifiedManagement - INFO - Attempting to create new master owner: Kelly Coile
+2025-05-15 18:35:27,528 - HorseUnifiedManagement - ERROR - Displaying Error: Failed to Create Master Owner - Validation failed: Account Number '000945' already exists.
+2025-05-15 18:41:45,013 - HorseUnifiedManagement - INFO - Horse selected: ID 5
+2025-05-15 18:41:45,014 - HorseUnifiedManagement - INFO - Loading details for horse ID: 5
+2025-05-15 18:41:53,538 - HorseUnifiedManagement - INFO - Asking Question: Confirm Deactivate - Are you sure you want to deactivate 'Who's The Cowboy'?
+2025-05-15 18:41:55,300 - HorseUnifiedManagement - INFO - User confirmed to deactivate horse ID: 5
+2025-05-15 18:41:55,307 - HorseController - INFO - Deactivated horse: Who's The Cowboy (ID: 5) by user TM.
+2025-05-15 18:41:55,307 - HorseUnifiedManagement - INFO - Displaying Info: Horse Status Changed - Horse 'Who's The Cowboy' deactivated successfully.
+2025-05-15 18:41:57,441 - HorseUnifiedManagement - INFO - Loading details for horse ID: 5
+2025-05-15 18:41:57,444 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-15 18:41:57,445 - HorseUnifiedManagement - INFO - Horse selection cleared.
+2025-05-15 18:41:57,451 - HorseUnifiedManagement - INFO - Horse selected: ID 6
+2025-05-15 18:41:57,451 - HorseUnifiedManagement - INFO - Loading details for horse ID: 6
+2025-05-15 18:41:59,914 - HorseUnifiedManagement - INFO - Asking Question: Confirm Deactivate - Are you sure you want to deactivate 'Divieland Band'?
+2025-05-15 18:42:01,189 - HorseUnifiedManagement - INFO - User confirmed to deactivate horse ID: 6
+2025-05-15 18:42:01,194 - HorseController - INFO - Deactivated horse: Divieland Band (ID: 6) by user TM.
+2025-05-15 18:42:01,194 - HorseUnifiedManagement - INFO - Displaying Info: Horse Status Changed - Horse 'Divieland Band' deactivated successfully.
+2025-05-15 18:42:02,739 - HorseUnifiedManagement - INFO - Loading details for horse ID: 6
+2025-05-15 18:42:02,740 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-15 18:42:02,741 - HorseUnifiedManagement - INFO - Horse selected: ID 7
+2025-05-15 18:42:02,742 - HorseUnifiedManagement - INFO - Loading details for horse ID: 7
+2025-05-15 18:42:02,743 - HorseUnifiedManagement - INFO - Horse selection cleared.
+2025-05-15 18:42:02,748 - HorseUnifiedManagement - INFO - Horse selected: ID 7
+2025-05-15 18:42:02,748 - HorseUnifiedManagement - INFO - Loading details for horse ID: 7
+2025-05-15 18:42:04,870 - HorseUnifiedManagement - INFO - Asking Question: Confirm Deactivate - Are you sure you want to deactivate 'One More Power'?
+2025-05-15 18:42:06,289 - HorseUnifiedManagement - INFO - User confirmed to deactivate horse ID: 7
+2025-05-15 18:42:06,293 - HorseController - INFO - Deactivated horse: One More Power (ID: 7) by user TM.
+2025-05-15 18:42:06,294 - HorseUnifiedManagement - INFO - Displaying Info: Horse Status Changed - Horse 'One More Power' deactivated successfully.
+2025-05-15 18:42:07,799 - HorseUnifiedManagement - INFO - Loading details for horse ID: 7
+2025-05-15 18:42:07,802 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-15 18:42:07,802 - HorseUnifiedManagement - INFO - Horse selected: ID 8
+2025-05-15 18:42:07,803 - HorseUnifiedManagement - INFO - Loading details for horse ID: 8
+2025-05-15 18:42:07,805 - HorseUnifiedManagement - INFO - Horse selection cleared.
+2025-05-15 18:42:07,808 - HorseUnifiedManagement - INFO - Horse selected: ID 8
+2025-05-15 18:42:07,808 - HorseUnifiedManagement - INFO - Loading details for horse ID: 8
+2025-05-15 18:42:09,545 - HorseUnifiedManagement - INFO - Asking Question: Confirm Deactivate - Are you sure you want to deactivate 'Peaks and Valley's'?
+2025-05-15 18:42:10,947 - HorseUnifiedManagement - INFO - User confirmed to deactivate horse ID: 8
+2025-05-15 18:42:10,952 - HorseController - INFO - Deactivated horse: Peaks and Valley's (ID: 8) by user TM.
+2025-05-15 18:42:10,952 - HorseUnifiedManagement - INFO - Displaying Info: Horse Status Changed - Horse 'Peaks and Valley's' deactivated successfully.
+2025-05-15 18:42:12,377 - HorseUnifiedManagement - INFO - Loading details for horse ID: 8
+2025-05-15 18:42:12,378 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-15 18:42:12,379 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-15 18:42:12,379 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-15 18:42:12,381 - HorseUnifiedManagement - INFO - Horse selection cleared.
+2025-05-15 18:42:12,384 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-15 18:42:12,384 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-15 18:42:13,666 - HorseUnifiedManagement - INFO - Horse selected: ID 9
+2025-05-15 18:42:13,667 - HorseUnifiedManagement - INFO - Loading details for horse ID: 9
+2025-05-15 18:42:15,456 - HorseUnifiedManagement - INFO - Asking Question: Confirm Deactivate - Are you sure you want to deactivate 'Stormboot'?
+2025-05-15 18:42:17,017 - HorseUnifiedManagement - INFO - User confirmed to deactivate horse ID: 9
+2025-05-15 18:42:17,021 - HorseController - INFO - Deactivated horse: Stormboot (ID: 9) by user TM.
+2025-05-15 18:42:17,022 - HorseUnifiedManagement - INFO - Displaying Info: Horse Status Changed - Horse 'Stormboot' deactivated successfully.
+2025-05-15 18:42:18,530 - HorseUnifiedManagement - INFO - Loading details for horse ID: 9
+2025-05-15 18:42:18,532 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-15 18:42:18,533 - HorseUnifiedManagement - INFO - Horse selection cleared.
+2025-05-15 18:42:18,535 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-15 18:42:18,535 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-15 18:42:27,365 - HorseUnifiedManagement - INFO - Log Out action triggered from user menu.
+2025-05-15 18:42:27,365 - EDSIApplication - INFO - Exit requested from Horse Management screen (logoff).
+2025-05-15 18:42:27,373 - EDSIApplication - INFO - User logged off.
+2025-05-15 18:42:29,514 - LoginScreen - INFO - Exit requested from login screen.
+2025-05-15 18:42:29,514 - EDSIApplication - INFO - Initiating application cleanup and exit.
+2025-05-15 18:42:29,516 - EDSIApplication - INFO - Database connection closed.
+2025-05-15 18:42:29,525 - EDSIApplication - INFO - Exiting application.
+2025-05-15 18:42:36,753 - EDSIApplication - INFO - Logging configured.
+2025-05-15 18:42:36,778 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.0.0
+2025-05-15 18:42:36,778 - EDSIApplication - INFO - Initializing database...
+2025-05-15 18:42:36,806 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-15 18:42:36,806 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-15 18:42:45,689 - LoginScreen - INFO - Password validation successful for user 'TM'.
+2025-05-15 18:42:45,690 - LoginScreen - INFO - User 'TM' logged in successfully
+2025-05-15 18:42:45,690 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-15 18:42:45,701 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-15 18:42:45,882 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_connections') -> True
+2025-05-15 18:42:45,882 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_requested') -> True
+2025-05-15 18:42:45,883 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'exit_requested') -> True
+2025-05-15 18:42:45,883 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-15 18:42:45,889 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-15 18:42:45,889 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-15 18:42:45,899 - HorseUnifiedManagement - INFO - Initial data loaded.
+2025-05-15 18:42:45,899 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-15 18:42:45,919 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-15 18:45:25,342 - HorseUnifiedManagement - INFO - Attempting to create new master owner: kelly coile
+2025-05-15 18:45:25,344 - HorseUnifiedManagement - ERROR - Displaying Error: Failed to Create Master Owner - Validation failed: Account Number '000945' already exists.
+2025-05-15 18:50:17,654 - HorseUnifiedManagement - INFO - Attempting to create new master owner: kellie cokioluj
+2025-05-15 18:50:17,662 - OwnerController - ERROR - Error creating master owner: 'Owner' object has no attribute 'owner_name'
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\controllers\owner_controller.py", line 245, in create_master_owner
+    display_name_for_log = new_owner.owner_name
+                           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Owner' object has no attribute 'owner_name'
+2025-05-15 18:50:17,677 - HorseUnifiedManagement - ERROR - Displaying Error: Failed to Create Master Owner - Failed to create owner: 'Owner' object has no attribute 'owner_name'
+2025-05-15 18:52:08,717 - HorseUnifiedManagement - INFO - Attempting to create new master owner: ghghg ghgfgfgh
+2025-05-15 18:52:08,722 - OwnerController - ERROR - Error creating master owner: 'Owner' object has no attribute 'owner_name'
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\controllers\owner_controller.py", line 245, in create_master_owner
+    display_name_for_log = new_owner.owner_name
+                           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Owner' object has no attribute 'owner_name'
+2025-05-15 18:52:08,723 - HorseUnifiedManagement - ERROR - Displaying Error: Failed to Create Master Owner - Failed to create owner: 'Owner' object has no attribute 'owner_name'
+2025-05-15 19:19:48,901 - HorseUnifiedManagement - INFO - Create and link owner dialog cancelled.
+2025-05-15 19:19:59,852 - HorseUnifiedManagement - INFO - Attempting to link existing owner ID 1 with 100.0% to horse ID 10
+2025-05-15 19:19:59,857 - HorseController - ERROR - Error adding owner to horse: 'created_by' is an invalid keyword argument for HorseOwner
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\controllers\horse_controller.py", line 441, in add_owner_to_horse
+    new_horse_owner = HorseOwner(
+                      ^^^^^^^^^^^
+  File "<string>", line 4, in __init__
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\state.py", line 566, in _initialize_instance
+    with util.safe_reraise():
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\state.py", line 564, in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\decl_base.py", line 2142, in _declarative_constructor
+    raise TypeError(
+TypeError: 'created_by' is an invalid keyword argument for HorseOwner
+2025-05-15 19:19:59,884 - HorseUnifiedManagement - ERROR - Displaying Error: Failed to Link Owner - Failed to add owner: 'created_by' is an invalid keyword argument for HorseOwner
+2025-05-15 19:20:27,341 - HorseUnifiedManagement - INFO - Link existing owner dialog cancelled.
+2025-05-15 19:20:58,243 - HorseUnifiedManagement - INFO - Attempting to link existing owner ID 1 with 100.0% to horse ID 10
+2025-05-15 19:20:58,245 - HorseController - ERROR - Error adding owner to horse: 'created_by' is an invalid keyword argument for HorseOwner
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\controllers\horse_controller.py", line 441, in add_owner_to_horse
+    new_horse_owner = HorseOwner(
+                      ^^^^^^^^^^^
+  File "<string>", line 4, in __init__
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\state.py", line 566, in _initialize_instance
+    with util.safe_reraise():
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\state.py", line 564, in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\decl_base.py", line 2142, in _declarative_constructor
+    raise TypeError(
+TypeError: 'created_by' is an invalid keyword argument for HorseOwner
+2025-05-15 19:20:58,247 - HorseUnifiedManagement - ERROR - Displaying Error: Failed to Link Owner - Failed to add owner: 'created_by' is an invalid keyword argument for HorseOwner
+2025-05-15 19:24:10,809 - HorseUnifiedManagement - INFO - Link existing owner dialog cancelled.
+2025-05-15 19:24:55,677 - HorseUnifiedManagement - INFO - Attempting to link existing owner ID 1 with 100.0% to horse ID 10
+2025-05-15 19:24:55,679 - HorseController - ERROR - Error adding owner to horse: 'created_by' is an invalid keyword argument for HorseOwner
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\controllers\horse_controller.py", line 441, in add_owner_to_horse
+    new_horse_owner = HorseOwner(
+                      ^^^^^^^^^^^
+  File "<string>", line 4, in __init__
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\state.py", line 566, in _initialize_instance
+    with util.safe_reraise():
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\state.py", line 564, in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\decl_base.py", line 2142, in _declarative_constructor
+    raise TypeError(
+TypeError: 'created_by' is an invalid keyword argument for HorseOwner
+2025-05-15 19:24:55,680 - HorseUnifiedManagement - ERROR - Displaying Error: Failed to Link Owner - Failed to add owner: 'created_by' is an invalid keyword argument for HorseOwner
+2025-05-15 19:25:12,437 - HorseUnifiedManagement - INFO - Attempting to link existing owner ID 1 with 100.0% to horse ID 10
+2025-05-15 19:25:12,439 - HorseController - ERROR - Error adding owner to horse: 'created_by' is an invalid keyword argument for HorseOwner
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\controllers\horse_controller.py", line 441, in add_owner_to_horse
+    new_horse_owner = HorseOwner(
+                      ^^^^^^^^^^^
+  File "<string>", line 4, in __init__
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\state.py", line 566, in _initialize_instance
+    with util.safe_reraise():
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\state.py", line 564, in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\decl_base.py", line 2142, in _declarative_constructor
+    raise TypeError(
+TypeError: 'created_by' is an invalid keyword argument for HorseOwner
+2025-05-15 19:25:12,440 - HorseUnifiedManagement - ERROR - Displaying Error: Failed to Link Owner - Failed to add owner: 'created_by' is an invalid keyword argument for HorseOwner
+2025-05-15 19:33:21,863 - EDSIApplication - INFO - Logging configured.
+2025-05-15 19:33:21,885 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.0.0
+2025-05-15 19:33:21,885 - EDSIApplication - INFO - Initializing database...
+2025-05-15 19:33:21,911 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-15 19:33:21,912 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-15 19:33:32,496 - LoginScreen - INFO - Password validation successful for user 'TM'.
+2025-05-15 19:33:32,496 - LoginScreen - INFO - User 'TM' logged in successfully
+2025-05-15 19:33:32,497 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-15 19:33:32,508 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-15 19:33:32,712 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_connections') -> True
+2025-05-15 19:33:32,712 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_requested') -> True
+2025-05-15 19:33:32,713 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'exit_requested') -> True
+2025-05-15 19:33:32,713 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-15 19:33:32,718 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-15 19:33:32,718 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-15 19:33:32,727 - HorseUnifiedManagement - INFO - Initial data loaded.
+2025-05-15 19:33:32,727 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-15 19:33:32,746 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-15 19:33:38,943 - HorseUnifiedManagement - INFO - Attempting to link existing owner ID 1 with 100.0% to horse ID 10
+2025-05-15 19:33:38,951 - HorseController - INFO - Added owner ID 1 to horse ID 10 with 100.00% ownership by TM.
+2025-05-15 19:33:38,951 - HorseUnifiedManagement - INFO - Displaying Info: Owner Linked - Owner added to horse successfully.
+2025-05-15 19:34:25,900 - HorseUnifiedManagement - INFO - Link existing owner dialog cancelled.
+2025-05-15 19:35:38,502 - HorseUnifiedManagement - INFO - Link existing owner dialog cancelled.
+2025-05-15 19:35:54,384 - HorseUnifiedManagement - INFO - Link existing owner dialog cancelled.
+2025-05-15 19:45:19,921 - HorseUnifiedManagement - INFO - Link existing owner dialog cancelled.
+2025-05-15 19:45:21,488 - HorseUnifiedManagement - INFO - Horse-owner selected: Owner ID 1
+2025-05-15 19:46:17,345 - HorseUnifiedManagement - INFO - Attempting to link existing owner ID 2 with 100.0% to horse ID 10
+2025-05-15 19:46:17,347 - HorseUnifiedManagement - ERROR - Displaying Error: Failed to Link Owner - Adding 100.00% would exceed 100% total ownership for this horse (current total: 100.00%).
+2025-05-15 19:46:33,521 - HorseUnifiedManagement - INFO - Attempting to update percentage for owner ID 1 on horse ID 10 to 76.0%
+2025-05-15 19:46:33,527 - HorseController - INFO - Updated ownership for horse ID 10, owner ID 1 to 76.00% by TM.
+2025-05-15 19:46:33,527 - HorseUnifiedManagement - INFO - Displaying Info: Percentage Updated - Ownership percentage updated successfully.
+2025-05-15 19:46:35,729 - HorseUnifiedManagement - INFO - Horse-owner selection cleared.
+2025-05-15 19:46:44,789 - HorseUnifiedManagement - INFO - Attempting to link existing owner ID 2 with 2.0% to horse ID 10
+2025-05-15 19:46:44,794 - HorseController - INFO - Added owner ID 2 to horse ID 10 with 2.00% ownership by TM.
+2025-05-15 19:46:44,794 - HorseUnifiedManagement - INFO - Displaying Info: Owner Linked - Owner added to horse successfully.
+2025-05-15 19:46:49,336 - HorseUnifiedManagement - INFO - Horse-owner selected: Owner ID 2
+2025-05-15 19:46:50,883 - HorseUnifiedManagement - INFO - Asking Question: Confirm Removal - Are you sure you want to remove owner 'kellie cokioluj [000234]' from horse 'Soul Rebel'?
+2025-05-15 19:46:52,298 - HorseUnifiedManagement - INFO - Attempting to remove owner ID 2 from horse ID 10
+2025-05-15 19:46:52,302 - HorseController - INFO - Removed owner ID 2 from horse ID 10 by TM.
+2025-05-15 19:46:52,302 - HorseUnifiedManagement - INFO - Displaying Info: Owner Removed - Owner removed from horse successfully.
+2025-05-15 19:46:53,891 - HorseUnifiedManagement - INFO - Horse-owner selected: Owner ID 2
+2025-05-15 19:46:53,891 - HorseUnifiedManagement - INFO - Horse-owner selection cleared.
+2025-05-15 19:47:21,319 - HorseUnifiedManagement - INFO - Link existing owner dialog cancelled.
+2025-05-15 19:47:23,428 - HorseUnifiedManagement - INFO - Horse-owner selected: Owner ID 1
+2025-05-15 19:47:35,668 - HorseUnifiedManagement - INFO - Attempting to update percentage for owner ID 1 on horse ID 10 to 100.0%
+2025-05-15 19:47:35,673 - HorseController - INFO - Updated ownership for horse ID 10, owner ID 1 to 100.00% by TM.
+2025-05-15 19:47:35,674 - HorseUnifiedManagement - INFO - Displaying Info: Percentage Updated - Ownership percentage updated successfully.
+2025-05-15 19:47:37,375 - HorseUnifiedManagement - INFO - Horse-owner selection cleared.
+2025-05-15 19:50:24,478 - HorseUnifiedManagement - INFO - Link existing owner dialog cancelled.
+2025-05-15 19:50:38,233 - HorseUnifiedManagement - INFO - Setup icon clicked, emitting setup_requested signal.
+2025-05-15 19:50:38,233 - EDSIApplication - INFO - Showing User Management Screen for admin 'TM'.
+2025-05-15 19:50:38,244 - UserManagementScreen - INFO - UserManagementScreen __init__ started by admin: TM
+2025-05-15 19:50:38,271 - UserManagementScreen - INFO - Loading users data...
+2025-05-15 19:50:38,273 - UserManagementScreen - INFO - Loaded 3 users into the list.
+2025-05-15 19:50:38,274 - UserManagementScreen - INFO - User selected: ADMIN
+2025-05-15 19:50:38,275 - UserManagementScreen - INFO - UserManagementScreen initialized with Tabbed Interface.
+2025-05-15 19:51:33,614 - UserManagementScreen - INFO - User Management screen exit requested.
+2025-05-15 19:51:33,615 - EDSIApplication - INFO - Exiting User Management Screen.
+2025-05-15 19:51:33,650 - EDSIApplication - INFO - Returned to Horse Management Screen.
+2025-05-15 19:54:49,395 - HorseUnifiedManagement - INFO - Initiating add new horse.
+2025-05-15 19:55:30,905 - HorseUnifiedManagement - INFO - Asking Question: Unsaved Changes - You have unsaved changes on the current horse. Discard and load selected horse?
+2025-05-15 19:55:35,754 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-15 19:55:35,754 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-15 19:57:34,978 - HorseUnifiedManagement - INFO - Create and link owner dialog cancelled.
+2025-05-15 20:00:31,653 - HorseUnifiedManagement - INFO - Link existing owner dialog cancelled.
+2025-05-15 20:00:33,661 - HorseUnifiedManagement - INFO - Setup icon clicked, emitting setup_requested signal.
+2025-05-15 20:00:33,661 - EDSIApplication - INFO - Showing User Management Screen for admin 'TM'.
+2025-05-15 20:00:33,670 - UserManagementScreen - INFO - UserManagementScreen __init__ started by admin: TM
+2025-05-15 20:00:33,697 - UserManagementScreen - INFO - Loading users data...
+2025-05-15 20:00:33,698 - UserManagementScreen - INFO - Loaded 3 users into the list.
+2025-05-15 20:00:33,699 - UserManagementScreen - INFO - User selected: ADMIN
+2025-05-15 20:00:33,700 - UserManagementScreen - INFO - UserManagementScreen initialized with Tabbed Interface.
+2025-05-15 20:02:55,404 - UserManagementScreen - INFO - User Management screen exit requested.
+2025-05-15 20:02:55,405 - EDSIApplication - INFO - Exiting User Management Screen.
+2025-05-15 20:02:55,444 - EDSIApplication - INFO - Returned to Horse Management Screen.
+2025-05-15 20:02:59,120 - HorseUnifiedManagement - INFO - Horse-owner selected: Owner ID 1
+2025-05-15 20:03:07,171 - HorseUnifiedManagement - INFO - Link existing owner dialog cancelled.
+2025-05-15 20:09:52,625 - HorseUnifiedManagement - INFO - Log Out action triggered from user menu.
+2025-05-15 20:09:52,625 - EDSIApplication - INFO - Exit requested from Horse Management screen (logoff).
+2025-05-15 20:09:52,649 - EDSIApplication - INFO - User logged off.
+2025-05-15 20:09:54,395 - LoginScreen - INFO - Exit requested from login screen.
+2025-05-15 20:09:54,395 - EDSIApplication - INFO - Initiating application cleanup and exit.
+2025-05-15 20:09:54,396 - EDSIApplication - INFO - Database connection closed.
+2025-05-15 20:09:54,417 - EDSIApplication - INFO - Exiting application.
+2025-05-15 20:10:42,266 - EDSIApplication - INFO - Logging configured.
+2025-05-15 20:10:42,293 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.0.0
+2025-05-15 20:10:42,293 - EDSIApplication - INFO - Initializing database...
+2025-05-15 20:10:42,321 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-15 20:10:42,321 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-15 20:10:54,193 - LoginScreen - INFO - Password validation successful for user 'TM'.
+2025-05-15 20:10:54,193 - LoginScreen - INFO - User 'TM' logged in successfully
+2025-05-15 20:10:54,193 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-15 20:10:54,206 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-15 20:10:54,382 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_connections') -> True
+2025-05-15 20:10:54,383 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_requested') -> True
+2025-05-15 20:10:54,383 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'exit_requested') -> True
+2025-05-15 20:10:54,383 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-15 20:10:54,389 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-15 20:10:54,389 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-15 20:10:54,398 - HorseUnifiedManagement - INFO - Initial data loaded.
+2025-05-15 20:10:54,398 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-15 20:10:54,422 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-15 20:10:58,604 - HorseUnifiedManagement - INFO - Setup icon clicked, emitting setup_requested signal.
+2025-05-15 20:10:58,604 - EDSIApplication - INFO - Showing User Management Screen for admin 'TM'.
+2025-05-15 20:10:58,614 - UserManagementScreen - INFO - UserManagementScreen __init__ started by admin: TM
+2025-05-15 20:10:58,627 - UserManagementScreen - INFO - Loading users data...
+2025-05-15 20:10:58,628 - UserManagementScreen - INFO - Loaded 3 users into the list.
+2025-05-15 20:10:58,629 - UserManagementScreen - INFO - User selected: ADMIN
+2025-05-15 20:10:58,629 - UserManagementScreen - INFO - UserManagementScreen initialized with Tabbed Interface.
+2025-05-15 20:11:07,158 - UserManagementScreen - INFO - User Management screen exit requested.
+2025-05-15 20:11:07,159 - EDSIApplication - INFO - Exiting User Management Screen.
+2025-05-15 20:11:07,178 - EDSIApplication - INFO - Returned to Horse Management Screen.
+2025-05-15 20:11:13,464 - HorseUnifiedManagement - INFO - Horse-owner selected: Owner ID 1
+2025-05-15 20:11:14,296 - HorseUnifiedManagement - INFO - Asking Question: Confirm Removal - Are you sure you want to remove owner 'Kelly Coile [000945]' from horse 'Soul Rebel'?
+2025-05-15 20:11:15,902 - HorseUnifiedManagement - INFO - Attempting to remove owner ID 1 from horse ID 10
+2025-05-15 20:11:15,907 - HorseController - INFO - Removed owner ID 1 from horse ID 10 by TM.
+2025-05-15 20:11:15,907 - HorseUnifiedManagement - INFO - Displaying Info: Owner Removed - Owner removed from horse successfully.
+2025-05-15 20:11:18,242 - HorseUnifiedManagement - INFO - Horse-owner selection cleared.
+2025-05-15 20:11:30,779 - HorseUnifiedManagement - INFO - Link existing owner dialog cancelled.
+2025-05-15 20:11:33,716 - HorseUnifiedManagement - INFO - Setup icon clicked, emitting setup_requested signal.
+2025-05-15 20:11:33,716 - EDSIApplication - INFO - Showing User Management Screen for admin 'TM'.
+2025-05-15 20:11:33,724 - UserManagementScreen - INFO - UserManagementScreen __init__ started by admin: TM
+2025-05-15 20:11:33,738 - UserManagementScreen - INFO - Loading users data...
+2025-05-15 20:11:33,739 - UserManagementScreen - INFO - Loaded 3 users into the list.
+2025-05-15 20:11:33,739 - UserManagementScreen - INFO - User selected: ADMIN
+2025-05-15 20:11:33,740 - UserManagementScreen - INFO - UserManagementScreen initialized with Tabbed Interface.
+2025-05-15 20:11:39,366 - UserManagementScreen - INFO - Add Master Owner button clicked - STUB (to be implemented).
+2025-05-15 20:11:39,366 - UserManagementScreen - INFO - Displaying Info: Not Implemented - Functionality to add a master owner is not yet implemented.
+2025-05-15 20:15:29,227 - UserManagementScreen - INFO - Add Master Owner button clicked - STUB (to be implemented).
+2025-05-15 20:15:29,228 - UserManagementScreen - INFO - Displaying Info: Not Implemented - Functionality to add a master owner is not yet implemented.
+2025-05-15 20:15:39,019 - UserManagementScreen - INFO - User Management screen exit requested.
+2025-05-15 20:15:39,020 - EDSIApplication - INFO - Exiting User Management Screen.
+2025-05-15 20:15:39,041 - EDSIApplication - INFO - Returned to Horse Management Screen.
+2025-05-15 20:15:44,473 - HorseUnifiedManagement - INFO - Setup icon clicked, emitting setup_requested signal.
+2025-05-15 20:15:44,474 - EDSIApplication - INFO - Showing User Management Screen for admin 'TM'.
+2025-05-15 20:15:44,482 - UserManagementScreen - INFO - UserManagementScreen __init__ started by admin: TM
+2025-05-15 20:15:44,510 - UserManagementScreen - INFO - Loading users data...
+2025-05-15 20:15:44,511 - UserManagementScreen - INFO - Loaded 3 users into the list.
+2025-05-15 20:15:44,512 - UserManagementScreen - INFO - User selected: ADMIN
+2025-05-15 20:15:44,513 - UserManagementScreen - INFO - UserManagementScreen initialized with Tabbed Interface.
+2025-05-15 20:15:52,049 - UserManagementScreen - INFO - Add Master Owner button clicked - STUB (to be implemented).
+2025-05-15 20:15:52,049 - UserManagementScreen - INFO - Displaying Info: Not Implemented - Functionality to add a master owner is not yet implemented.
+2025-05-15 20:27:59,084 - UserManagementScreen - INFO - User Management screen exit requested.
+2025-05-15 20:27:59,084 - EDSIApplication - INFO - Exiting User Management Screen.
+2025-05-15 20:27:59,121 - EDSIApplication - INFO - Returned to Horse Management Screen.
+2025-05-15 20:28:02,658 - HorseUnifiedManagement - INFO - Log Out action triggered from user menu.
+2025-05-15 20:28:02,658 - EDSIApplication - INFO - Exit requested from Horse Management screen (logoff).
+2025-05-15 20:28:02,678 - EDSIApplication - INFO - User logged off.
+2025-05-15 20:28:04,349 - LoginScreen - INFO - Exit requested from login screen.
+2025-05-15 20:28:04,349 - EDSIApplication - INFO - Initiating application cleanup and exit.
+2025-05-15 20:28:04,350 - EDSIApplication - INFO - Database connection closed.
+2025-05-15 20:28:04,377 - EDSIApplication - INFO - Exiting application.
+2025-05-15 20:28:13,551 - EDSIApplication - INFO - Logging configured.
+2025-05-15 20:28:13,575 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.0.0
+2025-05-15 20:28:13,575 - EDSIApplication - INFO - Initializing database...
+2025-05-15 20:28:13,602 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-15 20:28:13,602 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-15 20:28:59,097 - LoginScreen - INFO - Password validation successful for user 'TM'.
+2025-05-15 20:28:59,098 - LoginScreen - INFO - User 'TM' logged in successfully
+2025-05-15 20:28:59,099 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-15 20:28:59,110 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-15 20:28:59,250 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_connections') -> True
+2025-05-15 20:28:59,250 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_requested') -> True
+2025-05-15 20:28:59,250 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'exit_requested') -> True
+2025-05-15 20:28:59,251 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-15 20:28:59,256 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-15 20:28:59,256 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-15 20:28:59,264 - HorseUnifiedManagement - INFO - Initial data loaded.
+2025-05-15 20:28:59,265 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-15 20:28:59,286 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-15 20:29:03,172 - HorseUnifiedManagement - INFO - Setup icon clicked, emitting setup_requested signal.
+2025-05-15 20:29:03,172 - EDSIApplication - INFO - Showing User Management Screen for admin 'TM'.
+2025-05-15 20:29:03,182 - UserManagementScreen - INFO - UserManagementScreen __init__ started by admin: TM
+2025-05-15 20:29:03,195 - UserManagementScreen - INFO - Loading users data...
+2025-05-15 20:29:03,196 - UserManagementScreen - INFO - Loaded 3 users into the list.
+2025-05-15 20:29:03,197 - UserManagementScreen - INFO - User selected: ADMIN
+2025-05-15 20:29:03,198 - UserManagementScreen - INFO - Loading master owners data...
+2025-05-15 20:29:03,199 - UserManagementScreen - INFO - Loaded 3 master owners into the list.
+2025-05-15 20:29:03,199 - UserManagementScreen - INFO - Master owner selected: ID 1
+2025-05-15 20:29:03,201 - UserManagementScreen - INFO - UserManagementScreen initialized with Tabbed Interface.
+2025-05-15 20:29:51,103 - UserManagementScreen - INFO - Master owner selected: ID 3
+2025-05-15 20:29:52,691 - UserManagementScreen - INFO - Delete Master Owner button clicked - STUB (to be implemented).
+2025-05-15 20:29:52,692 - UserManagementScreen - INFO - Displaying Info: Not Implemented - Functionality to delete master owner (ID: 3) is not yet implemented.
+2025-05-15 20:29:58,356 - UserManagementScreen - INFO - Master owner selected: ID 2
+2025-05-15 20:30:01,577 - UserManagementScreen - INFO - Add Master Owner button clicked - STUB (to be implemented).
+2025-05-15 20:30:01,577 - UserManagementScreen - INFO - Displaying Info: Not Implemented - Functionality to add a master owner is not yet implemented.
+2025-05-15 20:30:13,096 - UserManagementScreen - INFO - Master owner selected: ID 3
+2025-05-15 20:30:16,580 - UserManagementScreen - INFO - Delete Master Owner button clicked - STUB (to be implemented).
+2025-05-15 20:30:16,580 - UserManagementScreen - INFO - Displaying Info: Not Implemented - Functionality to delete master owner (ID: 3) is not yet implemented.
+2025-05-15 20:38:35,439 - UserManagementScreen - INFO - User Management screen exit requested.
+2025-05-15 20:38:35,439 - EDSIApplication - INFO - Exiting User Management Screen.
+2025-05-15 20:38:35,478 - EDSIApplication - INFO - Returned to Horse Management Screen.
+2025-05-15 20:38:38,097 - HorseUnifiedManagement - INFO - Log Out action triggered from user menu.
+2025-05-15 20:38:38,097 - EDSIApplication - INFO - Exit requested from Horse Management screen (logoff).
+2025-05-15 20:38:38,115 - EDSIApplication - INFO - User logged off.
+2025-05-15 20:38:42,878 - LoginScreen - INFO - Exit requested from login screen.
+2025-05-15 20:38:42,878 - EDSIApplication - INFO - Initiating application cleanup and exit.
+2025-05-15 20:38:42,879 - EDSIApplication - INFO - Database connection closed.
+2025-05-15 20:38:42,900 - EDSIApplication - INFO - Exiting application.
+2025-05-15 20:56:50,016 - EDSIApplication - INFO - Logging configured.
+2025-05-15 20:56:50,039 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.0.0
+2025-05-15 20:56:50,039 - EDSIApplication - INFO - Initializing database...
+2025-05-15 20:56:50,066 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-15 20:56:50,066 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-15 20:57:06,032 - LoginScreen - INFO - Password validation successful for user 'TM'.
+2025-05-15 20:57:06,033 - LoginScreen - INFO - User 'TM' logged in successfully
+2025-05-15 20:57:06,034 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-15 20:57:06,044 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-15 20:57:06,221 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_connections') -> True
+2025-05-15 20:57:06,222 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_requested') -> True
+2025-05-15 20:57:06,222 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'exit_requested') -> True
+2025-05-15 20:57:06,222 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-15 20:57:06,228 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-15 20:57:06,228 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-15 20:57:06,236 - HorseUnifiedManagement - INFO - Initial data loaded.
+2025-05-15 20:57:06,236 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-15 20:57:06,253 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-15 20:57:09,453 - HorseUnifiedManagement - INFO - Setup icon clicked, emitting setup_requested signal.
+2025-05-15 20:57:09,454 - EDSIApplication - INFO - Showing User Management Screen for admin 'TM'.
+2025-05-15 20:57:09,463 - UserManagementScreen - INFO - UserManagementScreen __init__ started by admin: TM
+2025-05-15 21:06:15,550 - EDSIApplication - INFO - Logging configured.
+2025-05-15 21:06:15,573 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.0.0
+2025-05-15 21:06:15,574 - EDSIApplication - INFO - Initializing database...
+2025-05-15 21:06:15,599 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-15 21:06:15,600 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-15 21:06:25,237 - LoginScreen - INFO - Password validation successful for user 'TM'.
+2025-05-15 21:06:25,237 - LoginScreen - INFO - User 'TM' logged in successfully
+2025-05-15 21:06:25,238 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-15 21:06:25,249 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-15 21:06:25,425 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_connections') -> True
+2025-05-15 21:06:25,425 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_requested') -> True
+2025-05-15 21:06:25,425 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'exit_requested') -> True
+2025-05-15 21:06:25,426 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-15 21:06:25,432 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-15 21:06:25,432 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-15 21:06:25,440 - HorseUnifiedManagement - INFO - Initial data loaded.
+2025-05-15 21:06:25,440 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-15 21:06:25,473 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-15 21:06:28,768 - HorseUnifiedManagement - INFO - Setup icon clicked, emitting setup_requested signal.
+2025-05-15 21:06:28,769 - EDSIApplication - INFO - Showing User Management Screen for admin 'TM'.
+2025-05-15 21:06:28,777 - UserManagementScreen - INFO - UserManagementScreen __init__ started by admin: TM
+2025-05-15 21:06:28,817 - UserManagementScreen - INFO - Loading users data...
+2025-05-15 21:06:28,818 - UserManagementScreen - INFO - Loaded 3 users.
+2025-05-15 21:06:28,818 - UserManagementScreen - INFO - User selected: ADMIN
+2025-05-15 21:06:28,819 - UserManagementScreen - INFO - Loading master owners data...
+2025-05-15 21:06:28,820 - UserManagementScreen - INFO - Loaded 3 master owners.
+2025-05-15 21:06:28,820 - UserManagementScreen - INFO - Master owner selected: ID 1
+2025-05-15 21:06:28,824 - UserManagementScreen - INFO - UserManagementScreen initialized with Tabbed Interface.
+2025-05-15 21:06:37,865 - UserManagementScreen - INFO - Master owner selected: ID 2
+2025-05-15 21:06:39,558 - UserManagementScreen - INFO - Delete Master Owner: STUB
+2025-05-15 21:06:39,558 - UserManagementScreen - INFO - Displaying Info: Not Implemented - Delete master owner (ID: 2) not implemented.
+2025-05-15 21:06:44,612 - UserManagementScreen - INFO - Master owner selected: ID 3
+2025-05-15 21:06:46,391 - UserManagementScreen - INFO - Delete Master Owner: STUB
+2025-05-15 21:06:46,391 - UserManagementScreen - INFO - Displaying Info: Not Implemented - Delete master owner (ID: 3) not implemented.
+2025-05-15 21:06:52,631 - UserManagementScreen - INFO - Add Master Owner: STUB
+2025-05-15 21:06:52,631 - UserManagementScreen - INFO - Displaying Info: Not Implemented - Add master owner not implemented.
+2025-05-15 21:07:21,291 - UserManagementScreen - INFO - Add Master Owner: STUB
+2025-05-15 21:07:21,291 - UserManagementScreen - INFO - Displaying Info: Not Implemented - Add master owner not implemented.
+2025-05-15 21:07:46,295 - UserManagementScreen - INFO - Delete Master Owner: STUB
+2025-05-15 21:07:46,296 - UserManagementScreen - INFO - Displaying Info: Not Implemented - Delete master owner (ID: 3) not implemented.
+2025-05-15 21:13:29,935 - UserManagementScreen - INFO - User Management exit.
+2025-05-15 21:13:29,935 - EDSIApplication - INFO - Exiting User Management Screen.
+2025-05-15 21:13:29,974 - EDSIApplication - INFO - Returned to Horse Management Screen.
+2025-05-15 21:13:33,843 - HorseUnifiedManagement - INFO - Log Out action triggered from user menu.
+2025-05-15 21:13:33,844 - EDSIApplication - INFO - Exit requested from Horse Management screen (logoff).
+2025-05-15 21:13:33,860 - EDSIApplication - INFO - User logged off.
+2025-05-15 21:13:36,521 - LoginScreen - INFO - Exit requested from login screen.
+2025-05-15 21:13:36,521 - EDSIApplication - INFO - Initiating application cleanup and exit.
+2025-05-15 21:13:36,522 - EDSIApplication - INFO - Database connection closed.
+2025-05-15 21:13:36,540 - EDSIApplication - INFO - Exiting application.
+2025-05-15 21:14:18,565 - EDSIApplication - INFO - Logging configured.
+2025-05-15 21:14:18,588 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.0.0
+2025-05-15 21:14:18,588 - EDSIApplication - INFO - Initializing database...
+2025-05-15 21:14:18,615 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-15 21:14:18,616 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-15 21:14:29,812 - LoginScreen - INFO - Password validation successful for user 'TM'.
+2025-05-15 21:14:29,813 - LoginScreen - INFO - User 'TM' logged in successfully
+2025-05-15 21:14:29,813 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-15 21:14:29,825 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-15 21:14:30,002 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_connections') -> True
+2025-05-15 21:14:30,002 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_requested') -> True
+2025-05-15 21:14:30,002 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'exit_requested') -> True
+2025-05-15 21:14:30,002 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-15 21:14:30,008 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-15 21:14:30,008 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-15 21:14:30,016 - HorseUnifiedManagement - INFO - Initial data loaded.
+2025-05-15 21:14:30,016 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-15 21:14:30,036 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-15 21:14:32,852 - HorseUnifiedManagement - INFO - Setup icon clicked, emitting setup_requested signal.
+2025-05-15 21:14:32,852 - EDSIApplication - INFO - Showing User Management Screen for admin 'TM'.
+2025-05-15 21:14:32,862 - UserManagementScreen - INFO - UserManagementScreen __init__ started by admin: TM
+2025-05-15 21:14:32,903 - UserManagementScreen - INFO - Loading users data...
+2025-05-15 21:14:32,904 - UserManagementScreen - INFO - Loaded 3 users.
+2025-05-15 21:14:32,904 - UserManagementScreen - INFO - User selected: ADMIN
+2025-05-15 21:14:32,905 - UserManagementScreen - INFO - Loading master owners data...
+2025-05-15 21:14:32,906 - UserManagementScreen - INFO - Loaded 3 master owners.
+2025-05-15 21:14:32,906 - UserManagementScreen - INFO - Master owner selected: ID 1
+2025-05-15 21:14:32,910 - UserManagementScreen - INFO - UserManagementScreen initialized with Tabbed Interface.
+2025-05-15 21:14:38,987 - UserManagementScreen - INFO - Master owner selected: ID 2
+2025-05-15 21:14:40,430 - UserManagementScreen - INFO - Delete Master Owner: STUB
+2025-05-15 21:14:40,430 - UserManagementScreen - INFO - Displaying Info: Not Implemented - Delete master owner (ID: 2) not implemented.
+2025-05-15 21:14:47,669 - UserManagementScreen - INFO - Add Master Owner button clicked.
+2025-05-15 21:14:50,808 - UserManagementScreen - INFO - Add Master Owner dialog cancelled.
+2025-05-15 21:14:56,504 - UserManagementScreen - INFO - Add Master Owner button clicked.
+2025-05-15 21:15:18,437 - UserManagementScreen - INFO - Add Master Owner dialog cancelled.
+2025-05-15 21:17:22,941 - UserManagementScreen - INFO - Add Master Owner button clicked.
+2025-05-15 21:18:58,061 - OwnerController - INFO - Master Owner 'quail pond farm (Bradley Coulter)' (ID: 4) created by TM.
+2025-05-15 21:18:58,061 - UserManagementScreen - INFO - Displaying Info: Master Owner Created - Owner created successfully.
+2025-05-15 21:19:02,422 - UserManagementScreen - INFO - Loading master owners data...
+2025-05-15 21:19:02,423 - UserManagementScreen - INFO - Master owner selected: ID 2
+2025-05-15 21:19:02,425 - UserManagementScreen - INFO - Master owner selection cleared.
+2025-05-15 21:19:02,425 - UserManagementScreen - INFO - Loaded 4 master owners.
+2025-05-15 21:19:02,425 - UserManagementScreen - INFO - Master owner selected: ID 2
+2025-05-15 21:19:02,426 - UserManagementScreen - INFO - Master owner selected: ID 4
+2025-05-15 21:26:58,977 - UserManagementScreen - INFO - User Management exit.
+2025-05-15 21:26:58,977 - EDSIApplication - INFO - Exiting User Management Screen.
+2025-05-15 21:26:59,015 - EDSIApplication - INFO - Returned to Horse Management Screen.
+2025-05-15 21:27:06,906 - HorseUnifiedManagement - INFO - Log Out action triggered from user menu.
+2025-05-15 21:27:06,906 - EDSIApplication - INFO - Exit requested from Horse Management screen (logoff).
+2025-05-15 21:27:06,915 - EDSIApplication - INFO - User logged off.
+2025-05-15 21:32:48,221 - EDSIApplication - INFO - Logging configured.
+2025-05-15 21:32:48,246 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.0.0
+2025-05-15 21:32:48,246 - EDSIApplication - INFO - Initializing database...
+2025-05-15 21:32:48,273 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-15 21:32:48,273 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-15 21:32:57,830 - LoginScreen - INFO - Password validation successful for user 'TM'.
+2025-05-15 21:32:57,830 - LoginScreen - INFO - User 'TM' logged in successfully
+2025-05-15 21:32:57,831 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-15 21:32:57,843 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-15 21:32:58,016 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_connections') -> True
+2025-05-15 21:32:58,016 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_requested') -> True
+2025-05-15 21:32:58,017 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'exit_requested') -> True
+2025-05-15 21:32:58,017 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-15 21:32:58,023 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-15 21:32:58,023 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-15 21:32:58,032 - HorseUnifiedManagement - INFO - Initial data loaded.
+2025-05-15 21:32:58,032 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-15 21:32:58,047 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-15 21:32:59,983 - HorseUnifiedManagement - INFO - Setup icon clicked, emitting setup_requested signal.
+2025-05-15 21:32:59,983 - EDSIApplication - INFO - Showing User Management Screen for admin 'TM'.
+2025-05-15 21:32:59,991 - UserManagementScreen - INFO - UserManagementScreen __init__ started by admin: TM
+2025-05-15 21:33:00,031 - UserManagementScreen - INFO - Loading users data...
+2025-05-15 21:33:00,032 - UserManagementScreen - INFO - Loaded 3 users.
+2025-05-15 21:33:00,032 - UserManagementScreen - INFO - User selected: ADMIN
+2025-05-15 21:33:00,033 - UserManagementScreen - INFO - Loading master owners data...
+2025-05-15 21:33:00,034 - UserManagementScreen - INFO - Loaded 4 master owners.
+2025-05-15 21:33:00,034 - UserManagementScreen - INFO - Master owner selected: ID 1
+2025-05-15 21:33:00,038 - UserManagementScreen - INFO - UserManagementScreen initialized with Tabbed Interface.
+2025-05-15 21:33:05,765 - UserManagementScreen - INFO - Master owner selected: ID 4
+2025-05-15 21:33:07,983 - UserManagementScreen - INFO - Delete Master Owner button clicked.
+2025-05-15 21:33:07,983 - UserManagementScreen - INFO - Asking Question: Confirm Permanent Deletion - Are you sure you want to permanently delete owner 'quail pond farm (Bradley Coulter)' (ID: 4)?
+
+This action cannot be undone and will remove the owner from the system entirely.
+2025-05-15 21:33:10,170 - UserManagementScreen - INFO - User confirmed permanent deletion for master owner ID: 4
+2025-05-15 21:33:10,179 - OwnerController - INFO - Master Owner 'quail pond farm Coulter Bradley' (ID: 4) permanently deleted by admin 'TM'.
+2025-05-15 21:33:10,180 - UserManagementScreen - INFO - Displaying Info: Owner Deleted - Owner 'quail pond farm Coulter Bradley' deleted successfully.
+2025-05-15 21:33:12,437 - UserManagementScreen - INFO - Loading master owners data...
+2025-05-15 21:33:12,438 - UserManagementScreen - INFO - Master owner selected: ID 4
+2025-05-15 21:33:12,439 - UserManagementScreen - ERROR - Could not fetch master owner ID: 4
+2025-05-15 21:33:12,439 - UserManagementScreen - INFO - Master owner selected: ID 4
+2025-05-15 21:33:12,440 - UserManagementScreen - ERROR - Could not fetch master owner ID: 4
+2025-05-15 21:33:12,440 - UserManagementScreen - INFO - Master owner selection cleared.
+2025-05-15 21:33:12,441 - UserManagementScreen - INFO - Loaded 3 master owners.
+2025-05-15 21:33:12,441 - UserManagementScreen - INFO - Master owner selected: ID 1
+2025-05-15 21:33:13,612 - UserManagementScreen - INFO - Master owner selected: ID 2
+2025-05-15 21:33:14,723 - UserManagementScreen - INFO - Delete Master Owner button clicked.
+2025-05-15 21:33:14,723 - UserManagementScreen - INFO - Asking Question: Confirm Permanent Deletion - Are you sure you want to permanently delete owner 'kellie cokioluj' (ID: 2)?
+
+This action cannot be undone and will remove the owner from the system entirely.
+2025-05-15 21:33:16,217 - UserManagementScreen - INFO - User confirmed permanent deletion for master owner ID: 2
+2025-05-15 21:33:16,222 - OwnerController - INFO - Master Owner 'cokioluj kellie' (ID: 2) permanently deleted by admin 'TM'.
+2025-05-15 21:33:16,222 - UserManagementScreen - INFO - Displaying Info: Owner Deleted - Owner 'cokioluj kellie' deleted successfully.
+2025-05-15 21:33:17,447 - UserManagementScreen - INFO - Loading master owners data...
+2025-05-15 21:33:17,448 - UserManagementScreen - INFO - Master owner selected: ID 2
+2025-05-15 21:33:17,449 - UserManagementScreen - ERROR - Could not fetch master owner ID: 2
+2025-05-15 21:33:17,450 - UserManagementScreen - INFO - Master owner selection cleared.
+2025-05-15 21:33:17,450 - UserManagementScreen - INFO - Loaded 2 master owners.
+2025-05-15 21:33:17,450 - UserManagementScreen - INFO - Master owner selected: ID 1
+2025-05-15 21:33:18,611 - UserManagementScreen - INFO - Master owner selected: ID 3
+2025-05-15 21:33:20,033 - UserManagementScreen - INFO - Delete Master Owner button clicked.
+2025-05-15 21:33:20,033 - UserManagementScreen - INFO - Asking Question: Confirm Permanent Deletion - Are you sure you want to permanently delete owner 'ghghg ghgfgfgh' (ID: 3)?
+
+This action cannot be undone and will remove the owner from the system entirely.
+2025-05-15 21:33:22,045 - UserManagementScreen - INFO - User confirmed permanent deletion for master owner ID: 3
+2025-05-15 21:33:22,051 - OwnerController - INFO - Master Owner 'ghgfgfgh ghghg' (ID: 3) permanently deleted by admin 'TM'.
+2025-05-15 21:33:22,051 - UserManagementScreen - INFO - Displaying Info: Owner Deleted - Owner 'ghgfgfgh ghghg' deleted successfully.
+2025-05-15 21:33:23,554 - UserManagementScreen - INFO - Loading master owners data...
+2025-05-15 21:33:23,555 - UserManagementScreen - INFO - Master owner selected: ID 3
+2025-05-15 21:33:23,556 - UserManagementScreen - ERROR - Could not fetch master owner ID: 3
+2025-05-15 21:33:23,556 - UserManagementScreen - INFO - Master owner selection cleared.
+2025-05-15 21:33:23,556 - UserManagementScreen - INFO - Loaded 1 master owners.
+2025-05-15 21:33:23,556 - UserManagementScreen - INFO - Master owner selected: ID 1
+2025-05-15 21:33:37,533 - UserManagementScreen - INFO - Add Master Owner button clicked.
+2025-05-15 21:36:02,458 - OwnerController - ERROR - Error creating master owner: 'credit_rating' is an invalid keyword argument for Owner
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\controllers\owner_controller.py", line 196, in create_master_owner
+    new_owner = Owner(
+                ^^^^^^
+  File "<string>", line 4, in __init__
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\state.py", line 566, in _initialize_instance
+    with util.safe_reraise():
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\state.py", line 564, in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\decl_base.py", line 2142, in _declarative_constructor
+    raise TypeError(
+TypeError: 'credit_rating' is an invalid keyword argument for Owner
+2025-05-15 21:36:02,460 - UserManagementScreen - ERROR - Displaying Error: Failed to Create Master Owner - Failed to create owner: 'credit_rating' is an invalid keyword argument for Owner
+2025-05-15 21:36:10,741 - UserManagementScreen - INFO - Add Master Owner button clicked.
+2025-05-15 21:36:58,409 - OwnerController - ERROR - Error creating master owner: 'credit_rating' is an invalid keyword argument for Owner
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\controllers\owner_controller.py", line 196, in create_master_owner
+    new_owner = Owner(
+                ^^^^^^
+  File "<string>", line 4, in __init__
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\state.py", line 566, in _initialize_instance
+    with util.safe_reraise():
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\state.py", line 564, in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\decl_base.py", line 2142, in _declarative_constructor
+    raise TypeError(
+TypeError: 'credit_rating' is an invalid keyword argument for Owner
+2025-05-15 21:36:58,410 - UserManagementScreen - ERROR - Displaying Error: Failed to Create Master Owner - Failed to create owner: 'credit_rating' is an invalid keyword argument for Owner
+2025-05-15 21:40:14,689 - UserManagementScreen - INFO - User Management exit.
+2025-05-15 21:40:14,689 - EDSIApplication - INFO - Exiting User Management Screen.
+2025-05-15 21:40:14,724 - EDSIApplication - INFO - Returned to Horse Management Screen.
+2025-05-15 21:40:17,882 - HorseUnifiedManagement - INFO - Log Out action triggered from user menu.
+2025-05-15 21:40:17,882 - EDSIApplication - INFO - Exit requested from Horse Management screen (logoff).
+2025-05-15 21:40:17,889 - EDSIApplication - INFO - User logged off.
+2025-05-15 21:40:21,118 - LoginScreen - INFO - Exit requested from login screen.
+2025-05-15 21:40:21,119 - EDSIApplication - INFO - Initiating application cleanup and exit.
+2025-05-15 21:40:21,120 - EDSIApplication - INFO - Database connection closed.
+2025-05-15 21:40:21,127 - EDSIApplication - INFO - Exiting application.
+2025-05-15 21:49:07,440 - EDSIApplication - INFO - Logging configured.
+2025-05-15 21:49:07,466 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.0.0
+2025-05-15 21:49:07,466 - EDSIApplication - INFO - Initializing database...
+2025-05-15 21:49:07,493 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-15 21:49:07,493 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-15 21:49:15,729 - LoginScreen - INFO - Password validation successful for user 'TM'.
+2025-05-15 21:49:15,730 - LoginScreen - INFO - User 'TM' logged in successfully
+2025-05-15 21:49:15,730 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-15 21:49:15,741 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-15 21:49:15,929 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_connections') -> True
+2025-05-15 21:49:15,929 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_requested') -> True
+2025-05-15 21:49:15,930 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'exit_requested') -> True
+2025-05-15 21:49:15,930 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-15 21:49:15,936 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-15 21:49:15,936 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-15 21:49:15,944 - HorseUnifiedManagement - INFO - Initial data loaded.
+2025-05-15 21:49:15,944 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-15 21:49:15,963 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-15 21:49:18,483 - HorseUnifiedManagement - INFO - Setup icon clicked, emitting setup_requested signal.
+2025-05-15 21:49:18,484 - EDSIApplication - INFO - Showing User Management Screen for admin 'TM'.
+2025-05-15 21:49:18,493 - UserManagementScreen - INFO - UserManagementScreen __init__ started by admin: TM
+2025-05-15 21:49:18,534 - UserManagementScreen - INFO - Loading users data...
+2025-05-15 21:49:18,535 - UserManagementScreen - INFO - Loaded 3 users.
+2025-05-15 21:49:18,536 - UserManagementScreen - INFO - User selected: ADMIN
+2025-05-15 21:49:18,537 - UserManagementScreen - INFO - Loading master owners data...
+2025-05-15 21:49:18,538 - UserManagementScreen - INFO - Loaded 1 master owners.
+2025-05-15 21:49:18,538 - UserManagementScreen - INFO - Master owner selected: ID 1
+2025-05-15 21:49:18,542 - UserManagementScreen - INFO - UserManagementScreen initialized with Tabbed Interface.
+2025-05-15 21:49:23,673 - UserManagementScreen - INFO - Add Master Owner button clicked.
+2025-05-15 21:50:24,251 - OwnerController - INFO - Master Owner 'ttttry (ytrtryty uytytrytr)' (ID: 2) created by TM.
+2025-05-15 21:50:24,251 - UserManagementScreen - INFO - Displaying Info: Master Owner Created - Owner created successfully.
+2025-05-15 21:50:26,292 - UserManagementScreen - INFO - Loading master owners data...
+2025-05-15 21:50:26,293 - UserManagementScreen - INFO - Master owner selection cleared.
+2025-05-15 21:50:26,293 - UserManagementScreen - INFO - Loaded 2 master owners.
+2025-05-15 21:50:26,293 - UserManagementScreen - INFO - Master owner selected: ID 1
+2025-05-15 21:50:26,295 - UserManagementScreen - INFO - Master owner selected: ID 2
+2025-05-15 21:50:33,867 - UserManagementScreen - INFO - Delete Master Owner button clicked.
+2025-05-15 21:50:33,868 - UserManagementScreen - INFO - Asking Question: Confirm Permanent Deletion - Are you sure you want to permanently delete owner 'ttttry (ytrtryty uytytrytr)' (ID: 2)?
+
+This action cannot be undone and will remove the owner from the system entirely.
+2025-05-15 21:50:36,537 - UserManagementScreen - INFO - User confirmed permanent deletion for master owner ID: 2
+2025-05-15 21:50:36,545 - OwnerController - INFO - Master Owner 'ttttry uytytrytr ytrtryty' (ID: 2) permanently deleted by admin 'TM'.
+2025-05-15 21:50:36,545 - UserManagementScreen - INFO - Displaying Info: Owner Deleted - Owner 'ttttry uytytrytr ytrtryty' deleted successfully.
+2025-05-15 21:50:38,022 - UserManagementScreen - INFO - Loading master owners data...
+2025-05-15 21:50:38,022 - UserManagementScreen - INFO - Master owner selected: ID 2
+2025-05-15 21:50:38,023 - UserManagementScreen - ERROR - Could not fetch master owner ID: 2
+2025-05-15 21:50:38,023 - UserManagementScreen - INFO - Master owner selection cleared.
+2025-05-15 21:50:38,024 - UserManagementScreen - INFO - Loaded 1 master owners.
+2025-05-15 21:50:38,024 - UserManagementScreen - INFO - Master owner selected: ID 1
+2025-05-15 21:51:07,005 - UserManagementScreen - INFO - User Management exit.
+2025-05-15 21:51:07,005 - EDSIApplication - INFO - Exiting User Management Screen.
+2025-05-15 21:51:07,027 - EDSIApplication - INFO - Returned to Horse Management Screen.
+2025-05-15 21:51:20,046 - HorseUnifiedManagement - INFO - Log Out action triggered from user menu.
+2025-05-15 21:51:20,046 - EDSIApplication - INFO - Exit requested from Horse Management screen (logoff).
+2025-05-15 21:51:20,055 - EDSIApplication - INFO - User logged off.
+2025-05-15 21:51:22,551 - LoginScreen - INFO - Exit requested from login screen.
+2025-05-15 21:51:22,551 - EDSIApplication - INFO - Initiating application cleanup and exit.
+2025-05-15 21:51:22,552 - EDSIApplication - INFO - Database connection closed.
+2025-05-15 21:51:22,562 - EDSIApplication - INFO - Exiting application.
+2025-05-16 17:57:59,750 - EDSIApplication - INFO - Logging configured.
+2025-05-16 17:57:59,775 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.0.0
+2025-05-16 17:57:59,775 - EDSIApplication - INFO - Initializing database...
+2025-05-16 17:57:59,819 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-16 17:57:59,819 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-16 18:03:49,910 - LoginScreen - INFO - Password validation successful for user 'TM'.
+2025-05-16 18:03:49,910 - LoginScreen - INFO - User 'TM' logged in successfully
+2025-05-16 18:03:49,911 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-16 18:03:49,924 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-16 18:03:50,608 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_connections') -> True
+2025-05-16 18:03:50,609 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_requested') -> True
+2025-05-16 18:03:50,609 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'exit_requested') -> True
+2025-05-16 18:03:50,610 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-16 18:03:50,622 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-16 18:03:50,622 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-16 18:03:50,639 - HorseUnifiedManagement - INFO - Initial data loaded.
+2025-05-16 18:03:50,639 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-16 18:03:50,659 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-16 18:03:56,392 - HorseUnifiedManagement - INFO - Setup icon clicked, emitting setup_requested signal.
+2025-05-16 18:03:56,393 - EDSIApplication - INFO - Showing User Management Screen for admin 'TM'.
+2025-05-16 18:03:56,405 - UserManagementScreen - INFO - UserManagementScreen __init__ started by admin: TM
+2025-05-16 18:03:56,444 - UserManagementScreen - INFO - Loading users data...
+2025-05-16 18:03:56,445 - UserManagementScreen - INFO - Loaded 3 users.
+2025-05-16 18:03:56,445 - UserManagementScreen - INFO - User selected: ADMIN
+2025-05-16 18:03:56,446 - UserManagementScreen - INFO - Loading master owners data...
+2025-05-16 18:03:56,447 - UserManagementScreen - INFO - Loaded 1 master owners.
+2025-05-16 18:03:56,447 - UserManagementScreen - INFO - Master owner selected: ID 1
+2025-05-16 18:03:56,451 - UserManagementScreen - INFO - UserManagementScreen initialized with Tabbed Interface.
+2025-05-16 18:04:02,118 - UserManagementScreen - INFO - User selected: BC
+2025-05-16 18:04:03,225 - UserManagementScreen - INFO - User selected: TM
+2025-05-16 18:04:08,942 - UserManagementScreen - INFO - Change Password for: TM
+2025-05-16 18:04:12,778 - UserManagementScreen - INFO - Change pass cancelled for TM.
+2025-05-16 18:04:26,374 - UserManagementScreen - INFO - Add Master Owner button clicked.
+2025-05-16 18:06:02,138 - UserManagementScreen - INFO - Add Master Owner dialog cancelled.
+2025-05-16 18:06:04,399 - UserManagementScreen - INFO - User Management exit.
+2025-05-16 18:06:04,399 - EDSIApplication - INFO - Exiting User Management Screen.
+2025-05-16 18:06:04,421 - EDSIApplication - INFO - Returned to Horse Management Screen.
+2025-05-16 18:07:54,437 - HorseUnifiedManagement - INFO - Setup icon clicked, emitting setup_requested signal.
+2025-05-16 18:07:54,437 - EDSIApplication - INFO - Showing User Management Screen for admin 'TM'.
+2025-05-16 18:07:54,445 - UserManagementScreen - INFO - UserManagementScreen __init__ started by admin: TM
+2025-05-16 18:07:54,498 - UserManagementScreen - INFO - Loading users data...
+2025-05-16 18:07:54,499 - UserManagementScreen - INFO - Loaded 3 users.
+2025-05-16 18:07:54,500 - UserManagementScreen - INFO - User selected: ADMIN
+2025-05-16 18:07:54,501 - UserManagementScreen - INFO - Loading master owners data...
+2025-05-16 18:07:54,501 - UserManagementScreen - INFO - Loaded 1 master owners.
+2025-05-16 18:07:54,501 - UserManagementScreen - INFO - Master owner selected: ID 1
+2025-05-16 18:07:54,503 - UserManagementScreen - INFO - UserManagementScreen initialized with Tabbed Interface.
+2025-05-16 18:12:20,342 - UserManagementScreen - INFO - User Management exit.
+2025-05-16 18:12:20,342 - EDSIApplication - INFO - Exiting User Management Screen.
+2025-05-16 18:12:20,375 - EDSIApplication - INFO - Returned to Horse Management Screen.
+2025-05-16 18:12:23,799 - HorseUnifiedManagement - INFO - Log Out action triggered from user menu.
+2025-05-16 18:12:23,799 - EDSIApplication - INFO - Exit requested from Horse Management screen (logoff).
+2025-05-16 18:12:23,811 - EDSIApplication - INFO - User logged off.
+2025-05-16 18:12:25,989 - LoginScreen - INFO - Exit requested from login screen.
+2025-05-16 18:12:25,990 - EDSIApplication - INFO - Initiating application cleanup and exit.
+2025-05-16 18:12:25,991 - EDSIApplication - INFO - Database connection closed.
+2025-05-16 18:12:25,999 - EDSIApplication - INFO - Exiting application.
+2025-05-16 18:16:09,649 - EDSIApplication - INFO - Logging configured.
+2025-05-16 18:16:09,674 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.0.0
+2025-05-16 18:16:09,674 - EDSIApplication - INFO - Initializing database...
+2025-05-16 18:16:09,702 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-16 18:16:09,702 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-16 18:16:18,657 - LoginScreen - INFO - Password validation successful for user 'TM'.
+2025-05-16 18:16:18,657 - LoginScreen - INFO - User 'TM' logged in successfully
+2025-05-16 18:16:18,658 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-16 18:16:18,669 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-16 18:16:18,854 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_connections') -> True
+2025-05-16 18:16:18,855 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'setup_requested') -> True
+2025-05-16 18:16:18,855 - HorseUnifiedManagement - INFO - DEBUG __init__: hasattr(self, 'exit_requested') -> True
+2025-05-16 18:16:18,855 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-16 18:16:18,861 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-16 18:16:18,861 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-16 18:16:18,870 - HorseUnifiedManagement - INFO - Initial data loaded.
+2025-05-16 18:16:18,871 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-16 18:16:18,892 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-16 18:16:21,492 - HorseUnifiedManagement - INFO - Setup icon clicked, emitting setup_requested signal.
+2025-05-16 18:16:21,492 - EDSIApplication - INFO - Showing User Management Screen for admin 'TM'.
+2025-05-16 18:16:21,501 - UserManagementScreen - INFO - UserManagementScreen __init__ started by admin: TM
+2025-05-16 18:16:21,539 - UserManagementScreen - INFO - Loading users data...
+2025-05-16 18:16:21,540 - UserManagementScreen - INFO - Loaded 3 users.
+2025-05-16 18:16:21,541 - UserManagementScreen - INFO - User selected: ADMIN
+2025-05-16 18:16:21,541 - UserManagementScreen - INFO - Loading master owners data...
+2025-05-16 18:16:21,542 - UserManagementScreen - INFO - Loaded 1 master owners.
+2025-05-16 18:16:21,543 - UserManagementScreen - INFO - Master owner selected: ID 1
+2025-05-16 18:16:21,546 - UserManagementScreen - INFO - UserManagementScreen initialized with Tabbed Interface.
+2025-05-16 18:16:26,521 - UserManagementScreen - INFO - Add Master Owner button clicked.
+2025-05-16 18:16:42,778 - UserManagementScreen - INFO - Add Master Owner dialog cancelled.
+2025-05-16 18:16:53,142 - UserManagementScreen - INFO - User Management exit.
+2025-05-16 18:16:53,142 - EDSIApplication - INFO - Exiting User Management Screen.
+2025-05-16 18:16:53,163 - EDSIApplication - INFO - Returned to Horse Management Screen.
+2025-05-16 18:31:32,025 - HorseUnifiedManagement - INFO - Log Out action triggered from user menu.
+2025-05-16 18:31:32,025 - EDSIApplication - INFO - Exit requested from Horse Management screen (logoff).
+2025-05-16 18:31:32,042 - EDSIApplication - INFO - User logged off.
+2025-05-16 18:31:34,178 - LoginScreen - INFO - Exit requested from login screen.
+2025-05-16 18:31:34,178 - EDSIApplication - INFO - Initiating application cleanup and exit.
+2025-05-16 18:31:34,179 - EDSIApplication - INFO - Database connection closed.
+2025-05-16 18:31:34,202 - EDSIApplication - INFO - Exiting application.
+2025-05-16 18:31:46,232 - EDSIApplication - INFO - Logging configured.
+2025-05-16 18:31:46,257 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.0.0
+2025-05-16 18:31:46,257 - EDSIApplication - INFO - Initializing database...
+2025-05-16 18:31:46,283 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-16 18:31:46,283 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-16 18:32:09,346 - EDSIApplication - INFO - Initiating application cleanup and exit. Reason: User requested exit.
+2025-05-16 18:32:09,349 - EDSIApplication - INFO - Database connection closed.
+2025-05-16 18:32:09,355 - EDSIApplication - INFO - Exiting application.
+2025-05-16 18:32:21,748 - EDSIApplication - INFO - Logging configured.
+2025-05-16 18:32:21,777 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.0.0
+2025-05-16 18:32:21,777 - EDSIApplication - INFO - Initializing database...
+2025-05-16 18:32:21,803 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-16 18:32:21,803 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-16 18:32:23,643 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-16 18:45:30,896 - EDSIApplication - INFO - Logging configured.
+2025-05-16 18:45:30,922 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.0.0
+2025-05-16 18:45:30,922 - EDSIApplication - INFO - Initializing database...
+2025-05-16 18:45:30,947 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-16 18:45:30,947 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-16 18:46:07,280 - EDSIApplication - INFO - Initiating application cleanup and exit. Reason: User requested exit.
+2025-05-16 18:46:07,281 - EDSIApplication - INFO - Database connection closed.
+2025-05-16 18:46:07,290 - EDSIApplication - INFO - Exiting application.
+2025-05-16 18:46:14,407 - EDSIApplication - INFO - Logging configured.
+2025-05-16 18:46:14,432 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.0.0
+2025-05-16 18:46:14,432 - EDSIApplication - INFO - Initializing database...
+2025-05-16 18:46:14,459 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-16 18:46:14,459 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-16 18:46:17,268 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-16 18:49:07,046 - EDSIApplication - INFO - Logging configured.
+2025-05-16 18:49:07,071 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.0.0
+2025-05-16 18:49:07,071 - EDSIApplication - INFO - Initializing database...
+2025-05-16 18:49:07,097 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-16 18:49:07,098 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-16 18:49:46,819 - EDSIApplication - INFO - Initiating application cleanup and exit. Reason: User requested exit.
+2025-05-16 18:49:46,820 - EDSIApplication - INFO - Database connection closed.
+2025-05-16 18:49:46,888 - EDSIApplication - INFO - Exiting application.
+2025-05-16 19:13:39,888 - EDSIApplication - INFO - Logging configured.
+2025-05-16 19:13:39,917 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.0.0
+2025-05-16 19:13:39,917 - EDSIApplication - INFO - Initializing database...
+2025-05-16 19:13:39,945 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-16 19:13:39,945 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-16 19:13:42,434 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-16 19:13:53,663 - SmallLoginDialog - INFO - Password validation successful for user 'TM'.
+2025-05-16 19:13:53,663 - SmallLoginDialog - INFO - User 'TM' logged in successfully via small dialog.
+2025-05-16 19:13:53,664 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-16 19:13:53,665 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-16 19:46:50,697 - EDSIApplication - INFO - Logging configured.
+2025-05-16 19:46:50,724 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.3.1
+2025-05-16 19:46:50,724 - EDSIApplication - INFO - Initializing database...
+2025-05-16 19:46:50,752 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-16 19:46:50,752 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-16 19:46:52,907 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-16 19:47:04,286 - SmallLoginDialog - INFO - Password validation successful for user 'TM'.
+2025-05-16 19:47:04,286 - SmallLoginDialog - INFO - User 'TM' logged in successfully via small dialog.
+2025-05-16 19:47:04,287 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-16 19:47:04,289 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-16 19:53:04,682 - EDSIApplication - INFO - Logging configured.
+2025-05-16 19:53:04,723 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.3.1
+2025-05-16 19:53:04,723 - EDSIApplication - INFO - Initializing database...
+2025-05-16 19:53:04,753 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-16 19:53:04,753 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-16 19:53:08,798 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-16 19:53:21,957 - SmallLoginDialog - INFO - Password validation successful for user 'TM'.
+2025-05-16 19:53:21,958 - SmallLoginDialog - INFO - User 'TM' logged in successfully via small dialog.
+2025-05-16 19:53:21,959 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-16 19:53:21,962 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-16 20:06:39,388 - EDSIApplication - INFO - Logging configured.
+2025-05-16 20:06:39,414 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.3.1
+2025-05-16 20:06:39,414 - EDSIApplication - INFO - Initializing database...
+2025-05-16 20:06:39,443 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-16 20:06:39,443 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-16 20:06:42,139 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-16 20:06:51,226 - SmallLoginDialog - INFO - Password validation successful for user 'TM'.
+2025-05-16 20:06:51,227 - SmallLoginDialog - INFO - User 'TM' logged in successfully via small dialog.
+2025-05-16 20:06:51,228 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-16 20:06:51,230 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-16 20:14:24,491 - EDSIApplication - INFO - Logging configured.
+2025-05-16 20:14:24,518 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.3.1
+2025-05-16 20:14:24,518 - EDSIApplication - INFO - Initializing database...
+2025-05-16 20:14:24,546 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-16 20:14:24,546 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-16 20:14:27,354 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-16 20:14:34,439 - SmallLoginDialog - INFO - Password validation successful for user 'TM'.
+2025-05-16 20:14:34,439 - SmallLoginDialog - INFO - User 'TM' logged in successfully via small dialog.
+2025-05-16 20:14:34,439 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-16 20:14:34,441 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-16 20:14:34,595 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-16 20:14:34,601 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-16 20:14:34,601 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-16 20:14:34,608 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-16 20:14:34,667 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-16 20:15:01,573 - HorseUnifiedManagement - INFO - Setup icon clicked, emitting setup_requested signal.
+2025-05-16 20:15:01,573 - EDSIApplication - INFO - Showing User Management Screen for admin 'TM'.
+2025-05-16 20:15:01,580 - UserManagementScreen - INFO - UserManagementScreen __init__ started by admin: TM
+2025-05-16 20:15:01,636 - UserManagementScreen - INFO - Loading users data...
+2025-05-16 20:15:01,637 - UserManagementScreen - INFO - Loaded 3 users.
+2025-05-16 20:15:01,637 - UserManagementScreen - INFO - User selected: ADMIN
+2025-05-16 20:15:01,639 - UserManagementScreen - INFO - Loading master owners data...
+2025-05-16 20:15:01,640 - UserManagementScreen - INFO - Loaded 1 master owners.
+2025-05-16 20:15:01,640 - UserManagementScreen - INFO - Master owner selected: ID 1
+2025-05-16 20:15:01,643 - UserManagementScreen - INFO - UserManagementScreen initialized with Tabbed Interface.
+2025-05-16 20:18:37,749 - UserManagementScreen - INFO - Add Master Owner button clicked.
+2025-05-16 20:18:40,822 - UserManagementScreen - INFO - Add Master Owner dialog cancelled.
+2025-05-16 20:18:46,592 - UserManagementScreen - INFO - User Management exit.
+2025-05-16 20:18:46,592 - EDSIApplication - INFO - Exiting User Management Screen.
+2025-05-16 20:18:46,627 - EDSIApplication - INFO - Returned to Horse Management Screen.
+2025-05-16 20:19:40,613 - HorseUnifiedManagement - INFO - Log Out action triggered from user menu.
+2025-05-16 20:19:40,613 - EDSIApplication - INFO - Exit requested from Horse Management screen (logoff).
+2025-05-16 20:19:40,622 - EDSIApplication - INFO - User logged off.
+2025-05-16 20:19:48,897 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-16 20:20:01,109 - SmallLoginDialog - INFO - Password validation successful for user 'TM'.
+2025-05-16 20:20:01,110 - SmallLoginDialog - INFO - User 'TM' logged in successfully via small dialog.
+2025-05-16 20:20:01,111 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-16 20:20:01,113 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-16 20:20:01,179 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-16 20:20:01,182 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-16 20:20:01,182 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-16 20:20:01,183 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-16 20:20:01,236 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-16 20:20:12,930 - HorseUnifiedManagement - INFO - Setup icon clicked, emitting setup_requested signal.
+2025-05-16 20:20:12,930 - EDSIApplication - INFO - Showing User Management Screen for admin 'TM'.
+2025-05-16 20:20:12,940 - UserManagementScreen - INFO - UserManagementScreen __init__ started by admin: TM
+2025-05-16 20:20:12,993 - UserManagementScreen - INFO - Loading users data...
+2025-05-16 20:20:12,993 - UserManagementScreen - INFO - Loaded 3 users.
+2025-05-16 20:20:12,994 - UserManagementScreen - INFO - User selected: ADMIN
+2025-05-16 20:20:12,995 - UserManagementScreen - INFO - Loading master owners data...
+2025-05-16 20:20:12,995 - UserManagementScreen - INFO - Loaded 1 master owners.
+2025-05-16 20:20:12,995 - UserManagementScreen - INFO - Master owner selected: ID 1
+2025-05-16 20:20:12,998 - UserManagementScreen - INFO - UserManagementScreen initialized with Tabbed Interface.
+2025-05-16 20:20:29,060 - UserManagementScreen - INFO - User Management exit.
+2025-05-16 20:20:29,061 - EDSIApplication - INFO - Exiting User Management Screen.
+2025-05-16 20:20:29,105 - EDSIApplication - INFO - Returned to Horse Management Screen.
+2025-05-16 20:20:34,141 - HorseUnifiedManagement - INFO - Filter changed.
+2025-05-16 20:20:34,141 - HorseUnifiedManagement - INFO - Loading horses (Status: inactive, Search: '')
+2025-05-16 20:20:34,144 - HorseUnifiedManagement - INFO - Horse selection cleared.
+2025-05-16 20:20:34,152 - HorseUnifiedManagement - INFO - Horse selected: ID 6
+2025-05-16 20:20:34,152 - HorseUnifiedManagement - INFO - Loading details for horse ID: 6
+2025-05-16 20:20:34,154 - HorseUnifiedManagement - INFO - Filter changed.
+2025-05-16 20:20:34,155 - HorseUnifiedManagement - INFO - Loading horses (Status: inactive, Search: '')
+2025-05-16 20:20:34,155 - HorseUnifiedManagement - INFO - Horse selected: ID 7
+2025-05-16 20:20:34,155 - HorseUnifiedManagement - INFO - Loading details for horse ID: 7
+2025-05-16 20:20:34,157 - HorseUnifiedManagement - INFO - Horse selection cleared.
+2025-05-16 20:20:34,165 - HorseUnifiedManagement - INFO - Horse selected: ID 6
+2025-05-16 20:20:34,165 - HorseUnifiedManagement - INFO - Loading details for horse ID: 6
+2025-05-16 20:20:38,373 - HorseUnifiedManagement - INFO - Filter changed.
+2025-05-16 20:20:38,373 - HorseUnifiedManagement - INFO - Loading horses (Status: all, Search: '')
+2025-05-16 20:20:38,376 - HorseUnifiedManagement - INFO - Horse selected: ID 7
+2025-05-16 20:20:38,376 - HorseUnifiedManagement - INFO - Loading details for horse ID: 7
+2025-05-16 20:20:38,378 - HorseUnifiedManagement - INFO - Horse selection cleared.
+2025-05-16 20:20:38,386 - HorseUnifiedManagement - INFO - Horse selected: ID 6
+2025-05-16 20:20:38,387 - HorseUnifiedManagement - INFO - Loading details for horse ID: 6
+2025-05-16 20:20:38,388 - HorseUnifiedManagement - INFO - Filter changed.
+2025-05-16 20:20:38,389 - HorseUnifiedManagement - INFO - Loading horses (Status: all, Search: '')
+2025-05-16 20:20:38,389 - HorseUnifiedManagement - INFO - Horse selected: ID 7
+2025-05-16 20:20:38,389 - HorseUnifiedManagement - INFO - Loading details for horse ID: 7
+2025-05-16 20:20:38,391 - HorseUnifiedManagement - INFO - Horse selection cleared.
+2025-05-16 20:20:38,400 - HorseUnifiedManagement - INFO - Horse selected: ID 6
+2025-05-16 20:20:38,400 - HorseUnifiedManagement - INFO - Loading details for horse ID: 6
+2025-05-16 20:20:39,600 - HorseUnifiedManagement - INFO - Filter changed.
+2025-05-16 20:20:39,601 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-16 20:20:39,602 - HorseUnifiedManagement - INFO - Horse selected: ID 7
+2025-05-16 20:20:39,603 - HorseUnifiedManagement - INFO - Loading details for horse ID: 7
+2025-05-16 20:20:39,604 - HorseUnifiedManagement - INFO - Horse selection cleared.
+2025-05-16 20:20:39,606 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-16 20:20:39,606 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-16 20:20:39,608 - HorseUnifiedManagement - INFO - Filter changed.
+2025-05-16 20:20:39,608 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-16 20:20:39,609 - HorseUnifiedManagement - INFO - Horse selection cleared.
+2025-05-16 20:20:39,610 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-16 20:20:39,610 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-16 20:20:43,584 - HorseUnifiedManagement - INFO - Filter changed.
+2025-05-16 20:20:43,584 - HorseUnifiedManagement - INFO - Loading horses (Status: inactive, Search: '')
+2025-05-16 20:20:43,586 - HorseUnifiedManagement - INFO - Horse selection cleared.
+2025-05-16 20:20:43,595 - HorseUnifiedManagement - INFO - Horse selected: ID 6
+2025-05-16 20:20:43,596 - HorseUnifiedManagement - INFO - Loading details for horse ID: 6
+2025-05-16 20:20:43,598 - HorseUnifiedManagement - INFO - Filter changed.
+2025-05-16 20:20:43,598 - HorseUnifiedManagement - INFO - Loading horses (Status: inactive, Search: '')
+2025-05-16 20:20:43,598 - HorseUnifiedManagement - INFO - Horse selected: ID 7
+2025-05-16 20:20:43,599 - HorseUnifiedManagement - INFO - Loading details for horse ID: 7
+2025-05-16 20:20:43,600 - HorseUnifiedManagement - INFO - Horse selection cleared.
+2025-05-16 20:20:43,609 - HorseUnifiedManagement - INFO - Horse selected: ID 6
+2025-05-16 20:20:43,609 - HorseUnifiedManagement - INFO - Loading details for horse ID: 6
+2025-05-16 20:20:44,854 - HorseUnifiedManagement - INFO - Horse selected: ID 7
+2025-05-16 20:20:44,854 - HorseUnifiedManagement - INFO - Loading details for horse ID: 7
+2025-05-16 20:20:52,942 - HorseUnifiedManagement - INFO - Horse selected: ID 8
+2025-05-16 20:20:52,944 - HorseUnifiedManagement - INFO - Loading details for horse ID: 8
+2025-05-16 20:21:00,582 - HorseUnifiedManagement - INFO - Horse selected: ID 9
+2025-05-16 20:21:00,582 - HorseUnifiedManagement - INFO - Loading details for horse ID: 9
+2025-05-16 20:21:03,194 - HorseUnifiedManagement - INFO - Horse selected: ID 6
+2025-05-16 20:21:03,195 - HorseUnifiedManagement - INFO - Loading details for horse ID: 6
+2025-05-16 20:21:04,862 - HorseUnifiedManagement - INFO - Horse selected: ID 2
+2025-05-16 20:21:04,863 - HorseUnifiedManagement - INFO - Loading details for horse ID: 2
+2025-05-16 20:21:05,738 - HorseUnifiedManagement - INFO - Horse selected: ID 1
+2025-05-16 20:21:05,738 - HorseUnifiedManagement - INFO - Loading details for horse ID: 1
+2025-05-16 20:21:08,294 - HorseUnifiedManagement - INFO - Horse selected: ID 4
+2025-05-16 20:21:08,294 - HorseUnifiedManagement - INFO - Loading details for horse ID: 4
+2025-05-16 20:21:09,104 - HorseUnifiedManagement - INFO - Horse selected: ID 3
+2025-05-16 20:21:09,104 - HorseUnifiedManagement - INFO - Loading details for horse ID: 3
+2025-05-16 20:21:10,110 - HorseUnifiedManagement - INFO - Horse selected: ID 1
+2025-05-16 20:21:10,110 - HorseUnifiedManagement - INFO - Loading details for horse ID: 1
+2025-05-16 20:21:10,882 - HorseUnifiedManagement - INFO - Horse selected: ID 2
+2025-05-16 20:21:10,882 - HorseUnifiedManagement - INFO - Loading details for horse ID: 2
+2025-05-16 20:21:13,046 - HorseUnifiedManagement - INFO - Asking Question: Confirm Activate - Sure to activate 'test 2 horse'?
+2025-05-16 20:21:19,056 - HorseUnifiedManagement - INFO - Horse selected: ID 5
+2025-05-16 20:21:19,058 - HorseUnifiedManagement - INFO - Loading details for horse ID: 5
+2025-05-16 20:21:23,816 - HorseUnifiedManagement - INFO - Asking Question: Confirm Activate - Sure to activate 'Who's The Cowboy'?
+2025-05-16 20:21:25,518 - HorseController - INFO - Activated horse: Who's The Cowboy (ID: 5) by user TM.
+2025-05-16 20:21:25,518 - HorseUnifiedManagement - INFO - Displaying Info: Status Changed - Horse 'Who's The Cowboy' activated successfully.
+2025-05-16 20:21:28,210 - HorseUnifiedManagement - INFO - Loading details for horse ID: 5
+2025-05-16 20:21:28,212 - HorseUnifiedManagement - INFO - Loading horses (Status: inactive, Search: '')
+2025-05-16 20:21:28,213 - HorseUnifiedManagement - INFO - Horse selected: ID 2
+2025-05-16 20:21:28,213 - HorseUnifiedManagement - INFO - Loading details for horse ID: 2
+2025-05-16 20:21:28,214 - HorseUnifiedManagement - INFO - Horse selection cleared.
+2025-05-16 20:21:28,222 - HorseUnifiedManagement - INFO - Horse selected: ID 6
+2025-05-16 20:21:28,222 - HorseUnifiedManagement - INFO - Loading details for horse ID: 6
+2025-05-16 20:21:33,883 - HorseUnifiedManagement - INFO - Horse selected: ID 7
+2025-05-16 20:21:33,883 - HorseUnifiedManagement - INFO - Loading details for horse ID: 7
+2025-05-16 20:21:36,920 - HorseUnifiedManagement - INFO - Filter changed.
+2025-05-16 20:21:36,920 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-16 20:21:36,922 - HorseUnifiedManagement - INFO - Horse selection cleared.
+2025-05-16 20:21:36,925 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-16 20:21:36,925 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-16 20:21:36,927 - HorseUnifiedManagement - INFO - Filter changed.
+2025-05-16 20:21:36,927 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-16 20:21:36,928 - HorseUnifiedManagement - INFO - Horse selected: ID 5
+2025-05-16 20:21:36,928 - HorseUnifiedManagement - INFO - Loading details for horse ID: 5
+2025-05-16 20:21:36,929 - HorseUnifiedManagement - INFO - Horse selection cleared.
+2025-05-16 20:21:36,931 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-16 20:21:36,931 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-16 20:21:38,330 - HorseUnifiedManagement - INFO - Horse selected: ID 5
+2025-05-16 20:21:38,331 - HorseUnifiedManagement - INFO - Loading details for horse ID: 5
+2025-05-16 20:21:44,840 - HorseUnifiedManagement - INFO - Asking Question: Confirm Deactivate - Sure to deactivate 'Who's The Cowboy'?
+2025-05-16 20:21:46,397 - HorseController - INFO - Deactivated horse: Who's The Cowboy (ID: 5) by user TM.
+2025-05-16 20:21:46,397 - HorseUnifiedManagement - INFO - Displaying Info: Status Changed - Horse 'Who's The Cowboy' deactivated successfully.
+2025-05-16 20:21:47,704 - HorseUnifiedManagement - INFO - Loading details for horse ID: 5
+2025-05-16 20:21:47,706 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-16 20:21:47,706 - HorseUnifiedManagement - INFO - Horse selection cleared.
+2025-05-16 20:21:47,708 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-16 20:21:47,708 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-16 20:28:04,577 - EDSIApplication - INFO - Logging configured.
+2025-05-16 20:28:04,605 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.3.1
+2025-05-16 20:28:04,605 - EDSIApplication - INFO - Initializing database...
+2025-05-16 20:28:04,633 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-16 20:28:04,633 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-16 20:28:06,045 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-16 20:28:13,951 - SmallLoginDialog - INFO - Password validation successful for user 'TM'.
+2025-05-16 20:28:13,951 - SmallLoginDialog - INFO - User 'TM' logged in successfully via small dialog.
+2025-05-16 20:28:13,952 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-16 20:28:13,954 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-16 20:28:14,111 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-16 20:28:14,117 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-16 20:28:14,117 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-16 20:28:14,124 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-16 20:28:14,182 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-16 20:28:17,283 - HorseUnifiedManagement - INFO - Setup icon clicked, emitting setup_requested signal.
+2025-05-16 20:28:17,284 - EDSIApplication - INFO - Showing User Management Screen for admin 'TM'.
+2025-05-16 20:28:17,291 - UserManagementScreen - INFO - UserManagementScreen __init__ started by admin: TM
+2025-05-16 20:28:17,330 - UserManagementScreen - INFO - Loading users data...
+2025-05-16 20:28:17,331 - UserManagementScreen - INFO - Loaded 3 users.
+2025-05-16 20:28:17,332 - UserManagementScreen - INFO - User selected: ADMIN
+2025-05-16 20:28:17,333 - UserManagementScreen - INFO - Loading master owners data...
+2025-05-16 20:28:17,334 - UserManagementScreen - INFO - Loaded 1 master owners.
+2025-05-16 20:28:17,334 - UserManagementScreen - INFO - Master owner selected: ID 1
+2025-05-16 20:28:17,337 - UserManagementScreen - INFO - UserManagementScreen initialized with Tabbed Interface.

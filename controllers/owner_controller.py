@@ -2,30 +2,31 @@
 
 """
 EDSI Veterinary Management System - Owner Controller
-Version: 1.0.3
+Version: 1.2.1
 Purpose: Business logic for owner master file operations.
-         Corrected handling of owner_name to use model's actual fields
-         (first_name, last_name, farm_name) instead of hybrid_property in constructor.
-Last Updated: May 14, 2025
+         Added delete_master_owner method. Removed credit_rating handling from create/update
+         as it's not currently on the Owner model.
+Last Updated: May 15, 2025
 Author: Claude Assistant
 
 Changelog:
+- v1.2.1 (2025-05-15): Removed credit_rating from Owner constructor call and update logic
+                     as it's not defined on the Owner model.
+- v1.2.0 (2025-05-15): Added delete_master_owner method.
+  - New method to permanently delete an owner from the master list.
+  - Includes a check to prevent deletion if the owner is linked to any horses.
+- v1.1.0 (2025-05-15): Added get_all_master_owners method.
+- v1.0.4 (2025-05-15): Fixed AttributeError for owner_name in create_master_owner logging.
 - v1.0.3 (2025-05-14): Fixed TypeError for 'owner_name' argument.
-  - `create_master_owner`: Instantiates Owner using first_name, last_name, farm_name.
-  - `get_all_owners_for_lookup`: Queries individual name fields and constructs display name.
-                                 Search filter updated to target individual name fields.
-  - `validate_owner_data`: Validates individual name fields.
-- v1.0.2 (2025-05-13): Revised to align with existing Owner/StateProvince models.
-- v1.0.1 (2025-05-13): Temporarily removed Country and OwnerType model dependencies.
-- v1.0.0 (2025-05-13): Initial implementation
 """
 
 import logging
 from typing import List, Optional, Tuple, Dict
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import or_, func  # Added func
+from sqlalchemy import or_, func
 from config.database_config import db_manager
-from models import Owner, StateProvince
+from models import Owner, StateProvince, HorseOwner
+from datetime import datetime
 
 
 class OwnerController:
@@ -34,11 +35,23 @@ class OwnerController:
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
 
+    def get_all_master_owners(self, include_inactive: bool = False) -> List[Owner]:
+        session = db_manager.get_session()
+        try:
+            query = session.query(Owner)
+            if not include_inactive:
+                query = query.filter(Owner.is_active == True)
+            owners = query.order_by(
+                Owner.farm_name, Owner.last_name, Owner.first_name
+            ).all()
+            return owners
+        except Exception as e:
+            self.logger.error(f"Error fetching all master owners: {e}", exc_info=True)
+            return []
+        finally:
+            session.close()
+
     def get_all_owners_for_lookup(self, search_term: str = "") -> List[Dict[str, any]]:
-        """
-        Fetches all active owners, filtered by search term, for lookup purposes.
-        Returns a list of dictionaries with 'id' (owner_id) and 'name_account'.
-        """
         session = db_manager.get_session()
         try:
             query = session.query(
@@ -48,7 +61,6 @@ class OwnerController:
                 Owner.farm_name,
                 Owner.account_number,
             ).filter(Owner.is_active == True)
-
             if search_term:
                 search_pattern = f"%{search_term}%"
                 query = query.filter(
@@ -59,12 +71,9 @@ class OwnerController:
                         Owner.account_number.ilike(search_pattern),
                     )
                 )
-
-            # Order by farm_name, then last_name, then first_name for consistent sorting
             owners_data = query.order_by(
                 Owner.farm_name, Owner.last_name, Owner.first_name
             ).all()
-
             lookup_list = []
             for (
                 owner_id,
@@ -73,29 +82,21 @@ class OwnerController:
                 farm_name,
                 account_number,
             ) in owners_data:
-                name_parts = []
-                if first_name:
-                    name_parts.append(first_name)
-                if last_name:
-                    name_parts.append(last_name)
+                name_parts = [name for name in [first_name, last_name] if name]
                 individual_name = " ".join(name_parts)
-
-                display_text = ""
-                if farm_name:
-                    display_text = farm_name
-                    if individual_name:
-                        display_text += f" ({individual_name})"
-                elif individual_name:
-                    display_text = individual_name
-                else:  # Fallback if all name parts are empty
+                display_text = farm_name if farm_name else ""
+                if individual_name:
+                    display_text = (
+                        f"{display_text} ({individual_name})"
+                        if farm_name
+                        else individual_name
+                    )
+                if not display_text:
                     display_text = "Unnamed Owner"
-
                 if account_number:
                     display_text += f" [{account_number}]"
-
                 lookup_list.append({"id": owner_id, "name_account": display_text})
             return lookup_list
-
         except Exception as e:
             self.logger.error(f"Error fetching owners for lookup: {e}", exc_info=True)
             return []
@@ -103,15 +104,11 @@ class OwnerController:
             session.close()
 
     def get_owner_by_id(self, owner_id: int) -> Optional[Owner]:
-        """
-        Fetches a single owner by their owner_id.
-        Includes related StateProvince.
-        """
         session = db_manager.get_session()
         try:
             owner = (
                 session.query(Owner)
-                .options(joinedload(Owner.state))
+                .options(joinedload(Owner.state))  # Eager load state
                 .filter(Owner.owner_id == owner_id)
                 .first()
             )
@@ -127,122 +124,99 @@ class OwnerController:
     def validate_owner_data(
         self, owner_data: dict, is_new: bool = True
     ) -> Tuple[bool, List[str]]:
-        """
-        Validates owner data based on existing Owner model fields.
-        """
         errors = []
-
         first_name = owner_data.get("first_name", "").strip()
         last_name = owner_data.get("last_name", "").strip()
         farm_name = owner_data.get("farm_name", "").strip()
+        account_number_val = owner_data.get("account_number", "").strip()
 
         if not first_name and not last_name and not farm_name:
             errors.append(
                 "At least one name field (First, Last, or Farm Name) is required."
             )
 
-        # Other required fields based on your model and UI
-        if not owner_data.get("address_line1", "").strip():
+        # Check required fields based on what the dialogs are designed to pass
+        if not owner_data.get(
+            "address_line1", ""
+        ).strip():  # address_line1 is from dialogs
             errors.append("Address Line 1 is required.")
-        if not owner_data.get("city", "").strip():
+        if not owner_data.get("city", "").strip():  # city is from dialogs
             errors.append("City is required.")
-        if not owner_data.get("state_code", "").strip():
+        if not owner_data.get("state_code"):  # state_code (ID) is from dialogs
             errors.append("State is required.")
-        if not owner_data.get("zip_code", "").strip():
+        if not owner_data.get("zip_code", "").strip():  # zip_code is from dialogs
             errors.append("Zip Code is required.")
-        if not owner_data.get("phone", "").strip():
+        if not owner_data.get("phone", "").strip():  # phone is from dialogs
             errors.append("Phone is required.")
 
-        # Example length checks (adjust as per your model constraints)
         if len(first_name) > 50:
-            errors.append("First Name too long.")
+            errors.append("First Name too long (max 50).")
         if len(last_name) > 50:
-            errors.append("Last Name too long.")
+            errors.append("Last Name too long (max 50).")
         if len(farm_name) > 100:
-            errors.append("Farm Name too long.")
+            errors.append("Farm Name too long (max 100).")
         if len(owner_data.get("address_line1", "")) > 100:
-            errors.append("Address 1 too long.")
-        # ... other length checks ...
+            errors.append("Address 1 too long (max 100).")
+        if len(account_number_val) > 20:
+            errors.append("Account Number too long (max 20).")
+        # Removed credit_rating from validation as it's being removed from forms/model interaction
 
-        if is_new and owner_data.get("account_number"):
+        if is_new and account_number_val:
             session = db_manager.get_session()
             try:
                 existing = (
                     session.query(Owner)
-                    .filter(
-                        Owner.account_number == owner_data["account_number"].strip()
-                    )
+                    .filter(Owner.account_number == account_number_val)
                     .first()
                 )
                 if existing:
                     errors.append(
-                        f"Account Number '{owner_data['account_number']}' already exists."
+                        f"Account Number '{account_number_val}' already exists."
                     )
             finally:
                 session.close()
-
         return len(errors) == 0, errors
 
     def create_master_owner(
         self, owner_data: dict, current_user: str
     ) -> Tuple[bool, str, Optional[Owner]]:
-        """
-        Creates a new master owner record using existing Owner model fields.
-        """
-        # The dialog already constructs a combined 'owner_name' for display/logging,
-        # but for validation and creation, we use the individual parts.
-        validation_data = {
-            "first_name": owner_data.get("first_name"),
-            "last_name": owner_data.get("last_name"),
-            "farm_name": owner_data.get("farm_name"),
-            "address_line1": owner_data.get("address_line1"),
-            "city": owner_data.get("city"),
-            "state_code": owner_data.get("state_code"),
-            "zip_code": owner_data.get("zip_code"),
-            "phone": owner_data.get("phone"),
-            "account_number": owner_data.get("account_number"),
-        }
-        is_valid, errors = self.validate_owner_data(validation_data, is_new=True)
+        is_valid, errors = self.validate_owner_data(owner_data, is_new=True)
         if not is_valid:
             return False, "Validation failed: " + "; ".join(errors), None
 
         session = db_manager.get_session()
         try:
-            # Construct the Owner object using fields defined in the model
             new_owner = Owner(
                 account_number=owner_data.get("account_number", "").strip() or None,
                 first_name=owner_data.get("first_name", "").strip() or None,
                 last_name=owner_data.get("last_name", "").strip() or None,
                 farm_name=owner_data.get("farm_name", "").strip() or None,
-                # The combined 'owner_name' from dialog is not passed to constructor
                 address_line1=owner_data.get("address_line1", "").strip(),
                 address_line2=owner_data.get("address_line2", "").strip() or None,
                 city=owner_data.get("city", "").strip(),
-                state_code=owner_data.get("state_code", "").strip() or None,
+                state_code=owner_data.get("state_code"),
                 zip_code=owner_data.get("zip_code", "").strip(),
-                # country_name and owner_type_description are not in current Owner model
-                # country_id and owner_type_id are also not in current Owner model
-                phone=owner_data.get("phone", "").strip(),
-                mobile_phone=owner_data.get("mobile_phone", "").strip() or None,
+                phone=owner_data.get("phone", "").strip() or None,
                 email=owner_data.get("email", "").strip() or None,
                 is_active=owner_data.get("is_active", True),
-                # Assuming these fields exist in your Owner model based on common practice
-                # If not, they need to be added to the model or removed here.
-                # created_by=current_user,
-                # modified_by=current_user
+                # credit_rating is removed from constructor call
             )
-            # Set created_by and modified_by if they exist on the model
-            if hasattr(new_owner, "created_by"):
-                new_owner.created_by = current_user
-            if hasattr(new_owner, "modified_by"):
-                new_owner.modified_by = current_user
-
             session.add(new_owner)
             session.commit()
             session.refresh(new_owner)
-
-            # Use the hybrid property for logging the combined name
-            display_name_for_log = new_owner.owner_name
+            log_name_parts = [
+                name for name in [new_owner.first_name, new_owner.last_name] if name
+            ]
+            log_individual_name = " ".join(log_name_parts)
+            display_name_for_log = new_owner.farm_name if new_owner.farm_name else ""
+            if log_individual_name:
+                display_name_for_log = (
+                    f"{display_name_for_log} ({log_individual_name})"
+                    if new_owner.farm_name
+                    else log_individual_name
+                )
+            if not display_name_for_log:
+                display_name_for_log = f"Owner ID {new_owner.owner_id}"
             self.logger.info(
                 f"Master Owner '{display_name_for_log}' (ID: {new_owner.owner_id}) created by {current_user}."
             )
@@ -257,17 +231,14 @@ class OwnerController:
     def update_master_owner(
         self, owner_id: int, owner_data: dict, current_user: str
     ) -> Tuple[bool, str]:
-        """
-        Updates an existing master owner record using existing Owner model fields.
-        """
         session = db_manager.get_session()
         try:
             owner = session.query(Owner).filter(Owner.owner_id == owner_id).first()
             if not owner:
                 return False, f"Owner with ID {owner_id} not found."
 
-            validation_data = {"owner_id": owner_id}
-            update_fields = [
+            # Don't include credit_rating if it's not a model attribute
+            updatable_model_fields = [
                 "first_name",
                 "last_name",
                 "farm_name",
@@ -281,9 +252,17 @@ class OwnerController:
                 "email",
                 "is_active",
                 "account_number",
-                # Add other fields from your Owner model that are updatable
+                "balance",
+                "credit_limit",
+                "billing_terms",
+                "service_charge_rate",
+                "discount_rate",
+                # "credit_rating" removed from this list
             ]
-            for key in update_fields:
+            validation_data = {
+                "owner_id": owner_id
+            }  # Required for context in validate_owner_data if it needs it
+            for key in updatable_model_fields:
                 if key in owner_data:
                     validation_data[key] = owner_data[key]
 
@@ -291,20 +270,31 @@ class OwnerController:
             if not is_valid:
                 return False, "Validation failed: " + "; ".join(errors)
 
-            for key in update_fields:
-                if key in owner_data:
+            for key in updatable_model_fields:
+                if (
+                    key in owner_data
+                ):  # Only update fields that were actually passed in owner_data
                     value = owner_data[key]
                     setattr(
                         owner, key, value.strip() if isinstance(value, str) else value
                     )
 
-            if hasattr(owner, "modified_by"):
-                owner.modified_by = current_user
-            if hasattr(owner, "modified_date"):
-                owner.modified_date = datetime.utcnow()
-
+            owner.modified_date = datetime.utcnow()  # BaseModel handles this on update
             session.commit()
-            display_name_for_log = owner.owner_name  # Use hybrid property for log
+
+            log_name_parts = [
+                name for name in [owner.first_name, owner.last_name] if name
+            ]
+            log_individual_name = " ".join(log_name_parts)
+            display_name_for_log = owner.farm_name if owner.farm_name else ""
+            if log_individual_name:
+                display_name_for_log = (
+                    f"{display_name_for_log} ({log_individual_name})"
+                    if owner.farm_name
+                    else log_individual_name
+                )
+            if not display_name_for_log:
+                display_name_for_log = f"Owner ID {owner.owner_id}"
             self.logger.info(
                 f"Master Owner '{display_name_for_log}' (ID: {owner.owner_id}) updated by {current_user}."
             )
@@ -318,8 +308,59 @@ class OwnerController:
         finally:
             session.close()
 
+    def delete_master_owner(
+        self, owner_id_to_delete: int, current_admin_id: str
+    ) -> Tuple[bool, str]:
+        session = db_manager.get_session()
+        try:
+            owner = (
+                session.query(Owner)
+                .filter(Owner.owner_id == owner_id_to_delete)
+                .first()
+            )
+            if not owner:
+                return False, f"Owner with ID {owner_id_to_delete} not found."
+
+            linked_horses_count = (
+                session.query(HorseOwner)
+                .filter(HorseOwner.owner_id == owner_id_to_delete)
+                .count()
+            )
+            if linked_horses_count > 0:
+                self.logger.warning(
+                    f"Attempt to delete owner ID {owner_id_to_delete} who is linked to {linked_horses_count} horse(s)."
+                )
+                return (
+                    False,
+                    f"Cannot delete owner. They are currently linked to {linked_horses_count} horse(s). Please unlink them from all horses first.",
+                )
+
+            owner_name_for_log_parts = [
+                name
+                for name in [owner.farm_name, owner.last_name, owner.first_name]
+                if name
+            ]
+            owner_name_for_log = (
+                " ".join(owner_name_for_log_parts) or f"ID {owner_id_to_delete}"
+            )
+
+            session.delete(owner)
+            session.commit()
+            self.logger.info(
+                f"Master Owner '{owner_name_for_log}' (ID: {owner_id_to_delete}) permanently deleted by admin '{current_admin_id}'."
+            )
+            return True, f"Owner '{owner_name_for_log}' deleted successfully."
+        except Exception as e:
+            session.rollback()
+            self.logger.error(
+                f"Error deleting master owner ID {owner_id_to_delete}: {e}",
+                exc_info=True,
+            )
+            return False, f"Failed to delete owner: {e}"
+        finally:
+            session.close()
+
     def get_owner_form_reference_data(self) -> Dict[str, List[Dict[str, any]]]:
-        """Fetches reference data for owner forms (States only for now)."""
         session = db_manager.get_session()
         try:
             states = [
@@ -329,14 +370,7 @@ class OwnerController:
                 .order_by(StateProvince.state_name)
                 .all()
             ]
-            countries = []
-            owner_types = []
-
-            return {
-                "states": states,
-                "countries": countries,
-                "owner_types": owner_types,
-            }
+            return {"states": states, "countries": [], "owner_types": []}
         except Exception as e:
             self.logger.error(
                 f"Error fetching owner form reference data: {e}", exc_info=True
