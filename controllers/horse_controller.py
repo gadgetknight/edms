@@ -2,26 +2,22 @@
 
 """
 EDSI Veterinary Management System - Horse Controller
-Version: 1.2.2
+Version: 1.2.3
 Purpose: Business logic for horse management operations including CRUD, validation,
          data processing, and horse-owner associations.
-         Corrected HorseOwner instantiation in add_owner_to_horse.
-Last Updated: May 15, 2025
+         Allows 0% ownership percentage.
+Last Updated: May 17, 2025
 Author: Claude Assistant
 
 Changelog:
+- v1.2.3 (2025-05-17):
+    - Modified percentage validation in `add_owner_to_horse` and
+      `update_horse_owner_percentage` to allow 0% ownership.
 - v1.2.2 (2025-05-15): Removed non-existent audit fields from HorseOwner instantiation.
-  - In `add_owner_to_horse`, removed `created_by`, `modified_by`, `created_date`,
-    and `modified_date` from the `HorseOwner()` constructor call as they are
-    not defined on the HorseOwner model or are handled by BaseModel.
 - v1.2.1 (2025-05-14): Corrected querying by owner_name in get_horse_owners.
-  - Changed `Owner.owner_name` to query individual name fields
-    (`first_name`, `last_name`, `farm_name`) for sorting and display construction.
 - v1.2.0 (2025-05-13): Added methods for horse-owner associations.
 - v1.1.1 (2025-05-13): Implemented eager loading for Horse.location.
 - v1.1.0 (2025-05-13): Enhanced search_horses for flexible status filtering.
-- v1.0.1 (2025-05-12): Removed species support for horses-only system
-- v1.0.0 (2025-05-12): Initial implementation
 """
 
 import logging
@@ -42,14 +38,6 @@ class HorseController:
     def create_horse(
         self, horse_data: dict, current_user: str
     ) -> Tuple[bool, str, Optional[Horse]]:
-        """
-        Create a new horse record.
-        Args:
-            horse_data: Dictionary containing horse information.
-            current_user: Current logged-in user ID.
-        Returns:
-            Tuple of (success, message, horse_object).
-        """
         session = db_manager.get_session()
         try:
             if not horse_data.get("horse_name", "").strip():
@@ -68,9 +56,9 @@ class HorseController:
                 brand=horse_data.get("brand", "").strip(),
                 band_tag_number=horse_data.get("band_tag_number", "").strip(),
                 current_location_id=horse_data.get("current_location_id"),
-                created_by=current_user,  # Assumes Horse model has created_by
-                modified_by=current_user,  # Assumes Horse model has modified_by
-                is_active=True,  # Default new horses to active
+                created_by=current_user,
+                modified_by=current_user,
+                is_active=True,
             )
             session.add(horse)
             session.commit()
@@ -90,15 +78,6 @@ class HorseController:
     def update_horse(
         self, horse_id: int, horse_data: dict, current_user: str
     ) -> Tuple[bool, str]:
-        """
-        Update an existing horse record.
-        Args:
-            horse_id: ID of horse to update.
-            horse_data: Dictionary containing updated horse information.
-            current_user: Current logged-in user ID.
-        Returns:
-            Tuple of (success, message).
-        """
         session = db_manager.get_session()
         try:
             horse = session.query(Horse).filter(Horse.horse_id == horse_id).first()
@@ -121,8 +100,7 @@ class HorseController:
             horse.brand = horse_data.get("brand", "").strip()
             horse.band_tag_number = horse_data.get("band_tag_number", "").strip()
             horse.current_location_id = horse_data.get("current_location_id")
-            horse.modified_by = current_user  # Assumes Horse model has modified_by
-            # horse.modified_date is handled by BaseModel onupdate
+            horse.modified_by = current_user
             session.commit()
             self.logger.info(
                 f"Updated horse: {horse.horse_name} (ID: {horse.horse_id})"
@@ -137,7 +115,6 @@ class HorseController:
             session.close()
 
     def get_horse_by_id(self, horse_id: int) -> Optional[Horse]:
-        """Get horse by ID, including its location and owners."""
         session = db_manager.get_session()
         try:
             horse = (
@@ -161,10 +138,6 @@ class HorseController:
     def search_horses(
         self, search_term: str = "", status: str = "active"
     ) -> List[Horse]:
-        """
-        Search horses by name or account number, with status filtering.
-        Location data is eager-loaded.
-        """
         session = db_manager.get_session()
         try:
             query = session.query(Horse).options(joinedload(Horse.location))
@@ -196,7 +169,6 @@ class HorseController:
             session.close()
 
     def get_locations_list(self) -> List[Location]:
-        """Get list of all active locations."""
         session = db_manager.get_session()
         try:
             return (
@@ -212,7 +184,6 @@ class HorseController:
             session.close()
 
     def validate_horse_data(self, horse_data: dict) -> Tuple[bool, List[str]]:
-        """Validate horse data."""
         errors = []
         if not horse_data.get("horse_name", "").strip():
             errors.append("Horse name is required")
@@ -228,7 +199,6 @@ class HorseController:
         return len(errors) == 0, errors
 
     def _parse_date(self, date_value) -> Optional[date]:
-        """Parse date from various formats or QDate object."""
         if not date_value:
             return None
         if isinstance(date_value, date):
@@ -246,7 +216,6 @@ class HorseController:
         return None
 
     def deactivate_horse(self, horse_id: int, current_user: str) -> Tuple[bool, str]:
-        """Deactivate a horse (mark as inactive)."""
         session = db_manager.get_session()
         try:
             horse = session.query(Horse).filter(Horse.horse_id == horse_id).first()
@@ -255,8 +224,7 @@ class HorseController:
             if not horse.is_active:
                 return False, f"Horse '{horse.horse_name}' is already inactive."
             horse.is_active = False
-            horse.modified_by = current_user  # Assumes Horse model has modified_by
-            # horse.modified_date is handled by BaseModel onupdate
+            horse.modified_by = current_user
             session.commit()
             self.logger.info(
                 f"Deactivated horse: {horse.horse_name} (ID: {horse.horse_id}) by user {current_user}."
@@ -271,7 +239,6 @@ class HorseController:
             session.close()
 
     def activate_horse(self, horse_id: int, current_user: str) -> Tuple[bool, str]:
-        """Activate a horse (mark as active)."""
         session = db_manager.get_session()
         try:
             horse = session.query(Horse).filter(Horse.horse_id == horse_id).first()
@@ -280,8 +247,7 @@ class HorseController:
             if horse.is_active:
                 return False, f"Horse '{horse.horse_name}' is already active."
             horse.is_active = True
-            horse.modified_by = current_user  # Assumes Horse model has modified_by
-            # horse.modified_date is handled by BaseModel onupdate
+            horse.modified_by = current_user
             session.commit()
             self.logger.info(
                 f"Activated horse: {horse.horse_name} (ID: {horse.horse_id}) by user {current_user}."
@@ -296,19 +262,12 @@ class HorseController:
             session.close()
 
     def delete_horse(self, horse_id: int, current_user: str) -> Tuple[bool, str]:
-        """This method now calls deactivate_horse for clarity."""
         self.logger.warning(
             "delete_horse called, redirecting to deactivate_horse. Ensure UI reflects deactivation."
         )
         return self.deactivate_horse(horse_id, current_user)
 
-    # --- Horse-Owner Association Methods ---
-
     def get_horse_owners(self, horse_id: int) -> List[Dict[str, any]]:
-        """
-        Get a list of owners associated with a specific horse, including ownership percentage.
-        Returns a list of dictionaries for easier display.
-        """
         session = db_manager.get_session()
         try:
             horse_owners_data = (
@@ -325,7 +284,6 @@ class HorseController:
                 .order_by(Owner.farm_name, Owner.last_name, Owner.first_name)
                 .all()
             )
-
             result = []
             for (
                 owner_id,
@@ -341,7 +299,6 @@ class HorseController:
                 if last_name:
                     name_parts.append(last_name)
                 individual_name = " ".join(name_parts)
-
                 owner_name_for_display = ""
                 if farm_name:
                     owner_name_for_display = farm_name
@@ -351,13 +308,11 @@ class HorseController:
                     owner_name_for_display = individual_name
                 else:
                     owner_name_for_display = "Unnamed Owner"
-
                 display_name_with_account = (
                     f"{owner_name_for_display} [{acc_num}]"
                     if acc_num
                     else owner_name_for_display
                 )
-
                 result.append(
                     {
                         "owner_id": owner_id,
@@ -379,7 +334,6 @@ class HorseController:
     def add_owner_to_horse(
         self, horse_id: int, owner_id: int, percentage: float, current_user: str
     ) -> Tuple[bool, str]:
-        """Adds an existing owner to a horse with a specified ownership percentage."""
         session = db_manager.get_session()
         try:
             horse = session.query(Horse).filter(Horse.horse_id == horse_id).first()
@@ -395,7 +349,6 @@ class HorseController:
                 .first()
             )
             if existing_assoc:
-                # Construct owner display name for message
                 owner_display_parts = []
                 if owner.first_name:
                     owner_display_parts.append(owner.first_name)
@@ -409,16 +362,16 @@ class HorseController:
                     owner_display = owner_individual_display
                 elif not owner_display:
                     owner_display = f"ID {owner.owner_id}"
-
                 return (
                     False,
                     f"Owner '{owner_display}' is already associated with horse '{horse.horse_name}'.",
                 )
 
-            if not (0 < percentage <= 100):
+            # Allow 0% ownership
+            if not (0 <= percentage <= 100):  # MODIFIED: was (0 < percentage <= 100)
                 return (
                     False,
-                    "Ownership percentage must be greater than 0 and less than or equal to 100.",
+                    "Ownership percentage must be between 0 and 100 (inclusive).",  # MODIFIED: Message
                 )
 
             current_total_percentage = (
@@ -427,35 +380,25 @@ class HorseController:
                 .scalar()
                 or 0
             )
-            # Use a small epsilon for float comparison
             if current_total_percentage + percentage > 100.001:
-                # For more precise check if sum is problematic with floats
                 precise_total = sum(
                     ho.ownership_percentage
                     for ho in session.query(HorseOwner.ownership_percentage)
                     .filter(HorseOwner.horse_id == horse_id)
                     .all()
                 )
-                if (
-                    precise_total + percentage > 100.001
-                ):  # Add epsilon for float comparison
+                if precise_total + percentage > 100.001:
                     return (
                         False,
                         f"Adding {percentage:.2f}% would exceed 100% total ownership for this horse (current total: {precise_total:.2f}%).",
                     )
 
-            # --- FIX: Remove created_by, modified_by, created_date, modified_date ---
-            # These are not direct attributes of HorseOwner or are handled by BaseModel
             new_horse_owner = HorseOwner(
                 horse_id=horse_id,
                 owner_id=owner_id,
                 ownership_percentage=percentage,
-                # start_date might be relevant, set to today if not provided
                 start_date=date.today(),
             )
-            # BaseModel handles created_date and modified_date automatically.
-            # --- END FIX ---
-
             session.add(new_horse_owner)
             session.commit()
             self.logger.info(
@@ -472,7 +415,6 @@ class HorseController:
     def update_horse_owner_percentage(
         self, horse_id: int, owner_id: int, new_percentage: float, current_user: str
     ) -> Tuple[bool, str]:
-        """Updates the ownership percentage for a specific horse-owner association."""
         session = db_manager.get_session()
         try:
             assoc = (
@@ -483,10 +425,13 @@ class HorseController:
             if not assoc:
                 return False, "Ownership association not found."
 
-            if not (0 < new_percentage <= 100):
+            # Allow 0% ownership
+            if not (
+                0 <= new_percentage <= 100
+            ):  # MODIFIED: was (0 < new_percentage <= 100)
                 return (
                     False,
-                    "Ownership percentage must be greater than 0 and less than or equal to 100.",
+                    "Ownership percentage must be between 0 and 100 (inclusive).",  # MODIFIED: Message
                 )
 
             other_owners_percentage = (
@@ -497,7 +442,7 @@ class HorseController:
                 .scalar()
                 or 0
             )
-            if other_owners_percentage + new_percentage > 100.001:  # Add epsilon
+            if other_owners_percentage + new_percentage > 100.001:
                 precise_other_total = sum(
                     ho.ownership_percentage
                     for ho in session.query(HorseOwner.ownership_percentage)
@@ -513,8 +458,6 @@ class HorseController:
                     )
 
             assoc.ownership_percentage = new_percentage
-            # assoc.modified_by = current_user # If HorseOwner had modified_by
-            # assoc.modified_date is handled by BaseModel onupdate
             session.commit()
             self.logger.info(
                 f"Updated ownership for horse ID {horse_id}, owner ID {owner_id} to {new_percentage:.2f}% by {current_user}."
@@ -532,7 +475,6 @@ class HorseController:
     def remove_owner_from_horse(
         self, horse_id: int, owner_id: int, current_user: str
     ) -> Tuple[bool, str]:
-        """Removes an owner's association from a horse."""
         session = db_manager.get_session()
         try:
             assoc = (

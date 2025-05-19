@@ -2,28 +2,28 @@
 
 """
 EDSI Veterinary Management System - User Controller
-Version: 1.1.0
-Purpose: Business logic for user management operations (listing, creating, updating, deleting users).
-Last Updated: May 13, 2025
+Version: 1.1.1
+Purpose: Handles user authentication, CRUD operations, and role management.
+         Modified validate_password to return a dict to avoid DetachedInstanceError.
+Last Updated: May 18, 2025
 Author: Claude Assistant
 
 Changelog:
-- v1.1.0 (2025-05-13): Added delete_user_permanently method.
-  - Implemented logic to permanently delete a user.
-  - Added checks to prevent deletion of the currently logged-in admin
-    or the last remaining active admin user.
-- v1.0.0 (2025-05-13): Initial implementation
-  - Methods for get_all_users, get_user_by_id, validate_user_data,
-    create_user, update_user, change_password.
+- v1.1.1 (2025-05-18):
+    - Modified `validate_password` to return a dictionary of user details
+      (user_id, is_active) instead of the ORM object to prevent DetachedInstanceError.
+- v1.1.0 (User-Provided Version): Initial version with hashlib and validate_password.
 """
 
 import logging
 import hashlib
-from typing import List, Optional, Tuple
-from sqlalchemy.orm import Session
-from sqlalchemy import func  # For count
+from typing import List, Optional, Tuple, Dict  # Added Dict
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func
+from datetime import datetime  # Ensure datetime is imported for last_login
+
 from config.database_config import db_manager
-from models import User
+from models import User, Role, UserRole
 
 
 class UserController:
@@ -32,14 +32,71 @@ class UserController:
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
 
+    def _hash_password(self, password: str) -> str:
+        return hashlib.sha256(password.lower().encode("utf-8")).hexdigest()
+
+    def validate_password(
+        self, user_id: str, password_attempt: str
+    ) -> Tuple[bool, str, Optional[Dict]]:
+        """
+        Validates a user's password attempt.
+        Returns: (is_valid, message, user_details_dict_if_valid_else_None)
+        user_details_dict contains 'user_id' and 'is_active'.
+        """
+        self.logger.debug(f"Attempting to validate password for user: {user_id}")
+        session = db_manager.get_session()
+        try:
+            user = session.query(User).filter(User.user_id == user_id.upper()).first()
+            if not user:
+                self.logger.warning(
+                    f"User '{user_id}' not found during password validation."
+                )
+                return False, "Invalid User ID or Password.", None
+
+            hashed_attempt = self._hash_password(password_attempt)
+            if user.password_hash != hashed_attempt:
+                self.logger.warning(f"Incorrect password attempt for user '{user_id}'.")
+                return False, "Invalid User ID or Password.", None
+
+            # Password is correct.
+            # Capture necessary attributes before session closes.
+            user_is_active = user.is_active
+            actual_user_id = (
+                user.user_id
+            )  # Get the exact case from DB if needed, though we used .upper()
+
+            if not user_is_active:
+                self.logger.warning(f"Login attempt for inactive user '{user_id}'.")
+                # Return user details even if inactive, for the dialog to handle the message.
+                return (
+                    False,
+                    f"User account '{user_id}' is inactive.",
+                    {"user_id": actual_user_id, "is_active": user_is_active},
+                )
+
+            # Update last_login for active user
+            user.last_login = datetime.utcnow()
+            session.commit()
+
+            self.logger.info(
+                f"Password validated successfully for active user '{user_id}'."
+            )
+            return (
+                True,
+                "Login successful.",
+                {"user_id": actual_user_id, "is_active": user_is_active},
+            )
+        except Exception as e:
+            session.rollback()  # Ensure rollback on error
+            self.logger.error(
+                f"Error during password validation for user '{user_id}': {e}",
+                exc_info=True,
+            )
+            return False, "An error occurred during login. Please try again.", None
+        finally:
+            session.close()
+
     def get_all_users(self, include_inactive: bool = False) -> List[User]:
-        """
-        Fetches all users from the database.
-        Args:
-            include_inactive (bool): If True, includes inactive users. Defaults to False.
-        Returns:
-            List[User]: A list of User objects.
-        """
         session = db_manager.get_session()
         try:
             query = session.query(User)
@@ -54,13 +111,6 @@ class UserController:
             session.close()
 
     def get_user_by_id(self, user_id: str) -> Optional[User]:
-        """
-        Fetches a single user by their user_id.
-        Args:
-            user_id (str): The ID of the user to fetch.
-        Returns:
-            Optional[User]: The User object if found, else None.
-        """
         session = db_manager.get_session()
         try:
             user = session.query(User).filter(User.user_id == user_id.upper()).first()
@@ -79,15 +129,6 @@ class UserController:
         is_new: bool = True,
         original_user_id: Optional[str] = None,
     ) -> Tuple[bool, List[str]]:
-        """
-        Validates user data for creation or update.
-        Args:
-            user_data (dict): Dictionary containing user information.
-            is_new (bool): True if validating for a new user.
-            original_user_id (str, optional): The original user ID if updating, to allow checking if user_id changed.
-        Returns:
-            Tuple[bool, List[str]]: (is_valid, list_of_errors)
-        """
         errors = []
         user_id = user_data.get("user_id", "").strip().upper()
         user_name = user_data.get("user_name", "").strip()
@@ -99,18 +140,17 @@ class UserController:
             errors.append("User ID cannot exceed 20 characters.")
         elif " " in user_id:
             errors.append("User ID cannot contain spaces.")
-        elif is_new:  # Check for existence only if it's a new user
+        elif is_new:
             existing_user = self.get_user_by_id(user_id)
             if existing_user:
                 errors.append(f"User ID '{user_id}' already exists.")
-        # If updating, user_id is not changeable via this validation, so no check for existing needed here.
 
         if not user_name:
             errors.append("User Name is required.")
         elif len(user_name) > 100:
             errors.append("User Name cannot exceed 100 characters.")
 
-        if is_new:  # Password checks only for new users
+        if is_new:
             if not password:
                 errors.append("Password is required for new users.")
             elif len(password) < 6:
@@ -119,13 +159,6 @@ class UserController:
         return len(errors) == 0, errors
 
     def create_user(self, user_data: dict) -> Tuple[bool, str, Optional[User]]:
-        """
-        Creates a new user.
-        Args:
-            user_data (dict): User information including 'user_id', 'user_name', 'password'.
-        Returns:
-            Tuple[bool, str, Optional[User]]: (success, message, user_object)
-        """
         is_valid, errors = self.validate_user_data(user_data, is_new=True)
         if not is_valid:
             return False, "Validation failed: " + "; ".join(errors), None
@@ -134,7 +167,7 @@ class UserController:
         try:
             user_id = user_data["user_id"].strip().upper()
             password = user_data["password"]
-            password_hash = hashlib.sha256(password.lower().encode("utf-8")).hexdigest()
+            password_hash = self._hash_password(password)
 
             new_user = User(
                 user_id=user_id,
@@ -152,19 +185,13 @@ class UserController:
             self.logger.error(
                 f"Error creating user '{user_data.get('user_id')}': {e}", exc_info=True
             )
+            if "UNIQUE constraint failed" in str(e).upper():
+                return False, f"User ID '{user_data['user_id']}' already exists.", None
             return False, f"Failed to create user: {e}", None
         finally:
             session.close()
 
     def update_user(self, user_id_orig: str, user_data: dict) -> Tuple[bool, str]:
-        """
-        Updates an existing user's details (user_name, is_active).
-        Args:
-            user_id_orig (str): The original User ID of the user to update.
-            user_data (dict): Dictionary with 'user_name', and 'is_active'.
-        Returns:
-            Tuple[bool, str]: (success, message)
-        """
         session = db_manager.get_session()
         try:
             user_to_update_id = user_id_orig.upper()
@@ -172,10 +199,7 @@ class UserController:
             if not user:
                 return False, f"User '{user_to_update_id}' not found."
 
-            # Validate only the fields being updated
-            temp_validation_data = {
-                "user_id": user_to_update_id
-            }  # Keep user_id for context
+            temp_validation_data = {"user_id": user_to_update_id}
             if "user_name" in user_data:
                 temp_validation_data["user_name"] = user_data["user_name"]
 
@@ -188,14 +212,13 @@ class UserController:
             if "user_name" in user_data:
                 user.user_name = user_data["user_name"].strip()
             if "is_active" in user_data:
-                # Prevent deactivating the last active admin
                 if user.user_id == "ADMIN" and not user_data["is_active"]:
                     active_admin_count = (
                         session.query(func.count(User.user_id))
                         .filter(User.is_active == True, User.user_id == "ADMIN")
                         .scalar()
-                    )  # Simplistic check for "ADMIN" role
-                    if active_admin_count <= 1:  # If this is the last active admin
+                    )
+                    if active_admin_count <= 1:
                         self.logger.warning(
                             f"Attempt to deactivate the last active ADMIN user ('{user_to_update_id}') was prevented."
                         )
@@ -215,14 +238,6 @@ class UserController:
             session.close()
 
     def change_password(self, user_id: str, new_password: str) -> Tuple[bool, str]:
-        """
-        Changes a user's password.
-        Args:
-            user_id (str): The User ID.
-            new_password (str): The new password.
-        Returns:
-            Tuple[bool, str]: (success, message)
-        """
         if not new_password or len(new_password) < 6:
             return False, "New password must be at least 6 characters long."
 
@@ -232,9 +247,7 @@ class UserController:
             if not user:
                 return False, f"User '{user_id}' not found."
 
-            new_password_hash = hashlib.sha256(
-                new_password.lower().encode("utf-8")
-            ).hexdigest()
+            new_password_hash = self._hash_password(new_password)
             user.password_hash = new_password_hash
             session.commit()
             self.logger.info(f"Password changed successfully for user '{user_id}'.")
@@ -251,17 +264,6 @@ class UserController:
     def delete_user_permanently(
         self, user_id_to_delete: str, current_admin_id: str
     ) -> Tuple[bool, str]:
-        """
-        Permanently deletes a user from the database.
-        Prevents deletion of the currently logged-in admin or the last admin.
-
-        Args:
-            user_id_to_delete (str): The User ID of the user to be deleted.
-            current_admin_id (str): The User ID of the admin performing the deletion.
-
-        Returns:
-            Tuple[bool, str]: (success, message)
-        """
         user_id_to_delete_upper = user_id_to_delete.upper()
         current_admin_id_upper = current_admin_id.upper()
 
@@ -281,12 +283,10 @@ class UserController:
             if not user_to_delete:
                 return False, f"User '{user_id_to_delete_upper}' not found."
 
-            # Check if this is the last ADMIN user (assuming 'ADMIN' is a special role/ID)
-            # A more robust system might have roles, but for now, we check for 'ADMIN' ID.
-            if user_to_delete_upper == "ADMIN":
+            if user_id_to_delete_upper == "ADMIN":
                 admin_count = (
                     session.query(func.count(User.user_id))
-                    .filter(User.user_id == "ADMIN")
+                    .filter(User.user_id == "ADMIN", User.is_active == True)
                     .scalar()
                 )
                 if admin_count <= 1:
@@ -295,8 +295,6 @@ class UserController:
                     )
                     return False, "Cannot delete the last ADMIN user."
 
-            # A more general check: count active users. If only one active user left, and it's this one, prevent deletion.
-            # This is a simple check, a real system might need more complex role-based logic.
             active_user_count = (
                 session.query(func.count(User.user_id))
                 .filter(User.is_active == True)
@@ -320,5 +318,152 @@ class UserController:
                 f"Error deleting user '{user_id_to_delete_upper}': {e}", exc_info=True
             )
             return False, f"Failed to delete user: {e}"
+        finally:
+            session.close()
+
+    # --- Role Management (Basic Stubs - ensure Role, UserRole models are defined) ---
+    def create_role(
+        self, name: str, description: Optional[str] = None
+    ) -> Tuple[bool, str, Optional[Role]]:
+        session = db_manager.get_session()
+        try:
+            if not name:
+                return False, "Role name cannot be empty.", None
+            existing_role = session.query(Role).filter(Role.name == name).first()
+            if existing_role:
+                return False, f"Role '{name}' already exists.", None
+
+            new_role = Role(name=name, description=description)
+            session.add(new_role)
+            session.commit()
+            session.refresh(new_role)
+            self.logger.info(f"Role '{name}' created with ID {new_role.role_id}.")
+            return True, "Role created successfully.", new_role
+        except Exception as e:
+            session.rollback()
+            self.logger.error(f"Error creating role '{name}': {e}", exc_info=True)
+            return False, f"Failed to create role: {str(e)}", None
+        finally:
+            session.close()
+
+    def get_role_by_name(self, name: str) -> Optional[Role]:
+        session = db_manager.get_session()
+        try:
+            return session.query(Role).filter(Role.name == name).first()
+        finally:
+            session.close()
+
+    def get_all_roles(self) -> List[Role]:
+        session = db_manager.get_session()
+        try:
+            return session.query(Role).order_by(Role.name).all()
+        finally:
+            session.close()
+
+    def assign_role_to_user(self, user_id: str, role_name: str) -> Tuple[bool, str]:
+        session = db_manager.get_session()
+        try:
+            user = self.get_user_by_id(user_id)
+            if not user:
+                return False, f"User '{user_id}' not found."
+            role = self.get_role_by_name(role_name)
+            if not role:
+                return False, f"Role '{role_name}' not found."
+
+            existing_assoc = (
+                session.query(UserRole)
+                .filter_by(user_id=user_id, role_id=role.role_id)
+                .first()
+            )
+            if existing_assoc:
+                return True, f"User '{user_id}' already has role '{role_name}'."
+
+            user_role_assoc = UserRole(user_id=user_id, role_id=role.role_id)
+            session.add(user_role_assoc)
+            session.commit()
+            self.logger.info(f"Assigned role '{role_name}' to user '{user_id}'.")
+            return True, f"Role '{role_name}' assigned to user '{user_id}'."
+        except Exception as e:
+            session.rollback()
+            self.logger.error(
+                f"Error assigning role '{role_name}' to user '{user_id}': {e}",
+                exc_info=True,
+            )
+            return False, f"Failed to assign role: {str(e)}"
+        finally:
+            session.close()
+
+    def remove_role_from_user(self, user_id: str, role_name: str) -> Tuple[bool, str]:
+        session = db_manager.get_session()
+        try:
+            user = self.get_user_by_id(user_id)
+            if not user:
+                return False, f"User '{user_id}' not found."
+            role = self.get_role_by_name(role_name)
+            if not role:
+                return False, f"Role '{role_name}' not found."
+
+            assoc = (
+                session.query(UserRole)
+                .filter_by(user_id=user_id, role_id=role.role_id)
+                .first()
+            )
+            if not assoc:
+                return False, f"User '{user_id}' does not have role '{role_name}'."
+
+            session.delete(assoc)
+            session.commit()
+            self.logger.info(f"Removed role '{role_name}' from user '{user_id}'.")
+            return True, f"Role '{role_name}' removed from user '{user_id}'."
+        except Exception as e:
+            session.rollback()
+            self.logger.error(
+                f"Error removing role '{role_name}' from user '{user_id}': {e}",
+                exc_info=True,
+            )
+            return False, f"Failed to remove role: {str(e)}"
+        finally:
+            session.close()
+
+    def get_user_roles(self, user_id: str) -> List[str]:
+        session = db_manager.get_session()
+        try:
+            user = (
+                session.query(User)
+                .options(joinedload(User.roles))
+                .filter(User.user_id == user_id)
+                .first()
+            )
+            if user:
+                return [role.name for role in user.roles]
+            return []
+        finally:
+            session.close()
+
+    def delete_role(self, role_name: str) -> Tuple[bool, str]:
+        session = db_manager.get_session()
+        try:
+            role = (
+                session.query(Role)
+                .options(joinedload(Role.users))
+                .filter(Role.name == role_name)
+                .first()
+            )
+            if not role:
+                return False, f"Role '{role_name}' not found."
+            if role.users:
+                return (
+                    False,
+                    f"Role '{role_name}' cannot be deleted, it is assigned to {len(role.users)} user(s).",
+                )
+
+            session.delete(role)
+            session.commit()
+            self.logger.info(f"Role '{role_name}' deleted.")
+            return True, f"Role '{role_name}' deleted successfully."
+        except Exception as e:
+            session.rollback()
+            self.logger.error(f"Error deleting role '{role_name}': {e}", exc_info=True)
+            return False, f"Failed to delete role: {str(e)}"
         finally:
             session.close()

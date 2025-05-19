@@ -1,0 +1,100 @@
+2025-05-17 21:46:39,415 - ERROR - import_charge_codes.py:204 - Failed to initialize database session factory: Database not initialized. Call initialize_database() first.
+2025-05-17 21:48:10,025 - INFO - import_charge_codes.py:210 - Attempting to initialize database for import script...
+2025-05-17 21:48:10,025 - ERROR - import_charge_codes.py:226 - Failed to initialize database session factory: type object 'AppConfig' has no attribute 'DATABASE_URL'
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\scripts\import_charge_codes.py", line 214, in <module>
+    db_url = AppConfig.DATABASE_URL
+             ^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'AppConfig' has no attribute 'DATABASE_URL'
+2025-05-17 21:51:57,174 - INFO - import_charge_codes.py:222 - Attempting to initialize database for import script...
+2025-05-17 21:51:57,175 - ERROR - import_charge_codes.py:238 - Failed to initialize database session factory: module 'config.app_config' has no attribute 'DATABASE_URL'
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\scripts\import_charge_codes.py", line 226, in <module>
+    db_url = app_config.DATABASE_URL
+             ^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'config.app_config' has no attribute 'DATABASE_URL'
+2025-05-17 21:56:28,781 - INFO - import_charge_codes.py:227 - Attempting to initialize database for import script...
+2025-05-17 21:56:28,781 - ERROR - import_charge_codes.py:243 - Failed to initialize database session factory: module 'config.app_config' has no attribute 'DATABASE_URL'
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\scripts\import_charge_codes.py", line 231, in <module>
+    db_url = config.app_config.DATABASE_URL
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'config.app_config' has no attribute 'DATABASE_URL'
+2025-05-17 22:01:41,200 - INFO - import_charge_codes.py:227 - Attempting to initialize database for import script...
+2025-05-17 22:01:41,201 - INFO - database_config.py:96 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-17 22:01:41,207 - INFO - database_config.py:103 - Database engine and session factory created successfully.
+2025-05-17 22:01:41,208 - ERROR - database_config.py:184 - Error creating database tables: cannot import name 'Role' from 'models' (C:\Projects\EDMS\models\__init__.py)
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\config\database_config.py", line 158, in create_tables
+    from models import (  # Ensure all your models are imported here
+ImportError: cannot import name 'Role' from 'models' (C:\Projects\EDMS\models\__init__.py)
+2025-05-17 22:01:41,208 - ERROR - database_config.py:113 - Unexpected error during database initialization: cannot import name 'Role' from 'models' (C:\Projects\EDMS\models\__init__.py)
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\config\database_config.py", line 106, in initialize_database
+    self.create_tables()
+  File "C:\Projects\EDMS\config\database_config.py", line 158, in create_tables
+    from models import (  # Ensure all your models are imported here
+ImportError: cannot import name 'Role' from 'models' (C:\Projects\EDMS\models\__init__.py)
+2025-05-17 22:01:41,208 - ERROR - import_charge_codes.py:243 - Failed to initialize database session factory: cannot import name 'Role' from 'models' (C:\Projects\EDMS\models\__init__.py)
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\scripts\import_charge_codes.py", line 238, in <module>
+    db_manager.initialize_database(db_url)
+  File "C:\Projects\EDMS\config\database_config.py", line 106, in initialize_database
+    self.create_tables()
+  File "C:\Projects\EDMS\config\database_config.py", line 158, in create_tables
+    from models import (  # Ensure all your models are imported here
+ImportError: cannot import name 'Role' from 'models' (C:\Projects\EDMS\models\__init__.py)
+2025-05-17 22:02:55,649 - INFO - import_charge_codes.py:227 - Attempting to initialize database for import script...
+2025-05-17 22:02:55,649 - INFO - database_config.py:96 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-17 22:02:55,655 - INFO - database_config.py:103 - Database engine and session factory created successfully.
+2025-05-17 22:02:55,656 - ERROR - database_config.py:184 - Error creating database tables: cannot import name 'Role' from 'models' (C:\Projects\EDMS\models\__init__.py)
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\config\database_config.py", line 158, in create_tables
+    from models import (  # Ensure all your models are imported here
+ImportError: cannot import name 'Role' from 'models' (C:\Projects\EDMS\models\__init__.py)
+2025-05-17 22:02:55,656 - ERROR - database_config.py:113 - Unexpected error during database initialization: cannot import name 'Role' from 'models' (C:\Projects\EDMS\models\__init__.py)
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\config\database_config.py", line 106, in initialize_database
+    self.create_tables()
+  File "C:\Projects\EDMS\config\database_config.py", line 158, in create_tables
+    from models import (  # Ensure all your models are imported here
+ImportError: cannot import name 'Role' from 'models' (C:\Projects\EDMS\models\__init__.py)
+2025-05-17 22:02:55,657 - ERROR - import_charge_codes.py:243 - Failed to initialize database session factory: cannot import name 'Role' from 'models' (C:\Projects\EDMS\models\__init__.py)
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\scripts\import_charge_codes.py", line 238, in <module>
+    db_manager.initialize_database(db_url)
+  File "C:\Projects\EDMS\config\database_config.py", line 106, in initialize_database
+    self.create_tables()
+  File "C:\Projects\EDMS\config\database_config.py", line 158, in create_tables
+    from models import (  # Ensure all your models are imported here
+ImportError: cannot import name 'Role' from 'models' (C:\Projects\EDMS\models\__init__.py)
+2025-05-18 08:40:53,782 - INFO - import_charge_codes.py:227 - Attempting to initialize database for import script...
+2025-05-18 08:40:53,782 - INFO - database_config.py:96 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 08:40:53,793 - INFO - database_config.py:103 - Database engine and session factory created successfully.
+2025-05-18 08:40:53,794 - INFO - database_config.py:182 - Database tables created (if they didn't exist).
+2025-05-18 08:40:53,794 - INFO - import_charge_codes.py:239 - Database initialized successfully with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 08:40:53,794 - ERROR - import_charge_codes.py:251 - Charge code CSV file not found: C:\Projects\EDMS\charge_code_table.csv
+2025-05-18 08:40:53,794 - ERROR - import_charge_codes.py:252 - Please ensure 'charge_code_table.csv' is in the project root directory.
+2025-05-18 08:44:09,618 - INFO - import_charge_codes.py:227 - Attempting to initialize database for import script...
+2025-05-18 08:44:09,618 - INFO - database_config.py:96 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 08:44:09,626 - INFO - database_config.py:103 - Database engine and session factory created successfully.
+2025-05-18 08:44:09,627 - INFO - database_config.py:182 - Database tables created (if they didn't exist).
+2025-05-18 08:44:09,627 - INFO - import_charge_codes.py:239 - Database initialized successfully with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 08:44:09,627 - ERROR - import_charge_codes.py:251 - Charge code CSV file not found: C:\Projects\EDMS\charge_code_table.csv
+2025-05-18 08:44:09,628 - ERROR - import_charge_codes.py:252 - Please ensure 'charge_code_table.csv' is in the project root directory.
+2025-05-18 18:11:43,689 - INFO - import_charge_codes.py:227 - Attempting to initialize database for import script...
+2025-05-18 18:11:43,689 - INFO - database_config.py:96 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 18:11:43,696 - INFO - database_config.py:103 - Database engine and session factory created successfully.
+2025-05-18 18:11:43,697 - INFO - database_config.py:182 - Database tables created (if they didn't exist).
+2025-05-18 18:11:43,697 - INFO - import_charge_codes.py:239 - Database initialized successfully with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 18:11:43,697 - ERROR - import_charge_codes.py:251 - Charge code CSV file not found: C:\Projects\EDMS\charge_code_table.csv
+2025-05-18 18:11:43,698 - ERROR - import_charge_codes.py:252 - Please ensure 'charge_code_table.csv' is in the project root directory.
+2025-05-18 18:21:25,141 - INFO - import_charge_codes.py:227 - Attempting to initialize database for import script...
+2025-05-18 18:21:25,141 - INFO - database_config.py:96 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 18:21:25,149 - INFO - database_config.py:103 - Database engine and session factory created successfully.
+2025-05-18 18:21:25,150 - INFO - database_config.py:182 - Database tables created (if they didn't exist).
+2025-05-18 18:21:25,150 - INFO - import_charge_codes.py:239 - Database initialized successfully with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 18:21:25,150 - INFO - import_charge_codes.py:73 - Starting import from CSV: C:\Projects\EDMS\charge_code_table.csv
+2025-05-18 18:21:25,157 - ERROR - import_charge_codes.py:104 - CSV file is missing expected headers: SubCategory, ChargeCode, AltCode, UnitCharge
+2025-05-18 18:21:25,158 - ERROR - import_charge_codes.py:107 - Expected (case insensitive, spaces ignored): Category, SubCategory, ChargeCode, AltCode, Description, UnitCharge
+2025-05-18 18:21:25,158 - ERROR - import_charge_codes.py:110 - Found in CSV: Category, Sub-Category, Charge, Code, Alternate, Code, Description

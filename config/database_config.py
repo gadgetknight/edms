@@ -1,156 +1,141 @@
 # config/database_config.py
 
 """
-EDSI Veterinary Management System - Database Manager Configuration
-Version: 1.0.2
-Purpose: Manages database connection, session creation, and initial setup.
-Last Updated: May 12, 2025
+EDSI Veterinary Management System - Database Configuration
+Version: 1.1.4
+Purpose: Manages database connections, sessions, and engine setup using SQLAlchemy.
+         Ensures create_tables imports OwnerPayment and not a generic Payment.
+Last Updated: May 18, 2025
 Author: Claude Assistant
 
 Changelog:
-- v1.0.2 (2025-05-12): Store lowercase hash for default password.
-  - Modified _create_default_user to hash the lowercase version of the
-    default password ('admin1234') to support case-insensitive password checks.
-- v1.0.1 (2025-05-12): Updated default admin password
-  - Changed default password to 'admin1234' as requested.
-  - Ensured password hashing uses SHA-256.
-- v1.0.0 (2025-05-12): Initial implementation
+- v1.1.4 (2025-05-18):
+    - Ensured 'OwnerPayment' is imported in `create_tables` and generic 'Payment' is not.
+- v1.1.3 (2025-05-18):
+    - (Previous attempt to fix payment import)
+- v1.1.2 (2025-05-18):
+    - Added `from typing import Optional` to resolve NameError.
+- v1.1.1 (2025-05-17):
+    - Modified DatabaseManager to use `get_database_url()` from `config.app_config`.
 """
 
+import logging
 import os
-import hashlib
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
-from models import Base  # Base needs to be imported for metadata creation
-from config.app_config import AppConfig  # Import AppConfig for database path
-from models.user_models import User
+from sqlalchemy import create_engine, event
+from sqlalchemy.orm import sessionmaker, scoped_session, Session as SQLAlchemySession
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.exc import SQLAlchemyError
+from typing import Optional
+
+from .app_config import get_database_url, AppConfig
+
+db_logger = logging.getLogger("database_operations")
+
+if not db_logger.hasHandlers():
+    log_conf = AppConfig.get_logging_config()
+    db_log_file = log_conf.get("db_log_file", "logs/edsi_db.log")
+    log_dir_for_db = os.path.dirname(db_log_file)
+    if not os.path.exists(log_dir_for_db):
+        try:
+            os.makedirs(log_dir_for_db, exist_ok=True)
+        except OSError:
+            pass
+    pass
+
+Base = declarative_base()
 
 
 class DatabaseManager:
-    """Manages database connection and session creation"""
-
-    def __init__(self, db_path=None):
-        """
-        Initializes the DatabaseManager.
-
-        Args:
-            db_path (str, optional): Path to the database file.
-                                     If None, uses the path from AppConfig.
-                                     Defaults to None.
-        """
-        if db_path is None:
-            db_path = AppConfig.get_database_path()
-
-        self.database_url = f"sqlite:///{db_path}"
+    def __init__(self):
         self.engine = None
-        self.session_factory = None
-        self.Session = None
-        print(f"Database URL set to: {self.database_url}")  # Debug print
+        self.SessionLocal: Optional[scoped_session[SQLAlchemySession]] = None
+        self.db_url: Optional[str] = None
+        self.logger = logging.getLogger(self.__class__.__name__)
 
-    def initialize_database(self):
-        """Initialize database connection and create tables"""
-        print(f"Initializing database at: {self.database_url}")  # Debug print
-        self.engine = create_engine(
-            self.database_url,
-            echo=False,
-            pool_pre_ping=True,
-            connect_args={"check_same_thread": False},
-        )
+    def initialize_database(self, db_url: Optional[str] = None):
+        if self.engine:
+            self.logger.info("Database already initialized.")
+            return
+        if db_url is None:
+            self.db_url = get_database_url()
+        else:
+            self.db_url = db_url
+        if not self.db_url:
+            self.logger.error(
+                "DATABASE_URL is not configured. Cannot initialize database."
+            )
+            raise ValueError("DATABASE_URL is not configured.")
+        self.logger.info(f"Initializing database with URL: {self.db_url}")
+        try:
+            self.engine = create_engine(self.db_url, echo=False)
+            self.SessionLocal = scoped_session(
+                sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
+            )
+            self.logger.info(
+                "Database engine and session factory created successfully."
+            )
+            self.create_tables()
+        except SQLAlchemyError as e:
+            self.logger.error(
+                f"SQLAlchemyError during database initialization: {e}", exc_info=True
+            )
+            raise
+        except Exception as e:
+            self.logger.error(
+                f"Unexpected error during database initialization: {e}", exc_info=True
+            )
+            raise
 
-        Base.metadata.create_all(self.engine)
-        print("Database tables created (if they didn't exist).")  # Debug print
-
-        self.session_factory = sessionmaker(bind=self.engine)
-        self.Session = scoped_session(self.session_factory)
-        print("Database session factory created.")  # Debug print
-
-        self._create_default_user()
-
-    def get_session(self):
-        """Get a new database session"""
-        if not self.Session:
+    def get_session(self) -> SQLAlchemySession:
+        if not self.SessionLocal:
+            self.logger.error(
+                "SessionLocal not initialized. Call initialize_database() first."
+            )
             raise RuntimeError(
                 "Database not initialized. Call initialize_database() first."
             )
-        return self.Session()
+        return self.SessionLocal()
 
-    def close_session(self):
-        """Close the current session"""
-        if self.Session:
-            self.Session.remove()
-
-    def _create_default_user(self):
-        """Create default admin user if none exists, storing lowercase password hash."""
-        if not self.Session:
-            print("Cannot create default user: Session is not initialized.")
-            return
-
-        session = self.get_session()
+    def create_tables(self):
+        if not self.engine:
+            self.logger.error("Engine not initialized. Cannot create tables.")
+            raise RuntimeError("Database engine not initialized.")
         try:
-            user_count = session.query(User).count()
-            print(f"Checking for existing users... Found: {user_count}")  # Debug print
-            if user_count == 0:
-                print("No users found. Creating default ADMIN user...")  # Debug print
-                default_username = "ADMIN"
-                default_password = "admin1234"  # Base password
-                # --- CHANGE: Convert to lowercase before hashing ---
-                password_to_hash = default_password.lower()
-                password_hash = hashlib.sha256(
-                    password_to_hash.encode("utf-8")
-                ).hexdigest()
-                # --- END CHANGE ---
-                print(
-                    f"Password hash generated for default user (from lowercase)."
-                )  # Debug print
+            # Ensure all models that need tables created are imported here.
+            # 'Payment' (generic) has been removed. 'OwnerPayment' is the specific model.
+            from models import (
+                User,
+                Role,
+                UserRole,
+                Horse,
+                Owner,
+                HorseOwner,
+                Location,
+                Transaction,
+                TransactionDetail,
+                ChargeCode,
+                OwnerPayment,  # Use OwnerPayment here
+                Invoice,
+                Procedure,
+                Drug,
+                TreatmentLog,
+                CommunicationLog,
+                Document,
+                Reminder,
+                Appointment,
+                StateProvince,
+                Species,
+                SystemConfig,
+                HorseLocation,
+                HorseBilling,
+                OwnerBillingHistory,
+            )
 
-                admin_user = User(
-                    user_id=default_username,
-                    password_hash=password_hash,
-                    user_name="System Administrator",
-                    is_active=True,
-                )
-                session.add(admin_user)
-                session.commit()
-                print(
-                    f"Created default admin user ({default_username}/{default_password})"
-                )
-            else:
-                # --- Optional: Check if existing ADMIN user has the old hash and update it ---
-                admin_user = session.query(User).filter(User.user_id == "ADMIN").first()
-                if admin_user:
-                    # Generate the expected lowercase hash
-                    expected_hash = hashlib.sha256(
-                        "admin1234".lower().encode("utf-8")
-                    ).hexdigest()
-                    if admin_user.password_hash != expected_hash:
-                        print(
-                            "Updating existing ADMIN user password hash to lowercase version..."
-                        )
-                        admin_user.password_hash = expected_hash
-                        session.commit()
-                        print("ADMIN user password hash updated.")
-                    else:
-                        print(
-                            "ADMIN user already has the correct lowercase password hash."
-                        )
-
-                print(
-                    "Default user check: Users already exist in the database."
-                )  # Debug print
+            Base.metadata.create_all(bind=self.engine)
+            self.logger.info("Database tables created (if they didn't exist).")
         except Exception as e:
-            session.rollback()
-            print(
-                f"Error during default user check/creation: {e}"
-            )  # Use print for critical startup errors
-        finally:
-            self.close_session()
-
-    def close(self):
-        """Close database connection pool"""
-        if self.engine:
-            self.engine.dispose()
-            print("Database connection pool disposed.")  # Debug print
+            self.logger.error(f"Error creating database tables: {e}", exc_info=True)
+            raise
 
 
-# Global database manager instance
 db_manager = DatabaseManager()

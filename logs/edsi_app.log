@@ -2728,3 +2728,1257 @@ This action cannot be undone and will remove the owner from the system entirely.
 2025-05-16 20:28:17,334 - UserManagementScreen - INFO - Loaded 1 master owners.
 2025-05-16 20:28:17,334 - UserManagementScreen - INFO - Master owner selected: ID 1
 2025-05-16 20:28:17,337 - UserManagementScreen - INFO - UserManagementScreen initialized with Tabbed Interface.
+2025-05-16 20:56:41,702 - EDSIApplication - INFO - Logging configured.
+2025-05-16 20:56:41,729 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.3.1
+2025-05-16 20:56:41,729 - EDSIApplication - INFO - Initializing database...
+2025-05-16 20:56:41,756 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-16 20:56:41,756 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-16 20:56:50,843 - EDSIApplication - INFO - Initiating application cleanup and exit. Reason: Exit clicked on splash screen.
+2025-05-16 20:56:50,844 - EDSIApplication - INFO - Database connection closed.
+2025-05-16 20:56:50,852 - EDSIApplication - INFO - Exiting application.
+2025-05-16 20:58:10,117 - EDSIApplication - INFO - Logging configured.
+2025-05-16 20:58:10,144 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.3.1
+2025-05-16 20:58:10,144 - EDSIApplication - INFO - Initializing database...
+2025-05-16 20:58:10,170 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-16 20:58:10,170 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-16 20:58:14,338 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-16 20:58:25,359 - SmallLoginDialog - INFO - Password validation successful for user 'TM'.
+2025-05-16 20:58:25,360 - SmallLoginDialog - INFO - User 'TM' logged in successfully via small dialog.
+2025-05-16 20:58:25,360 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-16 20:58:25,363 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-16 20:58:25,530 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-16 20:58:25,536 - HorseUnifiedManagement - INFO - Horse selected: ID 10
+2025-05-16 20:58:25,536 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-16 20:58:25,543 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-16 20:58:25,604 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-16 20:58:32,776 - HorseUnifiedManagement - INFO - Setup icon clicked, emitting setup_requested signal.
+2025-05-16 20:58:32,777 - EDSIApplication - INFO - Showing User Management Screen for admin 'TM'.
+2025-05-16 20:58:32,787 - UserManagementScreen - INFO - UserManagementScreen __init__ started by admin: TM
+2025-05-16 20:58:32,825 - UserManagementScreen - INFO - Loading users data...
+2025-05-16 20:58:32,826 - UserManagementScreen - INFO - Loaded 3 users.
+2025-05-16 20:58:32,826 - UserManagementScreen - INFO - User selected: ADMIN
+2025-05-16 20:58:32,827 - UserManagementScreen - INFO - Loading master owners data...
+2025-05-16 20:58:32,828 - UserManagementScreen - INFO - Loaded 1 master owners.
+2025-05-16 20:58:32,828 - UserManagementScreen - INFO - Master owner selected: ID 1
+2025-05-16 20:58:32,831 - UserManagementScreen - INFO - UserManagementScreen initialized with Tabbed Interface.
+2025-05-16 20:58:42,505 - UserManagementScreen - INFO - User Management exit.
+2025-05-16 20:58:42,505 - EDSIApplication - INFO - Exiting User Management Screen.
+2025-05-16 20:58:42,530 - EDSIApplication - INFO - Returned to Horse Management Screen.
+2025-05-16 21:02:01,223 - HorseUnifiedManagement - INFO - Asking Question: Confirm Deactivate - Sure to deactivate 'Soul Rebel'?
+2025-05-16 21:02:02,862 - HorseController - INFO - Deactivated horse: Soul Rebel (ID: 10) by user TM.
+2025-05-16 21:02:02,862 - HorseUnifiedManagement - INFO - Displaying Info: Status Changed - Horse 'Soul Rebel' deactivated successfully.
+2025-05-16 21:02:05,004 - HorseUnifiedManagement - INFO - Loading details for horse ID: 10
+2025-05-16 21:02:05,006 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-16 21:02:05,006 - HorseUnifiedManagement - INFO - Horse selection cleared.
+2025-05-16 21:02:06,957 - HorseUnifiedManagement - INFO - Initiating add new horse.
+2025-05-16 21:05:43,166 - HorseUnifiedManagement - INFO - Attempting to save changes... New horse: True
+2025-05-16 21:05:43,167 - HorseUnifiedManagement - INFO - Creating new horse.
+2025-05-16 21:05:43,173 - HorseController - INFO - Created new horse: Soul Rebel (ID: 11)
+2025-05-16 21:05:43,174 - HorseUnifiedManagement - INFO - New horse created with ID: 11
+2025-05-16 21:05:43,174 - HorseUnifiedManagement - INFO - Displaying Info: Success - Horse created successfully
+2025-05-16 21:05:44,995 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-16 21:05:44,997 - HorseUnifiedManagement - INFO - Horse selected: ID 11
+2025-05-16 21:05:44,998 - HorseUnifiedManagement - INFO - Loading details for horse ID: 11
+2025-05-17 08:40:51,117 - EDSIApplication - INFO - Logging configured.
+2025-05-17 08:40:51,148 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.3.1
+2025-05-17 08:40:51,149 - EDSIApplication - INFO - Initializing database...
+2025-05-17 08:40:51,184 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-17 08:40:51,184 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-17 08:40:55,928 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-17 08:41:04,253 - SmallLoginDialog - INFO - Password validation successful for user 'TM'.
+2025-05-17 08:41:04,254 - SmallLoginDialog - INFO - User 'TM' logged in successfully via small dialog.
+2025-05-17 08:41:04,255 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-17 08:41:04,257 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-17 08:41:04,869 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-17 08:41:04,884 - HorseUnifiedManagement - INFO - Horse selected: ID 11
+2025-05-17 08:41:04,884 - HorseUnifiedManagement - INFO - Loading details for horse ID: 11
+2025-05-17 08:41:04,892 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-17 08:41:04,944 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-17 08:41:14,143 - HorseUnifiedManagement - INFO - Attempting to link existing owner ID 1 with 100.0% to horse ID 11
+2025-05-17 08:41:14,151 - HorseController - INFO - Added owner ID 1 to horse ID 11 with 100.00% ownership by TM.
+2025-05-17 08:41:14,151 - HorseUnifiedManagement - INFO - Displaying Info: Owner Linked - Owner added to horse successfully.
+2025-05-17 08:41:19,205 - HorseUnifiedManagement - INFO - Horse-owner association selected: Owner ID 1
+2025-05-17 08:49:49,911 - HorseUnifiedManagement - INFO - Log Out action triggered from user menu.
+2025-05-17 08:49:49,911 - EDSIApplication - INFO - Exit requested from Horse Management screen (logoff).
+2025-05-17 08:49:49,920 - EDSIApplication - INFO - User logged off.
+2025-05-17 08:49:52,025 - EDSIApplication - INFO - Initiating application cleanup and exit. Reason: Exit clicked on splash screen.
+2025-05-17 08:49:52,027 - EDSIApplication - INFO - Database connection closed.
+2025-05-17 08:49:52,035 - EDSIApplication - INFO - Exiting application.
+2025-05-17 08:56:03,879 - EDSIApplication - INFO - Logging configured.
+2025-05-17 08:56:03,906 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.3.1
+2025-05-17 08:56:03,906 - EDSIApplication - INFO - Initializing database...
+2025-05-17 08:56:03,932 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-17 08:56:03,932 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-17 08:56:05,948 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-17 08:56:16,279 - SmallLoginDialog - INFO - Password validation successful for user 'TM'.
+2025-05-17 08:56:16,279 - SmallLoginDialog - INFO - User 'TM' logged in successfully via small dialog.
+2025-05-17 08:56:16,280 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-17 08:56:16,282 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-17 08:56:16,455 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-17 08:56:16,462 - HorseUnifiedManagement - INFO - Horse selected: ID 11
+2025-05-17 08:56:16,462 - HorseUnifiedManagement - INFO - Loading details for horse ID: 11
+2025-05-17 08:56:16,471 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-17 08:56:16,527 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-17 18:23:41,448 - EDSIApplication - INFO - Logging configured.
+2025-05-17 18:23:41,475 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.3.1
+2025-05-17 18:23:41,476 - EDSIApplication - INFO - Initializing database...
+2025-05-17 18:23:41,519 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-17 18:23:41,519 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-17 18:23:49,635 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-17 18:23:58,162 - SmallLoginDialog - INFO - Password validation successful for user 'TM'.
+2025-05-17 18:23:58,162 - SmallLoginDialog - INFO - User 'TM' logged in successfully via small dialog.
+2025-05-17 18:23:58,162 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-17 18:23:58,165 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-17 18:23:58,343 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-17 18:23:58,358 - HorseUnifiedManagement - INFO - Horse selected: ID 11
+2025-05-17 18:23:58,358 - HorseUnifiedManagement - INFO - Loading details for horse ID: 11
+2025-05-17 18:23:58,375 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-17 18:23:58,435 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-17 18:24:06,891 - HorseUnifiedManagement - INFO - Horse-owner association selected: Owner ID 1
+2025-05-17 18:29:01,013 - HorseUnifiedManagement - INFO - Log Out action triggered from user menu.
+2025-05-17 18:29:01,013 - EDSIApplication - INFO - Exit requested from Horse Management screen (logoff).
+2025-05-17 18:29:01,024 - EDSIApplication - INFO - User logged off.
+2025-05-17 18:29:02,747 - EDSIApplication - INFO - Initiating application cleanup and exit. Reason: Exit clicked on splash screen.
+2025-05-17 18:29:02,749 - EDSIApplication - INFO - Database connection closed.
+2025-05-17 18:29:02,757 - EDSIApplication - INFO - Exiting application.
+2025-05-17 18:34:32,130 - EDSIApplication - INFO - Logging configured.
+2025-05-17 18:34:32,157 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.3.1
+2025-05-17 18:34:32,157 - EDSIApplication - INFO - Initializing database...
+2025-05-17 18:34:32,184 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-17 18:34:32,184 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-17 18:34:38,858 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-17 18:34:46,317 - SmallLoginDialog - INFO - Password validation successful for user 'TM'.
+2025-05-17 18:34:46,318 - SmallLoginDialog - INFO - User 'TM' logged in successfully via small dialog.
+2025-05-17 18:34:46,318 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-17 18:34:46,321 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-17 18:34:46,492 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-17 18:34:46,499 - HorseUnifiedManagement - INFO - Horse selected: ID 11
+2025-05-17 18:34:46,499 - HorseUnifiedManagement - INFO - Loading details for horse ID: 11
+2025-05-17 18:34:46,508 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-17 18:34:46,563 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-17 18:38:11,336 - HorseUnifiedManagement - INFO - Initiating add new horse.
+2025-05-17 18:39:29,278 - HorseUnifiedManagement - INFO - Attempting to save changes... New horse: True
+2025-05-17 18:39:29,278 - HorseUnifiedManagement - INFO - Creating new horse.
+2025-05-17 18:39:29,286 - HorseController - INFO - Created new horse: Donatello (ID: 12)
+2025-05-17 18:39:29,286 - HorseUnifiedManagement - INFO - New horse created with ID: 12
+2025-05-17 18:39:29,286 - HorseUnifiedManagement - INFO - Displaying Info: Success - Horse created successfully
+2025-05-17 18:39:31,025 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-17 18:39:31,030 - HorseUnifiedManagement - INFO - Horse selected: ID 12
+2025-05-17 18:39:31,030 - HorseUnifiedManagement - INFO - Loading details for horse ID: 12
+2025-05-17 18:42:34,911 - HorseUnifiedManagement - INFO - Attempting to create new master owner: Elizabeth and Jerald Vizzone
+2025-05-17 18:42:34,914 - HorseUnifiedManagement - ERROR - Displaying Error: Failed to Create Master Owner - Validation failed: Phone is required.
+2025-05-17 18:45:47,431 - HorseUnifiedManagement - INFO - Create and link owner dialog cancelled.
+2025-05-17 18:45:52,849 - HorseUnifiedManagement - INFO - Log Out action triggered from user menu.
+2025-05-17 18:45:52,850 - EDSIApplication - INFO - Exit requested from Horse Management screen (logoff).
+2025-05-17 18:45:52,860 - EDSIApplication - INFO - User logged off.
+2025-05-17 18:45:55,903 - EDSIApplication - INFO - Initiating application cleanup and exit. Reason: Exit clicked on splash screen.
+2025-05-17 18:45:55,904 - EDSIApplication - INFO - Database connection closed.
+2025-05-17 18:45:55,912 - EDSIApplication - INFO - Exiting application.
+2025-05-17 18:54:25,063 - EDSIApplication - INFO - Logging configured.
+2025-05-17 18:54:25,092 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.3.1
+2025-05-17 18:54:25,092 - EDSIApplication - INFO - Initializing database...
+2025-05-17 18:54:25,119 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-17 18:54:25,119 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-17 18:54:30,064 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-17 18:54:39,692 - SmallLoginDialog - INFO - Password validation successful for user 'TM'.
+2025-05-17 18:54:39,692 - SmallLoginDialog - INFO - User 'TM' logged in successfully via small dialog.
+2025-05-17 18:54:39,693 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-17 18:54:39,696 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-17 18:54:39,876 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-17 18:54:39,879 - HorseUnifiedManagement - ERROR - Error loading horses: 'HorseUnifiedManagement' object has no attribute 'populate_horse_list'
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\views\horse\horse_unified_management.py", line 917, in load_horses
+    self.populate_horse_list()
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'HorseUnifiedManagement' object has no attribute 'populate_horse_list'
+2025-05-17 18:54:39,888 - HorseUnifiedManagement - ERROR - Displaying Error: Load Error - Failed to load horse list: 'HorseUnifiedManagement' object has no attribute 'populate_horse_list'
+2025-05-17 19:05:53,121 - EDSIApplication - INFO - Logging configured.
+2025-05-17 19:05:53,150 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.3.1
+2025-05-17 19:05:53,150 - EDSIApplication - INFO - Initializing database...
+2025-05-17 19:05:53,176 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-17 19:05:53,176 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-17 19:05:56,547 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-17 19:06:04,005 - SmallLoginDialog - INFO - Password validation successful for user 'TM'.
+2025-05-17 19:06:04,005 - SmallLoginDialog - INFO - User 'TM' logged in successfully via small dialog.
+2025-05-17 19:06:04,005 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-17 19:06:04,007 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-17 19:06:04,173 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-17 19:06:04,181 - HorseUnifiedManagement - INFO - Horse selected: ID 12
+2025-05-17 19:06:04,182 - HorseUnifiedManagement - INFO - Loading details for horse ID: 12
+2025-05-17 19:06:04,190 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-17 19:06:04,254 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-17 19:09:20,152 - OwnerController - ERROR - Error creating master owner: 'country_name' is an invalid keyword argument for Owner
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\controllers\owner_controller.py", line 220, in create_master_owner
+    new_owner = Owner(
+                ^^^^^^
+  File "<string>", line 4, in __init__
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\state.py", line 566, in _initialize_instance
+    with util.safe_reraise():
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\state.py", line 564, in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\decl_base.py", line 2142, in _declarative_constructor
+    raise TypeError(
+TypeError: 'country_name' is an invalid keyword argument for Owner
+2025-05-17 19:09:20,163 - CreateAndLinkOwnerDialog - WARNING - Owner creation failed via controller: Failed to create owner: 'country_name' is an invalid keyword argument for Owner
+2025-05-17 19:09:45,714 - OwnerController - ERROR - Error creating master owner: 'country_name' is an invalid keyword argument for Owner
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\controllers\owner_controller.py", line 220, in create_master_owner
+    new_owner = Owner(
+                ^^^^^^
+  File "<string>", line 4, in __init__
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\state.py", line 566, in _initialize_instance
+    with util.safe_reraise():
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\state.py", line 564, in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\decl_base.py", line 2142, in _declarative_constructor
+    raise TypeError(
+TypeError: 'country_name' is an invalid keyword argument for Owner
+2025-05-17 19:09:45,715 - CreateAndLinkOwnerDialog - WARNING - Owner creation failed via controller: Failed to create owner: 'country_name' is an invalid keyword argument for Owner
+2025-05-17 19:09:52,410 - OwnerController - ERROR - Error creating master owner: 'country_name' is an invalid keyword argument for Owner
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\controllers\owner_controller.py", line 220, in create_master_owner
+    new_owner = Owner(
+                ^^^^^^
+  File "<string>", line 4, in __init__
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\state.py", line 566, in _initialize_instance
+    with util.safe_reraise():
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\state.py", line 564, in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\decl_base.py", line 2142, in _declarative_constructor
+    raise TypeError(
+TypeError: 'country_name' is an invalid keyword argument for Owner
+2025-05-17 19:09:52,412 - CreateAndLinkOwnerDialog - WARNING - Owner creation failed via controller: Failed to create owner: 'country_name' is an invalid keyword argument for Owner
+2025-05-17 19:10:06,255 - OwnerController - ERROR - Error creating master owner: 'country_name' is an invalid keyword argument for Owner
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\controllers\owner_controller.py", line 220, in create_master_owner
+    new_owner = Owner(
+                ^^^^^^
+  File "<string>", line 4, in __init__
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\state.py", line 566, in _initialize_instance
+    with util.safe_reraise():
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\state.py", line 564, in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\decl_base.py", line 2142, in _declarative_constructor
+    raise TypeError(
+TypeError: 'country_name' is an invalid keyword argument for Owner
+2025-05-17 19:10:06,256 - CreateAndLinkOwnerDialog - WARNING - Owner creation failed via controller: Failed to create owner: 'country_name' is an invalid keyword argument for Owner
+2025-05-17 19:27:27,046 - EDSIApplication - INFO - Logging configured.
+2025-05-17 19:27:27,076 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.3.1
+2025-05-17 19:27:27,076 - EDSIApplication - INFO - Initializing database...
+2025-05-17 19:27:27,102 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-17 19:27:27,102 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-17 19:27:29,557 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-17 19:27:37,498 - SmallLoginDialog - INFO - Password validation successful for user 'TM'.
+2025-05-17 19:27:37,498 - SmallLoginDialog - INFO - User 'TM' logged in successfully via small dialog.
+2025-05-17 19:27:37,499 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-17 19:27:37,501 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-17 19:27:37,670 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-17 19:27:37,678 - HorseUnifiedManagement - INFO - Horse selected: ID 12
+2025-05-17 19:27:37,678 - HorseUnifiedManagement - INFO - Loading details for horse ID: 12
+2025-05-17 19:27:37,687 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-17 19:27:37,747 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-17 19:27:58,681 - CreateAndLinkOwnerDialog - ERROR - Error populating states combo: 'CreateAndLinkOwnerDialog' object has no attribute 'country_input'
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\views\horse\dialogs\create_link_owner_dialog.py", line 214, in populate_states_combo
+    self.country_input.setText(
+    ^^^^^^^^^^^^^^^^^^
+AttributeError: 'CreateAndLinkOwnerDialog' object has no attribute 'country_input'
+2025-05-17 19:28:08,690 - HorseUnifiedManagement - INFO - Create and link owner dialog cancelled by user (rejected).
+2025-05-17 19:28:13,766 - HorseUnifiedManagement - INFO - Log Out action triggered from user menu.
+2025-05-17 19:28:13,766 - EDSIApplication - INFO - Exit requested from Horse Management screen (logoff).
+2025-05-17 19:28:13,777 - EDSIApplication - INFO - User logged off.
+2025-05-17 19:28:16,462 - EDSIApplication - INFO - Initiating application cleanup and exit. Reason: Exit clicked on splash screen.
+2025-05-17 19:28:16,463 - EDSIApplication - INFO - Database connection closed.
+2025-05-17 19:28:16,471 - EDSIApplication - INFO - Exiting application.
+2025-05-17 19:28:29,295 - EDSIApplication - INFO - Logging configured.
+2025-05-17 19:28:29,326 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.3.1
+2025-05-17 19:28:29,326 - EDSIApplication - INFO - Initializing database...
+2025-05-17 19:28:29,353 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-17 19:28:29,353 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-17 19:28:32,234 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-17 19:28:46,467 - SmallLoginDialog - INFO - Password validation successful for user 'TM'.
+2025-05-17 19:28:46,467 - SmallLoginDialog - INFO - User 'TM' logged in successfully via small dialog.
+2025-05-17 19:28:46,468 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-17 19:28:46,470 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-17 19:28:46,648 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-17 19:28:46,656 - HorseUnifiedManagement - INFO - Horse selected: ID 12
+2025-05-17 19:28:46,656 - HorseUnifiedManagement - INFO - Loading details for horse ID: 12
+2025-05-17 19:28:46,663 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-17 19:28:46,720 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-17 19:28:51,045 - CreateAndLinkOwnerDialog - ERROR - Error populating states combo: 'CreateAndLinkOwnerDialog' object has no attribute 'country_input'
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\views\horse\dialogs\create_link_owner_dialog.py", line 214, in populate_states_combo
+    self.country_input.setText(
+    ^^^^^^^^^^^^^^^^^^
+AttributeError: 'CreateAndLinkOwnerDialog' object has no attribute 'country_input'
+2025-05-17 19:32:13,389 - EDSIApplication - INFO - Logging configured.
+2025-05-17 19:32:13,426 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.3.1
+2025-05-17 19:32:13,426 - EDSIApplication - INFO - Initializing database...
+2025-05-17 19:32:13,452 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-17 19:32:13,452 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-17 19:33:19,677 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-17 19:33:30,078 - SmallLoginDialog - INFO - Password validation successful for user 'TM'.
+2025-05-17 19:33:30,079 - SmallLoginDialog - INFO - User 'TM' logged in successfully via small dialog.
+2025-05-17 19:33:30,079 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-17 19:33:30,081 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-17 19:33:30,260 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-17 19:33:30,270 - HorseUnifiedManagement - INFO - Horse selected: ID 12
+2025-05-17 19:33:30,270 - HorseUnifiedManagement - INFO - Loading details for horse ID: 12
+2025-05-17 19:33:30,279 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-17 19:33:30,338 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-17 19:37:48,441 - OwnerController - INFO - Master Owner 'Elizabeth & Jerald Vizzone' (ID: 2) created by TM.
+2025-05-17 19:37:48,441 - CreateAndLinkOwnerDialog - INFO - Owner successfully created by controller (ID: 2). Dialog will accept.
+2025-05-17 19:37:48,450 - HorseUnifiedManagement - INFO - Attempting to link newly created owner ID 2 to horse ID 12
+2025-05-17 19:37:48,457 - HorseController - INFO - Added owner ID 2 to horse ID 12 with 100.00% ownership by TM.
+2025-05-17 19:37:48,458 - HorseUnifiedManagement - INFO - Displaying Info: Owner Linked - Owner added to horse successfully.
+2025-05-17 19:37:55,435 - HorseUnifiedManagement - INFO - Horse-owner association selected: Owner ID 2
+2025-05-17 19:46:24,961 - HorseUnifiedManagement - INFO - Horse selected: ID 11
+2025-05-17 19:46:24,961 - HorseUnifiedManagement - INFO - Loading details for horse ID: 11
+2025-05-17 19:46:24,965 - HorseUnifiedManagement - INFO - Horse-owner association selection cleared.
+2025-05-17 19:46:26,852 - HorseUnifiedManagement - INFO - Horse selected: ID 12
+2025-05-17 19:46:26,852 - HorseUnifiedManagement - INFO - Loading details for horse ID: 12
+2025-05-17 19:46:27,991 - HorseUnifiedManagement - INFO - Horse selected: ID 11
+2025-05-17 19:46:27,991 - HorseUnifiedManagement - INFO - Loading details for horse ID: 11
+2025-05-17 19:46:38,446 - HorseUnifiedManagement - INFO - Initiating add new horse.
+2025-05-17 19:50:08,768 - HorseUnifiedManagement - INFO - Attempting to save changes... New horse: True
+2025-05-17 19:50:08,768 - HorseUnifiedManagement - INFO - Creating new horse.
+2025-05-17 19:50:08,774 - HorseController - INFO - Created new horse: Lorena 90 (ID: 13)
+2025-05-17 19:50:08,774 - HorseUnifiedManagement - INFO - New horse created with ID: 13
+2025-05-17 19:50:08,774 - HorseUnifiedManagement - INFO - Displaying Info: Success - Horse created successfully
+2025-05-17 19:50:10,325 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-17 19:50:10,330 - HorseUnifiedManagement - INFO - Horse selected: ID 12
+2025-05-17 19:50:10,330 - HorseUnifiedManagement - INFO - Loading details for horse ID: 12
+2025-05-17 19:50:10,332 - HorseUnifiedManagement - INFO - Horse selected: ID 13
+2025-05-17 19:50:10,332 - HorseUnifiedManagement - INFO - Loading details for horse ID: 13
+2025-05-17 19:52:31,254 - OwnerController - INFO - Master Owner 'Chelsea Moss' (ID: 3) created by TM.
+2025-05-17 19:52:31,254 - CreateAndLinkOwnerDialog - INFO - Owner successfully created by controller (ID: 3). Dialog will accept.
+2025-05-17 19:52:31,263 - HorseUnifiedManagement - INFO - Attempting to link newly created owner ID 3 to horse ID 13
+2025-05-17 19:52:31,268 - HorseController - INFO - Added owner ID 3 to horse ID 13 with 100.00% ownership by TM.
+2025-05-17 19:52:31,268 - HorseUnifiedManagement - INFO - Displaying Info: Owner Linked - Owner added to horse successfully.
+2025-05-17 19:54:19,360 - OwnerController - INFO - Master Owner 'Pegasus Farm (Dr. Erwin Wilson)' (ID: 4) created by TM.
+2025-05-17 19:54:19,360 - CreateAndLinkOwnerDialog - INFO - Owner successfully created by controller (ID: 4). Dialog will accept.
+2025-05-17 19:54:19,366 - HorseUnifiedManagement - INFO - Attempting to link newly created owner ID 4 to horse ID 13
+2025-05-17 19:54:19,367 - HorseUnifiedManagement - ERROR - Displaying Error: Failed to Link Owner - Adding 80.00% would exceed 100% total ownership for this horse (current total: 100.00%).
+2025-05-17 19:56:08,029 - CreateAndLinkOwnerDialog - WARNING - Owner creation failed via controller: Validation failed: Account Number '000059' already exists.
+2025-05-17 19:56:29,769 - OwnerController - INFO - Master Owner 'Pegasus Farm (Dr. Erwin Wilson)' (ID: 5) created by TM.
+2025-05-17 19:56:29,770 - CreateAndLinkOwnerDialog - INFO - Owner successfully created by controller (ID: 5). Dialog will accept.
+2025-05-17 19:56:29,779 - HorseUnifiedManagement - INFO - Attempting to link newly created owner ID 5 to horse ID 13
+2025-05-17 19:56:29,780 - HorseUnifiedManagement - ERROR - Displaying Error: Failed to Link Owner - Adding 100.00% would exceed 100% total ownership for this horse (current total: 100.00%).
+2025-05-17 19:56:59,919 - HorseUnifiedManagement - INFO - Log Out action triggered from user menu.
+2025-05-17 19:56:59,919 - EDSIApplication - INFO - Exit requested from Horse Management screen (logoff).
+2025-05-17 19:56:59,931 - EDSIApplication - INFO - User logged off.
+2025-05-17 19:57:01,627 - EDSIApplication - INFO - Initiating application cleanup and exit. Reason: Exit clicked on splash screen.
+2025-05-17 19:57:01,628 - EDSIApplication - INFO - Database connection closed.
+2025-05-17 19:57:01,637 - EDSIApplication - INFO - Exiting application.
+2025-05-17 20:01:11,341 - EDSIApplication - INFO - Logging configured.
+2025-05-17 20:01:11,373 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.3.1
+2025-05-17 20:01:11,373 - EDSIApplication - INFO - Initializing database...
+2025-05-17 20:01:11,399 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-17 20:01:11,399 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-17 20:01:20,879 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-17 20:01:29,698 - SmallLoginDialog - INFO - Password validation successful for user 'TM'.
+2025-05-17 20:01:29,699 - SmallLoginDialog - INFO - User 'TM' logged in successfully via small dialog.
+2025-05-17 20:01:29,699 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-17 20:01:29,701 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-17 20:01:29,869 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-17 20:01:29,879 - HorseUnifiedManagement - INFO - Horse selected: ID 12
+2025-05-17 20:01:29,879 - HorseUnifiedManagement - INFO - Loading details for horse ID: 12
+2025-05-17 20:01:29,887 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-17 20:01:29,952 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-17 20:01:34,297 - HorseUnifiedManagement - INFO - Horse selected: ID 13
+2025-05-17 20:01:34,297 - HorseUnifiedManagement - INFO - Loading details for horse ID: 13
+2025-05-17 20:01:40,298 - HorseUnifiedManagement - INFO - Horse-owner association selected: Owner ID 3
+2025-05-17 20:01:42,800 - HorseUnifiedManagement - INFO - Asking Question: Confirm Removal - Are you sure you want to remove owner 'Chelsea Moss [002850]' from horse 'Lorena 90'?
+2025-05-17 20:01:44,483 - HorseUnifiedManagement - INFO - Attempting to remove owner ID 3 from horse ID 13
+2025-05-17 20:01:44,488 - HorseController - INFO - Removed owner ID 3 from horse ID 13 by TM.
+2025-05-17 20:01:44,488 - HorseUnifiedManagement - INFO - Displaying Info: Owner Removed - Owner removed from horse successfully.
+2025-05-17 20:01:45,823 - HorseUnifiedManagement - INFO - Horse-owner association selection cleared.
+2025-05-17 20:02:16,473 - HorseUnifiedManagement - INFO - Link existing owner dialog cancelled.
+2025-05-17 20:02:18,374 - HorseUnifiedManagement - INFO - Setup icon clicked, emitting setup_requested signal.
+2025-05-17 20:02:18,374 - EDSIApplication - INFO - Showing User Management Screen for admin 'TM'.
+2025-05-17 20:02:18,385 - UserManagementScreen - INFO - UserManagementScreen __init__ started by admin: TM
+2025-05-17 20:02:18,428 - UserManagementScreen - INFO - Loading users data...
+2025-05-17 20:02:18,429 - UserManagementScreen - INFO - Loaded 3 users.
+2025-05-17 20:02:18,430 - UserManagementScreen - INFO - User selected: ADMIN
+2025-05-17 20:02:18,431 - UserManagementScreen - INFO - Loading master owners data...
+2025-05-17 20:02:18,433 - UserManagementScreen - INFO - Loaded 5 master owners.
+2025-05-17 20:02:18,433 - UserManagementScreen - INFO - Master owner selected: ID 1
+2025-05-17 20:02:18,436 - UserManagementScreen - INFO - UserManagementScreen initialized with Tabbed Interface.
+2025-05-17 20:02:22,909 - UserManagementScreen - INFO - Master owner selected: ID 5
+2025-05-17 20:02:26,575 - UserManagementScreen - INFO - Delete Master Owner button clicked.
+2025-05-17 20:02:26,575 - UserManagementScreen - INFO - Asking Question: Confirm Permanent Deletion - Are you sure you want to permanently delete owner 'Pegasus Farm (Dr. Erwin Wilson)' (ID: 5)?
+
+This action cannot be undone and will remove the owner from the system entirely.
+2025-05-17 20:02:28,013 - UserManagementScreen - INFO - User confirmed permanent deletion for master owner ID: 5
+2025-05-17 20:02:28,022 - OwnerController - INFO - Master Owner 'Pegasus Farm Wilson Dr. Erwin' (ID: 5) permanently deleted by admin 'TM'.
+2025-05-17 20:02:28,022 - UserManagementScreen - INFO - Displaying Info: Owner Deleted - Owner 'Pegasus Farm Wilson Dr. Erwin' deleted successfully.
+2025-05-17 20:02:29,759 - UserManagementScreen - INFO - Loading master owners data...
+2025-05-17 20:02:29,760 - UserManagementScreen - INFO - Master owner selected: ID 5
+2025-05-17 20:02:29,761 - UserManagementScreen - ERROR - Could not fetch master owner ID: 5
+2025-05-17 20:02:29,762 - UserManagementScreen - INFO - Master owner selected: ID 5
+2025-05-17 20:02:29,763 - UserManagementScreen - ERROR - Could not fetch master owner ID: 5
+2025-05-17 20:02:29,763 - UserManagementScreen - INFO - Master owner selected: ID 4
+2025-05-17 20:02:29,766 - UserManagementScreen - INFO - Master owner selection cleared.
+2025-05-17 20:02:29,766 - UserManagementScreen - INFO - Loaded 4 master owners.
+2025-05-17 20:02:29,766 - UserManagementScreen - INFO - Master owner selected: ID 1
+2025-05-17 20:02:36,120 - UserManagementScreen - INFO - User Management exit.
+2025-05-17 20:02:36,120 - EDSIApplication - INFO - Exiting User Management Screen.
+2025-05-17 20:02:36,146 - EDSIApplication - INFO - Returned to Horse Management Screen.
+2025-05-17 20:03:11,908 - HorseUnifiedManagement - INFO - Attempting to link existing owner ID 4 with 0.01% to horse ID 13
+2025-05-17 20:03:11,915 - HorseController - INFO - Added owner ID 4 to horse ID 13 with 0.01% ownership by TM.
+2025-05-17 20:03:11,915 - HorseUnifiedManagement - INFO - Displaying Info: Owner Linked - Owner added to horse successfully.
+2025-05-17 20:04:03,733 - HorseUnifiedManagement - INFO - Attempting to link existing owner ID 3 with 99.0% to horse ID 13
+2025-05-17 20:04:03,738 - HorseController - INFO - Added owner ID 3 to horse ID 13 with 99.00% ownership by TM.
+2025-05-17 20:04:03,739 - HorseUnifiedManagement - INFO - Displaying Info: Owner Linked - Owner added to horse successfully.
+2025-05-17 20:04:15,691 - HorseUnifiedManagement - INFO - Horse selected: ID 11
+2025-05-17 20:04:15,691 - HorseUnifiedManagement - INFO - Loading details for horse ID: 11
+2025-05-17 20:04:17,123 - HorseUnifiedManagement - INFO - Horse selected: ID 12
+2025-05-17 20:04:17,123 - HorseUnifiedManagement - INFO - Loading details for horse ID: 12
+2025-05-17 20:22:16,499 - HorseUnifiedManagement - INFO - Log Out action triggered from user menu.
+2025-05-17 20:22:16,500 - EDSIApplication - INFO - Exit requested from Horse Management screen (logoff).
+2025-05-17 20:22:16,525 - EDSIApplication - INFO - User logged off.
+2025-05-17 20:22:23,699 - EDSIApplication - INFO - Initiating application cleanup and exit. Reason: Exit clicked on splash screen.
+2025-05-17 20:22:23,700 - EDSIApplication - INFO - Database connection closed.
+2025-05-17 20:22:23,725 - EDSIApplication - INFO - Exiting application.
+2025-05-17 20:22:39,408 - EDSIApplication - INFO - Logging configured.
+2025-05-17 20:22:39,440 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.3.1
+2025-05-17 20:22:39,440 - EDSIApplication - INFO - Initializing database...
+2025-05-17 20:22:39,466 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-17 20:22:39,467 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-17 20:22:41,300 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-17 20:22:48,577 - SmallLoginDialog - INFO - Password validation successful for user 'TM'.
+2025-05-17 20:22:48,578 - SmallLoginDialog - INFO - User 'TM' logged in successfully via small dialog.
+2025-05-17 20:22:48,579 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-17 20:22:48,581 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-17 20:22:48,751 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-17 20:22:48,760 - HorseUnifiedManagement - INFO - Horse selected: ID 12
+2025-05-17 20:22:48,760 - HorseUnifiedManagement - INFO - Loading details for horse ID: 12
+2025-05-17 20:22:48,768 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-17 20:22:48,833 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-17 20:22:51,854 - HorseUnifiedManagement - INFO - Horse selected: ID 13
+2025-05-17 20:22:51,854 - HorseUnifiedManagement - INFO - Loading details for horse ID: 13
+2025-05-17 20:22:54,800 - HorseUnifiedManagement - INFO - Horse-owner association selected: Owner ID 4
+2025-05-17 20:23:00,238 - HorseUnifiedManagement - INFO - Attempting to update percentage for owner ID 4 on horse ID 13 to 0.0%
+2025-05-17 20:23:00,239 - HorseUnifiedManagement - ERROR - Displaying Error: Failed to Update Percentage - Ownership percentage must be greater than 0 and less than or equal to 100.
+2025-05-17 20:23:18,997 - HorseUnifiedManagement - INFO - Attempting to update percentage for owner ID 4 on horse ID 13 to 0.01%
+2025-05-17 20:23:18,999 - HorseController - INFO - Updated ownership for horse ID 13, owner ID 4 to 0.01% by TM.
+2025-05-17 20:23:18,999 - HorseUnifiedManagement - INFO - Displaying Info: Percentage Updated - Ownership percentage updated successfully.
+2025-05-17 20:23:20,703 - HorseUnifiedManagement - INFO - Horse-owner association selected: Owner ID 4
+2025-05-17 20:23:20,705 - HorseUnifiedManagement - INFO - Horse-owner association selection cleared.
+2025-05-17 20:23:30,332 - HorseUnifiedManagement - INFO - Horse-owner association selected: Owner ID 4
+2025-05-17 20:23:34,927 - HorseUnifiedManagement - INFO - Attempting to update percentage for owner ID 4 on horse ID 13 to 0.0%
+2025-05-17 20:23:34,928 - HorseUnifiedManagement - ERROR - Displaying Error: Failed to Update Percentage - Ownership percentage must be greater than 0 and less than or equal to 100.
+2025-05-17 20:24:06,815 - HorseUnifiedManagement - INFO - Setup icon clicked, emitting setup_requested signal.
+2025-05-17 20:24:06,815 - EDSIApplication - INFO - Showing User Management Screen for admin 'TM'.
+2025-05-17 20:24:06,824 - UserManagementScreen - INFO - UserManagementScreen __init__ started by admin: TM
+2025-05-17 20:24:06,867 - UserManagementScreen - INFO - Loading users data...
+2025-05-17 20:24:06,868 - UserManagementScreen - INFO - Loaded 3 users.
+2025-05-17 20:24:06,868 - UserManagementScreen - INFO - User selected: ADMIN
+2025-05-17 20:24:06,869 - UserManagementScreen - INFO - Loading master owners data...
+2025-05-17 20:24:06,870 - UserManagementScreen - INFO - Loaded 4 master owners.
+2025-05-17 20:24:06,870 - UserManagementScreen - INFO - Master owner selected: ID 1
+2025-05-17 20:24:06,874 - UserManagementScreen - INFO - UserManagementScreen initialized with Tabbed Interface.
+2025-05-17 20:24:11,012 - UserManagementScreen - INFO - Master owner selected: ID 3
+2025-05-17 20:24:15,269 - UserManagementScreen - INFO - User Management exit.
+2025-05-17 20:24:15,269 - EDSIApplication - INFO - Exiting User Management Screen.
+2025-05-17 20:24:15,296 - EDSIApplication - INFO - Returned to Horse Management Screen.
+2025-05-17 20:24:17,844 - HorseUnifiedManagement - INFO - Log Out action triggered from user menu.
+2025-05-17 20:24:17,845 - EDSIApplication - INFO - Exit requested from Horse Management screen (logoff).
+2025-05-17 20:24:17,856 - EDSIApplication - INFO - User logged off.
+2025-05-17 20:24:19,669 - EDSIApplication - INFO - Initiating application cleanup and exit. Reason: Exit clicked on splash screen.
+2025-05-17 20:24:19,672 - EDSIApplication - INFO - Database connection closed.
+2025-05-17 20:24:19,680 - EDSIApplication - INFO - Exiting application.
+2025-05-17 20:31:11,389 - EDSIApplication - INFO - Logging configured.
+2025-05-17 20:31:11,424 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.3.1
+2025-05-17 20:31:11,425 - EDSIApplication - INFO - Initializing database...
+2025-05-17 20:31:11,452 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-17 20:31:11,452 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-17 20:31:20,585 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-17 20:31:28,992 - SmallLoginDialog - INFO - Password validation successful for user 'TM'.
+2025-05-17 20:31:28,992 - SmallLoginDialog - INFO - User 'TM' logged in successfully via small dialog.
+2025-05-17 20:31:28,993 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-17 20:31:28,996 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-17 20:31:29,172 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-17 20:31:29,180 - HorseUnifiedManagement - INFO - Horse selected: ID 12
+2025-05-17 20:31:29,181 - HorseUnifiedManagement - INFO - Loading details for horse ID: 12
+2025-05-17 20:31:29,189 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-17 20:31:29,247 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-17 20:32:14,481 - HorseUnifiedManagement - INFO - Horse selected: ID 13
+2025-05-17 20:32:14,482 - HorseUnifiedManagement - INFO - Loading details for horse ID: 13
+2025-05-17 20:32:21,382 - HorseUnifiedManagement - INFO - Horse-owner association selected: Owner ID 4
+2025-05-17 20:32:26,455 - HorseUnifiedManagement - INFO - Attempting to update percentage for owner ID 4 on horse ID 13 to 0.0%
+2025-05-17 20:32:26,463 - HorseController - INFO - Updated ownership for horse ID 13, owner ID 4 to 0.00% by TM.
+2025-05-17 20:32:26,463 - HorseUnifiedManagement - INFO - Displaying Info: Percentage Updated - Ownership percentage updated successfully.
+2025-05-17 20:32:28,378 - HorseUnifiedManagement - INFO - Horse-owner association selected: Owner ID 4
+2025-05-17 20:32:28,379 - HorseUnifiedManagement - INFO - Horse-owner association selection cleared.
+2025-05-17 20:32:29,672 - HorseUnifiedManagement - INFO - Horse-owner association selected: Owner ID 3
+2025-05-17 20:32:33,756 - HorseUnifiedManagement - INFO - Attempting to update percentage for owner ID 3 on horse ID 13 to 100.0%
+2025-05-17 20:32:33,761 - HorseController - INFO - Updated ownership for horse ID 13, owner ID 3 to 100.00% by TM.
+2025-05-17 20:32:33,762 - HorseUnifiedManagement - INFO - Displaying Info: Percentage Updated - Ownership percentage updated successfully.
+2025-05-17 20:32:35,185 - HorseUnifiedManagement - INFO - Horse-owner association selected: Owner ID 4
+2025-05-17 20:32:35,187 - HorseUnifiedManagement - INFO - Horse-owner association selected: Owner ID 4
+2025-05-17 20:32:35,187 - HorseUnifiedManagement - INFO - Horse-owner association selection cleared.
+2025-05-17 20:32:58,963 - HorseUnifiedManagement - INFO - Refreshing data...
+2025-05-17 20:32:58,963 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-17 20:32:58,965 - HorseUnifiedManagement - INFO - Horse selection cleared.
+2025-05-17 20:32:58,969 - HorseUnifiedManagement - INFO - Horse selected: ID 13
+2025-05-17 20:32:58,969 - HorseUnifiedManagement - INFO - Loading details for horse ID: 13
+2025-05-17 20:40:19,177 - HorseUnifiedManagement - INFO - Log Out action triggered from user menu.
+2025-05-17 20:40:19,177 - EDSIApplication - INFO - Exit requested from Horse Management screen (logoff).
+2025-05-17 20:40:19,190 - EDSIApplication - INFO - User logged off.
+2025-05-17 20:40:21,557 - EDSIApplication - INFO - Initiating application cleanup and exit. Reason: Exit clicked on splash screen.
+2025-05-17 20:40:21,558 - EDSIApplication - INFO - Database connection closed.
+2025-05-17 20:40:21,567 - EDSIApplication - INFO - Exiting application.
+2025-05-17 20:52:18,490 - EDSIApplication - INFO - Logging configured.
+2025-05-17 20:52:18,523 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.3.1
+2025-05-17 20:52:18,523 - EDSIApplication - INFO - Initializing database...
+2025-05-17 20:52:18,550 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-17 20:52:18,551 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-17 20:52:20,584 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-17 20:52:29,080 - SmallLoginDialog - INFO - Password validation successful for user 'TM'.
+2025-05-17 20:52:29,080 - SmallLoginDialog - INFO - User 'TM' logged in successfully via small dialog.
+2025-05-17 20:52:29,081 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-17 20:52:29,083 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-17 20:52:29,251 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-17 20:52:29,259 - HorseUnifiedManagement - INFO - Horse selected: ID 12
+2025-05-17 20:52:29,260 - HorseUnifiedManagement - INFO - Loading details for horse ID: 12
+2025-05-17 20:52:29,269 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-17 20:52:29,336 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-17 20:52:33,408 - HorseUnifiedManagement - INFO - Horse selected: ID 13
+2025-05-17 20:52:33,409 - HorseUnifiedManagement - INFO - Loading details for horse ID: 13
+2025-05-17 20:52:37,138 - HorseUnifiedManagement - INFO - Horse-owner association selected: Owner ID 3
+2025-05-17 20:52:42,526 - HorseUnifiedManagement - INFO - Setup icon clicked, emitting setup_requested signal.
+2025-05-17 20:52:42,526 - EDSIApplication - INFO - Showing User Management Screen for admin 'TM'.
+2025-05-17 20:52:42,535 - UserManagementScreen - INFO - UserManagementScreen __init__ started by admin: TM
+2025-05-17 20:52:42,573 - UserManagementScreen - INFO - Loading users data...
+2025-05-17 20:52:42,574 - UserManagementScreen - INFO - Loaded 3 users.
+2025-05-17 20:52:42,575 - UserManagementScreen - INFO - User selected: ADMIN
+2025-05-17 20:52:42,575 - UserManagementScreen - INFO - Loading master owners data...
+2025-05-17 20:52:42,577 - UserManagementScreen - INFO - Loaded 4 master owners.
+2025-05-17 20:52:42,577 - UserManagementScreen - INFO - Master owner selected: ID 1
+2025-05-17 20:52:42,581 - UserManagementScreen - INFO - UserManagementScreen initialized with Tabbed Interface.
+2025-05-17 20:52:46,568 - UserManagementScreen - INFO - Master owner selected: ID 2
+2025-05-17 21:00:58,194 - UserManagementScreen - INFO - User Management exit.
+2025-05-17 21:00:58,195 - EDSIApplication - INFO - Exiting User Management Screen.
+2025-05-17 21:00:58,238 - EDSIApplication - INFO - Returned to Horse Management Screen.
+2025-05-17 21:01:00,714 - HorseUnifiedManagement - INFO - Log Out action triggered from user menu.
+2025-05-17 21:01:00,715 - EDSIApplication - INFO - Exit requested from Horse Management screen (logoff).
+2025-05-17 21:01:00,737 - EDSIApplication - INFO - User logged off.
+2025-05-17 21:01:02,376 - EDSIApplication - INFO - Initiating application cleanup and exit. Reason: Exit clicked on splash screen.
+2025-05-17 21:01:02,377 - EDSIApplication - INFO - Database connection closed.
+2025-05-17 21:01:02,398 - EDSIApplication - INFO - Exiting application.
+2025-05-17 21:01:11,294 - EDSIApplication - INFO - Logging configured.
+2025-05-17 21:01:11,329 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.3.1
+2025-05-17 21:01:11,329 - EDSIApplication - INFO - Initializing database...
+2025-05-17 21:01:11,357 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-17 21:01:11,357 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-17 21:01:13,582 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-17 21:01:21,456 - SmallLoginDialog - INFO - Password validation successful for user 'TM'.
+2025-05-17 21:01:21,456 - SmallLoginDialog - INFO - User 'TM' logged in successfully via small dialog.
+2025-05-17 21:01:21,457 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-17 21:01:21,459 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-17 21:01:21,629 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-17 21:01:21,639 - HorseUnifiedManagement - INFO - Horse selected: ID 12
+2025-05-17 21:01:21,639 - HorseUnifiedManagement - INFO - Loading details for horse ID: 12
+2025-05-17 21:01:21,647 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-17 21:01:21,701 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-17 21:01:26,091 - HorseUnifiedManagement - INFO - Horse selected: ID 13
+2025-05-17 21:01:26,091 - HorseUnifiedManagement - INFO - Loading details for horse ID: 13
+2025-05-17 21:01:26,953 - HorseUnifiedManagement - INFO - Horse selected: ID 11
+2025-05-17 21:01:26,953 - HorseUnifiedManagement - INFO - Loading details for horse ID: 11
+2025-05-17 21:04:46,033 - EDSIApplication - INFO - Logging configured.
+2025-05-17 21:04:46,067 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.3.1
+2025-05-17 21:04:46,067 - EDSIApplication - INFO - Initializing database...
+2025-05-17 21:04:46,094 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-17 21:04:46,094 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-17 21:05:03,028 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-17 21:05:21,339 - SmallLoginDialog - INFO - Password validation successful for user 'TM'.
+2025-05-17 21:05:21,339 - SmallLoginDialog - INFO - User 'TM' logged in successfully via small dialog.
+2025-05-17 21:05:21,339 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-17 21:05:21,341 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-17 21:05:21,512 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-17 21:05:21,521 - HorseUnifiedManagement - INFO - Horse selected: ID 12
+2025-05-17 21:05:21,521 - HorseUnifiedManagement - INFO - Loading details for horse ID: 12
+2025-05-17 21:05:21,530 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-17 21:05:21,596 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-17 21:05:35,858 - OwnersTab - INFO - Link existing owner dialog cancelled by user (rejected).
+2025-05-17 21:17:50,230 - HorseUnifiedManagement - INFO - Setup icon clicked, emitting setup_requested signal.
+2025-05-17 21:17:50,231 - EDSIApplication - INFO - Showing User Management Screen for admin 'TM'.
+2025-05-17 21:17:50,242 - UserManagementScreen - INFO - UserManagementScreen __init__ started by admin: TM
+2025-05-17 21:17:50,298 - UserManagementScreen - INFO - Loading users data...
+2025-05-17 21:17:50,299 - UserManagementScreen - INFO - Loaded 3 users.
+2025-05-17 21:17:50,300 - UserManagementScreen - INFO - User selected: ADMIN
+2025-05-17 21:17:50,300 - UserManagementScreen - INFO - Loading master owners data...
+2025-05-17 21:17:50,303 - UserManagementScreen - INFO - Loaded 4 master owners.
+2025-05-17 21:17:50,304 - UserManagementScreen - INFO - Master owner selected: ID 1
+2025-05-17 21:17:50,307 - UserManagementScreen - INFO - UserManagementScreen initialized with Tabbed Interface.
+2025-05-17 21:17:53,517 - UserManagementScreen - INFO - User Management exit.
+2025-05-17 21:17:53,517 - EDSIApplication - INFO - Exiting User Management Screen.
+2025-05-17 21:17:53,555 - EDSIApplication - INFO - Returned to Horse Management Screen.
+2025-05-17 21:17:56,044 - HorseUnifiedManagement - INFO - Log Out action triggered from user menu.
+2025-05-17 21:17:56,044 - EDSIApplication - INFO - Exit requested from Horse Management screen (logoff).
+2025-05-17 21:17:56,053 - EDSIApplication - INFO - User logged off.
+2025-05-17 21:17:57,988 - EDSIApplication - INFO - Initiating application cleanup and exit. Reason: Exit clicked on splash screen.
+2025-05-17 21:17:57,989 - EDSIApplication - INFO - Database connection closed.
+2025-05-17 21:17:57,995 - EDSIApplication - INFO - Exiting application.
+2025-05-17 21:38:04,746 - EDSIApplication - INFO - Logging configured.
+2025-05-17 21:38:04,777 - EDSIApplication - INFO - Starting EDSI Veterinary Management System v1.3.1
+2025-05-17 21:38:04,777 - EDSIApplication - INFO - Initializing database...
+2025-05-17 21:38:04,804 - EDSIApplication - INFO - Database initialized successfully.
+2025-05-17 21:38:04,804 - EDSIApplication - INFO - Running EDSI Application...
+2025-05-17 21:38:06,845 - EDSIApplication - INFO - Login area clicked on splash screen.
+2025-05-17 21:38:19,211 - SmallLoginDialog - WARNING - Password hash mismatch for user 'TM'.
+2025-05-17 21:38:25,427 - SmallLoginDialog - INFO - Password validation successful for user 'TM'.
+2025-05-17 21:38:25,428 - SmallLoginDialog - INFO - User 'TM' logged in successfully via small dialog.
+2025-05-17 21:38:25,429 - EDSIApplication - INFO - User 'TM' logged in successfully.
+2025-05-17 21:38:25,430 - HorseUnifiedManagement - INFO - HorseUnifiedManagement __init__ started for user: TM
+2025-05-17 21:38:25,569 - HorseUnifiedManagement - INFO - Loading horses (Status: active, Search: '')
+2025-05-17 21:38:25,578 - HorseUnifiedManagement - INFO - Horse selected: ID 12
+2025-05-17 21:38:25,578 - HorseUnifiedManagement - INFO - Loading details for horse ID: 12
+2025-05-17 21:38:25,586 - HorseUnifiedManagement - INFO - HorseUnifiedManagement screen __init__ finished.
+2025-05-17 21:38:25,645 - EDSIApplication - INFO - Horse Management Screen displayed.
+2025-05-17 21:38:28,874 - HorseUnifiedManagement - INFO - Setup icon clicked, emitting setup_requested signal.
+2025-05-17 21:38:28,875 - EDSIApplication - INFO - Showing User Management Screen for admin 'TM'.
+2025-05-17 21:38:28,884 - UserManagementScreen - INFO - UserManagementScreen __init__ started by admin: TM
+2025-05-17 21:38:28,924 - UserManagementScreen - INFO - Loading users data...
+2025-05-17 21:38:28,925 - UserManagementScreen - INFO - Loaded 3 users.
+2025-05-17 21:38:28,926 - UserManagementScreen - INFO - User selected: ADMIN
+2025-05-17 21:38:28,927 - UserManagementScreen - INFO - Loading master owners data...
+2025-05-17 21:38:28,929 - UserManagementScreen - INFO - Loaded 4 master owners.
+2025-05-17 21:38:28,929 - UserManagementScreen - INFO - Master owner selected: ID 1
+2025-05-17 21:38:28,932 - UserManagementScreen - INFO - UserManagementScreen initialized with Tabbed Interface.
+2025-05-17 21:45:36,424 - UserManagementScreen - INFO - User Management exit.
+2025-05-17 21:45:36,424 - EDSIApplication - INFO - Exiting User Management Screen.
+2025-05-17 21:45:36,446 - EDSIApplication - INFO - Returned to Horse Management Screen.
+2025-05-17 21:45:40,525 - HorseUnifiedManagement - INFO - Log Out action triggered from user menu.
+2025-05-17 21:45:40,525 - EDSIApplication - INFO - Exit requested from Horse Management screen (logoff).
+2025-05-17 21:45:40,538 - EDSIApplication - INFO - User logged off.
+2025-05-17 21:45:43,356 - EDSIApplication - INFO - Initiating application cleanup and exit. Reason: Exit clicked on splash screen.
+2025-05-17 21:45:43,358 - EDSIApplication - INFO - Database connection closed.
+2025-05-17 21:45:43,366 - EDSIApplication - INFO - Exiting application.
+2025-05-18 18:55:33,756 - INFO - main.py:122 - Logging configured.
+2025-05-18 18:55:33,757 - INFO - main.py:66 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-18 18:55:33,757 - INFO - main.py:125 - Initializing database...
+2025-05-18 18:55:33,757 - INFO - database_config.py:96 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 18:55:33,772 - INFO - database_config.py:103 - Database engine and session factory created successfully.
+2025-05-18 18:55:33,773 - INFO - database_config.py:182 - Database tables created (if they didn't exist).
+2025-05-18 18:55:33,774 - CRITICAL - main.py:139 - Failed to initialize database: Textual SQL expression 'SELECT 1' should be explicitly declared as text('SELECT 1')
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\main.py", line 135, in initialize_database
+    session.execute("SELECT 1")  # Simple query to test connection
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\session.py", line 2308, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\session.py", line 2088, in _execute_internal
+    statement = coercions.expect(roles.StatementRole, statement)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\coercions.py", line 413, in expect
+    resolved = impl._literal_coercion(
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\coercions.py", line 638, in _literal_coercion
+    return self._text_coercion(element, argname, **kw)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\coercions.py", line 631, in _text_coercion
+    return _no_text_coercion(element, argname)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\coercions.py", line 601, in _no_text_coercion
+    raise exc_cls(
+sqlalchemy.exc.ArgumentError: Textual SQL expression 'SELECT 1' should be explicitly declared as text('SELECT 1')
+2025-05-18 18:57:29,040 - INFO - main.py:118 - Logging configured.
+2025-05-18 18:57:29,040 - INFO - main.py:69 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-18 18:57:29,040 - INFO - main.py:121 - Initializing database...
+2025-05-18 18:57:29,040 - INFO - database_config.py:96 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 18:57:29,047 - INFO - database_config.py:103 - Database engine and session factory created successfully.
+2025-05-18 18:57:29,047 - INFO - database_config.py:182 - Database tables created (if they didn't exist).
+2025-05-18 18:57:29,048 - INFO - main.py:130 - Database initialized successfully.
+2025-05-18 19:02:12,251 - INFO - main.py:118 - Logging configured.
+2025-05-18 19:02:12,251 - INFO - main.py:69 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-18 19:02:12,252 - INFO - main.py:121 - Initializing database...
+2025-05-18 19:02:12,252 - INFO - database_config.py:96 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 19:02:12,259 - INFO - database_config.py:103 - Database engine and session factory created successfully.
+2025-05-18 19:02:12,260 - INFO - database_config.py:182 - Database tables created (if they didn't exist).
+2025-05-18 19:02:12,260 - INFO - main.py:130 - Database initialized successfully.
+2025-05-18 19:02:12,261 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-18 19:02:12,265 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-18 19:02:12,303 - INFO - main.py:238 - EDSI Veterinary Management System event loop started.
+2025-05-18 19:02:15,868 - INFO - main.py:148 - Login area clicked on splash screen.
+2025-05-18 19:05:28,948 - INFO - main.py:118 - Logging configured.
+2025-05-18 19:05:28,948 - INFO - main.py:69 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-18 19:05:28,949 - INFO - main.py:121 - Initializing database...
+2025-05-18 19:05:28,949 - INFO - database_config.py:96 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 19:05:28,957 - INFO - database_config.py:103 - Database engine and session factory created successfully.
+2025-05-18 19:05:28,958 - INFO - database_config.py:182 - Database tables created (if they didn't exist).
+2025-05-18 19:05:28,958 - INFO - main.py:130 - Database initialized successfully.
+2025-05-18 19:05:28,958 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-18 19:05:28,962 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-18 19:05:28,999 - INFO - main.py:238 - EDSI Veterinary Management System event loop started.
+2025-05-18 19:05:31,983 - INFO - main.py:148 - Login area clicked on splash screen.
+2025-05-18 19:07:00,810 - INFO - main.py:118 - Logging configured.
+2025-05-18 19:07:00,811 - INFO - main.py:69 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-18 19:07:00,811 - INFO - main.py:121 - Initializing database...
+2025-05-18 19:07:00,812 - INFO - database_config.py:96 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 19:07:00,818 - INFO - database_config.py:103 - Database engine and session factory created successfully.
+2025-05-18 19:07:00,819 - INFO - database_config.py:182 - Database tables created (if they didn't exist).
+2025-05-18 19:07:00,820 - INFO - main.py:130 - Database initialized successfully.
+2025-05-18 19:07:00,820 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-18 19:07:00,825 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-18 19:07:00,864 - INFO - main.py:238 - EDSI Veterinary Management System event loop started.
+2025-05-18 19:07:02,615 - INFO - main.py:148 - Login area clicked on splash screen.
+2025-05-18 19:08:33,192 - INFO - main.py:118 - Logging configured.
+2025-05-18 19:08:33,192 - INFO - main.py:69 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-18 19:08:33,193 - INFO - main.py:121 - Initializing database...
+2025-05-18 19:08:33,193 - INFO - database_config.py:96 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 19:08:33,200 - INFO - database_config.py:103 - Database engine and session factory created successfully.
+2025-05-18 19:08:33,201 - INFO - database_config.py:182 - Database tables created (if they didn't exist).
+2025-05-18 19:08:33,202 - INFO - main.py:130 - Database initialized successfully.
+2025-05-18 19:08:33,202 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-18 19:08:33,206 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-18 19:08:33,243 - INFO - main.py:238 - EDSI Veterinary Management System event loop started.
+2025-05-18 19:08:34,968 - INFO - main.py:148 - Login area clicked on splash screen.
+2025-05-18 19:10:01,867 - INFO - main.py:118 - Logging configured.
+2025-05-18 19:10:01,867 - INFO - main.py:69 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-18 19:10:01,868 - INFO - main.py:121 - Initializing database...
+2025-05-18 19:10:01,868 - INFO - database_config.py:96 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 19:10:01,875 - INFO - database_config.py:103 - Database engine and session factory created successfully.
+2025-05-18 19:10:01,876 - INFO - database_config.py:182 - Database tables created (if they didn't exist).
+2025-05-18 19:10:01,876 - INFO - main.py:130 - Database initialized successfully.
+2025-05-18 19:10:01,877 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-18 19:10:01,881 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-18 19:10:01,935 - INFO - main.py:238 - EDSI Veterinary Management System event loop started.
+2025-05-18 19:10:03,655 - INFO - main.py:148 - Login area clicked on splash screen.
+2025-05-18 19:20:27,028 - INFO - main.py:118 - Logging configured.
+2025-05-18 19:20:27,028 - INFO - main.py:69 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-18 19:20:27,029 - INFO - main.py:121 - Initializing database...
+2025-05-18 19:20:27,029 - INFO - database_config.py:96 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 19:20:27,037 - INFO - database_config.py:103 - Database engine and session factory created successfully.
+2025-05-18 19:20:27,037 - INFO - database_config.py:182 - Database tables created (if they didn't exist).
+2025-05-18 19:20:27,038 - INFO - main.py:130 - Database initialized successfully.
+2025-05-18 19:20:27,038 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-18 19:20:27,043 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-18 19:20:27,083 - INFO - main.py:238 - EDSI Veterinary Management System event loop started.
+2025-05-18 19:20:29,606 - INFO - main.py:148 - Login area clicked on splash screen.
+2025-05-18 19:23:40,974 - INFO - main.py:118 - Logging configured.
+2025-05-18 19:23:40,974 - INFO - main.py:69 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-18 19:23:40,975 - INFO - main.py:121 - Initializing database...
+2025-05-18 19:23:40,975 - INFO - database_config.py:96 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 19:23:40,982 - INFO - database_config.py:103 - Database engine and session factory created successfully.
+2025-05-18 19:23:40,983 - INFO - database_config.py:182 - Database tables created (if they didn't exist).
+2025-05-18 19:23:40,984 - INFO - main.py:130 - Database initialized successfully.
+2025-05-18 19:23:40,985 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-18 19:23:40,989 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-18 19:23:41,028 - INFO - main.py:238 - EDSI Veterinary Management System event loop started.
+2025-05-18 19:23:42,974 - INFO - main.py:148 - Login area clicked on splash screen.
+2025-05-18 19:23:51,093 - ERROR - user_controller.py:89 - Error during password validation for user 'TM': Could not initialize target column for ForeignKey 'species.species_code' on table 'horses': table 'species' has no column named 'species_code'
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\controllers\user_controller.py", line 58, in validate_password
+    session.query(User).filter(User.user_id == user_id.upper()).first()
+    ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\session.py", line 2912, in query
+    return self._query_cls(entities, self, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\query.py", line 276, in __init__
+    self._set_entities(entities)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\query.py", line 288, in _set_entities
+    self._raw_columns = [
+                        ^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\query.py", line 289, in <listcomp>
+    coercions.expect(
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\coercions.py", line 406, in expect
+    insp._post_inspect
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 1260, in __get__
+    obj.__dict__[self.__name__] = result = self.fget(obj)
+                                           ^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2707, in _post_inspect
+    self._check_configure()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2386, in _check_configure
+    _configure_registries({self.registry}, cascade=True)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 4199, in _configure_registries
+    _do_configure_registries(registries, cascade)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 4240, in _do_configure_registries
+    mapper._post_configure_properties()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2403, in _post_configure_properties
+    prop.init()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\interfaces.py", line 579, in init
+    self.do_init()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\relationships.py", line 1637, in do_init
+    self._setup_join_conditions()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\relationships.py", line 1882, in _setup_join_conditions
+    self._join_condition = jc = JoinCondition(
+                                ^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\relationships.py", line 2306, in __init__
+    self._determine_joins()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\relationships.py", line 2419, in _determine_joins
+    self.primaryjoin = join_condition(
+                       ^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\util.py", line 123, in join_condition
+    return Join._join_condition(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\selectable.py", line 1341, in _join_condition
+    constraints = cls._joincond_scan_left_right(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\selectable.py", line 1450, in _joincond_scan_left_right
+    col = fk.get_referent(b)
+          ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\schema.py", line 3022, in get_referent
+    return table.columns.corresponding_column(self.column)  # type: ignore
+                                              ^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 1146, in __get__
+    obj.__dict__[self.__name__] = result = self.fget(obj)
+                                           ^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\schema.py", line 3159, in column
+    return self._resolve_column()
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\schema.py", line 3198, in _resolve_column
+    return self._link_to_col_by_colstring(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\schema.py", line 3120, in _link_to_col_by_colstring
+    raise exc.NoReferencedColumnError(
+sqlalchemy.exc.NoReferencedColumnError: Could not initialize target column for ForeignKey 'species.species_code' on table 'horses': table 'species' has no column named 'species_code'
+2025-05-18 19:23:51,112 - WARNING - small_login_dialog.py:202 - Login failed for user 'TM': An error occurred during login. Please try again.
+2025-05-18 19:29:35,428 - INFO - main.py:118 - Logging configured.
+2025-05-18 19:29:35,428 - INFO - main.py:69 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-18 19:29:35,429 - INFO - main.py:121 - Initializing database...
+2025-05-18 19:29:35,429 - INFO - database_config.py:96 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 19:29:35,436 - INFO - database_config.py:103 - Database engine and session factory created successfully.
+2025-05-18 19:29:35,437 - INFO - database_config.py:182 - Database tables created (if they didn't exist).
+2025-05-18 19:29:35,438 - INFO - main.py:130 - Database initialized successfully.
+2025-05-18 19:29:35,438 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-18 19:29:35,442 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-18 19:29:35,481 - INFO - main.py:238 - EDSI Veterinary Management System event loop started.
+2025-05-18 19:29:37,521 - INFO - main.py:148 - Login area clicked on splash screen.
+2025-05-18 19:29:45,963 - ERROR - user_controller.py:89 - Error during password validation for user 'TM': Could not initialize target column for ForeignKey 'species.species_code' on table 'horses': table 'species' has no column named 'species_code'
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\controllers\user_controller.py", line 58, in validate_password
+    session.query(User).filter(User.user_id == user_id.upper()).first()
+    ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\session.py", line 2912, in query
+    return self._query_cls(entities, self, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\query.py", line 276, in __init__
+    self._set_entities(entities)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\query.py", line 288, in _set_entities
+    self._raw_columns = [
+                        ^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\query.py", line 289, in <listcomp>
+    coercions.expect(
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\coercions.py", line 406, in expect
+    insp._post_inspect
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 1260, in __get__
+    obj.__dict__[self.__name__] = result = self.fget(obj)
+                                           ^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2707, in _post_inspect
+    self._check_configure()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2386, in _check_configure
+    _configure_registries({self.registry}, cascade=True)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 4199, in _configure_registries
+    _do_configure_registries(registries, cascade)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 4240, in _do_configure_registries
+    mapper._post_configure_properties()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2403, in _post_configure_properties
+    prop.init()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\interfaces.py", line 579, in init
+    self.do_init()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\relationships.py", line 1637, in do_init
+    self._setup_join_conditions()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\relationships.py", line 1882, in _setup_join_conditions
+    self._join_condition = jc = JoinCondition(
+                                ^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\relationships.py", line 2306, in __init__
+    self._determine_joins()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\relationships.py", line 2419, in _determine_joins
+    self.primaryjoin = join_condition(
+                       ^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\util.py", line 123, in join_condition
+    return Join._join_condition(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\selectable.py", line 1341, in _join_condition
+    constraints = cls._joincond_scan_left_right(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\selectable.py", line 1450, in _joincond_scan_left_right
+    col = fk.get_referent(b)
+          ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\schema.py", line 3022, in get_referent
+    return table.columns.corresponding_column(self.column)  # type: ignore
+                                              ^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 1146, in __get__
+    obj.__dict__[self.__name__] = result = self.fget(obj)
+                                           ^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\schema.py", line 3159, in column
+    return self._resolve_column()
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\schema.py", line 3198, in _resolve_column
+    return self._link_to_col_by_colstring(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\schema.py", line 3120, in _link_to_col_by_colstring
+    raise exc.NoReferencedColumnError(
+sqlalchemy.exc.NoReferencedColumnError: Could not initialize target column for ForeignKey 'species.species_code' on table 'horses': table 'species' has no column named 'species_code'
+2025-05-18 19:29:45,970 - WARNING - small_login_dialog.py:202 - Login failed for user 'TM': An error occurred during login. Please try again.
+2025-05-18 19:39:35,460 - INFO - main.py:118 - Logging configured.
+2025-05-18 19:39:35,461 - INFO - main.py:69 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-18 19:39:35,461 - INFO - main.py:121 - Initializing database...
+2025-05-18 19:39:35,461 - INFO - database_config.py:96 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 19:39:35,467 - INFO - database_config.py:103 - Database engine and session factory created successfully.
+2025-05-18 19:39:35,468 - INFO - database_config.py:182 - Database tables created (if they didn't exist).
+2025-05-18 19:39:35,469 - INFO - main.py:130 - Database initialized successfully.
+2025-05-18 19:39:35,469 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-18 19:39:35,473 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-18 19:39:35,508 - INFO - main.py:238 - EDSI Veterinary Management System event loop started.
+2025-05-18 19:39:37,797 - INFO - main.py:148 - Login area clicked on splash screen.
+2025-05-18 19:39:46,456 - ERROR - user_controller.py:89 - Error during password validation for user 'TM': Could not determine join condition between parent/child tables on relationship Owner.state - there are no foreign keys linking these tables.  Ensure that referencing columns are associated with a ForeignKey or ForeignKeyConstraint, or specify a 'primaryjoin' expression.
+Traceback (most recent call last):
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\relationships.py", line 2419, in _determine_joins
+    self.primaryjoin = join_condition(
+                       ^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\util.py", line 123, in join_condition
+    return Join._join_condition(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\selectable.py", line 1358, in _join_condition
+    raise exc.NoForeignKeysError(
+sqlalchemy.exc.NoForeignKeysError: Can't find any foreign key relationships between 'owners' and 'state_provinces'.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\controllers\user_controller.py", line 58, in validate_password
+    session.query(User).filter(User.user_id == user_id.upper()).first()
+    ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\session.py", line 2912, in query
+    return self._query_cls(entities, self, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\query.py", line 276, in __init__
+    self._set_entities(entities)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\query.py", line 288, in _set_entities
+    self._raw_columns = [
+                        ^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\query.py", line 289, in <listcomp>
+    coercions.expect(
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\coercions.py", line 406, in expect
+    insp._post_inspect
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 1260, in __get__
+    obj.__dict__[self.__name__] = result = self.fget(obj)
+                                           ^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2707, in _post_inspect
+    self._check_configure()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2386, in _check_configure
+    _configure_registries({self.registry}, cascade=True)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 4199, in _configure_registries
+    _do_configure_registries(registries, cascade)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 4240, in _do_configure_registries
+    mapper._post_configure_properties()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2403, in _post_configure_properties
+    prop.init()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\interfaces.py", line 579, in init
+    self.do_init()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\relationships.py", line 1637, in do_init
+    self._setup_join_conditions()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\relationships.py", line 1882, in _setup_join_conditions
+    self._join_condition = jc = JoinCondition(
+                                ^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\relationships.py", line 2306, in __init__
+    self._determine_joins()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\relationships.py", line 2440, in _determine_joins
+    raise sa_exc.NoForeignKeysError(
+sqlalchemy.exc.NoForeignKeysError: Could not determine join condition between parent/child tables on relationship Owner.state - there are no foreign keys linking these tables.  Ensure that referencing columns are associated with a ForeignKey or ForeignKeyConstraint, or specify a 'primaryjoin' expression.
+2025-05-18 19:39:46,461 - WARNING - small_login_dialog.py:202 - Login failed for user 'TM': An error occurred during login. Please try again.
+2025-05-18 19:46:30,129 - INFO - main.py:118 - Logging configured.
+2025-05-18 19:46:30,129 - INFO - main.py:69 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-18 19:46:30,130 - INFO - main.py:121 - Initializing database...
+2025-05-18 19:46:30,130 - INFO - database_config.py:96 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 19:46:30,137 - INFO - database_config.py:103 - Database engine and session factory created successfully.
+2025-05-18 19:46:30,138 - INFO - database_config.py:182 - Database tables created (if they didn't exist).
+2025-05-18 19:46:30,138 - INFO - main.py:130 - Database initialized successfully.
+2025-05-18 19:46:30,139 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-18 19:46:30,143 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-18 19:46:30,178 - INFO - main.py:238 - EDSI Veterinary Management System event loop started.
+2025-05-18 19:46:32,069 - INFO - main.py:148 - Login area clicked on splash screen.
+2025-05-18 19:46:41,585 - ERROR - user_controller.py:89 - Error during password validation for user 'TM': Mapper 'Mapper[Payment(payments)]' has no property 'owner'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+Traceback (most recent call last):
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2505, in get_property
+    return self._props[key]
+           ~~~~~~~~~~~^^^^^
+KeyError: 'owner'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\controllers\user_controller.py", line 58, in validate_password
+    session.query(User).filter(User.user_id == user_id.upper()).first()
+    ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\session.py", line 2912, in query
+    return self._query_cls(entities, self, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\query.py", line 276, in __init__
+    self._set_entities(entities)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\query.py", line 288, in _set_entities
+    self._raw_columns = [
+                        ^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\query.py", line 289, in <listcomp>
+    coercions.expect(
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\coercions.py", line 406, in expect
+    insp._post_inspect
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 1260, in __get__
+    obj.__dict__[self.__name__] = result = self.fget(obj)
+                                           ^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2707, in _post_inspect
+    self._check_configure()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2386, in _check_configure
+    _configure_registries({self.registry}, cascade=True)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 4199, in _configure_registries
+    _do_configure_registries(registries, cascade)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 4240, in _do_configure_registries
+    mapper._post_configure_properties()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2403, in _post_configure_properties
+    prop.init()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\interfaces.py", line 579, in init
+    self.do_init()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\relationships.py", line 1640, in do_init
+    self._generate_backref()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\relationships.py", line 2129, in _generate_backref
+    self._add_reverse_property(self.back_populates)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\relationships.py", line 1571, in _add_reverse_property
+    other = self.mapper.get_property(key, _configure_mappers=False)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2507, in get_property
+    raise sa_exc.InvalidRequestError(
+sqlalchemy.exc.InvalidRequestError: Mapper 'Mapper[Payment(payments)]' has no property 'owner'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+2025-05-18 19:46:41,589 - WARNING - small_login_dialog.py:202 - Login failed for user 'TM': An error occurred during login. Please try again.
+2025-05-18 19:50:34,183 - INFO - main.py:118 - Logging configured.
+2025-05-18 19:50:34,183 - INFO - main.py:69 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-18 19:50:34,183 - INFO - main.py:121 - Initializing database...
+2025-05-18 19:50:34,183 - INFO - database_config.py:96 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 19:50:34,190 - INFO - database_config.py:103 - Database engine and session factory created successfully.
+2025-05-18 19:50:34,191 - INFO - database_config.py:182 - Database tables created (if they didn't exist).
+2025-05-18 19:50:34,192 - INFO - main.py:130 - Database initialized successfully.
+2025-05-18 19:50:34,192 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-18 19:50:34,196 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-18 19:50:34,230 - INFO - main.py:238 - EDSI Veterinary Management System event loop started.
+2025-05-18 19:50:36,826 - INFO - main.py:148 - Login area clicked on splash screen.
+2025-05-18 19:50:46,075 - ERROR - user_controller.py:89 - Error during password validation for user 'TM': reverse_property 'payments_made' on relationship OwnerPayment.owner references relationship Owner.payments_made, which does not reference mapper Mapper[OwnerPayment(owner_payments)]
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\controllers\user_controller.py", line 58, in validate_password
+    session.query(User).filter(User.user_id == user_id.upper()).first()
+    ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\session.py", line 2912, in query
+    return self._query_cls(entities, self, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\query.py", line 276, in __init__
+    self._set_entities(entities)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\query.py", line 288, in _set_entities
+    self._raw_columns = [
+                        ^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\query.py", line 289, in <listcomp>
+    coercions.expect(
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\coercions.py", line 406, in expect
+    insp._post_inspect
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 1260, in __get__
+    obj.__dict__[self.__name__] = result = self.fget(obj)
+                                           ^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2707, in _post_inspect
+    self._check_configure()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2386, in _check_configure
+    _configure_registries({self.registry}, cascade=True)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 4199, in _configure_registries
+    _do_configure_registries(registries, cascade)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 4240, in _do_configure_registries
+    mapper._post_configure_properties()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2403, in _post_configure_properties
+    prop.init()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\interfaces.py", line 579, in init
+    self.do_init()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\relationships.py", line 1640, in do_init
+    self._generate_backref()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\relationships.py", line 2129, in _generate_backref
+    self._add_reverse_property(self.back_populates)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\relationships.py", line 1595, in _add_reverse_property
+    raise sa_exc.ArgumentError(
+sqlalchemy.exc.ArgumentError: reverse_property 'payments_made' on relationship OwnerPayment.owner references relationship Owner.payments_made, which does not reference mapper Mapper[OwnerPayment(owner_payments)]
+2025-05-18 19:50:46,079 - WARNING - small_login_dialog.py:202 - Login failed for user 'TM': An error occurred during login. Please try again.
+2025-05-18 20:02:48,682 - INFO - main.py:118 - Logging configured.
+2025-05-18 20:02:48,683 - INFO - main.py:69 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-18 20:02:48,683 - INFO - main.py:121 - Initializing database...
+2025-05-18 20:02:48,683 - INFO - database_config.py:96 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 20:02:48,689 - INFO - database_config.py:103 - Database engine and session factory created successfully.
+2025-05-18 20:02:48,690 - INFO - database_config.py:182 - Database tables created (if they didn't exist).
+2025-05-18 20:02:48,691 - INFO - main.py:130 - Database initialized successfully.
+2025-05-18 20:02:48,691 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-18 20:02:48,696 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-18 20:02:48,731 - INFO - main.py:238 - EDSI Veterinary Management System event loop started.
+2025-05-18 20:02:50,771 - INFO - main.py:148 - Login area clicked on splash screen.
+2025-05-18 20:02:58,546 - ERROR - user_controller.py:89 - Error during password validation for user 'TM': reverse_property 'payments_made' on relationship Payment.owner references relationship Owner.payments_made, which does not reference mapper Mapper[Payment(payments)]
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\controllers\user_controller.py", line 58, in validate_password
+    session.query(User).filter(User.user_id == user_id.upper()).first()
+    ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\session.py", line 2912, in query
+    return self._query_cls(entities, self, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\query.py", line 276, in __init__
+    self._set_entities(entities)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\query.py", line 288, in _set_entities
+    self._raw_columns = [
+                        ^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\query.py", line 289, in <listcomp>
+    coercions.expect(
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\coercions.py", line 406, in expect
+    insp._post_inspect
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 1260, in __get__
+    obj.__dict__[self.__name__] = result = self.fget(obj)
+                                           ^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2707, in _post_inspect
+    self._check_configure()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2386, in _check_configure
+    _configure_registries({self.registry}, cascade=True)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 4199, in _configure_registries
+    _do_configure_registries(registries, cascade)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 4240, in _do_configure_registries
+    mapper._post_configure_properties()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2403, in _post_configure_properties
+    prop.init()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\interfaces.py", line 579, in init
+    self.do_init()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\relationships.py", line 1640, in do_init
+    self._generate_backref()
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\relationships.py", line 2129, in _generate_backref
+    self._add_reverse_property(self.back_populates)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\orm\relationships.py", line 1595, in _add_reverse_property
+    raise sa_exc.ArgumentError(
+sqlalchemy.exc.ArgumentError: reverse_property 'payments_made' on relationship Payment.owner references relationship Owner.payments_made, which does not reference mapper Mapper[Payment(payments)]
+2025-05-18 20:02:58,550 - WARNING - small_login_dialog.py:202 - Login failed for user 'TM': An error occurred during login. Please try again.
+2025-05-18 20:11:01,240 - INFO - main.py:118 - Logging configured.
+2025-05-18 20:11:01,240 - INFO - main.py:69 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-18 20:11:01,240 - INFO - main.py:121 - Initializing database...
+2025-05-18 20:11:01,241 - INFO - database_config.py:96 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 20:11:01,247 - INFO - database_config.py:103 - Database engine and session factory created successfully.
+2025-05-18 20:11:01,248 - ERROR - database_config.py:184 - Error creating database tables: cannot import name 'Payment' from 'models' (C:\Projects\EDMS\models\__init__.py)
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\config\database_config.py", line 158, in create_tables
+    from models import (  # Ensure all your models are imported here
+ImportError: cannot import name 'Payment' from 'models' (C:\Projects\EDMS\models\__init__.py)
+2025-05-18 20:11:01,248 - ERROR - database_config.py:113 - Unexpected error during database initialization: cannot import name 'Payment' from 'models' (C:\Projects\EDMS\models\__init__.py)
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\config\database_config.py", line 106, in initialize_database
+    self.create_tables()
+  File "C:\Projects\EDMS\config\database_config.py", line 158, in create_tables
+    from models import (  # Ensure all your models are imported here
+ImportError: cannot import name 'Payment' from 'models' (C:\Projects\EDMS\models\__init__.py)
+2025-05-18 20:11:01,250 - CRITICAL - main.py:132 - Failed to initialize database: cannot import name 'Payment' from 'models' (C:\Projects\EDMS\models\__init__.py)
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\main.py", line 124, in initialize_database
+    self.db_manager.initialize_database(DATABASE_URL)
+  File "C:\Projects\EDMS\config\database_config.py", line 106, in initialize_database
+    self.create_tables()
+  File "C:\Projects\EDMS\config\database_config.py", line 158, in create_tables
+    from models import (  # Ensure all your models are imported here
+ImportError: cannot import name 'Payment' from 'models' (C:\Projects\EDMS\models\__init__.py)
+2025-05-18 20:14:44,544 - INFO - main.py:118 - Logging configured.
+2025-05-18 20:14:44,545 - INFO - main.py:69 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-18 20:14:44,545 - INFO - main.py:121 - Initializing database...
+2025-05-18 20:14:44,545 - INFO - database_config.py:82 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 20:14:44,551 - INFO - database_config.py:89 - Database engine and session factory created successfully.
+2025-05-18 20:14:44,552 - INFO - database_config.py:167 - Database tables created (if they didn't exist).
+2025-05-18 20:14:44,553 - INFO - main.py:130 - Database initialized successfully.
+2025-05-18 20:14:44,553 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-18 20:14:44,557 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-18 20:14:44,592 - INFO - main.py:238 - EDSI Veterinary Management System event loop started.
+2025-05-18 20:14:46,622 - INFO - main.py:148 - Login area clicked on splash screen.
+2025-05-18 20:14:54,226 - INFO - user_controller.py:79 - Password validated successfully for active user 'TM'.
+2025-05-18 20:14:54,232 - INFO - small_login_dialog.py:190 - Password validation successful for user 'TM'.
+2025-05-18 20:22:34,737 - INFO - main.py:118 - Logging configured.
+2025-05-18 20:22:34,737 - INFO - main.py:69 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-18 20:22:34,738 - INFO - main.py:121 - Initializing database...
+2025-05-18 20:22:34,738 - INFO - database_config.py:82 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 20:22:34,745 - INFO - database_config.py:89 - Database engine and session factory created successfully.
+2025-05-18 20:22:34,746 - INFO - database_config.py:167 - Database tables created (if they didn't exist).
+2025-05-18 20:22:34,747 - INFO - main.py:130 - Database initialized successfully.
+2025-05-18 20:22:34,747 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-18 20:22:34,751 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-18 20:22:34,785 - INFO - main.py:238 - EDSI Veterinary Management System event loop started.
+2025-05-18 20:22:36,743 - INFO - main.py:148 - Login area clicked on splash screen.
+2025-05-18 20:22:44,304 - INFO - user_controller.py:81 - Password validated successfully for active user 'TM'.
+2025-05-18 20:22:44,304 - INFO - small_login_dialog.py:188 - Password validation successful for user 'TM'.
+2025-05-18 20:22:44,305 - INFO - small_login_dialog.py:192 - User 'TM' logged in successfully via small dialog.
+2025-05-18 20:22:44,305 - INFO - main.py:160 - User 'TM' logged in successfully.
+2025-05-18 20:22:44,316 - INFO - horse_unified_management.py:91 - HorseUnifiedManagement __init__ started for user: TM
+2025-05-18 20:39:02,557 - INFO - main.py:118 - Logging configured.
+2025-05-18 20:39:02,557 - INFO - main.py:69 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-18 20:39:02,557 - INFO - main.py:121 - Initializing database...
+2025-05-18 20:39:02,557 - INFO - database_config.py:82 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 20:39:02,564 - INFO - database_config.py:89 - Database engine and session factory created successfully.
+2025-05-18 20:39:02,565 - INFO - database_config.py:167 - Database tables created (if they didn't exist).
+2025-05-18 20:39:02,565 - INFO - main.py:130 - Database initialized successfully.
+2025-05-18 20:39:02,565 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-18 20:39:02,570 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-18 20:39:02,605 - INFO - main.py:238 - EDSI Veterinary Management System event loop started.
+2025-05-18 20:39:04,373 - INFO - main.py:148 - Login area clicked on splash screen.
+2025-05-18 20:39:12,601 - INFO - user_controller.py:81 - Password validated successfully for active user 'TM'.
+2025-05-18 20:39:12,601 - INFO - small_login_dialog.py:188 - Password validation successful for user 'TM'.
+2025-05-18 20:39:12,602 - INFO - small_login_dialog.py:192 - User 'TM' logged in successfully via small dialog.
+2025-05-18 20:39:12,603 - INFO - main.py:160 - User 'TM' logged in successfully.
+2025-05-18 20:39:12,616 - INFO - horse_unified_management.py:91 - HorseUnifiedManagement __init__ started for user: TM
+2025-05-18 20:39:12,617 - ERROR - horse_unified_management.py:743 - AttributeError during load_horses: 'HorseUnifiedManagement' object has no attribute 'search_input'
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\views\horse\horse_unified_management.py", line 709, in load_horses
+    search_term = self.search_input.text()
+                  ^^^^^^^^^^^^^^^^^
+AttributeError: 'HorseUnifiedManagement' object has no attribute 'search_input'
+2025-05-18 20:39:12,618 - ERROR - base_view.py:310 - Displaying Error: Load Error - A problem occurred: 'HorseUnifiedManagement' object has no attribute 'search_input'. Please check logs.
+2025-05-18 20:48:55,790 - INFO - main.py:118 - Logging configured.
+2025-05-18 20:48:55,790 - INFO - main.py:69 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-18 20:48:55,791 - INFO - main.py:121 - Initializing database...
+2025-05-18 20:48:55,791 - INFO - database_config.py:82 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 20:48:55,799 - INFO - database_config.py:89 - Database engine and session factory created successfully.
+2025-05-18 20:48:55,800 - INFO - database_config.py:167 - Database tables created (if they didn't exist).
+2025-05-18 20:48:55,800 - INFO - main.py:130 - Database initialized successfully.
+2025-05-18 20:48:55,800 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-18 20:48:55,804 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-18 20:48:55,841 - INFO - main.py:238 - EDSI Veterinary Management System event loop started.
+2025-05-18 20:48:57,925 - INFO - main.py:148 - Login area clicked on splash screen.
+2025-05-18 20:49:05,769 - WARNING - user_controller.py:58 - Incorrect password attempt for user 'TM'.
+2025-05-18 20:49:05,770 - WARNING - small_login_dialog.py:208 - Login failed for user 'TM': Invalid User ID or Password.
+2025-05-18 20:49:15,028 - INFO - user_controller.py:81 - Password validated successfully for active user 'TM'.
+2025-05-18 20:49:15,028 - INFO - small_login_dialog.py:188 - Password validation successful for user 'TM'.
+2025-05-18 20:49:15,030 - INFO - small_login_dialog.py:192 - User 'TM' logged in successfully via small dialog.
+2025-05-18 20:49:15,030 - INFO - main.py:160 - User 'TM' logged in successfully.
+2025-05-18 20:49:15,044 - INFO - horse_unified_management.py:91 - HorseUnifiedManagement __init__ started for user: TM
+2025-05-18 20:51:37,220 - INFO - main.py:118 - Logging configured.
+2025-05-18 20:51:37,221 - INFO - main.py:69 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-18 20:51:37,222 - INFO - main.py:121 - Initializing database...
+2025-05-18 20:51:37,222 - INFO - database_config.py:82 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 20:51:37,229 - INFO - database_config.py:89 - Database engine and session factory created successfully.
+2025-05-18 20:51:37,229 - INFO - database_config.py:167 - Database tables created (if they didn't exist).
+2025-05-18 20:51:37,230 - INFO - main.py:130 - Database initialized successfully.
+2025-05-18 20:51:37,230 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-18 20:51:37,235 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-18 20:51:37,274 - INFO - main.py:238 - EDSI Veterinary Management System event loop started.
+2025-05-18 20:51:39,282 - INFO - main.py:148 - Login area clicked on splash screen.
+2025-05-18 20:51:46,754 - INFO - user_controller.py:81 - Password validated successfully for active user 'TM'.
+2025-05-18 20:51:46,755 - INFO - small_login_dialog.py:188 - Password validation successful for user 'TM'.
+2025-05-18 20:51:46,755 - INFO - small_login_dialog.py:192 - User 'TM' logged in successfully via small dialog.
+2025-05-18 20:51:46,756 - INFO - main.py:160 - User 'TM' logged in successfully.
+2025-05-18 20:51:46,766 - INFO - horse_unified_management.py:91 - HorseUnifiedManagement __init__ started for user: TM
+2025-05-18 21:12:24,907 - INFO - main.py:118 - Logging configured.
+2025-05-18 21:12:24,908 - INFO - main.py:69 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-18 21:12:24,908 - INFO - main.py:121 - Initializing database...
+2025-05-18 21:12:24,908 - INFO - database_config.py:68 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-18 21:12:24,915 - INFO - database_config.py:74 - Database engine and session factory created successfully.
+2025-05-18 21:12:24,915 - INFO - database_config.py:135 - Database tables created (if they didn't exist).
+2025-05-18 21:12:24,916 - INFO - main.py:130 - Database initialized successfully.
+2025-05-18 21:12:24,916 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-18 21:12:24,921 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-18 21:12:24,961 - INFO - main.py:238 - EDSI Veterinary Management System event loop started.
+2025-05-18 21:12:26,757 - INFO - main.py:148 - Login area clicked on splash screen.
+2025-05-18 21:12:35,148 - INFO - user_controller.py:81 - Password validated successfully for active user 'TM'.
+2025-05-18 21:12:35,149 - INFO - small_login_dialog.py:188 - Password validation successful for user 'TM'.
+2025-05-18 21:12:35,149 - INFO - small_login_dialog.py:192 - User 'TM' logged in successfully via small dialog.
+2025-05-18 21:12:35,149 - INFO - main.py:160 - User 'TM' logged in successfully.
+2025-05-18 21:12:35,163 - INFO - horse_unified_management.py:91 - HorseUnifiedManagement __init__ started for user: TM

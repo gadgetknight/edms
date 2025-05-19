@@ -2,167 +2,298 @@
 
 """
 EDSI Veterinary Management System - Base View
-Version: 1.1.1
+Version: 1.1.4
 Purpose: Base class for all application windows using PySide6.
-Last Updated: May 12, 2025
+         Ensured setup_ui() is called before styling in __init__.
+Last Updated: May 18, 2025
 Author: Claude Assistant
 
 Changelog:
-- v1.1.1 (2025-05-12): Removed unsupported box-shadow property.
-  - Removed 'box-shadow' from input field focus style in apply_styling.
-- v1.1.0 (2025-05-12): Migrated to PySide6
-  - Changed all imports from PyQt6 to PySide6.
-  - Ensured compatibility with PySide6 signal/slot syntax and widgets.
-- v1.0.1 (2025-05-12): Fixed central widget initialization (PyQt6)
-- v1.0.0 (2025-05-12): Initial implementation (PyQt6)
+- v1.1.4 (2025-05-18):
+    - Modified __init__ to call self.setup_ui() before
+      self.apply_dark_theme_palette_and_global_styles(), aligning
+      with user's original BaseView structure for initialization order.
+- v1.1.3 (2025-05-18):
+    - Updated imports and styling methods to use DARK_... theme constants.
+- v1.1.2 (2025-05-18):
+    - (Previous attempt to fix imports)
+- v1.1.1 (2025-05-12): User's provided version.
 """
 
 import logging
-from PySide6.QtWidgets import (  # Changed import from PyQt6 to PySide6
+from typing import Optional
+
+from PySide6.QtWidgets import (
     QMainWindow,
     QWidget,
     QVBoxLayout,
-    QHBoxLayout,
-    QLabel,
-    QPushButton,
     QMessageBox,
-    QFrame,
+    QApplication,
 )
-from PySide6.QtCore import Qt, Signal  # Changed import from PyQt6 to PySide6
+from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import (
     QFont,
     QPalette,
     QColor,
     QScreen,
-)  # Changed import from PyQt6 to PySide6
+)
 
-from config.app_config import AppConfig
+from config.app_config import (
+    APP_NAME,
+    DEFAULT_FONT_FAMILY,
+    DEFAULT_FONT_SIZE,
+    SMALL_FONT_SIZE,
+    MIN_WINDOW_WIDTH,
+    MIN_WINDOW_HEIGHT,
+    DARK_BACKGROUND,
+    DARK_WIDGET_BACKGROUND,
+    DARK_HEADER_FOOTER,
+    DARK_BORDER,
+    DARK_TEXT_PRIMARY,
+    DARK_TEXT_SECONDARY,
+    DARK_TEXT_TERTIARY,
+    DARK_PRIMARY_ACTION,
+    DARK_BUTTON_BG,
+    DARK_BUTTON_HOVER,
+    DARK_ITEM_HOVER,
+    DARK_TOOLTIP_BASE,
+    DARK_TOOLTIP_TEXT,
+    DARK_HIGHLIGHT_BG,
+    DARK_HIGHLIGHT_TEXT,
+    DARK_INPUT_FIELD_BACKGROUND,
+)
 
 
 class BaseView(QMainWindow):
     """Base class for all application windows using PySide6."""
 
-    # Signal emitted when window is closing
     closing = Signal()
 
-    def __init__(self, parent=None):
-        """Initializes the BaseView."""
+    def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
         self.logger = logging.getLogger(self.__class__.__name__)
-
-        # Create central widget first - standard practice
-        self.central_widget = QWidget()
+        self.central_widget = QWidget(self)
         self.setCentralWidget(self.central_widget)
 
-        # Call setup_ui which should be overridden by subclasses
-        self.setup_ui()
-        # Apply common styling after the UI structure might be set
-        self.apply_styling()
+        # --- MODIFIED ORDER ---
+        # Call setup_ui FIRST - this is where subclasses (like HorseUnifiedManagement)
+        # create their UI elements (e.g., self.search_input, self.status_label).
+        if hasattr(self, "setup_ui") and callable(self.setup_ui):
+            self.setup_ui()
+        else:
+            # Apply a default layout if subclass doesn't provide setup_ui
+            # or if setup_ui doesn't set a layout for central_widget.
+            if not self.central_widget.layout():
+                base_layout = QVBoxLayout(self.central_widget)
+                self.central_widget.setLayout(base_layout)
+                self.logger.debug(
+                    f"BaseView: Applied default QVBoxLayout to central_widget for {self.__class__.__name__} as setup_ui was not fully implemented by subclass or did not set a layout."
+                )
+
+        # Then apply theme and styles
+        self.apply_dark_theme_palette_and_global_styles()
+        # --- END MODIFIED ORDER ---
 
     def setup_ui(self):
         """
-        Setup basic UI structure.
-        This method is intended to be overridden by subclasses
-        to set their own layouts and widgets within self.central_widget.
+        Intended to be overridden by subclasses to set their own layouts and widgets.
+        If a subclass defines this, it's responsible for setting up its central_widget's layout.
         """
-        pass  # Base implementation does nothing
+        # Default implementation: if subclass calls super().setup_ui() or doesn't override,
+        # ensure central_widget has a layout.
+        if not self.central_widget.layout():
+            base_layout = QVBoxLayout(self.central_widget)
+            self.central_widget.setLayout(base_layout)
+            self.logger.debug(
+                f"BaseView setup_ui: Applied default QVBoxLayout to central_widget for {self.__class__.__name__}"
+            )
 
-    def apply_styling(self):
-        """Apply consistent styling to the window and common elements."""
-        self.setMinimumSize(AppConfig.MIN_WINDOW_WIDTH, AppConfig.MIN_WINDOW_HEIGHT)
-
-        palette = self.palette()
-        palette.setColor(QPalette.ColorRole.Window, QColor(AppConfig.BACKGROUND_COLOR))
-        self.setPalette(palette)
-        self.setAutoFillBackground(True)
-
-        self.setStyleSheet(
-            f"""
-            QMainWindow {{
-                background-color: {AppConfig.BACKGROUND_COLOR}; /* Fallback */
-            }}
-            QFrame {{
-                /* Default Frame style - can be overridden by specific frames */
-                background-color: {AppConfig.SURFACE_COLOR};
-                border: 1px solid #dee2e6;
-                border-radius: 5px; /* Slightly smaller radius */
-            }}
-            QLabel {{
-                color: {AppConfig.TEXT_COLOR};
-                font-family: "{AppConfig.DEFAULT_FONT_FAMILY}"; /* Ensure quotes for font names */
-                font-size: {AppConfig.DEFAULT_FONT_SIZE}pt;
-                background-color: transparent; /* Ensure labels have transparent background */
-                padding: 1px; /* Prevent text clipping */
-            }}
-            QPushButton {{
-                background-color: {AppConfig.PRIMARY_COLOR};
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 4px;
-                font-family: "{AppConfig.DEFAULT_FONT_FAMILY}";
-                font-size: {AppConfig.DEFAULT_FONT_SIZE}pt;
-                font-weight: bold; /* Make buttons stand out more */
-                min-height: 32px; /* Ensure minimum button height */
-            }}
-            QPushButton:hover {{
-                background-color: #005a9e; /* Darker blue on hover */
-            }}
-            QPushButton:pressed {{
-                background-color: #004578; /* Even darker blue when pressed */
-            }}
-            QPushButton:disabled {{
-                background-color: #adb5bd; /* Grey out disabled buttons */
-                color: #f8f9fa;
-            }}
-            QLineEdit, QTextEdit, QSpinBox, QDoubleSpinBox, QComboBox, QDateEdit {{
-                 background-color: #ffffff;
-                 border: 1px solid #ced4da;
-                 border-radius: 4px;
-                 padding: 5px 8px; /* Standard padding */
-                 font-family: "{AppConfig.DEFAULT_FONT_FAMILY}";
-                 font-size: {AppConfig.DEFAULT_FONT_SIZE}pt;
-                 color: {AppConfig.TEXT_COLOR};
-            }}
-            QLineEdit:focus, QTextEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QComboBox:focus, QDateEdit:focus {{
-                border-color: {AppConfig.PRIMARY_COLOR};
-                /* Removed unsupported box-shadow property */
-            }}
-            QComboBox::drop-down {{
-                border: none; /* Style dropdown arrow */
-            }}
-            QComboBox::down-arrow {{
-                 /* You might need an image or leave it default */
-            }}
-            QStatusBar {{
-                font-family: "{AppConfig.DEFAULT_FONT_FAMILY}";
-                font-size: {AppConfig.SMALL_FONT_SIZE}pt;
-            }}
-        """
+    def apply_dark_theme_palette_and_global_styles(self):
+        """Applies a dark theme palette and global stylesheet settings."""
+        self.logger.debug(
+            f"Applying dark theme and global styles for {self.__class__.__name__}"
         )
 
-    def set_title(self, title):
-        """Set window title prefixed with the application name."""
-        self.setWindowTitle(f"{AppConfig.APP_NAME} - {title}")
+        dark_palette = QPalette()
+        dark_palette.setColor(QPalette.ColorRole.Window, QColor(DARK_BACKGROUND))
+        dark_palette.setColor(QPalette.ColorRole.WindowText, QColor(DARK_TEXT_PRIMARY))
+        dark_palette.setColor(QPalette.ColorRole.Base, QColor(DARK_WIDGET_BACKGROUND))
+        dark_palette.setColor(QPalette.ColorRole.AlternateBase, QColor(DARK_ITEM_HOVER))
+        dark_palette.setColor(QPalette.ColorRole.ToolTipBase, QColor(DARK_TOOLTIP_BASE))
+        dark_palette.setColor(QPalette.ColorRole.ToolTipText, QColor(DARK_TOOLTIP_TEXT))
+        dark_palette.setColor(QPalette.ColorRole.Text, QColor(DARK_TEXT_PRIMARY))
+        dark_palette.setColor(QPalette.ColorRole.Button, QColor(DARK_BUTTON_BG))
+        dark_palette.setColor(QPalette.ColorRole.ButtonText, QColor(DARK_TEXT_PRIMARY))
+        dark_palette.setColor(QPalette.ColorRole.BrightText, Qt.GlobalColor.red)
+        dark_palette.setColor(QPalette.ColorRole.Link, QColor(DARK_PRIMARY_ACTION))
+        dark_palette.setColor(QPalette.ColorRole.Highlight, QColor(DARK_HIGHLIGHT_BG))
+        dark_palette.setColor(
+            QPalette.ColorRole.HighlightedText, QColor(DARK_HIGHLIGHT_TEXT)
+        )
+        dark_palette.setColor(
+            QPalette.ColorRole.PlaceholderText, QColor(DARK_TEXT_TERTIARY)
+        )
 
-    # --- Message Box Helpers ---
-    def show_error(self, title, message):
-        """Show error message box."""
+        disabled_text_color = QColor(DARK_TEXT_TERTIARY)
+        disabled_bg_color = QColor(DARK_HEADER_FOOTER)
+        dark_palette.setColor(
+            QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text, disabled_text_color
+        )
+        dark_palette.setColor(
+            QPalette.ColorGroup.Disabled,
+            QPalette.ColorRole.ButtonText,
+            disabled_text_color,
+        )
+        dark_palette.setColor(
+            QPalette.ColorGroup.Disabled, QPalette.ColorRole.Base, disabled_bg_color
+        )
+        dark_palette.setColor(
+            QPalette.ColorGroup.Disabled, QPalette.ColorRole.Button, disabled_bg_color
+        )
+        dark_palette.setColor(
+            QPalette.ColorGroup.Disabled,
+            QPalette.ColorRole.WindowText,
+            disabled_text_color,
+        )
+
+        self.setPalette(dark_palette)
+        QApplication.instance().setPalette(dark_palette)
+
+        if self.central_widget:
+            self.central_widget.setPalette(dark_palette)
+            self.central_widget.setAutoFillBackground(True)
+        self.setAutoFillBackground(True)
+
+        self.setMinimumSize(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT)
+
+        app_font = QFont(DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE)
+        QApplication.setFont(app_font)
+        self.setFont(app_font)
+
+        try:
+            self.setStyleSheet(
+                f"""
+                QMainWindow, QDialog, QWidget {{
+                    font-family: "{DEFAULT_FONT_FAMILY}";
+                    font-size: {DEFAULT_FONT_SIZE}pt;
+                    background-color: {DARK_BACKGROUND};
+                    color: {DARK_TEXT_PRIMARY};
+                }}
+                QFrame {{ }}
+                QLabel {{
+                    color: {DARK_TEXT_PRIMARY}; 
+                    background-color: transparent; 
+                    padding: 1px; 
+                }}
+                QPushButton {{
+                    background-color: {DARK_BUTTON_BG};
+                    color: {DARK_TEXT_PRIMARY};
+                    border: 1px solid {DARK_BORDER};
+                    padding: 8px 16px;
+                    border-radius: 4px;
+                    font-weight: 500; 
+                    min-height: 30px; 
+                }}
+                QPushButton:hover {{ background-color: {DARK_BUTTON_HOVER}; }}
+                QPushButton:pressed {{ background-color: {QColor(DARK_BUTTON_HOVER).darker(110).name()}; }}
+                QPushButton:disabled {{
+                    background-color: {DARK_HEADER_FOOTER}; 
+                    color: {DARK_TEXT_TERTIARY};
+                    border-color: {DARK_BORDER};
+                }}
+                QLineEdit, QTextEdit, QSpinBox, QDoubleSpinBox, QComboBox, QDateEdit {{
+                    background-color: {DARK_INPUT_FIELD_BACKGROUND};
+                    border: 1px solid {DARK_BORDER};
+                    border-radius: 4px;
+                    padding: 6px 8px; 
+                    color: {DARK_TEXT_PRIMARY};
+                    min-height: 20px; 
+                }}
+                QLineEdit:focus, QTextEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QComboBox:focus, QDateEdit:focus {{
+                    border-color: {DARK_PRIMARY_ACTION};
+                }}
+                QLineEdit:read-only {{
+                    background-color: {QColor(DARK_INPUT_FIELD_BACKGROUND).darker(110).name()};
+                    color: {DARK_TEXT_TERTIARY};
+                }}
+                QComboBox::drop-down {{ border: none; }}
+                QComboBox QAbstractItemView {{ 
+                    background-color: {DARK_WIDGET_BACKGROUND}; 
+                    color: {DARK_TEXT_PRIMARY}; 
+                    border: 1px solid {DARK_BORDER}; 
+                    selection-background-color: {DARK_HIGHLIGHT_BG}; 
+                    selection-color: {DARK_HIGHLIGHT_TEXT}; 
+                }}
+                QStatusBar {{
+                    font-size: {SMALL_FONT_SIZE}pt;
+                    color: {DARK_TEXT_SECONDARY};
+                    background-color: {DARK_HEADER_FOOTER};
+                    border-top: 1px solid {DARK_BORDER};
+                }}
+                QHeaderView::section {{
+                    background-color: {DARK_HEADER_FOOTER};
+                    color: {DARK_TEXT_PRIMARY};
+                    padding: 5px;
+                    border: 1px solid {DARK_BORDER};
+                    font-size: {DEFAULT_FONT_SIZE}pt;
+                    font-weight: 500;
+                }}
+                QTableWidget {{
+                    gridline-color: {DARK_BORDER};
+                    background-color: {DARK_WIDGET_BACKGROUND};
+                    color: {DARK_TEXT_PRIMARY};
+                    border: 1px solid {DARK_BORDER};
+                }}
+                QTableWidget::item {{ padding: 5px; }}
+                QTableWidget::item:selected {{
+                    background-color: {DARK_HIGHLIGHT_BG};
+                    color: {DARK_HIGHLIGHT_TEXT};
+                }}
+                QListWidget {{
+                     background-color: {DARK_WIDGET_BACKGROUND};
+                     color: {DARK_TEXT_PRIMARY};
+                     border: 1px solid {DARK_BORDER};
+                }}
+                QListWidget::item {{ padding: 5px; }}
+                QListWidget::item:selected {{
+                    background-color: {DARK_HIGHLIGHT_BG};
+                    color: {DARK_HIGHLIGHT_TEXT};
+                }}
+                QListWidget::item:hover:!selected {{ background-color: {DARK_ITEM_HOVER}; }}
+                QToolTip {{
+                    background-color: {DARK_TOOLTIP_BASE};
+                    color: {DARK_TOOLTIP_TEXT};
+                    border: 1px solid {DARK_BORDER};
+                    padding: 4px;
+                    border-radius: 3px;
+                }}
+            """
+            )
+        except Exception as e:
+            self.logger.error(
+                f"Unexpected error applying global stylesheet in BaseView: {e}",
+                exc_info=True,
+            )
+            self.setStyleSheet(
+                "QMainWindow { background-color: #1A202C; } QLabel { color: #E2E8F0; }"
+            )
+
+    def set_title(self, title: str):
+        self.setWindowTitle(f"{APP_NAME} - {title}")
+
+    def show_error(self, title: str, message: str):
         self.logger.error(f"Displaying Error: {title} - {message}")
         QMessageBox.critical(self, title, str(message))
 
-    def show_warning(self, title, message):
-        """Show warning message box."""
+    def show_warning(self, title: str, message: str):
         self.logger.warning(f"Displaying Warning: {title} - {message}")
         QMessageBox.warning(self, title, str(message))
 
-    def show_info(self, title, message):
-        """Show information message box."""
+    def show_info(self, title: str, message: str):
         self.logger.info(f"Displaying Info: {title} - {message}")
         QMessageBox.information(self, title, str(message))
 
-    def show_question(self, title, message):
-        """Show question dialog and return True if Yes is clicked, False otherwise."""
+    def show_question(self, title: str, message: str) -> bool:
         self.logger.info(f"Asking Question: {title} - {message}")
         reply = QMessageBox.question(
             self,
@@ -173,33 +304,20 @@ class BaseView(QMainWindow):
         )
         return reply == QMessageBox.StandardButton.Yes
 
-    # --- Window Positioning ---
     def center_on_screen(self):
-        """Center the window on the screen where the mouse cursor is."""
         try:
-            screen = self.screen()
-            if not screen:
-                # Use QApplication.primaryScreen() in PySide6
-                screen = QApplication.primaryScreen()
-
-            if screen:
-                screen_geometry = screen.availableGeometry()
-                window_geometry = self.frameGeometry()
-                center_point = screen_geometry.center()
-                window_geometry.moveCenter(center_point)
-                self.move(window_geometry.topLeft())
+            primary_screen = QApplication.primaryScreen()
+            if primary_screen:
+                screen_geometry = primary_screen.availableGeometry()
+                self.move(screen_geometry.center() - self.rect().center())
             else:
-                # Fallback if screen detection fails
-                self.logger.warning("Could not detect screen for centering.")
-                # Apply a default position
+                self.logger.warning("Could not detect primary screen for centering.")
                 self.move(100, 100)
         except Exception as e:
-            self.logger.error(f"Could not center window: {e}")
+            self.logger.error(f"Could not center window: {e}", exc_info=True)
             self.move(100, 100)
 
-    # --- Event Handling ---
     def closeEvent(self, event):
-        """Handle window close event."""
         self.logger.debug(f"Close event triggered for {self.__class__.__name__}")
         self.closing.emit()
         super().closeEvent(event)

@@ -2,25 +2,33 @@
 
 """
 EDSI Veterinary Management System - User Management Screen (Tabbed Interface)
-Version: 1.10.1
+Version: 1.10.2
 Purpose: Provides a tabbed interface for managing system settings.
-         Uses centralized AppConfig for dark theme colors.
-         Ensures input fields in AddMasterOwnerDialog are visually distinct.
-Last Updated: May 16, 2025
-Author: Claude Assistant
+         Added "Charge Codes" tab functionality.
+Last Updated: May 18, 2025
+Author: Claude Assistant (integrating user's v1.10.1 with charge codes)
 
 Changelog:
-- v1.10.1 (2025-05-16):
-  - Updated to use centralized dark theme colors from AppConfig.
-  - Removed local dark theme color constant definitions.
-  - Applied explicit styling to input fields in AddMasterOwnerDialog,
-    AddUserDialog, and ChangePasswordDialog for visual clarity.
+- v1.10.2 (2025-05-18):
+    - Integrated "Charge Codes" tab based on user's v1.10.1 structure.
+    - Added QTableWidget for displaying charge codes.
+    - Added "Add", "Edit", "Toggle Active" buttons for charge codes.
+    - Integrated AddEditChargeCodeDialog (from views/admin/dialogs/) for creating/editing.
+    - Used ChargeCodeController for backend operations.
+- v1.10.1 (2025-05-16): (User's Base Version)
+    - Updated to use centralized dark theme colors from AppConfig.
+    - Removed local dark theme color constant definitions.
+    - Applied explicit styling to input fields in AddMasterOwnerDialog,
+      AddUserDialog, and ChangePasswordDialog for visual clarity.
 - v1.10.0 (2025-05-15): Implemented Delete Master Owner, fixed Add dialogs.
 - v1.9.0 (2025-05-15): Implemented "Delete Master Owner" functionality (stub).
 - v1.8.0 (2025-05-15): Implemented "Add Master Owner" functionality.
 """
 
 import logging
+from typing import Optional, List, Dict  # Ensure List and Dict are imported
+from decimal import Decimal  # Ensure Decimal is imported
+
 from PySide6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
@@ -39,18 +47,39 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QComboBox,
     QScrollArea,
+    QTableWidget,
+    QTableWidgetItem,  # Added QTableWidget, QTableWidgetItem
+    QHeaderView,
+    QAbstractItemView,
+    QSizePolicy,
+    QStatusBar,  # Added QHeaderView, QAbstractItemView, QStatusBar
 )
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QTimer  # Added QTimer
 from PySide6.QtGui import QFont, QPalette, QColor
 
 from views.base_view import BaseView
 from controllers.user_controller import UserController
 from controllers.owner_controller import OwnerController
-from config.app_config import AppConfig  # Import AppConfig for colors
-from models import User, Owner, StateProvince
+from controllers.charge_code_controller import ChargeCodeController  # New import
+from config.app_config import AppConfig
+from models import (
+    User,
+    Owner,
+    StateProvince,
+    ChargeCode as ChargeCodeModel,
+)  # New import
 
+# Dialogs - assuming these are still defined inline as per user's v1.10.1
+# If they are moved to views/admin/dialogs/, these imports would change.
+# For now, keeping them as per user's provided structure.
+# from .dialogs.add_user_dialog import AddUserDialog # If moved
+# from .dialogs.edit_user_dialog import EditUserDialog # If moved
+# from .dialogs.change_password_dialog import ChangePasswordDialog # If moved
+# from .dialogs.add_master_owner_dialog import AddMasterOwnerDialog # If moved
+# from .dialogs.edit_master_owner_dialog import EditMasterOwnerDialog # If moved
 
-# --- Constants for Dark Theme are now in AppConfig ---
+# This dialog IS expected to be in the dialogs subfolder
+from .dialogs.add_edit_charge_code_dialog import AddEditChargeCodeDialog
 
 
 class UserListWidget(QListWidget):
@@ -128,14 +157,12 @@ class AddUserDialog(QDialog):
         form_layout.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)
         form_layout.setContentsMargins(15, 15, 15, 15)
         form_layout.setSpacing(10)
-
         dialog_styles = (
             f"QLabel {{ color: {AppConfig.DARK_TEXT_SECONDARY}; background-color: transparent; padding-top:3px; }}"
             + f"QCheckBox::indicator {{ width: 13px; height: 13px; }}"
         )
         self.setStyleSheet(dialog_styles)
         specific_input_style = UserManagementScreen.get_specific_input_field_style()
-
         self.user_id_input = QLineEdit()
         self.user_id_input.setPlaceholderText("Max 20 chars, no spaces")
         self.user_id_input.setStyleSheet(specific_input_style)
@@ -165,9 +192,7 @@ class AddUserDialog(QDialog):
         self.button_box.rejected.connect(self.reject)
         for button in self.button_box.buttons():
             button.setMinimumHeight(30)
-            button.setStyleSheet(
-                UserManagementScreen.get_generic_button_style()
-            )  # Use static method
+            button.setStyleSheet(UserManagementScreen.get_generic_button_style())
             if (
                 self.button_box.buttonRole(button)
                 == QDialogButtonBox.ButtonRole.AcceptRole
@@ -349,16 +374,13 @@ class AddMasterOwnerDialog(QDialog):
         form_layout.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         form_layout.setContentsMargins(15, 15, 15, 15)
         form_layout.setSpacing(10)
-
         dialog_specific_styles = (
             f"QLabel {{ color: {AppConfig.DARK_TEXT_SECONDARY}; background-color: transparent; padding-top: 3px; }}"
             + f"QCheckBox::indicator {{ width: 13px; height: 13px; }}"
         )
         self.setStyleSheet(dialog_specific_styles)
-
         self.form_fields = {}
         specific_input_style = UserManagementScreen.get_specific_input_field_style()
-
         dialog_fields = [
             ("Account #:", "account_number", "QLineEdit", ""),
             ("Farm Name:", "farm_name", "QLineEdit", ""),
@@ -370,7 +392,7 @@ class AddMasterOwnerDialog(QDialog):
             ("State*:", "state_code", "QComboBox", ""),
             ("Zip/Postal*:", "zip_code", "QLineEdit", ""),
             ("Country:", "country_name", "QLineEdit", "e.g. USA"),
-            ("Phone*:", "phone", "QLineEdit", ""),
+            ("Phone*:", "phone", "QLineEdit", ""),  # Phone is required by controller
             ("Email:", "email", "QLineEdit", ""),
         ]
         for label_text, field_name, widget_type, placeholder in dialog_fields:
@@ -384,11 +406,10 @@ class AddMasterOwnerDialog(QDialog):
                 if field_name == "state_code":
                     self._populate_states_combo(widget)
             else:
-                widget = QWidget()
+                widget = QWidget()  # Should not happen
             widget.setStyleSheet(specific_input_style)
             self.form_fields[field_name] = widget
             form_layout.addRow(label_widget, widget)
-
         self.form_fields["is_active"] = QCheckBox("Owner is Active")
         self.form_fields["is_active"].setChecked(True)
         form_layout.addRow("", self.form_fields["is_active"])
@@ -465,25 +486,38 @@ class AddMasterOwnerDialog(QDialog):
 
 class UserManagementScreen(BaseView):
     exit_requested = Signal()
+    horse_management_requested = Signal()  # Added signal
 
-    def __init__(self, current_admin_user: str):
+    def __init__(self, current_user_id: str):  # Changed from current_admin_user
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.info(
-            f"UserManagementScreen __init__ started by admin: {current_admin_user}"
+            f"UserManagementScreen __init__ started by user: {current_user_id}"
         )
-        self.current_admin_user = current_admin_user
+        self.current_user_id = current_user_id  # Store the user ID
         self.user_controller = UserController()
         self.owner_controller = OwnerController()
-        self.users_list_data = []
-        self.selected_user_id = None
-        self.current_selected_user_obj = None
-        self.has_details_changed = False
-        self.owners_master_list_data = []
-        self.selected_master_owner_id = None
-        self.current_selected_master_owner_obj = None
-        self.has_owner_details_changed = False
-        self.owner_form_fields = {}
-        super().__init__()
+        self.charge_code_controller = ChargeCodeController()  # New
+
+        self.users_list_data = []  # From user's version
+        self.selected_user_id: Optional[str] = None  # From user's version
+        self.current_selected_user_obj: Optional[User] = None  # From user's version
+        self.has_details_changed: bool = False  # From user's version
+
+        self.owners_master_list_data = []  # From user's version
+        self.selected_master_owner_id: Optional[int] = None  # From user's version
+        self.current_selected_master_owner_obj: Optional[Owner] = (
+            None  # From user's version
+        )
+        self.has_owner_details_changed: bool = False  # From user's version
+        self.owner_form_fields: Dict[str, QWidget] = {}  # From user's version
+
+        self.selected_charge_code_id: Optional[int] = None  # New for charge codes
+
+        super().__init__()  # Calls setup_ui from BaseView if not overridden, then apply_styling
+        # User's version calls load_users_data and load_master_owners_data in __init__ after super()
+        # We will add load_charge_codes_data() here as well.
+
+        # Apply dark palette as per user's version's __init__
         dark_palette = QPalette()
         dark_palette.setColor(
             QPalette.ColorRole.Window, QColor(AppConfig.DARK_BACKGROUND)
@@ -494,7 +528,9 @@ class UserManagementScreen(BaseView):
         dark_palette.setColor(
             QPalette.ColorRole.Base, QColor(AppConfig.DARK_WIDGET_BACKGROUND)
         )
-        dark_palette.setColor(QPalette.ColorRole.AlternateBase, QColor("#333333"))
+        dark_palette.setColor(
+            QPalette.ColorRole.AlternateBase, QColor("#333333")
+        )  # User's specific color
         dark_palette.setColor(
             QPalette.ColorRole.ToolTipBase, QColor(AppConfig.DARK_WIDGET_BACKGROUND)
         )
@@ -541,42 +577,62 @@ class UserManagementScreen(BaseView):
         )
         self.setPalette(dark_palette)
         self.setAutoFillBackground(True)
+
         self.load_users_data()
         self.load_master_owners_data()
+        self.load_charge_codes_data()  # New call
         self.logger.info("UserManagementScreen initialized with Tabbed Interface.")
 
-    def setup_ui(self):
+    def setup_ui(self):  # This method is called by BaseView's __init__
         self.logger.debug("UserManagementScreen setup_ui started.")
-        self.set_title("System Setup & Administration")
-        self.resize(900, 700)
+        self.set_title("System Setup & Administration")  # User's title
+        self.resize(1000, 700)  # User's preferred size
         self.center_on_screen()
+
         main_layout = QVBoxLayout(self.central_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
-        self.setup_screen_header(main_layout)
+
+        self.setup_screen_header(main_layout)  # User's header method
+
         self.tab_widget = QTabWidget()
-        self.tab_widget.setStyleSheet(
-            f"QTabWidget::pane {{border: 1px solid {AppConfig.DARK_BORDER}; background-color: {AppConfig.DARK_WIDGET_BACKGROUND}; border-bottom-left-radius: 5px; border-bottom-right-radius: 5px;}} QTabBar::tab {{padding: 10px 20px; margin-right: 2px; background-color: {AppConfig.DARK_BUTTON_BG}; color: {AppConfig.DARK_TEXT_SECONDARY}; border: 1px solid {AppConfig.DARK_BORDER}; border-bottom: none; border-top-left-radius: 5px; border-top-right-radius: 5px; font-size: 13px;}} QTabBar::tab:selected {{background-color: {AppConfig.DARK_WIDGET_BACKGROUND}; color: {AppConfig.DARK_TEXT_PRIMARY}; font-weight: bold; border-bottom-color: {AppConfig.DARK_WIDGET_BACKGROUND};}} QTabBar::tab:!selected:hover {{ background-color: {AppConfig.DARK_BUTTON_HOVER}; color: {AppConfig.DARK_TEXT_PRIMARY}; }}"
+        self.tab_widget.setStyleSheet(  # User's tab style
+            f"QTabWidget::pane {{border: 1px solid {AppConfig.DARK_BORDER}; background-color: {AppConfig.DARK_WIDGET_BACKGROUND}; border-bottom-left-radius: 5px; border-bottom-right-radius: 5px;}}"
+            f"QTabBar::tab {{padding: 10px 20px; margin-right: 2px; background-color: {AppConfig.DARK_BUTTON_BG}; color: {AppConfig.DARK_TEXT_SECONDARY}; border: 1px solid {AppConfig.DARK_BORDER}; border-bottom: none; border-top-left-radius: 5px; border-top-right-radius: 5px; font-size: 13px;}}"
+            f"QTabBar::tab:selected {{background-color: {AppConfig.DARK_WIDGET_BACKGROUND}; color: {AppConfig.DARK_TEXT_PRIMARY}; font-weight: bold; border-bottom-color: {AppConfig.DARK_WIDGET_BACKGROUND};}}"
+            f"QTabBar::tab:!selected:hover {{ background-color: {AppConfig.DARK_BUTTON_HOVER}; color: {AppConfig.DARK_TEXT_PRIMARY}; }}"
         )
         main_layout.addWidget(self.tab_widget, 1)
+
+        # Setup existing tabs using user's methods
         self.users_tab = QWidget()
         self.users_tab.setStyleSheet(
             f"background-color: {AppConfig.DARK_WIDGET_BACKGROUND};"
         )
-        self.setup_users_tab_ui(self.users_tab)
+        self.setup_users_tab_ui(self.users_tab)  # User's method
         self.tab_widget.addTab(self.users_tab, "👥 Users")
+
         self.owners_tab = QWidget()
         self.owners_tab.setStyleSheet(
             f"background-color: {AppConfig.DARK_WIDGET_BACKGROUND};"
         )
-        self.setup_owners_tab_ui(self.owners_tab)
-        self.tab_widget.addTab(self.owners_tab, "👤 Owners")
+        self.setup_owners_tab_ui(self.owners_tab)  # User's method
+        self.tab_widget.addTab(self.owners_tab, "👤 Master Owners")
+
+        # Setup new Charge Codes tab
+        self.charge_codes_tab = QWidget()  # Create the QWidget for the tab
+        self.charge_codes_tab.setStyleSheet(
+            f"background-color: {AppConfig.DARK_WIDGET_BACKGROUND};"
+        )
+        self.setup_charge_codes_tab_ui(self.charge_codes_tab)  # Call new setup method
+        self.tab_widget.addTab(self.charge_codes_tab, "💲 Charge Codes")
+
         placeholder_tabs = [
             "📍 Locations",
             "💊 Drugs",
             "💉 Procedures",
-            "💲 Charge Codes",
-        ]
+            "⚙️ System Config",
+        ]  # Adjusted placeholder
         for tab_name in placeholder_tabs:
             placeholder_widget = QWidget()
             placeholder_widget.setStyleSheet(
@@ -592,21 +648,37 @@ class UserManagementScreen(BaseView):
             )
             placeholder_layout.addWidget(placeholder_label)
             self.tab_widget.addTab(placeholder_widget, tab_name)
+
+        # User's persistent action bar at the bottom
         persistent_action_bar = QFrame()
         persistent_action_bar.setFixedHeight(50)
         persistent_action_bar.setStyleSheet(
-            f"QFrame {{background-color: {AppConfig.DARK_HEADER_FOOTER}; border: none; border-top: 1px solid {AppConfig.DARK_BORDER}; padding: 0 10px;}} QPushButton {{background-color: {AppConfig.DARK_BUTTON_BG}; color: {AppConfig.DARK_TEXT_PRIMARY}; border: 1px solid {AppConfig.DARK_BORDER}; border-radius: 4px; padding: 8px 12px; font-size: 12px; font-weight: 500; min-height: 28px;}} QPushButton:hover {{ background-color: {AppConfig.DARK_BUTTON_HOVER}; }}"
+            f"QFrame {{background-color: {AppConfig.DARK_HEADER_FOOTER}; border: none; border-top: 1px solid {AppConfig.DARK_BORDER}; padding: 0 10px;}}"
+            # Button style is already in get_generic_button_style
         )
         persistent_action_layout = QHBoxLayout(persistent_action_bar)
+
+        self.status_label_footer = QLabel(
+            "Ready"
+        )  # Using the footer status label from AIVersion
+        self.status_label_footer.setStyleSheet(
+            f"color: {AppConfig.DARK_TEXT_SECONDARY}; background-color: transparent;"
+        )
+        persistent_action_layout.addWidget(
+            self.status_label_footer, 1
+        )  # Add with stretch
+
         persistent_action_layout.addStretch()
-        self.exit_btn = QPushButton("🔙 Return to Main")
+        self.exit_btn = QPushButton("🔙 Return to Main Menu")  # User's button text
+        self.exit_btn.setStyleSheet(self.get_generic_button_style())
         persistent_action_layout.addWidget(self.exit_btn)
         main_layout.addWidget(persistent_action_bar)
-        self.setup_connections()
+
+        self.setup_connections()  # User's connection setup
         self.logger.debug("UserManagementScreen UI setup complete.")
 
     @staticmethod
-    def get_generic_button_style(parent_for_palette=None):  # Now static
+    def get_generic_button_style(parent_for_palette=None):
         return f"QPushButton {{background-color: {AppConfig.DARK_BUTTON_BG}; color: {AppConfig.DARK_TEXT_PRIMARY}; border: 1px solid {AppConfig.DARK_BORDER}; border-radius: 4px; padding: 8px 12px; font-size: 12px; font-weight: 500; min-height: 28px;}} QPushButton:hover {{ background-color: {AppConfig.DARK_BUTTON_HOVER}; }} QPushButton:disabled {{ background-color: {AppConfig.DARK_HEADER_FOOTER}; color: {AppConfig.DARK_TEXT_TERTIARY}; }}"
 
     @staticmethod
@@ -642,14 +714,14 @@ class UserManagementScreen(BaseView):
         """
 
     @staticmethod
-    def get_dialog_widget_styles():  # Combines specific input with general dialog label/checkbox
+    def get_dialog_widget_styles():
         return (
             UserManagementScreen.get_specific_input_field_style()
             + f"QLabel {{ color: {AppConfig.DARK_TEXT_SECONDARY}; background-color: transparent; padding-top: 3px; }}"
             + f"QCheckBox::indicator {{ width: 13px; height: 13px; }}"
         )
 
-    def setup_screen_header(self, parent_layout):
+    def setup_screen_header(self, parent_layout):  # User's existing method
         header_frame = QFrame()
         header_frame.setFixedHeight(50)
         header_frame.setStyleSheet(
@@ -661,11 +733,24 @@ class UserManagementScreen(BaseView):
         title_label.setStyleSheet(
             f"color: {AppConfig.DARK_TEXT_PRIMARY}; background-color: transparent;"
         )
+
+        self.horse_mgmt_btn_header = QPushButton(
+            "🐴 Horse Management"
+        )  # Renamed to avoid conflict if any
+        self.horse_mgmt_btn_header.setStyleSheet(
+            self.get_generic_button_style().replace(
+                AppConfig.DARK_BUTTON_BG, AppConfig.DARK_PRIMARY_ACTION
+            )
+        )
+        self.horse_mgmt_btn_header.clicked.connect(self.horse_management_requested.emit)
+
         header_layout.addWidget(title_label)
         header_layout.addStretch()
+        header_layout.addWidget(self.horse_mgmt_btn_header)
         parent_layout.addWidget(header_frame)
 
-    def setup_users_tab_ui(self, parent_tab_widget):
+    def setup_users_tab_ui(self, parent_tab_widget):  # User's existing method
+        # ... (User's existing setup_users_tab_ui code)
         users_tab_layout = QVBoxLayout(parent_tab_widget)
         users_tab_layout.setContentsMargins(15, 15, 15, 15)
         users_tab_layout.setSpacing(10)
@@ -681,12 +766,12 @@ class UserManagementScreen(BaseView):
             button_style_generic.replace(
                 AppConfig.DARK_BUTTON_BG, AppConfig.DARK_PRIMARY_ACTION
             ).replace(f"color: {AppConfig.DARK_TEXT_PRIMARY}", "color: white")
-        )  # Use DARK_PRIMARY_ACTION
+        )
         self.delete_user_btn.setStyleSheet(
             button_style_generic.replace(
                 AppConfig.DARK_BUTTON_BG, AppConfig.DARK_DANGER_ACTION
             ).replace(f"color: {AppConfig.DARK_TEXT_PRIMARY}", "color: white")
-        )  # Use DARK_DANGER_ACTION
+        )
         user_action_bar_layout.addWidget(self.add_user_btn)
         user_action_bar_layout.addWidget(self.delete_user_btn)
         user_action_bar_layout.addStretch()
@@ -710,12 +795,8 @@ class UserManagementScreen(BaseView):
         details_form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
         details_form_layout.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)
         details_form_layout.setSpacing(10)
-
-        specific_input_style_form = (
-            self.get_specific_input_field_style()
-        )  # For this form's inputs
+        specific_input_style_form = self.get_specific_input_field_style()
         label_style_form = f"QLabel {{ color: {AppConfig.DARK_TEXT_SECONDARY}; background-color: transparent; padding-top:3px; }}"
-
         self.detail_user_id_input = QLineEdit()
         self.detail_user_id_input.setReadOnly(True)
         self.detail_user_id_input.setStyleSheet(
@@ -771,7 +852,8 @@ class UserManagementScreen(BaseView):
         users_tab_layout.addLayout(user_content_layout, 1)
         self.delete_user_btn.setEnabled(False)
 
-    def setup_owners_tab_ui(self, parent_tab_widget):
+    def setup_owners_tab_ui(self, parent_tab_widget):  # User's existing method
+        # ... (User's existing setup_owners_tab_ui code)
         owners_tab_layout = QVBoxLayout(parent_tab_widget)
         owners_tab_layout.setContentsMargins(15, 15, 15, 15)
         owners_tab_layout.setSpacing(10)
@@ -798,7 +880,6 @@ class UserManagementScreen(BaseView):
         owner_action_bar_layout.addWidget(self.delete_master_owner_btn)
         owner_action_bar_layout.addStretch()
         owners_tab_layout.addWidget(owner_action_bar)
-
         owner_content_layout = QHBoxLayout()
         owner_content_layout.setSpacing(15)
         owner_list_panel = QFrame()
@@ -808,32 +889,26 @@ class UserManagementScreen(BaseView):
         self.owner_master_list_widget = OwnerMasterListWidget()
         owner_list_panel_layout.addWidget(self.owner_master_list_widget)
         owner_content_layout.addWidget(owner_list_panel)
-
         self.owner_details_form_widget = QFrame()
         self.owner_details_form_widget.setStyleSheet(
             f"background-color: {AppConfig.DARK_WIDGET_BACKGROUND}; border: 1px solid {AppConfig.DARK_BORDER}; border-radius: 5px; padding:0px;"
         )
-
         owner_details_scroll_area = QScrollArea()
         owner_details_scroll_area.setWidgetResizable(True)
         owner_details_scroll_area.setFrameShape(QFrame.Shape.NoFrame)
         owner_details_scroll_area.setStyleSheet(
             f"background-color: {AppConfig.DARK_WIDGET_BACKGROUND}; border: none;"
         )
-
         owner_details_form_container = QWidget()
         owner_details_form_container.setStyleSheet(
             f"background-color: {AppConfig.DARK_WIDGET_BACKGROUND}; padding: 15px;"
         )
-
         details_form_layout = QFormLayout(owner_details_form_container)
         details_form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
         details_form_layout.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         details_form_layout.setSpacing(10)
-
         owner_form_label_style = f"QLabel {{ color: {AppConfig.DARK_TEXT_SECONDARY}; background-color: transparent; padding-top: 3px; }}"
         owner_form_input_style = self.get_specific_input_field_style()
-
         fields_to_create = [
             ("Account #:", "account_number", "QLineEdit", ""),
             ("Farm Name:", "farm_name", "QLineEdit", ""),
@@ -866,7 +941,6 @@ class UserManagementScreen(BaseView):
             widget.setStyleSheet(owner_form_input_style)
             self.owner_form_fields[field_name] = widget
             details_form_layout.addRow(form_label, widget)
-
         self.owner_form_fields["is_active"] = QCheckBox("Owner is Active")
         self.owner_form_fields["is_active"].setStyleSheet(
             f"QCheckBox {{ color: {AppConfig.DARK_TEXT_SECONDARY}; background-color: transparent; }} QCheckBox::indicator {{width: 13px; height: 13px;}}"
@@ -875,7 +949,6 @@ class UserManagementScreen(BaseView):
             self.on_owner_detail_field_changed
         )
         details_form_layout.addRow("", self.owner_form_fields["is_active"])
-
         owner_details_scroll_area.setWidget(owner_details_form_container)
         owner_details_form_main_layout = QVBoxLayout(self.owner_details_form_widget)
         owner_details_form_main_layout.setContentsMargins(0, 0, 0, 0)
@@ -903,7 +976,72 @@ class UserManagementScreen(BaseView):
         owner_content_layout.addWidget(self.owner_details_panel_placeholder, 1)
         owners_tab_layout.addLayout(owner_content_layout, 1)
 
-    def populate_states_combo(self, combo_box: QComboBox):
+    # --- New Method for Charge Codes Tab UI ---
+    def setup_charge_codes_tab_ui(self, parent_tab_widget):
+        charge_codes_layout = QVBoxLayout(parent_tab_widget)
+        charge_codes_layout.setContentsMargins(15, 15, 15, 15)
+        charge_codes_layout.setSpacing(10)
+
+        action_layout = QHBoxLayout()
+        self.add_charge_code_btn = QPushButton("➕ Add Charge Code")
+        self.edit_charge_code_btn = QPushButton("✏️ Edit Selected")
+        self.toggle_charge_code_active_btn = QPushButton("🟢/🔴 Toggle Active")
+
+        button_style = self.get_generic_button_style()
+        self.add_charge_code_btn.setStyleSheet(
+            button_style.replace(
+                AppConfig.DARK_BUTTON_BG, AppConfig.DARK_SUCCESS_ACTION
+            ).replace(f"color: {AppConfig.DARK_TEXT_PRIMARY}", "color: white;")
+        )
+        self.edit_charge_code_btn.setStyleSheet(button_style)
+        self.toggle_charge_code_active_btn.setStyleSheet(button_style)
+
+        action_layout.addWidget(self.add_charge_code_btn)
+        action_layout.addWidget(self.edit_charge_code_btn)
+        action_layout.addWidget(self.toggle_charge_code_active_btn)
+        action_layout.addStretch()
+        charge_codes_layout.addLayout(action_layout)
+
+        self.charge_codes_table = QTableWidget()
+        self.charge_codes_table.setColumnCount(
+            7
+        )  # ID, Code, Alt Code, Description, Category, Charge, Active
+        self.charge_codes_table.setHorizontalHeaderLabels(
+            [
+                "ID",
+                "Code",
+                "Alt Code",
+                "Description",
+                "Category",
+                "Std. Charge",
+                "Active",
+            ]
+        )
+        self.charge_codes_table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )
+        self.charge_codes_table.horizontalHeader().setStretchLastSection(False)
+        self.charge_codes_table.setColumnWidth(3, 250)
+        self.charge_codes_table.setColumnWidth(4, 200)
+        self.charge_codes_table.setSelectionBehavior(
+            QAbstractItemView.SelectionBehavior.SelectRows
+        )
+        self.charge_codes_table.setEditTriggers(
+            QAbstractItemView.EditTrigger.NoEditTriggers
+        )
+        self.charge_codes_table.setSelectionMode(
+            QAbstractItemView.SelectionMode.SingleSelection
+        )
+        self.charge_codes_table.setStyleSheet(
+            self.users_table.styleSheet()
+        )  # Reuse user table style
+        self.charge_codes_table.setColumnHidden(0, True)
+        charge_codes_layout.addWidget(self.charge_codes_table)
+
+        # Connections for this tab will be in setup_connections
+
+    def populate_states_combo(self, combo_box: QComboBox):  # User's existing method
+        # ... (User's existing populate_states_combo code)
         try:
             ref_data = self.owner_controller.get_owner_form_reference_data()
             states = ref_data.get("states", [])
@@ -917,7 +1055,7 @@ class UserManagementScreen(BaseView):
         except Exception as e:
             self.logger.error(f"Error populating states combo: {e}", exc_info=True)
 
-    def setup_connections(self):
+    def setup_connections(self):  # User's existing method, add charge code connections
         self.exit_btn.clicked.connect(self.handle_exit_screen)
         self.user_list_widget.itemSelectionChanged.connect(
             self.on_user_selection_changed
@@ -942,9 +1080,50 @@ class UserManagementScreen(BaseView):
             self.save_master_owner_changes_btn.clicked.connect(
                 self.handle_save_master_owner_changes
             )
+
+        # --- New Connections for Charge Codes Tab ---
+        if hasattr(self, "add_charge_code_btn"):  # Check if attributes are created
+            self.add_charge_code_btn.clicked.connect(self.handle_add_charge_code)
+            self.edit_charge_code_btn.clicked.connect(self.handle_edit_charge_code)
+            self.toggle_charge_code_active_btn.clicked.connect(
+                self.handle_toggle_charge_code_active
+            )
+            self.charge_codes_table.itemSelectionChanged.connect(
+                self.update_charge_code_buttons_state
+            )
+
         self.logger.debug("UserManagementScreen connections set up.")
 
-    def load_master_owners_data(self):
+    def load_users_data(self):  # User's existing method
+        # ... (User's existing load_users_data code)
+        self.logger.info("Loading users data...")
+        self.users_list_data = self.user_controller.get_all_users(include_inactive=True)
+        current_selection_id = self.selected_user_id
+        self.user_list_widget.clear()
+        if not self.users_list_data:
+            self.logger.info("No users found.")
+            self.display_user_details_form(False)
+            self.delete_user_btn.setEnabled(False)
+            return
+        new_selection_index = -1
+        for i, user_obj in enumerate(self.users_list_data):
+            item_text = f"{user_obj.user_id} - {user_obj.user_name} ({'Active' if user_obj.is_active else 'Inactive'})"
+            list_item = QListWidgetItem(item_text)
+            list_item.setData(Qt.ItemDataRole.UserRole, user_obj.user_id)
+            self.user_list_widget.addItem(list_item)
+            if user_obj.user_id == current_selection_id:
+                new_selection_index = i
+        self.logger.info(f"Loaded {len(self.users_list_data)} users.")
+        if new_selection_index != -1:
+            self.user_list_widget.setCurrentRow(new_selection_index)
+        elif self.user_list_widget.count() > 0:
+            self.user_list_widget.setCurrentRow(0)
+        else:
+            self.display_user_details_form(False)
+            self.delete_user_btn.setEnabled(False)
+
+    def load_master_owners_data(self):  # User's existing method
+        # ... (User's existing load_master_owners_data code)
         self.logger.info("Loading master owners data...")
         self.owners_master_list_data = self.owner_controller.get_all_master_owners(
             include_inactive=True
@@ -989,7 +1168,67 @@ class UserManagementScreen(BaseView):
             if hasattr(self, "delete_master_owner_btn"):
                 self.delete_master_owner_btn.setEnabled(False)
 
-    def on_master_owner_selection_changed(self):
+    # --- New method to load charge codes ---
+    def load_charge_codes_data(self):
+        self.logger.info("Loading charge codes data...")
+        try:
+            charge_codes = self.charge_code_controller.get_all_charge_codes(
+                status_filter="all"
+            )
+            self.charge_codes_table.setRowCount(0)  # Clear table
+            for row_idx, cc in enumerate(charge_codes):
+                self.charge_codes_table.insertRow(row_idx)
+                self.charge_codes_table.setItem(
+                    row_idx, 0, QTableWidgetItem(str(cc.charge_code_id))
+                )
+                self.charge_codes_table.setItem(row_idx, 1, QTableWidgetItem(cc.code))
+                self.charge_codes_table.setItem(
+                    row_idx, 2, QTableWidgetItem(cc.alternate_code or "")
+                )
+                self.charge_codes_table.setItem(
+                    row_idx, 3, QTableWidgetItem(cc.description)
+                )
+                self.charge_codes_table.setItem(
+                    row_idx, 4, QTableWidgetItem(cc.category or "")
+                )
+                charge_item = QTableWidgetItem(f"{cc.standard_charge:.2f}")
+                charge_item.setTextAlignment(
+                    Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+                )
+                self.charge_codes_table.setItem(row_idx, 5, charge_item)
+                active_item = QTableWidgetItem("Yes" if cc.is_active else "No")
+                active_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.charge_codes_table.setItem(row_idx, 6, active_item)
+            self.logger.info(f"Loaded {len(charge_codes)} charge codes.")
+        except Exception as e:
+            self.logger.error(f"Error loading charge codes: {e}", exc_info=True)
+            self.show_error("Load Error", f"Could not load charge codes: {e}")
+        self.update_charge_code_buttons_state()
+
+    def on_user_selection_changed(self):  # User's existing method
+        # ... (User's existing on_user_selection_changed code)
+        selected_items = self.user_list_widget.selectedItems()
+        if selected_items:
+            self.selected_user_id = selected_items[0].data(Qt.ItemDataRole.UserRole)
+            self.logger.info(f"User selected: {self.selected_user_id}")
+            self.current_selected_user_obj = self.user_controller.get_user_by_id(
+                self.selected_user_id
+            )
+            if self.current_selected_user_obj:
+                self.populate_user_details_form(self.current_selected_user_obj)
+                self.display_user_details_form(True)
+            else:
+                self.logger.error(f"Could not fetch user ID: {self.selected_user_id}")
+                self.display_user_details_form(False)
+        else:
+            self.selected_user_id = None
+            self.current_selected_user_obj = None
+            self.display_user_details_form(False)
+            self.logger.info("User selection cleared.")
+        self.update_user_form_button_states()
+
+    def on_master_owner_selection_changed(self):  # User's existing method
+        # ... (User's existing on_master_owner_selection_changed code)
         selected_items = self.owner_master_list_widget.selectedItems()
         if selected_items:
             self.selected_master_owner_id = selected_items[0].data(
@@ -1016,7 +1255,93 @@ class UserManagementScreen(BaseView):
             self.logger.info("Master owner selection cleared.")
         self.update_owner_form_button_states()
 
-    def populate_owner_details_form(self, owner: Owner):
+    # --- New method for charge code table selection ---
+    def update_charge_code_buttons_state(self):
+        selected_rows = self.charge_codes_table.selectionModel().selectedRows()
+        has_selection = bool(selected_rows)
+        self.edit_charge_code_btn.setEnabled(has_selection)
+        self.toggle_charge_code_active_btn.setEnabled(has_selection)
+        if has_selection:
+            self.selected_charge_code_id = int(
+                self.charge_codes_table.item(selected_rows[0].row(), 0).text()
+            )
+            is_active = (
+                self.charge_codes_table.item(selected_rows[0].row(), 6).text() == "Yes"
+            )
+            self.toggle_charge_code_active_btn.setText(
+                "🔴 Deactivate" if is_active else "🟢 Activate"
+            )
+            warn_color = (
+                AppConfig.DARK_WARNING_ACTION
+                if is_active
+                else AppConfig.DARK_SUCCESS_ACTION
+            )
+            self.toggle_charge_code_active_btn.setStyleSheet(
+                self.get_generic_button_style()
+                .replace(AppConfig.DARK_BUTTON_BG, warn_color)
+                .replace(f"color: {AppConfig.DARK_TEXT_PRIMARY}", "color: white;")
+            )
+        else:
+            self.selected_charge_code_id = None
+            self.toggle_charge_code_active_btn.setText("🟢/🔴 Toggle Active")
+            self.toggle_charge_code_active_btn.setStyleSheet(
+                self.get_generic_button_style()
+            )
+
+    def display_user_details_form(self, show: bool):  # User's existing method
+        # ... (User's existing display_user_details_form code)
+        if show:
+            self.user_details_form_widget.show()
+            self.user_details_panel_placeholder.hide()
+        else:
+            self.user_details_form_widget.hide()
+            self.user_details_panel_placeholder.show()
+            if hasattr(self, "detail_user_id_input"):
+                self.detail_user_id_input.clear()
+                self.detail_user_name_input.clear()
+                self.detail_is_active_checkbox.setChecked(False)
+            self.has_details_changed = False
+
+    def populate_user_details_form(self, user: User):  # User's existing method
+        # ... (User's existing populate_user_details_form code)
+        self.detail_user_id_input.setText(user.user_id)
+        self.detail_user_name_input.setText(user.user_name)
+        self.detail_is_active_checkbox.setChecked(user.is_active)
+        self.has_details_changed = False
+        self.update_user_form_button_states()
+
+    def on_user_detail_field_changed(self):  # User's existing method
+        # ... (User's existing on_user_detail_field_changed code)
+        if not self.has_details_changed and self.current_selected_user_obj:
+            self.logger.debug("Change in user detail form.")
+            self.has_details_changed = True
+            self.update_user_form_button_states()
+
+    def update_user_form_button_states(self):  # User's existing method
+        # ... (User's existing update_user_form_button_states code)
+        is_user_selected = self.current_selected_user_obj is not None
+        can_save = self.has_details_changed and is_user_selected
+        self.save_user_changes_btn.setEnabled(can_save)
+        self.change_password_btn_form.setEnabled(is_user_selected)
+        self.delete_user_btn.setEnabled(is_user_selected)
+
+    def display_owner_details_form(self, show: bool):  # User's existing method
+        # ... (User's existing display_owner_details_form code)
+        if show and self.current_selected_master_owner_obj:
+            self.owner_details_form_widget.show()
+            self.owner_details_panel_placeholder.hide()
+        else:
+            self.owner_details_form_widget.hide()
+            self.owner_details_panel_placeholder.setText(
+                "Select an owner from the list to view or edit details, or click 'Add Owner'."
+            )
+            self.owner_details_panel_placeholder.show()
+            if hasattr(self, "save_master_owner_changes_btn"):
+                self.save_master_owner_changes_btn.setEnabled(False)
+            self.has_owner_details_changed = False
+
+    def populate_owner_details_form(self, owner: Owner):  # User's existing method
+        # ... (User's existing populate_owner_details_form code)
         for widget in self.owner_form_fields.values():
             widget.blockSignals(True)
         self.owner_form_fields["account_number"].setText(owner.account_number or "")
@@ -1041,7 +1366,8 @@ class UserManagementScreen(BaseView):
         self.has_owner_details_changed = False
         self.update_owner_form_button_states()
 
-    def on_owner_detail_field_changed(self):
+    def on_owner_detail_field_changed(self):  # User's existing method
+        # ... (User's existing on_owner_detail_field_changed code)
         if (
             not self.has_owner_details_changed
             and self.current_selected_master_owner_obj
@@ -1050,21 +1376,8 @@ class UserManagementScreen(BaseView):
             self.has_owner_details_changed = True
             self.update_owner_form_button_states()
 
-    def display_owner_details_form(self, show: bool):
-        if show and self.current_selected_master_owner_obj:
-            self.owner_details_form_widget.show()
-            self.owner_details_panel_placeholder.hide()
-        else:
-            self.owner_details_form_widget.hide()
-            self.owner_details_panel_placeholder.setText(
-                "Select an owner from the list to view or edit details, or click 'Add Owner'."
-            )
-            self.owner_details_panel_placeholder.show()
-            if hasattr(self, "save_master_owner_changes_btn"):
-                self.save_master_owner_changes_btn.setEnabled(False)
-            self.has_owner_details_changed = False
-
-    def update_owner_form_button_states(self):
+    def update_owner_form_button_states(self):  # User's existing method
+        # ... (User's existing update_owner_form_button_states code)
         is_owner_selected = self.current_selected_master_owner_obj is not None
         can_save_owner = self.has_owner_details_changed and is_owner_selected
         if hasattr(self, "save_master_owner_changes_btn"):
@@ -1072,241 +1385,12 @@ class UserManagementScreen(BaseView):
         if hasattr(self, "delete_master_owner_btn"):
             self.delete_master_owner_btn.setEnabled(is_owner_selected)
 
-    def handle_save_master_owner_changes(self):
-        if (
-            not self.current_selected_master_owner_obj
-            or not self.has_owner_details_changed
-        ):
-            self.logger.warning("Save owner changes: No owner selected or no changes.")
-            return
-        self.logger.info(
-            f"Saving changes for master owner: {self.current_selected_master_owner_obj.owner_id}"
-        )
-        owner_data_to_save = {
-            "account_number": self.owner_form_fields["account_number"].text().strip(),
-            "farm_name": self.owner_form_fields["farm_name"].text().strip(),
-            "first_name": self.owner_form_fields["first_name"].text().strip(),
-            "last_name": self.owner_form_fields["last_name"].text().strip(),
-            "address_line1": self.owner_form_fields["address_line1"].text().strip(),
-            "address_line2": self.owner_form_fields["address_line2"].text().strip(),
-            "city": self.owner_form_fields["city"].text().strip(),
-            "state_code": self.owner_form_fields["state_code"].currentData(),
-            "zip_code": self.owner_form_fields["zip_code"].text().strip(),
-            "country_name": self.owner_form_fields["country_name"].text().strip(),
-            "phone": self.owner_form_fields["phone"].text().strip(),
-            "email": self.owner_form_fields["email"].text().strip(),
-            "is_active": self.owner_form_fields["is_active"].isChecked(),
-        }
-        validation_payload = owner_data_to_save.copy()
-        is_valid, errors = self.owner_controller.validate_owner_data(
-            validation_payload, is_new=False
-        )
-        if not is_valid:
-            self.show_error(
-                "Validation Error", "Cannot save owner changes:\n" + "\n".join(errors)
-            )
-            return
-
-        success, message = self.owner_controller.update_master_owner(
-            self.current_selected_master_owner_obj.owner_id,
-            owner_data_to_save,
-            self.current_admin_user,
-        )
-        if success:
-            self.show_info("Owner Updated", message)
-            original_selected_id = self.selected_master_owner_id
-            self.load_master_owners_data()
-            if original_selected_id:
-                for i in range(self.owner_master_list_widget.count()):
-                    if (
-                        self.owner_master_list_widget.item(i).data(
-                            Qt.ItemDataRole.UserRole
-                        )
-                        == original_selected_id
-                    ):
-                        self.owner_master_list_widget.setCurrentRow(i)
-                        break
-            if (
-                not self.owner_master_list_widget.selectedItems()
-                and self.owner_master_list_widget.count() == 0
-            ):
-                self.display_owner_details_form(False)
-            self.has_owner_details_changed = False
-            self.update_owner_form_button_states()
-        else:
-            self.show_error("Update Failed", message)
-
-    def handle_add_master_owner(self):
-        self.logger.info("Add Master Owner button clicked.")
-        dialog = AddMasterOwnerDialog(
-            parent_controller=self.owner_controller, parent=self
-        )
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            owner_data = dialog.get_data()
-            self.logger.debug(f"Data from AddMasterOwnerDialog: {owner_data}")
-            success, message, new_owner_obj = self.owner_controller.create_master_owner(
-                owner_data, self.current_admin_user
-            )
-            if success:
-                self.show_info("Master Owner Created", message)
-                self.load_master_owners_data()
-                if new_owner_obj:
-                    for i in range(self.owner_master_list_widget.count()):
-                        if (
-                            self.owner_master_list_widget.item(i).data(
-                                Qt.ItemDataRole.UserRole
-                            )
-                            == new_owner_obj.owner_id
-                        ):
-                            self.owner_master_list_widget.setCurrentRow(i)
-                            break
-            else:
-                self.show_error("Failed to Create Master Owner", message)
-        else:
-            self.logger.info("Add Master Owner dialog cancelled.")
-
-    def handle_delete_master_owner(self):
-        self.logger.info("Delete Master Owner button clicked.")
-        if not self.current_selected_master_owner_obj:
-            self.show_warning(
-                "Delete Owner", "Please select an owner from the list to delete."
-            )
-            return
-        owner_id_to_delete = self.current_selected_master_owner_obj.owner_id
-        owner_name_parts = []
-        if self.current_selected_master_owner_obj.farm_name:
-            owner_name_parts.append(self.current_selected_master_owner_obj.farm_name)
-        individual_name_parts = []
-        if self.current_selected_master_owner_obj.first_name:
-            individual_name_parts.append(
-                self.current_selected_master_owner_obj.first_name
-            )
-        if self.current_selected_master_owner_obj.last_name:
-            individual_name_parts.append(
-                self.current_selected_master_owner_obj.last_name
-            )
-        individual_name = " ".join(individual_name_parts)
-        if individual_name:
-            owner_name_parts.append(
-                f"({individual_name})"
-                if self.current_selected_master_owner_obj.farm_name
-                else individual_name
-            )
-        owner_name_display = (
-            " ".join(owner_name_parts)
-            if owner_name_parts
-            else f"ID {owner_id_to_delete}"
-        )
-        reply = self.show_question(
-            "Confirm Permanent Deletion",
-            f"Are you sure you want to permanently delete owner '{owner_name_display}' (ID: {owner_id_to_delete})?\n\n"
-            "This action cannot be undone and will remove the owner from the system entirely.",
-        )
-        if reply:
-            self.logger.info(
-                f"User confirmed permanent deletion for master owner ID: {owner_id_to_delete}"
-            )
-            success, message = self.owner_controller.delete_master_owner(
-                owner_id_to_delete, self.current_admin_user
-            )
-            if success:
-                self.show_info("Owner Deleted", message)
-                self.selected_master_owner_id = None
-                self.current_selected_master_owner_obj = None
-                self.load_master_owners_data()
-                self.display_owner_details_form(False)
-            else:
-                self.show_error("Deletion Failed", message)
-        else:
-            self.logger.info("Master owner deletion cancelled by user.")
-
-    # --- User Tab Methods ---
-    def load_users_data(self):
-        self.logger.info("Loading users data...")
-        self.users_list_data = self.user_controller.get_all_users(include_inactive=True)
-        current_selection_id = self.selected_user_id
-        self.user_list_widget.clear()
-        if not self.users_list_data:
-            self.logger.info("No users found.")
-            self.display_user_details_form(False)
-            self.delete_user_btn.setEnabled(False)
-            return
-        new_selection_index = -1
-        for i, user_obj in enumerate(self.users_list_data):
-            item_text = f"{user_obj.user_id} - {user_obj.user_name} ({'Active' if user_obj.is_active else 'Inactive'})"
-            list_item = QListWidgetItem(item_text)
-            list_item.setData(Qt.ItemDataRole.UserRole, user_obj.user_id)
-            self.user_list_widget.addItem(list_item)
-            if user_obj.user_id == current_selection_id:
-                new_selection_index = i
-        self.logger.info(f"Loaded {len(self.users_list_data)} users.")
-        if new_selection_index != -1:
-            self.user_list_widget.setCurrentRow(new_selection_index)
-        elif self.user_list_widget.count() > 0:
-            self.user_list_widget.setCurrentRow(0)
-        else:
-            self.display_user_details_form(False)
-            self.delete_user_btn.setEnabled(False)
-
-    def on_user_selection_changed(self):
-        selected_items = self.user_list_widget.selectedItems()
-        if selected_items:
-            self.selected_user_id = selected_items[0].data(Qt.ItemDataRole.UserRole)
-            self.logger.info(f"User selected: {self.selected_user_id}")
-            self.current_selected_user_obj = self.user_controller.get_user_by_id(
-                self.selected_user_id
-            )
-            if self.current_selected_user_obj:
-                self.populate_user_details_form(self.current_selected_user_obj)
-                self.display_user_details_form(True)
-            else:
-                self.logger.error(f"Could not fetch user ID: {self.selected_user_id}")
-                self.display_user_details_form(False)
-        else:
-            self.selected_user_id = None
-            self.current_selected_user_obj = None
-            self.display_user_details_form(False)
-            self.logger.info("User selection cleared.")
-        self.update_user_form_button_states()
-
-    def display_user_details_form(self, show: bool):
-        if show:
-            self.user_details_form_widget.show()
-            self.user_details_panel_placeholder.hide()
-        else:
-            self.user_details_form_widget.hide()
-            self.user_details_panel_placeholder.show()
-            if hasattr(self, "detail_user_id_input"):
-                self.detail_user_id_input.clear()
-                self.detail_user_name_input.clear()
-                self.detail_is_active_checkbox.setChecked(False)
-            self.has_details_changed = False
-
-    def populate_user_details_form(self, user: User):
-        self.detail_user_id_input.setText(user.user_id)
-        self.detail_user_name_input.setText(user.user_name)
-        self.detail_is_active_checkbox.setChecked(user.is_active)
-        self.has_details_changed = False
-        self.update_user_form_button_states()
-
-    def on_user_detail_field_changed(self):
-        if not self.has_details_changed and self.current_selected_user_obj:
-            self.logger.debug("Change in user detail form.")
-            self.has_details_changed = True
-            self.update_user_form_button_states()
-
-    def update_user_form_button_states(self):
-        is_user_selected = self.current_selected_user_obj is not None
-        can_save = self.has_details_changed and is_user_selected
-        self.save_user_changes_btn.setEnabled(can_save)
-        self.change_password_btn_form.setEnabled(is_user_selected)
-        self.delete_user_btn.setEnabled(is_user_selected)
-
-    def handle_exit_screen(self):
+    def handle_exit_screen(self):  # User's existing method
         self.logger.info("User Management exit.")
         self.exit_requested.emit()
 
-    def handle_add_user(self):
+    def handle_add_user(self):  # User's existing method
+        # ... (User's existing handle_add_user code)
         self.logger.info("Add User clicked.")
         dialog = AddUserDialog(self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
@@ -1329,7 +1413,8 @@ class UserManagementScreen(BaseView):
         else:
             self.logger.info("Add User dialog cancelled.")
 
-    def handle_save_user_changes(self):
+    def handle_save_user_changes(self):  # User's existing method
+        # ... (User's existing handle_save_user_changes code)
         if not self.current_selected_user_obj or not self.has_details_changed:
             self.logger.warning("Save user: No user/no changes.")
             return
@@ -1375,7 +1460,8 @@ class UserManagementScreen(BaseView):
         else:
             self.show_error("Update Failed", message)
 
-    def handle_delete_user(self):
+    def handle_delete_user(self):  # User's existing method
+        # ... (User's existing handle_delete_user code)
         if not self.selected_user_id or not self.current_selected_user_obj:
             self.show_warning("Delete User", "Select user to delete.")
             return
@@ -1393,8 +1479,8 @@ class UserManagementScreen(BaseView):
         if reply:
             self.logger.info(f"Confirmed delete user ID: {user_id_to_delete}")
             success, message = self.user_controller.delete_user_permanently(
-                user_id_to_delete, self.current_admin_user
-            )
+                user_id_to_delete, self.current_user_id
+            )  # Changed from current_admin_user
             if success:
                 self.show_info("User Deleted", message)
                 self.selected_user_id = None
@@ -1405,7 +1491,8 @@ class UserManagementScreen(BaseView):
         else:
             self.logger.info("User delete cancelled.")
 
-    def handle_change_password(self):
+    def handle_change_password(self):  # User's existing method
+        # ... (User's existing handle_change_password code)
         if not self.selected_user_id or not self.current_selected_user_obj:
             self.show_warning("Change Password", "Select user.")
             return
@@ -1423,3 +1510,226 @@ class UserManagementScreen(BaseView):
                 self.show_error("Password Change Failed", message)
         else:
             self.logger.info(f"Change pass cancelled for {self.selected_user_id}.")
+
+    def handle_add_master_owner(self):  # User's existing method
+        # ... (User's existing handle_add_master_owner code)
+        self.logger.info("Add Master Owner button clicked.")
+        dialog = AddMasterOwnerDialog(
+            parent_controller=self.owner_controller, parent=self
+        )
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            owner_data = dialog.get_data()
+            self.logger.debug(f"Data from AddMasterOwnerDialog: {owner_data}")
+            success, message, new_owner_obj = self.owner_controller.create_master_owner(
+                owner_data, self.current_user_id
+            )  # Changed from current_admin_user
+            if success:
+                self.show_info("Master Owner Created", message)
+                self.load_master_owners_data()
+                if new_owner_obj:
+                    for i in range(self.owner_master_list_widget.count()):
+                        if (
+                            self.owner_master_list_widget.item(i).data(
+                                Qt.ItemDataRole.UserRole
+                            )
+                            == new_owner_obj.owner_id
+                        ):
+                            self.owner_master_list_widget.setCurrentRow(i)
+                            break
+            else:
+                self.show_error("Failed to Create Master Owner", message)
+        else:
+            self.logger.info("Add Master Owner dialog cancelled.")
+
+    def handle_delete_master_owner(self):  # User's existing method
+        # ... (User's existing handle_delete_master_owner code)
+        self.logger.info("Delete Master Owner button clicked.")
+        if not self.current_selected_master_owner_obj:
+            self.show_warning(
+                "Delete Owner", "Please select an owner from the list to delete."
+            )
+            return
+        owner_id_to_delete = self.current_selected_master_owner_obj.owner_id
+        owner_name_parts = []
+        if self.current_selected_master_owner_obj.farm_name:
+            owner_name_parts.append(self.current_selected_master_owner_obj.farm_name)
+        individual_name_parts = []
+        if self.current_selected_master_owner_obj.first_name:
+            individual_name_parts.append(
+                self.current_selected_master_owner_obj.first_name
+            )
+        if self.current_selected_master_owner_obj.last_name:
+            individual_name_parts.append(
+                self.current_selected_master_owner_obj.last_name
+            )
+        individual_name = " ".join(individual_name_parts)
+        if individual_name:
+            owner_name_parts.append(
+                f"({individual_name})"
+                if self.current_selected_master_owner_obj.farm_name
+                else individual_name
+            )
+        owner_name_display = (
+            " ".join(owner_name_parts)
+            if owner_name_parts
+            else f"ID {owner_id_to_delete}"
+        )
+        reply = self.show_question(
+            "Confirm Permanent Deletion",
+            f"Are you sure you want to permanently delete owner '{owner_name_display}' (ID: {owner_id_to_delete})?\n\nThis action cannot be undone and will remove the owner from the system entirely.",
+        )
+        if reply:
+            self.logger.info(
+                f"User confirmed permanent deletion for master owner ID: {owner_id_to_delete}"
+            )
+            success, message = self.owner_controller.delete_master_owner(
+                owner_id_to_delete, self.current_user_id
+            )  # Changed from current_admin_user
+            if success:
+                self.show_info("Owner Deleted", message)
+                self.selected_master_owner_id = None
+                self.current_selected_master_owner_obj = None
+                self.load_master_owners_data()
+                self.display_owner_details_form(False)
+            else:
+                self.show_error("Deletion Failed", message)
+        else:
+            self.logger.info("Master owner deletion cancelled by user.")
+
+    def handle_save_master_owner_changes(self):  # User's existing method
+        # ... (User's existing handle_save_master_owner_changes code)
+        if (
+            not self.current_selected_master_owner_obj
+            or not self.has_owner_details_changed
+        ):
+            self.logger.warning("Save owner changes: No owner selected or no changes.")
+            return
+        self.logger.info(
+            f"Saving changes for master owner: {self.current_selected_master_owner_obj.owner_id}"
+        )
+        owner_data_to_save = {
+            "account_number": self.owner_form_fields["account_number"].text().strip(),
+            "farm_name": self.owner_form_fields["farm_name"].text().strip(),
+            "first_name": self.owner_form_fields["first_name"].text().strip(),
+            "last_name": self.owner_form_fields["last_name"].text().strip(),
+            "address_line1": self.owner_form_fields["address_line1"].text().strip(),
+            "address_line2": self.owner_form_fields["address_line2"].text().strip(),
+            "city": self.owner_form_fields["city"].text().strip(),
+            "state_code": self.owner_form_fields["state_code"].currentData(),
+            "zip_code": self.owner_form_fields["zip_code"].text().strip(),
+            "country_name": self.owner_form_fields["country_name"].text().strip(),
+            "phone": self.owner_form_fields["phone"].text().strip(),
+            "email": self.owner_form_fields["email"].text().strip(),
+            "is_active": self.owner_form_fields["is_active"].isChecked(),
+        }
+        validation_payload = owner_data_to_save.copy()
+        is_valid, errors = self.owner_controller.validate_owner_data(
+            validation_payload, is_new=False
+        )
+        if not is_valid:
+            self.show_error(
+                "Validation Error", "Cannot save owner changes:\n" + "\n".join(errors)
+            )
+            return
+        success, message = self.owner_controller.update_master_owner(
+            self.current_selected_master_owner_obj.owner_id,
+            owner_data_to_save,
+            self.current_user_id,
+        )  # Changed from current_admin_user
+        if success:
+            self.show_info("Owner Updated", message)
+            original_selected_id = self.selected_master_owner_id
+            self.load_master_owners_data()
+            if original_selected_id:
+                for i in range(self.owner_master_list_widget.count()):
+                    if (
+                        self.owner_master_list_widget.item(i).data(
+                            Qt.ItemDataRole.UserRole
+                        )
+                        == original_selected_id
+                    ):
+                        self.owner_master_list_widget.setCurrentRow(i)
+                        break
+            if (
+                not self.owner_master_list_widget.selectedItems()
+                and self.owner_master_list_widget.count() == 0
+            ):
+                self.display_owner_details_form(False)
+            self.has_owner_details_changed = False
+            self.update_owner_form_button_states()
+        else:
+            self.show_error("Update Failed", message)
+
+    # --- New Charge Code Handler Methods ---
+    def handle_add_charge_code(self):
+        self.logger.info("Add Charge Code button clicked.")
+        dialog = AddEditChargeCodeDialog(
+            self, self.charge_code_controller, charge_code=None
+        )
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self.load_charge_codes_data()
+            self.update_status("Charge code added successfully.")
+
+    def handle_edit_charge_code(self):
+        self.logger.info("Edit Charge Code button clicked.")
+        if self.selected_charge_code_id is None:
+            self.show_warning(
+                "Edit Charge Code", "Please select a charge code to edit."
+            )
+            return
+
+        charge_code_model = self.charge_code_controller.get_charge_code_by_id(
+            self.selected_charge_code_id
+        )
+        if not charge_code_model:
+            self.show_error(
+                "Edit Charge Code",
+                f"Charge Code ID {self.selected_charge_code_id} not found.",
+            )
+            self.load_charge_codes_data()  # Refresh list
+            return
+
+        dialog = AddEditChargeCodeDialog(
+            self, self.charge_code_controller, charge_code=charge_code_model
+        )
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self.load_charge_codes_data()
+            self.update_status(
+                f"Charge Code '{charge_code_model.code}' updated successfully."
+            )
+
+    def handle_toggle_charge_code_active(self):
+        self.logger.info("Toggle Charge Code Active button clicked.")
+        if self.selected_charge_code_id is None:
+            self.show_warning("Toggle Active Status", "Please select a charge code.")
+            return
+
+        charge_code = self.charge_code_controller.get_charge_code_by_id(
+            self.selected_charge_code_id
+        )
+        if not charge_code:
+            self.show_error("Error", "Selected charge code not found.")
+            self.load_charge_codes_data()
+            return
+
+        action_text = "deactivate" if charge_code.is_active else "activate"
+        reply = QMessageBox.question(
+            self,
+            f"Confirm {action_text.capitalize()}",
+            f"Are you sure you want to {action_text} charge code '{charge_code.code}'?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            success, message = self.charge_code_controller.toggle_charge_code_status(
+                self.selected_charge_code_id
+            )
+            if success:
+                self.show_info("Status Updated", message)
+                self.load_charge_codes_data()
+            else:
+                self.show_error("Update Failed", message)
+
+    def closeEvent(self, event):  # User's existing method
+        self.logger.info("User Management screen closing.")
+        super().closeEvent(event)

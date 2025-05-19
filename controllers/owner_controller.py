@@ -2,22 +2,23 @@
 
 """
 EDSI Veterinary Management System - Owner Controller
-Version: 1.2.1
+Version: 1.3.2
 Purpose: Business logic for owner master file operations.
-         Added delete_master_owner method. Removed credit_rating handling from create/update
-         as it's not currently on the Owner model.
-Last Updated: May 15, 2025
+         Removed direct handling of 'country_name' for Owner model
+         as it's derived via StateProvince and not a direct Owner field.
+Last Updated: May 17, 2025
 Author: Claude Assistant
 
 Changelog:
-- v1.2.1 (2025-05-15): Removed credit_rating from Owner constructor call and update logic
-                     as it's not defined on the Owner model.
+- v1.3.2 (2025-05-17):
+    - Removed `country_name` from Owner instantiation in `create_master_owner`
+      and from updatable fields in `update_master_owner` as it's not a direct DB field.
+    - Removed `country_name` length validation in `validate_owner_data`.
+- v1.3.1 (2025-05-17):
+    - Removed phone number requirement from `validate_owner_data`.
+    - Added `mobile_phone` handling to `create_master_owner` and `update_master_owner`.
+- v1.2.1 (2025-05-15): Removed credit_rating from Owner constructor call and update logic.
 - v1.2.0 (2025-05-15): Added delete_master_owner method.
-  - New method to permanently delete an owner from the master list.
-  - Includes a check to prevent deletion if the owner is linked to any horses.
-- v1.1.0 (2025-05-15): Added get_all_master_owners method.
-- v1.0.4 (2025-05-15): Fixed AttributeError for owner_name in create_master_owner logging.
-- v1.0.3 (2025-05-14): Fixed TypeError for 'owner_name' argument.
 """
 
 import logging
@@ -108,7 +109,7 @@ class OwnerController:
         try:
             owner = (
                 session.query(Owner)
-                .options(joinedload(Owner.state))  # Eager load state
+                .options(joinedload(Owner.state))
                 .filter(Owner.owner_id == owner_id)
                 .first()
             )
@@ -132,34 +133,46 @@ class OwnerController:
 
         if not first_name and not last_name and not farm_name:
             errors.append(
-                "At least one name field (First, Last, or Farm Name) is required."
+                "It's recommended to provide at least one of: First Name, Last Name, or Farm Name."
             )
+        elif first_name and not last_name:
+            errors.append("If First Name is provided, Last Name is recommended.")
 
-        # Check required fields based on what the dialogs are designed to pass
-        if not owner_data.get(
-            "address_line1", ""
-        ).strip():  # address_line1 is from dialogs
+        if not owner_data.get("address_line1", "").strip():
             errors.append("Address Line 1 is required.")
-        if not owner_data.get("city", "").strip():  # city is from dialogs
+        if not owner_data.get("city", "").strip():
             errors.append("City is required.")
-        if not owner_data.get("state_code"):  # state_code (ID) is from dialogs
+        if not owner_data.get("state_code"):
             errors.append("State is required.")
-        if not owner_data.get("zip_code", "").strip():  # zip_code is from dialogs
+        if not owner_data.get("zip_code", "").strip():
             errors.append("Zip Code is required.")
-        if not owner_data.get("phone", "").strip():  # phone is from dialogs
-            errors.append("Phone is required.")
 
         if len(first_name) > 50:
-            errors.append("First Name too long (max 50).")
+            errors.append("First Name cannot exceed 50 characters.")
         if len(last_name) > 50:
-            errors.append("Last Name too long (max 50).")
+            errors.append("Last Name cannot exceed 50 characters.")
         if len(farm_name) > 100:
-            errors.append("Farm Name too long (max 100).")
+            errors.append("Farm Name cannot exceed 100 characters.")
         if len(owner_data.get("address_line1", "")) > 100:
-            errors.append("Address 1 too long (max 100).")
+            errors.append("Address Line 1 cannot exceed 100 characters.")
+        if len(owner_data.get("address_line2", "")) > 100:
+            errors.append("Address Line 2 cannot exceed 100 characters.")
+        if len(owner_data.get("city", "")) > 50:
+            errors.append("City cannot exceed 50 characters.")
+        if len(owner_data.get("zip_code", "")) > 20:
+            errors.append("Zip Code cannot exceed 20 characters.")
+        # country_name is informational, so length validation might still be useful if displayed
+        # but it's not a DB constraint on Owner table.
+        # if len(owner_data.get("country_name", "")) > 50:
+        #     errors.append("Country Name cannot exceed 50 characters (informational).")
+        if len(owner_data.get("phone", "")) > 20:
+            errors.append("Primary Phone cannot exceed 20 characters.")
+        if len(owner_data.get("mobile_phone", "")) > 20:
+            errors.append("Mobile Phone cannot exceed 20 characters.")
+        if len(owner_data.get("email", "")) > 100:
+            errors.append("Email cannot exceed 100 characters.")
         if len(account_number_val) > 20:
-            errors.append("Account Number too long (max 20).")
-        # Removed credit_rating from validation as it's being removed from forms/model interaction
+            errors.append("Account Number cannot exceed 20 characters.")
 
         if is_new and account_number_val:
             session = db_manager.get_session()
@@ -186,24 +199,27 @@ class OwnerController:
 
         session = db_manager.get_session()
         try:
+            # Create Owner object without country_name
             new_owner = Owner(
                 account_number=owner_data.get("account_number", "").strip() or None,
                 first_name=owner_data.get("first_name", "").strip() or None,
                 last_name=owner_data.get("last_name", "").strip() or None,
                 farm_name=owner_data.get("farm_name", "").strip() or None,
-                address_line1=owner_data.get("address_line1", "").strip(),
+                address_line1=owner_data.get("address_line1", "").strip() or None,
                 address_line2=owner_data.get("address_line2", "").strip() or None,
-                city=owner_data.get("city", "").strip(),
+                city=owner_data.get("city", "").strip() or None,
                 state_code=owner_data.get("state_code"),
-                zip_code=owner_data.get("zip_code", "").strip(),
+                zip_code=owner_data.get("zip_code", "").strip() or None,
+                # country_name is NOT passed to the constructor
                 phone=owner_data.get("phone", "").strip() or None,
+                mobile_phone=owner_data.get("mobile_phone", "").strip() or None,
                 email=owner_data.get("email", "").strip() or None,
                 is_active=owner_data.get("is_active", True),
-                # credit_rating is removed from constructor call
             )
             session.add(new_owner)
             session.commit()
             session.refresh(new_owner)
+
             log_name_parts = [
                 name for name in [new_owner.first_name, new_owner.last_name] if name
             ]
@@ -217,6 +233,7 @@ class OwnerController:
                 )
             if not display_name_for_log:
                 display_name_for_log = f"Owner ID {new_owner.owner_id}"
+
             self.logger.info(
                 f"Master Owner '{display_name_for_log}' (ID: {new_owner.owner_id}) created by {current_user}."
             )
@@ -237,8 +254,22 @@ class OwnerController:
             if not owner:
                 return False, f"Owner with ID {owner_id} not found."
 
-            # Don't include credit_rating if it's not a model attribute
-            updatable_model_fields = [
+            validation_data = owner_data.copy()
+            if "address_line1" not in validation_data:
+                validation_data["address_line1"] = owner.address_line1
+            if "city" not in validation_data:
+                validation_data["city"] = owner.city
+            if "state_code" not in validation_data:
+                validation_data["state_code"] = owner.state_code
+            if "zip_code" not in validation_data:
+                validation_data["zip_code"] = owner.zip_code
+
+            is_valid, errors = self.validate_owner_data(validation_data, is_new=False)
+            if not is_valid:
+                return False, "Validation failed: " + "; ".join(errors)
+
+            updatable_fields = [
+                "account_number",
                 "first_name",
                 "last_name",
                 "farm_name",
@@ -246,40 +277,25 @@ class OwnerController:
                 "address_line2",
                 "city",
                 "state_code",
-                "zip_code",
+                "zip_code",  # country_name removed
                 "phone",
                 "mobile_phone",
                 "email",
                 "is_active",
-                "account_number",
                 "balance",
                 "credit_limit",
                 "billing_terms",
                 "service_charge_rate",
                 "discount_rate",
-                # "credit_rating" removed from this list
             ]
-            validation_data = {
-                "owner_id": owner_id
-            }  # Required for context in validate_owner_data if it needs it
-            for key in updatable_model_fields:
+
+            for key in updatable_fields:
                 if key in owner_data:
-                    validation_data[key] = owner_data[key]
-
-            is_valid, errors = self.validate_owner_data(validation_data, is_new=False)
-            if not is_valid:
-                return False, "Validation failed: " + "; ".join(errors)
-
-            for key in updatable_model_fields:
-                if (
-                    key in owner_data
-                ):  # Only update fields that were actually passed in owner_data
                     value = owner_data[key]
                     setattr(
                         owner, key, value.strip() if isinstance(value, str) else value
                     )
 
-            owner.modified_date = datetime.utcnow()  # BaseModel handles this on update
             session.commit()
 
             log_name_parts = [
@@ -295,6 +311,7 @@ class OwnerController:
                 )
             if not display_name_for_log:
                 display_name_for_log = f"Owner ID {owner.owner_id}"
+
             self.logger.info(
                 f"Master Owner '{display_name_for_log}' (ID: {owner.owner_id}) updated by {current_user}."
             )
@@ -364,17 +381,23 @@ class OwnerController:
         session = db_manager.get_session()
         try:
             states = [
-                {"id": s.state_code, "name": s.state_name}
+                {
+                    "id": s.state_code,
+                    "name": s.state_name,
+                    "country_code": s.country_code,
+                }
                 for s in session.query(StateProvince)
                 .filter(StateProvince.is_active == True)
                 .order_by(StateProvince.state_name)
                 .all()
             ]
-            return {"states": states, "countries": [], "owner_types": []}
+            return {
+                "states": states
+            }  # Removed countries from here as it's free text now
         except Exception as e:
             self.logger.error(
                 f"Error fetching owner form reference data: {e}", exc_info=True
             )
-            return {"states": [], "countries": [], "owner_types": []}
+            return {"states": []}
         finally:
             session.close()
