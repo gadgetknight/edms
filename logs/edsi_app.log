@@ -2762,3 +2762,361 @@ WHERE state_provinces.is_active = 1 ORDER BY state_provinces.state_name]
 2025-05-20 15:04:32,430 - INFO - main.py:210 - User 'ADMIN' logging out from Horse Management.
 2025-05-20 15:04:32,455 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
 2025-05-20 15:04:32,460 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-20 15:22:12,680 - INFO - main.py:118 - Logging configured.
+2025-05-20 15:22:12,680 - INFO - main.py:69 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-20 15:22:12,681 - INFO - main.py:121 - Initializing database...
+2025-05-20 15:22:12,681 - INFO - database_config.py:79 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-20 15:22:12,688 - INFO - database_config.py:85 - Database engine and session factory created successfully.
+2025-05-20 15:22:12,688 - INFO - database_config.py:149 - Models known by Base.metadata before create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-20 15:22:12,977 - INFO - database_config.py:154 - Database tables created (if they didn't exist).
+2025-05-20 15:22:12,977 - INFO - database_config.py:156 - Models known by Base.metadata after create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-20 15:22:12,978 - INFO - main.py:130 - Database initialized successfully.
+2025-05-20 15:22:12,978 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-20 15:22:12,982 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-20 15:22:13,008 - INFO - main.py:238 - EDSI Veterinary Management System event loop started.
+2025-05-20 15:23:11,896 - INFO - main.py:118 - Logging configured.
+2025-05-20 15:23:11,896 - INFO - main.py:69 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-20 15:23:11,897 - INFO - main.py:121 - Initializing database...
+2025-05-20 15:23:11,897 - INFO - database_config.py:79 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-20 15:23:11,904 - INFO - database_config.py:85 - Database engine and session factory created successfully.
+2025-05-20 15:23:11,905 - INFO - database_config.py:149 - Models known by Base.metadata before create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-20 15:23:11,908 - INFO - database_config.py:154 - Database tables created (if they didn't exist).
+2025-05-20 15:23:11,908 - INFO - database_config.py:156 - Models known by Base.metadata after create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-20 15:23:11,909 - INFO - main.py:130 - Database initialized successfully.
+2025-05-20 15:23:11,909 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-20 15:23:11,913 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-20 15:23:11,946 - INFO - main.py:238 - EDSI Veterinary Management System event loop started.
+2025-05-20 15:23:13,474 - INFO - main.py:148 - Login area clicked on splash screen.
+2025-05-20 15:23:22,640 - INFO - user_controller.py:81 - Password validated successfully for active user 'ADMIN'.
+2025-05-20 15:23:22,640 - INFO - small_login_dialog.py:188 - Password validation successful for user 'ADMIN'.
+2025-05-20 15:23:22,641 - INFO - small_login_dialog.py:192 - User 'ADMIN' logged in successfully via small dialog.
+2025-05-20 15:23:22,642 - INFO - main.py:160 - User 'ADMIN' logged in successfully.
+2025-05-20 15:23:22,652 - INFO - horse_unified_management.py:96 - HorseUnifiedManagement __init__ started for user: ADMIN
+2025-05-20 15:23:22,857 - INFO - horse_unified_management.py:713 - Loading horses (Status: active, Search: '')
+2025-05-20 15:23:22,870 - INFO - horse_unified_management.py:803 - Horse selected: ID 4
+2025-05-20 15:23:22,871 - INFO - horse_unified_management.py:911 - Loading details for horse ID: 4
+2025-05-20 15:23:22,880 - INFO - horse_unified_management.py:115 - HorseUnifiedManagement screen __init__ finished.
+2025-05-20 15:23:22,935 - INFO - main.py:186 - Horse Management Screen displayed.
+2025-05-20 15:23:31,063 - INFO - horse_unified_management.py:1085 - Setup icon clicked, emitting setup_requested signal.
+2025-05-20 15:23:31,074 - INFO - user_management_screen.py:475 - UserManagementScreen __init__ started by user: ADMIN
+2025-05-20 15:23:31,124 - INFO - user_management_screen.py:1042 - Loading users data...
+2025-05-20 15:23:31,125 - INFO - user_management_screen.py:1059 - Loaded 1 users.
+2025-05-20 15:23:31,126 - INFO - user_management_screen.py:1189 - User selected: ADMIN
+2025-05-20 15:23:31,127 - INFO - user_management_screen.py:1069 - Loading master owners data...
+2025-05-20 15:23:31,128 - INFO - user_management_screen.py:1103 - Loaded 4 master owners.
+2025-05-20 15:23:31,128 - INFO - user_management_screen.py:1212 - Master owner selected: ID 4
+2025-05-20 15:23:31,131 - INFO - user_management_screen.py:1116 - Loading charge codes data...
+2025-05-20 15:23:31,133 - INFO - user_management_screen.py:1152 - Loaded 4 charge codes.
+2025-05-20 15:23:31,133 - INFO - user_management_screen.py:1159 - Loading locations data...
+2025-05-20 15:23:31,133 - INFO - user_management_screen.py:1179 - Loaded 3 locations.
+2025-05-20 15:23:31,134 - INFO - user_management_screen.py:504 - UserManagementScreen initialized with Tabbed Interface.
+2025-05-20 15:23:31,152 - INFO - main.py:207 - User Management Screen displayed.
+2025-05-20 15:23:54,862 - INFO - user_management_screen.py:1589 - Saving changes for master owner: 4
+2025-05-20 15:23:57,097 - INFO - user_management_screen.py:1212 - Master owner selected: ID 1
+2025-05-20 15:24:03,968 - INFO - user_management_screen.py:1589 - Saving changes for master owner: 1
+2025-05-20 15:24:06,923 - INFO - user_management_screen.py:1212 - Master owner selected: ID 2
+2025-05-20 15:24:12,599 - INFO - user_management_screen.py:1589 - Saving changes for master owner: 2
+2025-05-20 15:24:14,359 - INFO - user_management_screen.py:1212 - Master owner selected: ID 3
+2025-05-20 15:24:19,648 - INFO - user_management_screen.py:1589 - Saving changes for master owner: 3
+2025-05-20 15:24:30,511 - INFO - user_management_screen.py:1827 - User Management screen closing.
+2025-05-20 15:24:30,522 - INFO - horse_unified_management.py:96 - HorseUnifiedManagement __init__ started for user: ADMIN
+2025-05-20 15:24:30,597 - INFO - horse_unified_management.py:713 - Loading horses (Status: active, Search: '')
+2025-05-20 15:24:30,604 - INFO - horse_unified_management.py:803 - Horse selected: ID 4
+2025-05-20 15:24:30,604 - INFO - horse_unified_management.py:911 - Loading details for horse ID: 4
+2025-05-20 15:24:30,607 - INFO - horse_unified_management.py:115 - HorseUnifiedManagement screen __init__ finished.
+2025-05-20 15:24:30,627 - INFO - main.py:186 - Horse Management Screen displayed.
+2025-05-20 15:24:36,479 - INFO - owners_tab.py:392 - Initiating Link Existing Owner for horse: Daisy
+2025-05-20 15:24:38,300 - INFO - link_existing_owner_dialog.py:260 - Owner selected from search: ID 4, Display: John Hill
+2025-05-20 15:24:40,422 - INFO - owners_tab.py:406 - Attempting to link existing owner ID 4 with 100.0% to horse ID 4
+2025-05-20 15:24:40,430 - INFO - horse_controller.py:621 - Added owner ID 4 to horse ID 4 with 100.00% ownership by ADMIN.
+2025-05-20 15:24:40,430 - INFO - base_view.py:293 - Displaying Info: Owner Linked - Owner added to horse successfully.
+2025-05-20 15:24:44,156 - INFO - horse_unified_management.py:803 - Horse selected: ID 1
+2025-05-20 15:24:44,157 - INFO - horse_unified_management.py:911 - Loading details for horse ID: 1
+2025-05-20 15:24:45,596 - INFO - owners_tab.py:392 - Initiating Link Existing Owner for horse: Donatello
+2025-05-20 15:24:46,941 - INFO - link_existing_owner_dialog.py:260 - Owner selected from search: ID 1, Display: Amy Reed
+2025-05-20 15:24:48,121 - INFO - owners_tab.py:406 - Attempting to link existing owner ID 1 with 100.0% to horse ID 1
+2025-05-20 15:24:48,126 - INFO - horse_controller.py:621 - Added owner ID 1 to horse ID 1 with 100.00% ownership by ADMIN.
+2025-05-20 15:24:48,126 - INFO - base_view.py:293 - Displaying Info: Owner Linked - Owner added to horse successfully.
+2025-05-20 15:24:51,174 - INFO - horse_unified_management.py:803 - Horse selected: ID 7
+2025-05-20 15:24:51,175 - INFO - horse_unified_management.py:911 - Loading details for horse ID: 7
+2025-05-20 15:24:52,353 - INFO - owners_tab.py:392 - Initiating Link Existing Owner for horse: Ironheart
+2025-05-20 15:24:53,460 - INFO - link_existing_owner_dialog.py:260 - Owner selected from search: ID 3, Display: Sam White
+2025-05-20 15:24:54,492 - INFO - owners_tab.py:406 - Attempting to link existing owner ID 3 with 100.0% to horse ID 7
+2025-05-20 15:24:54,497 - INFO - horse_controller.py:621 - Added owner ID 3 to horse ID 7 with 100.00% ownership by ADMIN.
+2025-05-20 15:24:54,497 - INFO - base_view.py:293 - Displaying Info: Owner Linked - Owner added to horse successfully.
+2025-05-20 15:24:57,124 - INFO - horse_unified_management.py:803 - Horse selected: ID 2
+2025-05-20 15:24:57,124 - INFO - horse_unified_management.py:911 - Loading details for horse ID: 2
+2025-05-20 15:24:58,353 - INFO - owners_tab.py:392 - Initiating Link Existing Owner for horse: Lorena 90
+2025-05-20 15:25:06,922 - INFO - link_existing_owner_dialog.py:260 - Owner selected from search: ID 4, Display: John Hill
+2025-05-20 15:25:08,672 - INFO - owners_tab.py:406 - Attempting to link existing owner ID 4 with 100.0% to horse ID 2
+2025-05-20 15:25:08,677 - INFO - horse_controller.py:621 - Added owner ID 4 to horse ID 2 with 100.00% ownership by ADMIN.
+2025-05-20 15:25:08,677 - INFO - base_view.py:293 - Displaying Info: Owner Linked - Owner added to horse successfully.
+2025-05-20 15:25:12,546 - INFO - horse_unified_management.py:803 - Horse selected: ID 3
+2025-05-20 15:25:12,546 - INFO - horse_unified_management.py:911 - Loading details for horse ID: 3
+2025-05-20 15:25:15,075 - INFO - horse_unified_management.py:803 - Horse selected: ID 2
+2025-05-20 15:25:15,075 - INFO - horse_unified_management.py:911 - Loading details for horse ID: 2
+2025-05-20 15:25:16,112 - INFO - horse_unified_management.py:803 - Horse selected: ID 7
+2025-05-20 15:25:16,113 - INFO - horse_unified_management.py:911 - Loading details for horse ID: 7
+2025-05-20 15:25:16,923 - INFO - horse_unified_management.py:803 - Horse selected: ID 1
+2025-05-20 15:25:16,924 - INFO - horse_unified_management.py:911 - Loading details for horse ID: 1
+2025-05-20 15:25:17,640 - INFO - horse_unified_management.py:803 - Horse selected: ID 4
+2025-05-20 15:25:17,640 - INFO - horse_unified_management.py:911 - Loading details for horse ID: 4
+2025-05-20 15:25:18,900 - INFO - horse_unified_management.py:803 - Horse selected: ID 3
+2025-05-20 15:25:18,900 - INFO - horse_unified_management.py:911 - Loading details for horse ID: 3
+2025-05-20 15:25:21,579 - INFO - owners_tab.py:300 - Initiating Create & Link Owner for horse: Soul Rebel
+2025-05-20 15:26:34,146 - INFO - owners_tab.py:327 - Dialog accepted. Owner details: {'account_number': '567890', 'farm_name': '', 'first_name': 'John', 'last_name': 'Wilson', 'address_line1': '25 White Rd', 'address_line2': '', 'city': 'Mount Laurel', 'state_code': 'NJ', 'zip_code': '08054', 'country_name': '', 'phone': '609-876-4534', 'email': '', 'is_active': True}, Percentage: 100.0
+2025-05-20 15:26:34,152 - INFO - owner_controller.py:237 - Master Owner 'John Wilson' (ID: 5) created by ADMIN.
+2025-05-20 15:26:34,152 - INFO - owners_tab.py:342 - Newly created owner ID 5, now linking to horse ID 3
+2025-05-20 15:26:34,157 - INFO - horse_controller.py:621 - Added owner ID 5 to horse ID 3 with 100.00% ownership by ADMIN.
+2025-05-20 15:26:34,157 - INFO - base_view.py:293 - Displaying Info: Owner Linked - Owner added to horse successfully.
+2025-05-20 15:26:39,640 - INFO - horse_unified_management.py:803 - Horse selected: ID 2
+2025-05-20 15:26:39,640 - INFO - horse_unified_management.py:911 - Loading details for horse ID: 2
+2025-05-20 15:26:40,769 - INFO - owners_tab.py:265 - Horse-owner association selected: Owner ID 4
+2025-05-20 15:26:43,104 - INFO - horse_unified_management.py:803 - Horse selected: ID 7
+2025-05-20 15:26:43,104 - INFO - horse_unified_management.py:911 - Loading details for horse ID: 7
+2025-05-20 15:26:43,106 - INFO - owners_tab.py:293 - Horse-owner association selection cleared.
+2025-05-20 15:26:44,410 - INFO - horse_unified_management.py:803 - Horse selected: ID 5
+2025-05-20 15:26:44,411 - INFO - horse_unified_management.py:911 - Loading details for horse ID: 5
+2025-05-20 15:26:49,076 - INFO - horse_unified_management.py:1085 - Setup icon clicked, emitting setup_requested signal.
+2025-05-20 15:26:49,086 - INFO - user_management_screen.py:475 - UserManagementScreen __init__ started by user: ADMIN
+2025-05-20 15:26:49,132 - INFO - user_management_screen.py:1042 - Loading users data...
+2025-05-20 15:26:49,133 - INFO - user_management_screen.py:1059 - Loaded 1 users.
+2025-05-20 15:26:49,133 - INFO - user_management_screen.py:1189 - User selected: ADMIN
+2025-05-20 15:26:49,134 - INFO - user_management_screen.py:1069 - Loading master owners data...
+2025-05-20 15:26:49,135 - INFO - user_management_screen.py:1103 - Loaded 5 master owners.
+2025-05-20 15:26:49,135 - INFO - user_management_screen.py:1212 - Master owner selected: ID 4
+2025-05-20 15:26:49,137 - INFO - user_management_screen.py:1116 - Loading charge codes data...
+2025-05-20 15:26:49,138 - INFO - user_management_screen.py:1152 - Loaded 4 charge codes.
+2025-05-20 15:26:49,138 - INFO - user_management_screen.py:1159 - Loading locations data...
+2025-05-20 15:26:49,139 - INFO - user_management_screen.py:1179 - Loaded 3 locations.
+2025-05-20 15:26:49,139 - INFO - user_management_screen.py:504 - UserManagementScreen initialized with Tabbed Interface.
+2025-05-20 15:26:49,162 - INFO - main.py:207 - User Management Screen displayed.
+2025-05-20 15:27:02,846 - INFO - user_management_screen.py:1212 - Master owner selected: ID 1
+2025-05-20 15:27:03,554 - INFO - user_management_screen.py:1212 - Master owner selected: ID 2
+2025-05-20 15:27:04,310 - INFO - user_management_screen.py:1212 - Master owner selected: ID 3
+2025-05-20 15:27:05,182 - INFO - user_management_screen.py:1212 - Master owner selected: ID 5
+2025-05-20 15:27:10,975 - INFO - user_management_screen.py:1212 - Master owner selected: ID 3
+2025-05-20 15:27:24,230 - INFO - user_management_screen.py:1589 - Saving changes for master owner: 3
+2025-05-20 15:27:26,010 - INFO - user_management_screen.py:1212 - Master owner selected: ID 2
+2025-05-20 15:27:31,567 - INFO - user_management_screen.py:1589 - Saving changes for master owner: 2
+2025-05-20 15:27:33,186 - INFO - user_management_screen.py:1212 - Master owner selected: ID 1
+2025-05-20 15:27:38,865 - INFO - user_management_screen.py:1589 - Saving changes for master owner: 1
+2025-05-20 15:27:40,194 - INFO - user_management_screen.py:1212 - Master owner selected: ID 4
+2025-05-20 15:28:22,184 - INFO - user_management_screen.py:1827 - User Management screen closing.
+2025-05-20 17:44:36,667 - INFO - main.py:118 - Logging configured.
+2025-05-20 17:44:36,667 - INFO - main.py:69 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-20 17:44:36,667 - INFO - main.py:121 - Initializing database...
+2025-05-20 17:44:36,667 - INFO - database_config.py:79 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-20 17:44:36,681 - INFO - database_config.py:85 - Database engine and session factory created successfully.
+2025-05-20 17:44:36,681 - INFO - database_config.py:149 - Models known by Base.metadata before create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-20 17:44:36,684 - INFO - database_config.py:154 - Database tables created (if they didn't exist).
+2025-05-20 17:44:36,684 - INFO - database_config.py:156 - Models known by Base.metadata after create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-20 17:44:36,685 - INFO - main.py:130 - Database initialized successfully.
+2025-05-20 17:44:36,685 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-20 17:44:36,696 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-20 17:44:36,731 - INFO - main.py:238 - EDSI Veterinary Management System event loop started.
+2025-05-20 17:44:39,168 - INFO - main.py:148 - Login area clicked on splash screen.
+2025-05-20 17:44:50,802 - INFO - user_controller.py:81 - Password validated successfully for active user 'ADMIN'.
+2025-05-20 17:44:50,802 - INFO - small_login_dialog.py:188 - Password validation successful for user 'ADMIN'.
+2025-05-20 17:44:50,803 - INFO - small_login_dialog.py:192 - User 'ADMIN' logged in successfully via small dialog.
+2025-05-20 17:44:50,803 - INFO - main.py:160 - User 'ADMIN' logged in successfully.
+2025-05-20 17:44:50,821 - INFO - horse_unified_management.py:96 - HorseUnifiedManagement __init__ started for user: ADMIN
+2025-05-20 17:44:51,978 - INFO - horse_unified_management.py:713 - Loading horses (Status: active, Search: '')
+2025-05-20 17:44:51,999 - INFO - horse_unified_management.py:803 - Horse selected: ID 4
+2025-05-20 17:44:51,999 - INFO - horse_unified_management.py:911 - Loading details for horse ID: 4
+2025-05-20 17:44:52,008 - INFO - horse_unified_management.py:115 - HorseUnifiedManagement screen __init__ finished.
+2025-05-20 17:44:52,064 - INFO - main.py:186 - Horse Management Screen displayed.
+2025-05-20 17:45:00,546 - INFO - main.py:118 - Logging configured.
+2025-05-20 17:45:00,546 - INFO - main.py:69 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-20 17:45:00,547 - INFO - main.py:121 - Initializing database...
+2025-05-20 17:45:00,547 - INFO - database_config.py:79 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-20 17:45:00,554 - INFO - database_config.py:85 - Database engine and session factory created successfully.
+2025-05-20 17:45:00,554 - INFO - database_config.py:149 - Models known by Base.metadata before create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-20 17:45:00,558 - INFO - database_config.py:154 - Database tables created (if they didn't exist).
+2025-05-20 17:45:00,559 - INFO - database_config.py:156 - Models known by Base.metadata after create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-20 17:45:00,559 - INFO - main.py:130 - Database initialized successfully.
+2025-05-20 17:45:00,560 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-20 17:45:00,564 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-20 17:45:00,595 - INFO - main.py:238 - EDSI Veterinary Management System event loop started.
+2025-05-20 17:45:02,241 - INFO - main.py:148 - Login area clicked on splash screen.
+2025-05-20 17:45:12,891 - INFO - user_controller.py:81 - Password validated successfully for active user 'ADMIN'.
+2025-05-20 17:45:12,892 - INFO - small_login_dialog.py:188 - Password validation successful for user 'ADMIN'.
+2025-05-20 17:45:12,892 - INFO - small_login_dialog.py:192 - User 'ADMIN' logged in successfully via small dialog.
+2025-05-20 17:45:12,892 - INFO - main.py:160 - User 'ADMIN' logged in successfully.
+2025-05-20 17:45:12,904 - INFO - horse_unified_management.py:96 - HorseUnifiedManagement __init__ started for user: ADMIN
+2025-05-20 17:45:13,091 - INFO - horse_unified_management.py:713 - Loading horses (Status: active, Search: '')
+2025-05-20 17:45:13,104 - INFO - horse_unified_management.py:803 - Horse selected: ID 4
+2025-05-20 17:45:13,104 - INFO - horse_unified_management.py:911 - Loading details for horse ID: 4
+2025-05-20 17:45:13,114 - INFO - horse_unified_management.py:115 - HorseUnifiedManagement screen __init__ finished.
+2025-05-20 17:45:13,180 - INFO - main.py:186 - Horse Management Screen displayed.
+2025-05-20 17:53:40,642 - INFO - main.py:119 - Logging configured.
+2025-05-20 17:53:40,643 - INFO - main.py:70 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-20 17:53:40,643 - INFO - main.py:122 - Initializing database...
+2025-05-20 17:53:40,643 - INFO - database_config.py:79 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-20 17:53:40,650 - INFO - database_config.py:85 - Database engine and session factory created successfully.
+2025-05-20 17:53:40,651 - INFO - database_config.py:149 - Models known by Base.metadata before create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-20 17:53:40,653 - INFO - database_config.py:154 - Database tables created (if they didn't exist).
+2025-05-20 17:53:40,653 - INFO - database_config.py:156 - Models known by Base.metadata after create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-20 17:53:40,654 - INFO - main.py:128 - Database initialized successfully.
+2025-05-20 17:53:40,654 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-20 17:53:40,658 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-20 17:53:40,684 - INFO - main.py:145 - Splash screen displayed.
+2025-05-20 17:53:40,685 - INFO - main.py:291 - EDSI Veterinary Management System event loop started.
+2025-05-20 17:53:42,633 - INFO - main.py:148 - Login area clicked on splash screen.
+2025-05-20 17:53:52,890 - INFO - user_controller.py:81 - Password validated successfully for active user 'ADMIN'.
+2025-05-20 17:53:52,890 - INFO - small_login_dialog.py:188 - Password validation successful for user 'ADMIN'.
+2025-05-20 17:53:52,891 - INFO - small_login_dialog.py:192 - User 'ADMIN' logged in successfully via small dialog.
+2025-05-20 17:53:52,891 - INFO - main.py:188 - User 'ADMIN' logged in successfully.
+2025-05-20 17:53:52,909 - INFO - horse_unified_management.py:108 - HorseUnifiedManagement __init__ started for user: ADMIN
+2025-05-20 17:53:53,116 - INFO - horse_unified_management.py:725 - Loading horses (Status: active, Search: '')
+2025-05-20 17:53:53,129 - INFO - horse_unified_management.py:815 - Horse selected: ID 4
+2025-05-20 17:53:53,130 - INFO - horse_unified_management.py:957 - Loading details for horse ID: 4
+2025-05-20 17:53:53,139 - INFO - horse_unified_management.py:124 - HorseUnifiedManagement screen __init__ finished.
+2025-05-20 17:53:53,140 - INFO - main.py:227 - About to call self.horse_management_screen.show()
+2025-05-20 17:53:53,192 - INFO - horse_unified_management.py:128 - HorseUnifiedManagement showEvent triggered.
+2025-05-20 17:53:53,192 - INFO - horse_unified_management.py:130 - HorseUnifiedManagement is now visible.
+2025-05-20 17:53:53,203 - INFO - main.py:229 - Horse Management Screen show() called and displayed.
+2025-05-20 17:54:02,719 - INFO - owners_tab.py:265 - Horse-owner association selected: Owner ID 4
+2025-05-20 17:54:07,348 - INFO - horse_unified_management.py:815 - Horse selected: ID 1
+2025-05-20 17:54:07,348 - INFO - horse_unified_management.py:957 - Loading details for horse ID: 1
+2025-05-20 17:54:07,352 - INFO - owners_tab.py:293 - Horse-owner association selection cleared.
+2025-05-20 17:54:08,709 - INFO - horse_unified_management.py:815 - Horse selected: ID 7
+2025-05-20 17:54:08,709 - INFO - horse_unified_management.py:957 - Loading details for horse ID: 7
+2025-05-20 17:54:09,581 - INFO - horse_unified_management.py:815 - Horse selected: ID 2
+2025-05-20 17:54:09,581 - INFO - horse_unified_management.py:957 - Loading details for horse ID: 2
+2025-05-20 17:54:10,707 - INFO - horse_unified_management.py:815 - Horse selected: ID 3
+2025-05-20 17:54:10,707 - INFO - horse_unified_management.py:957 - Loading details for horse ID: 3
+2025-05-20 17:54:11,921 - INFO - horse_unified_management.py:815 - Horse selected: ID 5
+2025-05-20 17:54:11,921 - INFO - horse_unified_management.py:957 - Loading details for horse ID: 5
+2025-05-20 17:54:13,227 - INFO - horse_unified_management.py:815 - Horse selected: ID 6
+2025-05-20 17:54:13,227 - INFO - horse_unified_management.py:957 - Loading details for horse ID: 6
+2025-05-20 17:54:17,103 - INFO - horse_unified_management.py:815 - Horse selected: ID 5
+2025-05-20 17:54:17,104 - INFO - horse_unified_management.py:957 - Loading details for horse ID: 5
+2025-05-20 17:54:19,913 - INFO - owners_tab.py:300 - Initiating Create & Link Owner for horse: Thunder
+2025-05-20 17:55:39,881 - INFO - owners_tab.py:327 - Dialog accepted. Owner details: {'account_number': '000124', 'farm_name': '', 'first_name': 'Patrick', 'last_name': 'Kennedy', 'address_line1': '513 Peckertoen Rd', 'address_line2': '', 'city': 'Waterford Works', 'state_code': 'NJ', 'zip_code': '09123', 'country_name': 'USA', 'phone': '732-456-2316', 'email': '', 'is_active': True}, Percentage: 100.0
+2025-05-20 17:55:39,888 - INFO - owner_controller.py:237 - Master Owner 'Patrick Kennedy' (ID: 6) created by ADMIN.
+2025-05-20 17:55:39,888 - INFO - owners_tab.py:342 - Newly created owner ID 6, now linking to horse ID 5
+2025-05-20 17:55:39,894 - INFO - horse_controller.py:621 - Added owner ID 6 to horse ID 5 with 100.00% ownership by ADMIN.
+2025-05-20 17:55:39,894 - INFO - base_view.py:293 - Displaying Info: Owner Linked - Owner added to horse successfully.
+2025-05-20 17:55:42,318 - INFO - horse_unified_management.py:815 - Horse selected: ID 6
+2025-05-20 17:55:42,318 - INFO - horse_unified_management.py:957 - Loading details for horse ID: 6
+2025-05-20 17:55:45,325 - INFO - owners_tab.py:300 - Initiating Create & Link Owner for horse: Thunderblade
+2025-05-20 18:01:00,883 - INFO - owners_tab.py:327 - Dialog accepted. Owner details: {'account_number': '345092', 'farm_name': '', 'first_name': 'Katherine', 'last_name': 'Martin', 'address_line1': '982 River Rd', 'address_line2': '', 'city': 'Middletown', 'state_code': 'DE', 'zip_code': '90234', 'country_name': 'USA', 'phone': '609-505-4530', 'email': '', 'is_active': True}, Percentage: 100.0
+2025-05-20 18:01:00,890 - INFO - owner_controller.py:237 - Master Owner 'Katherine Martin' (ID: 7) created by ADMIN.
+2025-05-20 18:01:00,890 - INFO - owners_tab.py:342 - Newly created owner ID 7, now linking to horse ID 6
+2025-05-20 18:01:00,895 - INFO - horse_controller.py:621 - Added owner ID 7 to horse ID 6 with 100.00% ownership by ADMIN.
+2025-05-20 18:01:00,896 - INFO - base_view.py:293 - Displaying Info: Owner Linked - Owner added to horse successfully.
+2025-05-20 18:01:18,202 - INFO - horse_unified_management.py:1129 - Setup icon clicked, emitting setup_requested signal.
+2025-05-20 18:01:18,202 - WARNING - horse_unified_management.py:134 - HorseUnifiedManagement closeEvent triggered. Event type: 19
+2025-05-20 18:01:18,203 - WARNING - main.py:199 - CRITICAL_DIAGNOSTIC: HorseUnifiedManagement screen emitted 'closing' signal!
+2025-05-20 18:01:18,204 - WARNING - horse_unified_management.py:139 - HorseUnifiedManagement has finished processing closeEvent.
+2025-05-20 18:01:18,215 - INFO - user_management_screen.py:475 - UserManagementScreen __init__ started by user: ADMIN
+2025-05-20 18:01:18,266 - INFO - user_management_screen.py:1042 - Loading users data...
+2025-05-20 18:01:18,267 - INFO - user_management_screen.py:1059 - Loaded 1 users.
+2025-05-20 18:01:18,268 - INFO - user_management_screen.py:1189 - User selected: ADMIN
+2025-05-20 18:01:18,269 - INFO - user_management_screen.py:1069 - Loading master owners data...
+2025-05-20 18:01:18,270 - INFO - user_management_screen.py:1103 - Loaded 7 master owners.
+2025-05-20 18:01:18,270 - INFO - user_management_screen.py:1212 - Master owner selected: ID 4
+2025-05-20 18:01:18,273 - INFO - user_management_screen.py:1116 - Loading charge codes data...
+2025-05-20 18:01:18,274 - INFO - user_management_screen.py:1152 - Loaded 4 charge codes.
+2025-05-20 18:01:18,275 - INFO - user_management_screen.py:1159 - Loading locations data...
+2025-05-20 18:01:18,276 - INFO - user_management_screen.py:1179 - Loaded 3 locations.
+2025-05-20 18:01:18,277 - INFO - user_management_screen.py:504 - UserManagementScreen initialized with Tabbed Interface.
+2025-05-20 18:01:18,298 - INFO - main.py:251 - User Management Screen displayed.
+2025-05-20 18:01:24,605 - INFO - user_management_screen.py:1738 - Add Location button clicked.
+2025-05-20 18:02:59,242 - INFO - user_management_screen.py:1755 - Edit Location button clicked.
+2025-05-20 18:03:15,077 - INFO - user_management_screen.py:1378 - User Management exit.
+2025-05-20 18:03:15,078 - INFO - main.py:261 - User 'ADMIN' logging out from Admin Screen.
+2025-05-20 18:03:15,079 - INFO - user_management_screen.py:1827 - User Management screen closing.
+2025-05-20 18:03:15,106 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-20 18:03:15,111 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-20 18:03:15,133 - INFO - main.py:145 - Splash screen displayed.
+2025-05-20 18:13:43,276 - INFO - main.py:119 - Logging configured.
+2025-05-20 18:13:43,277 - INFO - main.py:70 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-20 18:13:43,277 - INFO - main.py:122 - Initializing database...
+2025-05-20 18:13:43,278 - INFO - database_config.py:79 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-20 18:13:43,285 - INFO - database_config.py:85 - Database engine and session factory created successfully.
+2025-05-20 18:13:43,285 - INFO - database_config.py:149 - Models known by Base.metadata before create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-20 18:13:43,288 - INFO - database_config.py:154 - Database tables created (if they didn't exist).
+2025-05-20 18:13:43,288 - INFO - database_config.py:156 - Models known by Base.metadata after create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-20 18:13:43,289 - INFO - main.py:128 - Database initialized successfully.
+2025-05-20 18:13:43,289 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-20 18:13:43,293 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-20 18:13:43,324 - INFO - main.py:145 - Splash screen displayed.
+2025-05-20 18:13:43,324 - INFO - main.py:291 - EDSI Veterinary Management System event loop started.
+2025-05-20 18:13:46,467 - INFO - main.py:148 - Login area clicked on splash screen.
+2025-05-20 18:13:54,980 - INFO - user_controller.py:81 - Password validated successfully for active user 'ADMIN'.
+2025-05-20 18:13:54,981 - INFO - small_login_dialog.py:188 - Password validation successful for user 'ADMIN'.
+2025-05-20 18:13:54,982 - INFO - small_login_dialog.py:192 - User 'ADMIN' logged in successfully via small dialog.
+2025-05-20 18:13:54,982 - INFO - main.py:188 - User 'ADMIN' logged in successfully.
+2025-05-20 18:13:54,999 - INFO - horse_unified_management.py:108 - HorseUnifiedManagement __init__ started for user: ADMIN
+2025-05-20 18:13:55,212 - INFO - horse_unified_management.py:725 - Loading horses (Status: active, Search: '')
+2025-05-20 18:13:55,225 - INFO - horse_unified_management.py:815 - Horse selected: ID 4
+2025-05-20 18:13:55,226 - INFO - horse_unified_management.py:957 - Loading details for horse ID: 4
+2025-05-20 18:13:55,236 - INFO - horse_unified_management.py:124 - HorseUnifiedManagement screen __init__ finished.
+2025-05-20 18:13:55,236 - INFO - main.py:227 - About to call self.horse_management_screen.show()
+2025-05-20 18:13:55,286 - INFO - horse_unified_management.py:128 - HorseUnifiedManagement showEvent triggered.
+2025-05-20 18:13:55,287 - INFO - horse_unified_management.py:130 - HorseUnifiedManagement is now visible.
+2025-05-20 18:13:55,301 - INFO - main.py:229 - Horse Management Screen show() called and displayed.
+2025-05-20 18:19:09,915 - INFO - horse_unified_management.py:1129 - Setup icon clicked, emitting setup_requested signal.
+2025-05-20 18:19:09,916 - WARNING - horse_unified_management.py:134 - HorseUnifiedManagement closeEvent triggered. Event type: 19
+2025-05-20 18:19:09,918 - WARNING - main.py:199 - CRITICAL_DIAGNOSTIC: HorseUnifiedManagement screen emitted 'closing' signal!
+2025-05-20 18:19:09,918 - WARNING - horse_unified_management.py:139 - HorseUnifiedManagement has finished processing closeEvent.
+2025-05-20 18:19:09,927 - INFO - user_management_screen.py:475 - UserManagementScreen __init__ started by user: ADMIN
+2025-05-20 18:19:09,994 - INFO - user_management_screen.py:1042 - Loading users data...
+2025-05-20 18:19:09,995 - INFO - user_management_screen.py:1059 - Loaded 1 users.
+2025-05-20 18:19:09,995 - INFO - user_management_screen.py:1189 - User selected: ADMIN
+2025-05-20 18:19:09,996 - INFO - user_management_screen.py:1069 - Loading master owners data...
+2025-05-20 18:19:09,997 - INFO - user_management_screen.py:1103 - Loaded 7 master owners.
+2025-05-20 18:19:09,998 - INFO - user_management_screen.py:1212 - Master owner selected: ID 4
+2025-05-20 18:19:10,000 - INFO - user_management_screen.py:1116 - Loading charge codes data...
+2025-05-20 18:19:10,002 - INFO - user_management_screen.py:1152 - Loaded 4 charge codes.
+2025-05-20 18:19:10,002 - INFO - user_management_screen.py:1159 - Loading locations data...
+2025-05-20 18:19:10,003 - INFO - user_management_screen.py:1179 - Loaded 3 locations.
+2025-05-20 18:19:10,003 - INFO - user_management_screen.py:504 - UserManagementScreen initialized with Tabbed Interface.
+2025-05-20 18:19:10,026 - INFO - main.py:251 - User Management Screen displayed.
+2025-05-20 18:20:16,225 - INFO - user_management_screen.py:1827 - User Management screen closing.
+2025-05-20 18:20:16,236 - INFO - horse_unified_management.py:108 - HorseUnifiedManagement __init__ started for user: ADMIN
+2025-05-20 18:20:16,325 - INFO - horse_unified_management.py:725 - Loading horses (Status: active, Search: '')
+2025-05-20 18:20:16,334 - INFO - horse_unified_management.py:815 - Horse selected: ID 4
+2025-05-20 18:20:16,334 - INFO - horse_unified_management.py:957 - Loading details for horse ID: 4
+2025-05-20 18:20:16,336 - INFO - horse_unified_management.py:124 - HorseUnifiedManagement screen __init__ finished.
+2025-05-20 18:20:16,337 - INFO - main.py:227 - About to call self.horse_management_screen.show()
+2025-05-20 18:20:16,345 - INFO - horse_unified_management.py:128 - HorseUnifiedManagement showEvent triggered.
+2025-05-20 18:20:16,345 - INFO - horse_unified_management.py:130 - HorseUnifiedManagement is now visible.
+2025-05-20 18:20:16,356 - INFO - main.py:229 - Horse Management Screen show() called and displayed.
+2025-05-20 18:25:41,084 - INFO - horse_unified_management.py:1129 - Setup icon clicked, emitting setup_requested signal.
+2025-05-20 18:25:41,084 - WARNING - horse_unified_management.py:134 - HorseUnifiedManagement closeEvent triggered. Event type: 19
+2025-05-20 18:25:41,085 - WARNING - main.py:199 - CRITICAL_DIAGNOSTIC: HorseUnifiedManagement screen emitted 'closing' signal!
+2025-05-20 18:25:41,085 - WARNING - horse_unified_management.py:139 - HorseUnifiedManagement has finished processing closeEvent.
+2025-05-20 18:25:41,094 - INFO - user_management_screen.py:475 - UserManagementScreen __init__ started by user: ADMIN
+2025-05-20 18:25:41,156 - INFO - user_management_screen.py:1042 - Loading users data...
+2025-05-20 18:25:41,156 - INFO - user_management_screen.py:1059 - Loaded 1 users.
+2025-05-20 18:25:41,157 - INFO - user_management_screen.py:1189 - User selected: ADMIN
+2025-05-20 18:25:41,158 - INFO - user_management_screen.py:1069 - Loading master owners data...
+2025-05-20 18:25:41,159 - INFO - user_management_screen.py:1103 - Loaded 7 master owners.
+2025-05-20 18:25:41,159 - INFO - user_management_screen.py:1212 - Master owner selected: ID 4
+2025-05-20 18:25:41,161 - INFO - user_management_screen.py:1116 - Loading charge codes data...
+2025-05-20 18:25:41,162 - INFO - user_management_screen.py:1152 - Loaded 4 charge codes.
+2025-05-20 18:25:41,162 - INFO - user_management_screen.py:1159 - Loading locations data...
+2025-05-20 18:25:41,163 - INFO - user_management_screen.py:1179 - Loaded 3 locations.
+2025-05-20 18:25:41,163 - INFO - user_management_screen.py:504 - UserManagementScreen initialized with Tabbed Interface.
+2025-05-20 18:25:41,185 - INFO - main.py:251 - User Management Screen displayed.
+2025-05-20 19:10:29,586 - INFO - user_management_screen.py:1827 - User Management screen closing.
+2025-05-20 19:10:29,600 - INFO - horse_unified_management.py:108 - HorseUnifiedManagement __init__ started for user: ADMIN
+2025-05-20 19:10:29,687 - INFO - horse_unified_management.py:725 - Loading horses (Status: active, Search: '')
+2025-05-20 19:10:29,694 - INFO - horse_unified_management.py:815 - Horse selected: ID 4
+2025-05-20 19:10:29,694 - INFO - horse_unified_management.py:957 - Loading details for horse ID: 4
+2025-05-20 19:10:29,697 - INFO - horse_unified_management.py:124 - HorseUnifiedManagement screen __init__ finished.
+2025-05-20 19:10:29,697 - INFO - main.py:227 - About to call self.horse_management_screen.show()
+2025-05-20 19:10:29,709 - INFO - horse_unified_management.py:128 - HorseUnifiedManagement showEvent triggered.
+2025-05-20 19:10:29,709 - INFO - horse_unified_management.py:130 - HorseUnifiedManagement is now visible.
+2025-05-20 19:10:29,725 - INFO - main.py:229 - Horse Management Screen show() called and displayed.
+2025-05-20 19:10:32,934 - INFO - horse_unified_management.py:1133 - Log Out action triggered from user menu.
+2025-05-20 19:10:32,934 - INFO - main.py:254 - User 'ADMIN' logging out from Horse Management.
+2025-05-20 19:10:32,935 - WARNING - horse_unified_management.py:134 - HorseUnifiedManagement closeEvent triggered. Event type: 19
+2025-05-20 19:10:32,935 - WARNING - main.py:199 - CRITICAL_DIAGNOSTIC: HorseUnifiedManagement screen emitted 'closing' signal!
+2025-05-20 19:10:32,936 - WARNING - horse_unified_management.py:139 - HorseUnifiedManagement has finished processing closeEvent.
+2025-05-20 19:10:32,946 - INFO - splash_screen.py:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-20 19:10:32,956 - INFO - splash_screen.py:138 - Splash screen UI setup complete.
+2025-05-20 19:10:32,990 - INFO - main.py:145 - Splash screen displayed.

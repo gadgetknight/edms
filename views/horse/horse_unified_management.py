@@ -2,12 +2,14 @@
 
 """
 EDSI Veterinary Management System - Unified Horse Management Screen (Dark Theme)
-Version: 1.6.4
-Purpose: Unified interface for horse management. Adds detailed logging for startup debugging.
-Last Updated: May 18, 2025
+Version: 1.6.5
+Purpose: Unified interface for horse management. Adds detailed logging for startup and show/close events.
+Last Updated: May 20, 2025
 Author: Claude Assistant
 
 Changelog:
+- v1.6.5 (2025-05-20):
+    - Added overriding of showEvent and closeEvent with logging for diagnostic purposes.
 - v1.6.4 (2025-05-18):
     - Added detailed DEBUG logging to setup_ui, setup_header, setup_action_bar,
       setup_main_content, and setup_footer methods.
@@ -53,7 +55,15 @@ from PySide6.QtWidgets import (
     QStatusBar,
 )
 from PySide6.QtCore import Qt, Signal, QDate, QTimer
-from PySide6.QtGui import QFont, QPalette, QColor, QAction, QKeyEvent
+from PySide6.QtGui import (
+    QFont,
+    QPalette,
+    QColor,
+    QAction,
+    QKeyEvent,
+    QShowEvent,
+    QCloseEvent,
+)  # Added QShowEvent, QCloseEvent
 
 from views.base_view import BaseView
 from config.app_config import (
@@ -91,6 +101,8 @@ class HorseUnifiedManagement(BaseView):
     exit_requested = Signal()
     setup_requested = Signal()
 
+    # closing signal is inherited from BaseView
+
     def __init__(self, current_user=None):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.info(
@@ -99,7 +111,7 @@ class HorseUnifiedManagement(BaseView):
         self.current_user = current_user or "ADMIN"
         self.horse_controller = HorseController()
         self.owner_controller = OwnerController()
-        super().__init__()  # This will call the overridden setup_ui
+        super().__init__()
         self.horses_list: List[Horse] = []
         self.current_horse: Optional[Horse] = None
         self._has_changes_in_active_tab: bool = False
@@ -108,11 +120,25 @@ class HorseUnifiedManagement(BaseView):
         self.search_timer.setSingleShot(True)
         self.search_timer.timeout.connect(self.perform_search)
 
-        # Palette setup is handled by BaseView's apply_dark_theme_palette_and_global_styles
-        # which is called in BaseView.__init__ AFTER setup_ui completes.
-
         self.load_initial_data()
         self.logger.info("HorseUnifiedManagement screen __init__ finished.")
+
+    def showEvent(self, event: QShowEvent):
+        """Override showEvent to log when the window is actually shown."""
+        self.logger.info("HorseUnifiedManagement showEvent triggered.")
+        super().showEvent(event)
+        self.logger.info("HorseUnifiedManagement is now visible.")
+
+    def closeEvent(self, event: QCloseEvent):
+        """Override closeEvent to log when and why the window is closing."""
+        self.logger.warning(
+            f"HorseUnifiedManagement closeEvent triggered. Event type: {event.type()}"
+        )
+        # self.closing.emit() # This is already in BaseView's closeEvent
+        super().closeEvent(event)  # Calls BaseView.closeEvent which emits self.closing
+        self.logger.warning(
+            "HorseUnifiedManagement has finished processing closeEvent."
+        )
 
     def get_form_input_style(self, base_bg=DARK_INPUT_FIELD_BACKGROUND):
         return f"""
@@ -170,10 +196,9 @@ class HorseUnifiedManagement(BaseView):
         """
 
     def setup_ui(self):
-        self.logger.debug("setup_ui: START")  # ADDED LOGGING
+        self.logger.debug("setup_ui: START")
         self.set_title("Horse Management")
         self.resize(1200, 800)
-        # self.center_on_screen() # Centering is handled by BaseView or main app
 
         main_layout = QVBoxLayout(self.central_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -183,11 +208,11 @@ class HorseUnifiedManagement(BaseView):
         self.setup_action_bar(main_layout)
         self.setup_main_content(main_layout)
         self.setup_footer(main_layout)
-        self.setup_connections()  # This should ideally be called after all UI elements are created
-        self.logger.debug("setup_ui: END")  # ADDED LOGGING
+        self.setup_connections()
+        self.logger.debug("setup_ui: END")
 
     def setup_header(self, parent_layout):
-        self.logger.debug("setup_header: START")  # ADDED LOGGING
+        self.logger.debug("setup_header: START")
         header_frame = QFrame()
         header_frame.setObjectName("HeaderFrame")
         header_frame.setFixedHeight(55)
@@ -283,10 +308,10 @@ class HorseUnifiedManagement(BaseView):
         header_layout.addStretch()
         header_layout.addWidget(right_widget)
         parent_layout.addWidget(header_frame)
-        self.logger.debug("setup_header: END")  # ADDED LOGGING
+        self.logger.debug("setup_header: END")
 
     def setup_action_bar(self, parent_layout):
-        self.logger.debug("setup_action_bar: START")  # ADDED LOGGING
+        self.logger.debug("setup_action_bar: START")
         action_bar_frame = QFrame()
         action_bar_frame.setObjectName("ActionBarFrame")
         action_bar_frame.setFixedHeight(50)
@@ -333,13 +358,9 @@ class HorseUnifiedManagement(BaseView):
         action_bar_layout.addWidget(self.deactivated_radio)
         action_bar_layout.addStretch()
 
-        self.logger.debug(
-            "setup_action_bar: Creating QLineEdit for search_input."
-        )  # ADDED LOGGING
+        self.logger.debug("setup_action_bar: Creating QLineEdit for search_input.")
         self.search_input = QLineEdit()
-        self.logger.debug(
-            "setup_action_bar: QLineEdit for search_input created."
-        )  # ADDED LOGGING
+        self.logger.debug("setup_action_bar: QLineEdit for search_input created.")
 
         self.search_input.setPlaceholderText("🔍 Search...")
         self.search_input.setFixedHeight(30)
@@ -350,10 +371,10 @@ class HorseUnifiedManagement(BaseView):
         action_bar_layout.addWidget(self.search_input)
         self.edit_horse_btn.setEnabled(False)
         parent_layout.addWidget(action_bar_frame)
-        self.logger.debug("setup_action_bar: END")  # ADDED LOGGING
+        self.logger.debug("setup_action_bar: END")
 
     def setup_main_content(self, parent_layout):
-        self.logger.debug("setup_main_content: START")  # ADDED LOGGING
+        self.logger.debug("setup_main_content: START")
         self.splitter = QSplitter(Qt.Orientation.Horizontal)
         self.splitter.setHandleWidth(1)
         self.splitter.setStyleSheet(
@@ -372,7 +393,7 @@ class HorseUnifiedManagement(BaseView):
         self.splitter.setCollapsible(0, False)
         self.splitter.setCollapsible(1, False)
         parent_layout.addWidget(self.splitter, 1)
-        self.logger.debug("setup_main_content: END")  # ADDED LOGGING
+        self.logger.debug("setup_main_content: END")
 
     def setup_horse_list_panel(self):
         self.logger.debug("setup_horse_list_panel started.")
@@ -544,7 +565,7 @@ class HorseUnifiedManagement(BaseView):
             )
 
     def setup_footer(self, parent_layout):
-        self.logger.debug("setup_footer: START")  # ADDED LOGGING
+        self.logger.debug("setup_footer: START")
         self.status_bar = QStatusBar()
         self.status_bar.setFixedHeight(28)
         self.status_bar.setStyleSheet(
@@ -559,13 +580,9 @@ class HorseUnifiedManagement(BaseView):
         )
         parent_layout.addWidget(self.status_bar)
 
-        self.logger.debug(
-            "setup_footer: Creating QLabel for status_label."
-        )  # ADDED LOGGING
+        self.logger.debug("setup_footer: Creating QLabel for status_label.")
         self.status_label = QLabel("Ready")
-        self.logger.debug(
-            "setup_footer: QLabel for status_label created."
-        )  # ADDED LOGGING
+        self.logger.debug("setup_footer: QLabel for status_label created.")
 
         self.footer_horse_count_label = QLabel("Showing 0 of 0 horses")
         self.shortcut_label = QLabel("F5=Refresh")
@@ -577,7 +594,7 @@ class HorseUnifiedManagement(BaseView):
         )
         self.status_bar.addPermanentWidget(separator_label)
         self.status_bar.addPermanentWidget(self.shortcut_label)
-        self.logger.debug("setup_footer: END")  # ADDED LOGGING
+        self.logger.debug("setup_footer: END")
 
     def save_changes(self):
         if not self._has_changes_in_active_tab:
@@ -683,25 +700,20 @@ class HorseUnifiedManagement(BaseView):
 
     def load_initial_data(self):
         self.logger.debug("load_initial_data called")
-        self.load_horses()  # This calls self.search_input.text()
-        self.update_status(
-            "Initialization complete. Ready."
-        )  # This calls self.status_label.setText()
+        self.load_horses()
+        self.update_status("Initialization complete. Ready.")
 
     def load_horses(self):
         try:
-            # Ensure UI elements are available before accessing them
             if not hasattr(self, "search_input"):
                 self.logger.error(
                     "load_horses called before search_input is initialized."
                 )
-                # Potentially initialize it here if it's a recoverable state, or re-raise/handle
                 return
             if not hasattr(self, "status_label"):
                 self.logger.error(
                     "load_horses called before status_label is initialized."
                 )
-                # Potentially initialize it here if it's a recoverable state, or re-raise/handle
                 return
 
             search_term = self.search_input.text()
@@ -892,14 +904,48 @@ class HorseUnifiedManagement(BaseView):
         self.load_horses()
         if self.current_horse:
             if self.current_horse.horse_id != current_selected_id:
+                # If selection changed due to filter/search, load new details
                 self.load_horse_details(self.current_horse.horse_id)
-            else:
-                if hasattr(self, "basic_info_tab"):
-                    self.basic_info_tab.populate_fields(self.current_horse)
-                if hasattr(self, "owners_tab"):
-                    self.owners_tab.load_owners_for_horse(self.current_horse)
-        elif current_selected_id is not None:
+            else:  # Reselected same horse, refresh its details from DB
+                fresh_horse_data = self.horse_controller.get_horse_by_id(
+                    self.current_horse.horse_id
+                )
+                if fresh_horse_data:
+                    self.current_horse = (
+                        fresh_horse_data  # Update the stored current_horse object
+                    )
+                    if hasattr(self, "basic_info_tab"):
+                        self.basic_info_tab.populate_fields(self.current_horse)
+                    if hasattr(self, "owners_tab"):
+                        self.owners_tab.load_owners_for_horse(self.current_horse)
+                    # Update header display elements directly since populate_fields doesn't do this
+                    self.horse_title.setText(
+                        self.current_horse.horse_name or "Unnamed Horse"
+                    )
+                    age_str = (
+                        self.horse_list._calculate_age(self.current_horse.date_of_birth)
+                        if self.horse_list
+                        and hasattr(self.horse_list, "_calculate_age")
+                        else "Age N/A"
+                    )
+                    location_name = (
+                        self.current_horse.location.location_name
+                        if self.current_horse.location
+                        else "N/A"
+                    )
+                    self.horse_info_line.setText(
+                        f"Acct: {self.current_horse.account_number or 'N/A'} | Breed: {self.current_horse.breed or 'N/A'} | "
+                        f"Color: {self.current_horse.color or 'N/A'} | Sex: {self.current_horse.sex or 'N/A'} | Age: {age_str} | "
+                        f"📍 {location_name}"
+                    )
+                else:  # Horse was deleted or became inaccessible
+                    self.display_empty_state()
+
+        elif (
+            current_selected_id is not None
+        ):  # Was selected, now no selection (e.g. list became empty)
             self.display_empty_state()
+
         self.update_main_action_buttons_state()
         self.update_status("Data refreshed.")
 
@@ -955,7 +1001,6 @@ class HorseUnifiedManagement(BaseView):
 
     def update_status(self, message, timeout=4000):
         self.logger.debug(f"Status update: {message}")
-        # Ensure status_label exists before trying to setText
         if hasattr(self, "status_label") and self.status_label:
             self.status_label.setText(message)
             if timeout > 0:
@@ -1009,8 +1054,8 @@ class HorseUnifiedManagement(BaseView):
             )
             if success:
                 self.show_info("Status Changed", message)
-                self.load_horse_details(self.current_horse.horse_id)
-                self.load_horses()
+                self.load_horse_details(self.current_horse.horse_id)  # Refresh details
+                self.load_horses()  # Refresh list
                 self.update_status(message)
             else:
                 self.show_error(f"{action_text.capitalize()} Failed", message)
@@ -1058,7 +1103,6 @@ class HorseUnifiedManagement(BaseView):
 
     def setup_connections(self):
         self.logger.debug("setup_connections started.")
-        # Ensure all UI elements are created before connecting signals
         if hasattr(self, "add_horse_btn"):
             self.add_horse_btn.clicked.connect(self.add_new_horse)
         if hasattr(self, "edit_horse_btn"):
@@ -1094,4 +1138,7 @@ class HorseUnifiedManagement(BaseView):
             )
             if not reply:
                 return
+        # Instead of self.exit_requested.emit() which might go to main app for full exit,
+        # we should probably have a dedicated signal or method for logout that leads back to login/splash.
+        # For now, assuming exit_requested is meant to trigger a logout sequence in main.py
         self.exit_requested.emit()

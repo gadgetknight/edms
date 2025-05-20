@@ -2,14 +2,17 @@
 
 """
 EDSI Veterinary Management System - Main Application
-Version: 1.3.3
+Version: 1.3.4
 Purpose: Main entry point for the EDSI application.
          Initializes the application, database, logging, and manages screen transitions.
-         Corrected SQLAlchemy text execution.
-Last Updated: May 18, 2025
+         Added diagnostic logging for main screen closure.
+Last Updated: May 20, 2025
 Author: Claude Assistant
 
 Changelog:
+- v1.3.4 (2025-05-20):
+    - Added diagnostic logging to `show_horse_management_screen` to trace if the
+      `closing` signal of HorseUnifiedManagement is emitted unexpectedly.
 - v1.3.3 (2025-05-18):
     - Modified `initialize_database` to use `text('SELECT 1')` for SQLAlchemy execution
       to resolve ArgumentError.
@@ -25,14 +28,13 @@ import sys
 import os
 import logging
 from logging.handlers import RotatingFileHandler
-from typing import Optional  # Added for type hinting
+from typing import Optional
 
 from PySide6.QtWidgets import QApplication, QMessageBox, QDialog
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QPalette, QColor
-from sqlalchemy import text  # <--- Added import for text()
+from sqlalchemy import text
 
-# Add project root to sys.path to allow importing project modules
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
@@ -48,7 +50,6 @@ from config.app_config import (
     DATABASE_URL,
 )
 
-# Import screens after path setup
 from views.auth.splash_screen import SplashScreen
 from views.auth.small_login_dialog import SmallLoginDialog
 from views.horse.horse_unified_management import HorseUnifiedManagement
@@ -120,12 +121,9 @@ class EDSIApplication(QApplication):
     def initialize_database(self):
         self.logger.info("Initializing database...")
         try:
-            # DATABASE_URL is imported from app_config
             self.db_manager.initialize_database(DATABASE_URL)
             session = self.db_manager.get_session()
-            # --- MODIFIED LINE ---
-            session.execute(text("SELECT 1"))  # Wrap raw SQL in text()
-            # --- END MODIFICATION ---
+            session.execute(text("SELECT 1"))
             session.close()
             self.logger.info("Database initialized successfully.")
         except Exception as e:
@@ -138,11 +136,13 @@ class EDSIApplication(QApplication):
             sys.exit(1)
 
     def show_splash_screen(self):
+        self.logger.debug("Attempting to show splash screen.")
         self.close_all_screens()
         self.splash_screen = SplashScreen()
         self.splash_screen.login_requested.connect(self.show_login_dialog)
         self.splash_screen.exit_requested.connect(self.quit)
         self.splash_screen.show()
+        self.logger.info("Splash screen displayed.")
 
     def show_login_dialog(self):
         self.logger.info("Login area clicked on splash screen.")
@@ -151,9 +151,37 @@ class EDSIApplication(QApplication):
             self.login_dialog.activateWindow()
             return
 
-        self.login_dialog = SmallLoginDialog(parent=self.splash_screen)
+        # Ensure splash is still visible as parent, or use None
+        parent_widget = (
+            self.splash_screen
+            if self.splash_screen and self.splash_screen.isVisible()
+            else None
+        )
+        self.login_dialog = SmallLoginDialog(parent=parent_widget)
         self.login_dialog.login_successful.connect(self.handle_login_success)
-        self.login_dialog.exec()
+        self.login_dialog.dialog_closed.connect(self.handle_login_dialog_closed)
+        self.login_dialog.show()  # Changed from exec() to show() for modeless behavior if splash needs to hide first
+        # If exec() is desired, ensure splash is hidden *before* or managed correctly.
+        # For now, let's assume exec() was intended.
+        # self.login_dialog.exec()
+
+    def handle_login_dialog_closed(self):
+        self.logger.debug("Login dialog reported closed.")
+        # If login was not successful, and splash is gone, we might need to reshow splash or quit
+        if not self.current_user_id and not (
+            self.splash_screen and self.splash_screen.isVisible()
+        ):
+            if not (
+                self.horse_management_screen
+                and self.horse_management_screen.isVisible()
+            ) and not (
+                self.user_management_screen and self.user_management_screen.isVisible()
+            ):
+                self.logger.info(
+                    "Login dialog closed without login, and no other main screens visible. Showing splash."
+                )
+                # self.show_splash_screen() # This might be too aggressive if another screen is coming up.
+                # The problem is the main screen disappearing *after* login.
 
     def handle_login_success(self, user_id: str):
         self.current_user_id = user_id
@@ -166,11 +194,20 @@ class EDSIApplication(QApplication):
             self.splash_screen = None
         self.show_horse_management_screen()
 
+    def handle_main_screen_closure_signal(self):
+        # This is a diagnostic slot
+        self.logger.warning(
+            "CRITICAL_DIAGNOSTIC: HorseUnifiedManagement screen emitted 'closing' signal!"
+        )
+        # You could add more actions here, e.g., try to show a message or prevent app exit
+        # For now, just logging is the primary goal.
+
     def show_horse_management_screen(self):
+        self.logger.debug("Attempting to show Horse Management Screen.")
         self.close_all_screens()
         if not self.current_user_id:
             self.logger.warning(
-                "Attempted to show horse management screen without a logged-in user."
+                "Attempted to show horse management screen without a logged-in user. Navigating to splash."
             )
             self.show_splash_screen()
             return
@@ -178,18 +215,25 @@ class EDSIApplication(QApplication):
         self.horse_management_screen = HorseUnifiedManagement(
             current_user=self.current_user_id
         )
+        # Connect to the closing signal for diagnostics
+        self.horse_management_screen.closing.connect(
+            self.handle_main_screen_closure_signal
+        )
         self.horse_management_screen.exit_requested.connect(self.handle_logout)
         self.horse_management_screen.setup_requested.connect(
             self.show_user_management_screen
         )
+
+        self.logger.info("About to call self.horse_management_screen.show()")
         self.horse_management_screen.show()
-        self.logger.info("Horse Management Screen displayed.")
+        self.logger.info("Horse Management Screen show() called and displayed.")
 
     def show_user_management_screen(self):
+        self.logger.debug("Attempting to show User Management Screen.")
         self.close_all_screens()
         if not self.current_user_id:
             self.logger.warning(
-                "Attempted to show user management screen without a logged-in user."
+                "Attempted to show user management screen without a logged-in user. Navigating to splash."
             )
             self.show_splash_screen()
             return
@@ -221,26 +265,34 @@ class EDSIApplication(QApplication):
         self.show_splash_screen()
 
     def close_all_screens(self):
-        """Closes all main application screens before switching."""
+        self.logger.debug("close_all_screens called.")
         if self.login_dialog and self.login_dialog.isVisible():
-            self.login_dialog.reject()
+            self.logger.debug("Closing login dialog.")
+            self.login_dialog.reject()  # Use reject to ensure dialog_closed is emitted if connected
             self.login_dialog = None
         if self.horse_management_screen:
+            self.logger.debug("Closing horse_management_screen.")
             self.horse_management_screen.close()
             self.horse_management_screen = None
         if self.user_management_screen:
+            self.logger.debug("Closing user_management_screen.")
             self.user_management_screen.close()
             self.user_management_screen = None
-        # Splash screen handling is managed by show_splash_screen or handle_login_success
+        # Splash screen is handled by its own showing/closing logic usually
+        if (
+            self.splash_screen
+            and self.splash_screen.isVisible()
+            and not (self.login_dialog and self.login_dialog.isVisible())
+        ):
+            # Only close splash if no login dialog is active over it and it's not about to be reshown
+            pass  # Let specific methods like handle_login_success close it.
 
     def run(self):
-        """Starts the Qt application event loop."""
         self.logger.info(f"{APP_NAME} event loop started.")
         return self.exec()
 
 
 def main():
-    """Main function to create and run the application."""
     app_instance = EDSIApplication()
     sys.exit(app_instance.run())
 

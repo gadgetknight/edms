@@ -2,13 +2,18 @@
 
 """
 EDSI Veterinary Management System - Initial Data Setup
-Version: 1.2.2
+Version: 1.2.3
 Purpose: Adds initial reference data with more robust commits and detailed logging
-         for each data type to help diagnose population issues.
+         for each data type to help diagnose population issues. Corrects Owner
+         instantiation by removing direct country_name argument.
 Last Updated: May 20, 2025
 Author: Gemini
 
 Changelog:
+- v1.2.3 (2025-05-20):
+    - Removed `country_name` as a direct keyword argument when creating `Owner`
+      instances in `add_sample_owners_data` to align with the `Owner` model
+      definition, which derives country information via `StateProvince`.
 - v1.2.2 (2025-05-20):
     - Refactored data adding functions (species, states, locations, charge_codes,
       veterinarian, horses, owners) to include more detailed logging within
@@ -348,7 +353,14 @@ def add_sample_charge_codes_data(session):
             True,
         ),
         ("650", "AF", "Attend Foaling", "Veterinary Call Fees", 100.00, True),
-        ("100", "FC", "Farm Call", "Veterinary Call Fees", 100.00, True),
+        (
+            "100",
+            "FC",
+            "Farm Call",
+            "Veterinary Call Fees",
+            100.00,
+            True,
+        ),  # Note: PDF/CSV differ for this. Using script's value.
         (
             "32",
             "BLBS",
@@ -490,28 +502,28 @@ def add_sample_owners_data(session):
             "full_name": "Amy Reed",
             "address1": "22 Carrigan Rd.",
             "city_state_zip": "Medford, NJ 08055",
-            "country": "USA",
+            # "country": "USA", # Country is derived from StateProvince
             "phone": "609-640-9823",
         },
         {
             "full_name": "Brian Walsh",
             "address1": "301 Westminster Blvd",
             "city_state_zip": "Colts Neck, NJ 07093",
-            "country": "USA",
+            # "country": "USA",
             "phone": "732-983-3029",
         },
         {
             "full_name": "Sam White",
             "address1": "457 White Birch Rd",
             "city_state_zip": "Sewell, NJ 08002",
-            "country": "USA",
+            # "country": "USA",
             "phone": "609-823-0923",
         },
         {
             "full_name": "John Hill",
             "address1": "30 Laird Rd",
             "city_state_zip": "Moorestown, NJ 08057",
-            "country": "USA",
+            # "country": "USA",
             "phone": "856-302-9899",
         },
     ]
@@ -561,9 +573,9 @@ def add_sample_owners_data(session):
                     last_name=last_name,
                     address_line1=owner_entry["address1"],
                     city=city,
-                    state_code=state_code,
+                    state_code=state_code,  # This links to StateProvince, which has country_code
                     zip_code=zip_code,
-                    country_name=owner_entry["country"],
+                    # Removed country_name=owner_entry["country"],
                     phone=owner_entry["phone"],
                     is_active=True,
                     created_by="SCRIPT",
