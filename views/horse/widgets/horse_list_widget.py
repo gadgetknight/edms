@@ -2,11 +2,18 @@
 
 """
 EDSI Veterinary Management System - Horse List Widget
-Version: 1.0.0
+Version: 1.0.1
 Purpose: Custom QListWidget for displaying a list of horses with specific styling
-         and item representation. Extracted from horse_unified_management.py.
-Last Updated: May 17, 2025
+         and item representation. Corrected AppConfig constant usage.
+Last Updated: May 18, 2025
 Author: Claude Assistant
+
+Changelog:
+- v1.0.1 (2025-05-18):
+    - Corrected AppConfig constant usage. Imported constants directly instead of
+      accessing them via the AppConfig class.
+- v1.0.0 (2025-05-17):
+    - Initial extraction from horse_unified_management.py.
 """
 
 import logging
@@ -17,10 +24,17 @@ from PySide6.QtWidgets import QListWidget, QVBoxLayout, QLabel, QWidget
 from PySide6.QtGui import QFont
 from PySide6.QtCore import Qt
 
-from config.app_config import AppConfig
-
-# Assuming Horse model might be needed for type hinting if not already implicitly handled
-# from models import Horse # Not strictly needed if 'horse' objects passed are assumed to have attrs
+# Corrected import: Import constants directly
+from config.app_config import (
+    DARK_WIDGET_BACKGROUND,
+    DARK_TEXT_PRIMARY,
+    DARK_BORDER,
+    DARK_PRIMARY_ACTION,
+    DARK_ITEM_HOVER,
+    DEFAULT_FONT_FAMILY,
+    DARK_TEXT_SECONDARY,
+    DARK_TEXT_TERTIARY,
+)
 
 
 class HorseListWidget(QListWidget):
@@ -32,18 +46,18 @@ class HorseListWidget(QListWidget):
         self.setStyleSheet(
             f"""
             QListWidget {{
-                border: none; background-color: {AppConfig.DARK_WIDGET_BACKGROUND};
-                color: {AppConfig.DARK_TEXT_PRIMARY}; outline: none;
+                border: none; background-color: {DARK_WIDGET_BACKGROUND};
+                color: {DARK_TEXT_PRIMARY}; outline: none;
             }}
             QListWidget::item {{
-                padding: 10px 15px; border-bottom: 1px solid {AppConfig.DARK_BORDER};
-                min-height: 55px; background-color: {AppConfig.DARK_WIDGET_BACKGROUND};
+                padding: 10px 15px; border-bottom: 1px solid {DARK_BORDER};
+                min-height: 55px; background-color: {DARK_WIDGET_BACKGROUND};
             }}
             QListWidget::item:selected {{
-                background-color: {AppConfig.DARK_PRIMARY_ACTION}40; /* RGBA */
-                border-left: 3px solid {AppConfig.DARK_PRIMARY_ACTION}; color: #ffffff;
+                background-color: {DARK_PRIMARY_ACTION}40; /* RGBA */
+                border-left: 3px solid {DARK_PRIMARY_ACTION}; color: #ffffff;
             }}
-            QListWidget::item:hover:!selected {{ background-color: {AppConfig.DARK_ITEM_HOVER}; }}
+            QListWidget::item:hover:!selected {{ background-color: {DARK_ITEM_HOVER}; }}
             """
         )
 
@@ -59,34 +73,34 @@ class HorseListWidget(QListWidget):
         widget = QWidget()
         # Ensure the widget itself doesn't override the transparent background needed for items
         widget.setStyleSheet(
-            f"background-color: transparent; border: none; color: {AppConfig.DARK_TEXT_PRIMARY};"
+            f"background-color: transparent; border: none; color: {DARK_TEXT_PRIMARY};"
         )
         layout = QVBoxLayout(widget)
         layout.setContentsMargins(0, 5, 0, 5)
         layout.setSpacing(2)
 
         name_label = QLabel(horse.horse_name or "Unnamed Horse")
-        name_label.setFont(QFont(AppConfig.DEFAULT_FONT_FAMILY, 12, QFont.Weight.Bold))
+        name_label.setFont(QFont(DEFAULT_FONT_FAMILY, 12, QFont.Weight.Bold))
         name_label.setStyleSheet(
-            f"color: {AppConfig.DARK_TEXT_PRIMARY}; background: transparent;"
+            f"color: {DARK_TEXT_PRIMARY}; background: transparent;"
         )
 
         info_text = f"Acct: {horse.account_number or 'N/A'} | {horse.breed or 'N/A'}"
         info_label = QLabel(info_text)
         info_label.setStyleSheet(
-            f"color: {AppConfig.DARK_TEXT_SECONDARY}; font-size: 10px; background: transparent;"
+            f"color: {DARK_TEXT_SECONDARY}; font-size: 10px; background: transparent;"
         )
 
         details_text = f"{horse.color or '?'} | {horse.sex or '?'} | {self._calculate_age(horse.date_of_birth)}"
         details_label = QLabel(details_text)
         details_label.setStyleSheet(
-            f"color: {AppConfig.DARK_TEXT_SECONDARY}; font-size: 10px; background: transparent;"
+            f"color: {DARK_TEXT_SECONDARY}; font-size: 10px; background: transparent;"
         )
 
         location_text = horse.location.location_name if horse.location else "N/A"
         location_label = QLabel(f"📍 {location_text}")
         location_label.setStyleSheet(
-            f"color: {AppConfig.DARK_TEXT_TERTIARY}; font-size: 10px; background: transparent;"
+            f"color: {DARK_TEXT_TERTIARY}; font-size: 10px; background: transparent;"
         )
 
         layout.addWidget(name_label)

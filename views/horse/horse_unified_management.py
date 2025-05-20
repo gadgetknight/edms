@@ -2,12 +2,17 @@
 
 """
 EDSI Veterinary Management System - Unified Horse Management Screen (Dark Theme)
-Version: 1.6.3
-Purpose: Unified interface for horse management. Removes syntax error.
+Version: 1.6.4
+Purpose: Unified interface for horse management. Adds detailed logging for startup debugging.
 Last Updated: May 18, 2025
 Author: Claude Assistant
 
 Changelog:
+- v1.6.4 (2025-05-18):
+    - Added detailed DEBUG logging to setup_ui, setup_header, setup_action_bar,
+      setup_main_content, and setup_footer methods.
+    - Added specific logging before and after creation of self.search_input in
+      setup_action_bar and self.status_label in setup_footer to trace AttributeError.
 - v1.6.3 (2025-05-18):
     - Removed stray Markdown backticks that were causing a SyntaxError.
 - v1.6.2 (2025-05-18):
@@ -94,7 +99,7 @@ class HorseUnifiedManagement(BaseView):
         self.current_user = current_user or "ADMIN"
         self.horse_controller = HorseController()
         self.owner_controller = OwnerController()
-        super().__init__()
+        super().__init__()  # This will call the overridden setup_ui
         self.horses_list: List[Horse] = []
         self.current_horse: Optional[Horse] = None
         self._has_changes_in_active_tab: bool = False
@@ -103,49 +108,8 @@ class HorseUnifiedManagement(BaseView):
         self.search_timer.setSingleShot(True)
         self.search_timer.timeout.connect(self.perform_search)
 
-        dark_palette = QPalette()
-        dark_palette.setColor(QPalette.ColorRole.Window, QColor(DARK_BACKGROUND))
-        dark_palette.setColor(QPalette.ColorRole.WindowText, QColor(DARK_TEXT_PRIMARY))
-        dark_palette.setColor(QPalette.ColorRole.Base, QColor(DARK_WIDGET_BACKGROUND))
-        dark_palette.setColor(QPalette.ColorRole.AlternateBase, QColor(DARK_ITEM_HOVER))
-        dark_palette.setColor(
-            QPalette.ColorRole.ToolTipBase, QColor(DARK_WIDGET_BACKGROUND)
-        )
-        dark_palette.setColor(QPalette.ColorRole.ToolTipText, QColor(DARK_TEXT_PRIMARY))
-        dark_palette.setColor(QPalette.ColorRole.Text, QColor(DARK_TEXT_PRIMARY))
-        dark_palette.setColor(QPalette.ColorRole.Button, QColor(DARK_BUTTON_BG))
-        dark_palette.setColor(QPalette.ColorRole.ButtonText, QColor(DARK_TEXT_PRIMARY))
-        dark_palette.setColor(QPalette.ColorRole.BrightText, Qt.GlobalColor.red)
-        dark_palette.setColor(QPalette.ColorRole.Link, QColor(DARK_PRIMARY_ACTION))
-        dark_palette.setColor(QPalette.ColorRole.Highlight, QColor(DARK_HIGHLIGHT_BG))
-        dark_palette.setColor(
-            QPalette.ColorRole.HighlightedText, QColor(DARK_HIGHLIGHT_TEXT)
-        )
-        dark_palette.setColor(
-            QPalette.ColorRole.PlaceholderText, QColor(DARK_TEXT_TERTIARY)
-        )
-        dark_palette.setColor(
-            QPalette.ColorGroup.Disabled,
-            QPalette.ColorRole.Text,
-            QColor(DARK_TEXT_TERTIARY),
-        )
-        dark_palette.setColor(
-            QPalette.ColorGroup.Disabled,
-            QPalette.ColorRole.ButtonText,
-            QColor(DARK_TEXT_TERTIARY),
-        )
-        dark_palette.setColor(
-            QPalette.ColorGroup.Disabled,
-            QPalette.ColorRole.Base,
-            QColor(DARK_HEADER_FOOTER),
-        )
-        dark_palette.setColor(
-            QPalette.ColorGroup.Disabled,
-            QPalette.ColorRole.Button,
-            QColor(DARK_HEADER_FOOTER),
-        )
-        self.setPalette(dark_palette)
-        self.setAutoFillBackground(True)
+        # Palette setup is handled by BaseView's apply_dark_theme_palette_and_global_styles
+        # which is called in BaseView.__init__ AFTER setup_ui completes.
 
         self.load_initial_data()
         self.logger.info("HorseUnifiedManagement screen __init__ finished.")
@@ -206,22 +170,24 @@ class HorseUnifiedManagement(BaseView):
         """
 
     def setup_ui(self):
-        self.logger.debug("HorseUnifiedManagement setup_ui started.")
+        self.logger.debug("setup_ui: START")  # ADDED LOGGING
         self.set_title("Horse Management")
         self.resize(1200, 800)
-        self.center_on_screen()
+        # self.center_on_screen() # Centering is handled by BaseView or main app
+
         main_layout = QVBoxLayout(self.central_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
+
         self.setup_header(main_layout)
         self.setup_action_bar(main_layout)
         self.setup_main_content(main_layout)
         self.setup_footer(main_layout)
-        self.setup_connections()
-        self.logger.debug("Dark Theme UI setup complete.")
+        self.setup_connections()  # This should ideally be called after all UI elements are created
+        self.logger.debug("setup_ui: END")  # ADDED LOGGING
 
     def setup_header(self, parent_layout):
-        self.logger.debug("setup_header started.")
+        self.logger.debug("setup_header: START")  # ADDED LOGGING
         header_frame = QFrame()
         header_frame.setObjectName("HeaderFrame")
         header_frame.setFixedHeight(55)
@@ -317,10 +283,10 @@ class HorseUnifiedManagement(BaseView):
         header_layout.addStretch()
         header_layout.addWidget(right_widget)
         parent_layout.addWidget(header_frame)
-        self.logger.debug("setup_header finished.")
+        self.logger.debug("setup_header: END")  # ADDED LOGGING
 
     def setup_action_bar(self, parent_layout):
-        self.logger.debug("setup_action_bar started.")
+        self.logger.debug("setup_action_bar: START")  # ADDED LOGGING
         action_bar_frame = QFrame()
         action_bar_frame.setObjectName("ActionBarFrame")
         action_bar_frame.setFixedHeight(50)
@@ -366,7 +332,15 @@ class HorseUnifiedManagement(BaseView):
         action_bar_layout.addWidget(self.all_horses_radio)
         action_bar_layout.addWidget(self.deactivated_radio)
         action_bar_layout.addStretch()
+
+        self.logger.debug(
+            "setup_action_bar: Creating QLineEdit for search_input."
+        )  # ADDED LOGGING
         self.search_input = QLineEdit()
+        self.logger.debug(
+            "setup_action_bar: QLineEdit for search_input created."
+        )  # ADDED LOGGING
+
         self.search_input.setPlaceholderText("🔍 Search...")
         self.search_input.setFixedHeight(30)
         self.search_input.setFixedWidth(220)
@@ -376,10 +350,10 @@ class HorseUnifiedManagement(BaseView):
         action_bar_layout.addWidget(self.search_input)
         self.edit_horse_btn.setEnabled(False)
         parent_layout.addWidget(action_bar_frame)
-        self.logger.debug("setup_action_bar finished.")
+        self.logger.debug("setup_action_bar: END")  # ADDED LOGGING
 
     def setup_main_content(self, parent_layout):
-        self.logger.debug("setup_main_content started.")
+        self.logger.debug("setup_main_content: START")  # ADDED LOGGING
         self.splitter = QSplitter(Qt.Orientation.Horizontal)
         self.splitter.setHandleWidth(1)
         self.splitter.setStyleSheet(
@@ -398,7 +372,7 @@ class HorseUnifiedManagement(BaseView):
         self.splitter.setCollapsible(0, False)
         self.splitter.setCollapsible(1, False)
         parent_layout.addWidget(self.splitter, 1)
-        self.logger.debug("setup_main_content finished.")
+        self.logger.debug("setup_main_content: END")  # ADDED LOGGING
 
     def setup_horse_list_panel(self):
         self.logger.debug("setup_horse_list_panel started.")
@@ -570,7 +544,7 @@ class HorseUnifiedManagement(BaseView):
             )
 
     def setup_footer(self, parent_layout):
-        self.logger.debug("setup_footer started.")
+        self.logger.debug("setup_footer: START")  # ADDED LOGGING
         self.status_bar = QStatusBar()
         self.status_bar.setFixedHeight(28)
         self.status_bar.setStyleSheet(
@@ -584,7 +558,15 @@ class HorseUnifiedManagement(BaseView):
             """
         )
         parent_layout.addWidget(self.status_bar)
+
+        self.logger.debug(
+            "setup_footer: Creating QLabel for status_label."
+        )  # ADDED LOGGING
         self.status_label = QLabel("Ready")
+        self.logger.debug(
+            "setup_footer: QLabel for status_label created."
+        )  # ADDED LOGGING
+
         self.footer_horse_count_label = QLabel("Showing 0 of 0 horses")
         self.shortcut_label = QLabel("F5=Refresh")
         self.status_bar.addWidget(self.status_label, 1)
@@ -595,7 +577,7 @@ class HorseUnifiedManagement(BaseView):
         )
         self.status_bar.addPermanentWidget(separator_label)
         self.status_bar.addPermanentWidget(self.shortcut_label)
-        self.logger.debug("setup_footer finished.")
+        self.logger.debug("setup_footer: END")  # ADDED LOGGING
 
     def save_changes(self):
         if not self._has_changes_in_active_tab:
@@ -701,11 +683,27 @@ class HorseUnifiedManagement(BaseView):
 
     def load_initial_data(self):
         self.logger.debug("load_initial_data called")
-        self.load_horses()
-        self.update_status("Initialization complete. Ready.")
+        self.load_horses()  # This calls self.search_input.text()
+        self.update_status(
+            "Initialization complete. Ready."
+        )  # This calls self.status_label.setText()
 
     def load_horses(self):
         try:
+            # Ensure UI elements are available before accessing them
+            if not hasattr(self, "search_input"):
+                self.logger.error(
+                    "load_horses called before search_input is initialized."
+                )
+                # Potentially initialize it here if it's a recoverable state, or re-raise/handle
+                return
+            if not hasattr(self, "status_label"):
+                self.logger.error(
+                    "load_horses called before status_label is initialized."
+                )
+                # Potentially initialize it here if it's a recoverable state, or re-raise/handle
+                return
+
             search_term = self.search_input.text()
             status_filter = "active"
             if self.all_horses_radio.isChecked():
@@ -957,12 +955,24 @@ class HorseUnifiedManagement(BaseView):
 
     def update_status(self, message, timeout=4000):
         self.logger.debug(f"Status update: {message}")
-        self.status_label.setText(message)
-        if timeout > 0:
-            QTimer.singleShot(timeout, lambda: self.clear_status_if_matches(message))
+        # Ensure status_label exists before trying to setText
+        if hasattr(self, "status_label") and self.status_label:
+            self.status_label.setText(message)
+            if timeout > 0:
+                QTimer.singleShot(
+                    timeout, lambda: self.clear_status_if_matches(message)
+                )
+        else:
+            self.logger.warning(
+                f"update_status called but self.status_label is not initialized. Message: {message}"
+            )
 
     def clear_status_if_matches(self, original_message):
-        if self.status_label.text() == original_message:
+        if (
+            hasattr(self, "status_label")
+            and self.status_label
+            and self.status_label.text() == original_message
+        ):
             self.status_label.setText("Ready")
 
     def update_main_action_buttons_state(self):
@@ -1048,16 +1058,27 @@ class HorseUnifiedManagement(BaseView):
 
     def setup_connections(self):
         self.logger.debug("setup_connections started.")
-        self.add_horse_btn.clicked.connect(self.add_new_horse)
-        self.edit_horse_btn.clicked.connect(self.edit_selected_horse)
-        self.refresh_btn.clicked.connect(self.refresh_data)
-        self.help_btn.clicked.connect(self.show_help)
-        self.setup_icon_btn.clicked.connect(self.handle_setup_icon_click)
-        self.active_only_radio.toggled.connect(self.on_filter_changed)
-        self.all_horses_radio.toggled.connect(self.on_filter_changed)
-        self.deactivated_radio.toggled.connect(self.on_filter_changed)
-        self.search_input.textChanged.connect(self.on_search_text_changed)
-        self.horse_list.itemSelectionChanged.connect(self.on_selection_changed)
+        # Ensure all UI elements are created before connecting signals
+        if hasattr(self, "add_horse_btn"):
+            self.add_horse_btn.clicked.connect(self.add_new_horse)
+        if hasattr(self, "edit_horse_btn"):
+            self.edit_horse_btn.clicked.connect(self.edit_selected_horse)
+        if hasattr(self, "refresh_btn"):
+            self.refresh_btn.clicked.connect(self.refresh_data)
+        if hasattr(self, "help_btn"):
+            self.help_btn.clicked.connect(self.show_help)
+        if hasattr(self, "setup_icon_btn"):
+            self.setup_icon_btn.clicked.connect(self.handle_setup_icon_click)
+        if hasattr(self, "active_only_radio"):
+            self.active_only_radio.toggled.connect(self.on_filter_changed)
+        if hasattr(self, "all_horses_radio"):
+            self.all_horses_radio.toggled.connect(self.on_filter_changed)
+        if hasattr(self, "deactivated_radio"):
+            self.deactivated_radio.toggled.connect(self.on_filter_changed)
+        if hasattr(self, "search_input"):
+            self.search_input.textChanged.connect(self.on_search_text_changed)
+        if hasattr(self, "horse_list"):
+            self.horse_list.itemSelectionChanged.connect(self.on_selection_changed)
         self.logger.debug("Signal connections established.")
 
     def handle_setup_icon_click(self):

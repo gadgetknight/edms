@@ -1,192 +1,213 @@
 # views/horse/dialogs/create_link_owner_dialog.py
-
 """
-EDSI Veterinary Management System - Create and Link Owner Dialog
-Version: 1.1.2
-Purpose: Dialog to create a new owner and link them to a horse.
-         Corrects order of initialization for country_input.
-Last Updated: May 17, 2025
+EDSI Veterinary Management System - Create New Owner and Link Dialog
+Version: 1.0.5
+Purpose: Dialog for creating a new owner and linking them to a horse with a percentage.
+         Allows 0% ownership and ensures dialog stays open on validation error.
+Last Updated: May 19, 2025
 Author: Claude Assistant
 
 Changelog:
-- v1.1.2 (2025-05-17):
-    - Fixed AttributeError by defining `self.country_input` before calling `populate_states_combo`.
-- v1.1.1 (2025-05-17):
-    - Set default text for `country_input` to "USA".
-    - `country_name` collected from form but not passed to Owner constructor.
-- v1.1.0 (2025-05-17):
-    - Added Mobile Phone input field.
-    - Phone fields are no longer client-side validated as required.
-    - Owner creation (controller call) moved into `validate_and_accept`.
-    - Dialog remains open if owner creation fails at controller level.
-    - `get_data` returns the created Owner object and percentage for linking.
-- v1.0.0 (2025-05-16): Initial extraction from horse_unified_management.py.
+- v1.0.5 (2025-05-19):
+    - Changed percentage_input range and validation to allow 0.00%.
+    - Ensured dialog validation logic explicitly keeps dialog open on error.
+- v1.0.4 (2025-05-19):
+    - Changed "Phone*:" label to "Phone:" to reflect it's not a mandatory field.
+- v1.0.3 (2025-05-19):
+    - Corrected `scroll_area.setFrameShape(QWidget.Shape.NoFrame)` to
+      `scroll_area.setFrameShape(QFrame.Shape.NoFrame)`.
+- v1.0.2 (2025-05-19):
+    - Resolved AppConfig constant AttributeError by importing constants directly.
+    - Removed import of UserManagementScreen and localized style helper methods.
 """
 
 import logging
-from typing import Optional, Dict, List  # Added List for type hinting
+from typing import Optional, Dict, List
 
 from PySide6.QtWidgets import (
     QDialog,
     QVBoxLayout,
-    QHBoxLayout,
-    QGridLayout,
-    QLabel,
+    QFormLayout,
     QLineEdit,
     QComboBox,
+    QDoubleSpinBox,
     QCheckBox,
     QDialogButtonBox,
-    QDoubleSpinBox,
-    QFormLayout,
     QMessageBox,
+    QLabel,
+    QScrollArea,
+    QWidget,
     QFrame,
 )
-from PySide6.QtCore import Qt
 from PySide6.QtGui import QPalette, QColor
+from PySide6.QtCore import Qt
 
-from config.app_config import AppConfig
 from controllers.owner_controller import OwnerController
-from models import Owner
+from models import Owner as OwnerModel
+
+from config.app_config import (
+    DARK_WIDGET_BACKGROUND,
+    DARK_TEXT_PRIMARY,
+    DARK_INPUT_FIELD_BACKGROUND,
+    DARK_ITEM_HOVER,
+    DARK_BUTTON_BG,
+    DARK_BUTTON_HOVER,
+    DARK_PRIMARY_ACTION,
+    DARK_HIGHLIGHT_BG,
+    DARK_HIGHLIGHT_TEXT,
+    DARK_TEXT_TERTIARY,
+    DARK_TEXT_SECONDARY,
+    DARK_SUCCESS_ACTION,
+    DARK_BORDER,
+    DARK_HEADER_FOOTER,
+)
 
 
 class CreateAndLinkOwnerDialog(QDialog):
-    """Dialog to create a new owner and link them to a horse with an ownership percentage."""
-
-    def __init__(self, parent_horse_screen, horse_name: str, current_user_id: str):
-        super().__init__(parent_horse_screen)
-        self.horse_name = horse_name
-        self.current_user_id = current_user_id
-        self.setWindowTitle(f"Create New Owner & Link to {self.horse_name}")
-        self.setMinimumWidth(750)
+    def __init__(self, parent_view, horse_name: str, current_user_login: str):
+        super().__init__(parent_view)
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.parent_view = parent_view
+        self.horse_name = horse_name
+        self.current_user_login = current_user_login
         self.owner_controller = OwnerController()
-        self.parent_screen = parent_horse_screen
-        self.newly_created_owner: Optional[Owner] = None
 
+        self.setWindowTitle(f"Create & Link New Owner to {self.horse_name}")
+        self.setMinimumWidth(600)
+
+        self._setup_palette()
+        self._setup_ui()
+
+        if "state_code" in self.form_fields and isinstance(
+            self.form_fields["state_code"], QComboBox
+        ):
+            self._populate_states_combo(self.form_fields["state_code"])
+
+    def _get_dialog_specific_input_field_style(self):
+        return f"""
+            QLineEdit, QComboBox, QTextEdit, QDoubleSpinBox {{
+                background-color: {DARK_INPUT_FIELD_BACKGROUND}; color: {DARK_TEXT_PRIMARY};
+                border: 1px solid {DARK_BORDER}; border-radius: 4px; padding: 6px; min-height: 20px;
+            }}
+            QLineEdit:focus, QComboBox:focus, QTextEdit:focus, QDoubleSpinBox:focus {{ border-color: {DARK_PRIMARY_ACTION}; }}
+            QComboBox::drop-down {{ border: none; background-color: transparent; subcontrol-position: right center; width: 15px; }}
+            QComboBox::down-arrow {{ image: url(none); }}
+            QComboBox QAbstractItemView {{
+                background-color: {DARK_WIDGET_BACKGROUND}; color: {DARK_TEXT_PRIMARY};
+                border: 1px solid {DARK_BORDER}; selection-background-color: {DARK_HIGHLIGHT_BG};
+                selection-color: {DARK_HIGHLIGHT_TEXT};
+            }} """
+
+    def _get_dialog_generic_button_style(self):
+        return (
+            f"QPushButton {{background-color: {DARK_BUTTON_BG}; color: {DARK_TEXT_PRIMARY}; "
+            f"border: 1px solid {DARK_BORDER}; border-radius: 4px; padding: 8px 12px; "
+            f"font-size: 12px; font-weight: 500; min-height: 28px;}} "
+            f"QPushButton:hover {{ background-color: {DARK_BUTTON_HOVER}; }} "
+            f"QPushButton:disabled {{ background-color: {DARK_HEADER_FOOTER}; color: {DARK_TEXT_TERTIARY}; }}"
+        )
+
+    def _setup_palette(self):
         palette = QPalette()
+        palette.setColor(QPalette.ColorRole.Window, QColor(DARK_WIDGET_BACKGROUND))
+        palette.setColor(QPalette.ColorRole.WindowText, QColor(DARK_TEXT_PRIMARY))
+        palette.setColor(QPalette.ColorRole.Base, QColor(DARK_INPUT_FIELD_BACKGROUND))
+        palette.setColor(QPalette.ColorRole.AlternateBase, QColor(DARK_ITEM_HOVER))
+        palette.setColor(QPalette.ColorRole.ToolTipBase, QColor(DARK_WIDGET_BACKGROUND))
+        palette.setColor(QPalette.ColorRole.ToolTipText, QColor(DARK_TEXT_PRIMARY))
+        palette.setColor(QPalette.ColorRole.Text, QColor(DARK_TEXT_PRIMARY))
+        palette.setColor(QPalette.ColorRole.Button, QColor(DARK_BUTTON_BG))
+        palette.setColor(QPalette.ColorRole.ButtonText, QColor(DARK_TEXT_PRIMARY))
+        palette.setColor(QPalette.ColorRole.BrightText, QColor(Qt.GlobalColor.red))
+        palette.setColor(QPalette.ColorRole.Link, QColor(DARK_PRIMARY_ACTION))
+        palette.setColor(QPalette.ColorRole.Highlight, QColor(DARK_HIGHLIGHT_BG))
         palette.setColor(
-            QPalette.ColorRole.Window, QColor(AppConfig.DARK_WIDGET_BACKGROUND)
+            QPalette.ColorRole.HighlightedText, QColor(DARK_HIGHLIGHT_TEXT)
         )
-        palette.setColor(
-            QPalette.ColorRole.WindowText, QColor(AppConfig.DARK_TEXT_PRIMARY)
-        )
-        palette.setColor(
-            QPalette.ColorRole.Base, QColor(AppConfig.DARK_INPUT_FIELD_BACKGROUND)
-        )
-        palette.setColor(QPalette.ColorRole.Text, QColor(AppConfig.DARK_TEXT_PRIMARY))
-        palette.setColor(QPalette.ColorRole.Button, QColor(AppConfig.DARK_BUTTON_BG))
-        palette.setColor(
-            QPalette.ColorRole.ButtonText, QColor(AppConfig.DARK_TEXT_PRIMARY)
-        )
-        palette.setColor(
-            QPalette.ColorRole.PlaceholderText, QColor(AppConfig.DARK_TEXT_TERTIARY)
-        )
+        palette.setColor(QPalette.ColorRole.PlaceholderText, QColor(DARK_TEXT_TERTIARY))
         self.setPalette(palette)
+        self.setAutoFillBackground(True)
 
+    def _setup_ui(self):
         main_dialog_layout = QVBoxLayout(self)
-        main_dialog_layout.setSpacing(15)
-        main_dialog_layout.setContentsMargins(15, 15, 15, 15)
-
-        form_fields_grid_layout = QGridLayout()
-        form_fields_grid_layout.setSpacing(25)
-        form_layout_left = QFormLayout()
-        form_layout_left.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
-        form_layout_left.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
-        form_layout_left.setSpacing(10)
-        form_layout_right = QFormLayout()
-        form_layout_right.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
-        form_layout_right.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
-        form_layout_right.setSpacing(10)
-
-        self.setStyleSheet(
-            f"QLabel {{ color: {AppConfig.DARK_TEXT_SECONDARY}; background-color:transparent; padding-top:3px;}}"
+        instruction_label = QLabel(
+            f"Enter details for the new owner to be linked to <b>{self.horse_name}</b>."
         )
-        input_style = self.parent_screen.get_form_input_style()
-
-        # Column 1 Fields
-        self.account_number_input = QLineEdit()
-        self.account_number_input.setPlaceholderText("Account Number (Optional)")
-        self.account_number_input.setStyleSheet(input_style)
-        form_layout_left.addRow(QLabel("Account Number:"), self.account_number_input)
-        self.farm_name_input = QLineEdit()
-        self.farm_name_input.setStyleSheet(input_style)
-        form_layout_left.addRow(QLabel("Farm Name:"), self.farm_name_input)
-        self.first_name_input = QLineEdit()
-        self.first_name_input.setStyleSheet(input_style)
-        form_layout_left.addRow(QLabel("First Name:"), self.first_name_input)
-        self.last_name_input = QLineEdit()
-        self.last_name_input.setStyleSheet(input_style)
-        form_layout_left.addRow(QLabel("Last Name:"), self.last_name_input)
-        self.address1_input = QLineEdit()
-        self.address1_input.setStyleSheet(input_style)
-        form_layout_left.addRow(QLabel("Street Address*:"), self.address1_input)
-        self.address2_input = QLineEdit()
-        self.address2_input.setStyleSheet(input_style)
-        form_layout_left.addRow(QLabel("Address Line 2:"), self.address2_input)
-        self.city_input = QLineEdit()
-        self.city_input.setStyleSheet(input_style)
-        form_layout_left.addRow(QLabel("City*:"), self.city_input)
-
-        # Column 2 Fields
-        self.state_combo = QComboBox()
-        self.state_combo.setStyleSheet(input_style)
-        form_layout_right.addRow(QLabel("State/Province*:"), self.state_combo)
-
-        self.zip_code_input = QLineEdit()
-        self.zip_code_input.setStyleSheet(input_style)
-        form_layout_right.addRow(QLabel("Zip/Postal Code*:"), self.zip_code_input)
-
-        # --- Define country_input BEFORE populate_states_combo ---
-        self.country_input = QLineEdit()
-        self.country_input.setStyleSheet(input_style)
-        form_layout_right.addRow(QLabel("Country:"), self.country_input)
-        # --- End define country_input ---
-
-        self.populate_states_combo()  # Now it's safe to call this
-
-        self.phone1_input = QLineEdit()
-        self.phone1_input.setStyleSheet(input_style)
-        form_layout_right.addRow(QLabel("Primary Phone:"), self.phone1_input)
-        self.mobile_phone_input = QLineEdit()
-        self.mobile_phone_input.setStyleSheet(input_style)
-        form_layout_right.addRow(QLabel("Mobile Phone:"), self.mobile_phone_input)
-        self.email_input = QLineEdit()
-        self.email_input.setStyleSheet(input_style)
-        form_layout_right.addRow(QLabel("Email:"), self.email_input)
-        self.is_active_checkbox = QCheckBox("Owner is Active")
-        self.is_active_checkbox.setChecked(True)
-        self.is_active_checkbox.setStyleSheet(
-            f"QCheckBox {{ color: {AppConfig.DARK_TEXT_SECONDARY}; }} QCheckBox::indicator {{width: 13px; height: 13px;}}"
+        instruction_label.setStyleSheet(
+            f"color: {DARK_TEXT_SECONDARY}; margin-bottom: 10px; background-color: transparent;"
         )
-        form_layout_right.addRow("", self.is_active_checkbox)
-
-        form_fields_grid_layout.addLayout(form_layout_left, 0, 0)
-        form_fields_grid_layout.addLayout(form_layout_right, 0, 1)
-        main_dialog_layout.addLayout(form_fields_grid_layout)
-
-        percentage_frame = QFrame()
-        percentage_layout = QHBoxLayout(percentage_frame)
-        percentage_label = QLabel(f"Ownership % for {self.horse_name}:*")
-        self.percentage_spinbox = QDoubleSpinBox()
-        self.percentage_spinbox.setRange(0.00, 100.00)
-        self.percentage_spinbox.setDecimals(2)
-        self.percentage_spinbox.setValue(100.00)
-        self.percentage_spinbox.setSuffix(" %")
-        self.percentage_spinbox.setStyleSheet(input_style)
-        percentage_layout.addWidget(percentage_label)
-        percentage_layout.addStretch()
-        percentage_layout.addWidget(self.percentage_spinbox)
-        main_dialog_layout.addWidget(percentage_frame)
-
+        instruction_label.setWordWrap(True)
+        main_dialog_layout.addWidget(instruction_label)
+        scroll_area = QScrollArea(self)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        scroll_area.setStyleSheet(
+            f"background-color: {DARK_WIDGET_BACKGROUND}; border: none;"
+        )
+        form_container_widget = QWidget()
+        form_container_widget.setStyleSheet(
+            f"background-color: {DARK_WIDGET_BACKGROUND};"
+        )
+        form_layout = QFormLayout(form_container_widget)
+        form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+        form_layout.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
+        form_layout.setContentsMargins(10, 10, 10, 10)
+        form_layout.setSpacing(10)
+        dialog_specific_styles = (
+            f"QLabel {{ color: {DARK_TEXT_SECONDARY}; background-color: transparent; padding-top: 3px; }}"
+            + f"QCheckBox::indicator {{ width: 13px; height: 13px; }}"
+        )
+        self.setStyleSheet(dialog_specific_styles)
+        self.form_fields = {}
+        specific_input_style = self._get_dialog_specific_input_field_style()
+        dialog_fields = [
+            ("Account #:", "account_number", "QLineEdit", ""),
+            ("Farm Name:", "farm_name", "QLineEdit", ""),
+            ("First Name:", "first_name", "QLineEdit", ""),
+            ("Last Name*:", "last_name", "QLineEdit", ""),
+            ("Address 1*:", "address_line1", "QLineEdit", ""),
+            ("Address 2:", "address_line2", "QLineEdit", ""),
+            ("City*:", "city", "QLineEdit", ""),
+            ("State*:", "state_code", "QComboBox", ""),
+            ("Zip/Postal*:", "zip_code", "QLineEdit", ""),
+            ("Country:", "country_name", "QLineEdit", "e.g. USA"),
+            ("Phone:", "phone", "QLineEdit", ""),
+            ("Email:", "email", "QLineEdit", ""),
+        ]
+        for label_text, field_name, widget_type, placeholder in dialog_fields:
+            label_widget = QLabel(label_text)
+            if widget_type == "QLineEdit":
+                widget = QLineEdit()
+                if placeholder:
+                    widget.setPlaceholderText(placeholder)
+            elif widget_type == "QComboBox":
+                widget = QComboBox()
+            else:
+                widget = QLineEdit()
+            widget.setStyleSheet(specific_input_style)
+            self.form_fields[field_name] = widget
+            form_layout.addRow(label_widget, widget)
+        self.form_fields["is_active"] = QCheckBox("Owner is Active")
+        self.form_fields["is_active"].setChecked(True)
+        form_layout.addRow("", self.form_fields["is_active"])
+        self.percentage_input = QDoubleSpinBox()
+        self.percentage_input.setRange(0.00, 100.00)  # MODIFIED: Allow 0.00
+        self.percentage_input.setDecimals(2)
+        self.percentage_input.setSuffix(" %")
+        self.percentage_input.setValue(100.00)
+        self.percentage_input.setStyleSheet(specific_input_style)
+        form_layout.addRow("Ownership %*:", self.percentage_input)
+        scroll_area.setWidget(form_container_widget)
+        main_dialog_layout.addWidget(scroll_area)
         self.button_box = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
-        self.button_box.button(QDialogButtonBox.StandardButton.Ok).setText(
-            "Save Owner & Link"
-        )
+        # Connect accepted to validate_and_accept, which will decide to call super().accept()
         self.button_box.accepted.connect(self.validate_and_accept)
-        self.button_box.rejected.connect(self.reject)
-        generic_button_style = self.parent_screen.get_generic_button_style()
+        self.button_box.rejected.connect(
+            self.reject
+        )  # reject() will close the dialog with Rejected status
+        generic_button_style = self._get_dialog_generic_button_style()
         for button in self.button_box.buttons():
             button.setMinimumHeight(30)
             button.setStyleSheet(generic_button_style)
@@ -194,130 +215,78 @@ class CreateAndLinkOwnerDialog(QDialog):
                 self.button_box.buttonRole(button)
                 == QDialogButtonBox.ButtonRole.AcceptRole
             ):
-                ok_bg_color = AppConfig.DARK_SUCCESS_ACTION
-                if len(ok_bg_color) == 4:
+                ok_bg_color = DARK_SUCCESS_ACTION
+                if len(ok_bg_color) == 4 and ok_bg_color.startswith("#"):
                     ok_bg_color = (
                         f"#{ok_bg_color[1]*2}{ok_bg_color[2]*2}{ok_bg_color[3]*2}"
                     )
                 button.setStyleSheet(
-                    button.styleSheet()
-                    .replace(AppConfig.DARK_BUTTON_BG, ok_bg_color)
-                    .replace(f"color: {AppConfig.DARK_TEXT_PRIMARY}", "color: white;")
+                    generic_button_style
+                    + f"QPushButton {{ background-color: {ok_bg_color}; color: white; }}"
                 )
         main_dialog_layout.addWidget(self.button_box)
 
-    def populate_states_combo(self):
+    def _populate_states_combo(self, combo_box: QComboBox):
         try:
             ref_data = self.owner_controller.get_owner_form_reference_data()
-            states: List[Dict[str, any]] = ref_data.get(
-                "states", []
-            )  # Ensure type hint for states
-            self.state_combo.addItem("", None)
-
-            default_country_set_from_state = False
-            # Iterate through states to populate combo and potentially derive country
+            states: List[Dict[str, str]] = ref_data.get("states", [])
+            combo_box.blockSignals(True)
+            combo_box.clear()
+            combo_box.addItem("", None)
             for state_data in states:
-                self.state_combo.addItem(state_data["name"], state_data["id"])
-                # If a state is selected AND it has a country_code AND country field is empty, set it.
-                # This part of logic might be better tied to state_combo.currentIndexChanged signal
-                # For now, we'll just try to set it if the *first* state with country_code is added
-                # and country_input is still blank.
-                if not default_country_set_from_state and state_data.get(
-                    "country_code"
-                ):
-                    if (
-                        not self.country_input.text().strip()
-                    ):  # Check if country_input is actually empty
-                        self.country_input.setText(state_data["country_code"])
-                        default_country_set_from_state = True
-
-            # If after populating states, country field is still empty, default to USA
-            if not self.country_input.text().strip():
-                self.country_input.setText("USA")
-
+                combo_box.addItem(state_data["name"], state_data["id"])
+            combo_box.blockSignals(False)
+            self.logger.debug(f"Populated states combo with {len(states)} states.")
         except Exception as e:
             self.logger.error(f"Error populating states combo: {e}", exc_info=True)
             QMessageBox.warning(self, "Error", "Could not load states for the form.")
 
-    def _collect_owner_data_from_form(self) -> Dict:
-        # ... (rest of the method is the same)
-        return {
-            "account_number": self.account_number_input.text().strip(),
-            "farm_name": self.farm_name_input.text().strip(),
-            "first_name": self.first_name_input.text().strip(),
-            "last_name": self.last_name_input.text().strip(),
-            "address_line1": self.address1_input.text().strip(),
-            "address_line2": self.address2_input.text().strip(),
-            "city": self.city_input.text().strip(),
-            "state_code": self.state_combo.currentData(),
-            "zip_code": self.zip_code_input.text().strip(),
-            "country_name": self.country_input.text().strip(),
-            "phone": self.phone1_input.text().strip(),
-            "mobile_phone": self.mobile_phone_input.text().strip(),
-            "email": self.email_input.text().strip(),
-            "is_active": self.is_active_checkbox.isChecked(),
-        }
-
     def validate_and_accept(self):
-        # ... (rest of the method is the same)
-        client_errors = []
-        owner_details_for_validation = self._collect_owner_data_from_form()
+        """Validates the form data. If valid, accepts the dialog. Otherwise, shows errors and keeps dialog open."""
+        owner_data = {}
+        for field_name, widget in self.form_fields.items():
+            if isinstance(widget, QLineEdit):
+                owner_data[field_name] = widget.text().strip()
+            elif isinstance(widget, QComboBox):
+                owner_data[field_name] = widget.currentData()
+            elif isinstance(widget, QCheckBox):
+                owner_data[field_name] = widget.isChecked()
+        percentage = self.percentage_input.value()
 
-        if (
-            not owner_details_for_validation["first_name"]
-            and not owner_details_for_validation["farm_name"]
-            and not owner_details_for_validation["last_name"]
-        ):
-            client_errors.append(
-                "At least First Name, Last Name, or Farm Name is required."
-            )
-        if not owner_details_for_validation["address_line1"]:
-            client_errors.append("Street Address is required.")
-        if not owner_details_for_validation["city"]:
-            client_errors.append("City is required.")
-        if not owner_details_for_validation["state_code"]:
-            client_errors.append("State/Province is required.")
-        if not owner_details_for_validation["zip_code"]:
-            client_errors.append("Zip/Postal Code is required.")
-
-        percentage = self.percentage_spinbox.value()
-        if not (0 <= percentage <= 100):
-            client_errors.append("Ownership percentage must be between 0 and 100.")
-
-        if client_errors:
+        is_valid, errors = self.owner_controller.validate_owner_data(
+            owner_data, is_new=True
+        )
+        if not is_valid:
             QMessageBox.warning(
                 self,
                 "Input Error",
-                "\n- ".join(["Please correct the following:"] + client_errors),
+                "Please correct owner details:\n- " + "\n- ".join(errors),
             )
-            return
+            return  # Explicitly return, do not call accept()
 
-        self.logger.debug(
-            f"Attempting to create owner with data: {owner_details_for_validation}"
-        )
-        success, message, new_owner_obj = self.owner_controller.create_master_owner(
-            owner_details_for_validation, self.current_user_id
-        )
-
-        if success and new_owner_obj:
-            self.newly_created_owner = new_owner_obj
-            self.logger.info(
-                f"Owner successfully created by controller (ID: {new_owner_obj.owner_id}). Dialog will accept."
-            )
-            super().accept()
-        else:
-            self.logger.warning(f"Owner creation failed via controller: {message}")
-            QMessageBox.critical(
+        if not (0.00 <= percentage <= 100.00):  # MODIFIED: Allow 0.00
+            QMessageBox.warning(
                 self,
-                "Owner Creation Failed",
-                f"Could not create owner:\n{message}\nPlease correct the data and try again.",
+                "Input Error",
+                "Ownership percentage must be between 0.00 and 100.00.",
             )
+            return  # Explicitly return, do not call accept()
 
-    def get_data(self) -> Optional[dict]:
-        # ... (rest of the method is the same)
-        if self.result() == QDialog.DialogCode.Accepted and self.newly_created_owner:
-            return {
-                "new_owner_object": self.newly_created_owner,
-                "percentage": self.percentage_spinbox.value(),
-            }
-        return None
+        self.logger.debug("CreateAndLinkOwnerDialog validation successful, accepting.")
+        super().accept()  # Only accept if all validations pass
+
+    def get_data(self) -> Optional[Dict]:
+        """Returns the collected data if the dialog was accepted. Should be called by the parent."""
+        # This method assumes validation has already passed if dialog was accepted.
+        owner_details = {}
+        for field_name, widget in self.form_fields.items():
+            if isinstance(widget, QLineEdit):
+                owner_details[field_name] = widget.text().strip()
+            elif isinstance(widget, QComboBox):
+                owner_details[field_name] = widget.currentData()
+            elif isinstance(widget, QCheckBox):
+                owner_details[field_name] = widget.isChecked()
+        return {
+            "owner_details": owner_details,
+            "percentage": self.percentage_input.value(),
+        }
