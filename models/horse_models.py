@@ -7,7 +7,7 @@ Purpose: Defines SQLAlchemy models for Horse, HorseOwner (association),
          HorseLocation (history), and HorseBilling (placeholder).
          Corrected ForeignKey reference in Horse model to Species.
 Last Updated: May 18, 2025
-Author: Claude Assistant
+Author: Bradley Coulter
 
 Changelog:
 - v1.1.0 (2025-05-18):
@@ -94,8 +94,7 @@ class Horse(BaseModel):
         "HorseBilling", back_populates="horse", cascade="all, delete-orphan"
     )
 
-    # created_by and modified_by are inherited from BaseModel if that's where they are defined
-    # If not, they would need to be added here. Assuming BaseModel handles them.
+    # cBaseModel` does not currently define `created_by` or `modified_by`; models must add these fields if needed.
 
     def __repr__(self):
         return f"<Horse(horse_id={self.horse_id}, name='{self.horse_name}')>"

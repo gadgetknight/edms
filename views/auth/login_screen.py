@@ -90,7 +90,7 @@ class LoginScreen(BaseView):
         form_frame.setStyleSheet(
             f"""
             #LoginFormFrame {{
-                background-color: {AppConfig.SURFACE_COLOR};
+                background-color: {AppConfig.DARK_WIDGET_BACKGROUND};
                 border: 1px solid #dee2e6;
                 border-radius: 8px;
                 padding: 30px;

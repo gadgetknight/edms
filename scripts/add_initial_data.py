@@ -2,38 +2,40 @@
 
 """
 EDSI Veterinary Management System - Initial Data Setup
-Version: 1.1.0
-Purpose: Adds initial reference data and a default admin user to the database.
-Last Updated: May 18, 2025
-Author: Claude Assistant
+Version: 1.2.2
+Purpose: Adds initial reference data with more robust commits and detailed logging
+         for each data type to help diagnose population issues.
+Last Updated: May 20, 2025
+Author: Gemini
 
 Changelog:
-- v1.1.0 (2025-05-18):
-    - Added function to create a default admin user ('ADMIN' with a
-      default password) if one does not already exist.
-    - Imported User model and hashlib for password hashing.
-    - Ensured all model imports are present for table creation checks by db_manager.
-- v1.0.0 (2025-05-12): Initial implementation
-  - Added sample species data
-  - Added sample locations
-  - Added sample charge codes
-  - Added sample veterinarians
-  - Added sample states/provinces
+- v1.2.2 (2025-05-20):
+    - Refactored data adding functions (species, states, locations, charge_codes,
+      veterinarian, horses, owners) to include more detailed logging within
+      their loops and to attempt their own session.commit().
+    - This makes each data section more atomic and improves error reporting if
+      a specific section fails to populate.
+- v1.2.1 (2025-05-20):
+    - Updated sample data for Locations, Charge Codes, Veterinarian (single entry),
+      Horses, and Owners based on user-provided lists.
+    - Species data addition simplified to ensure only "Equine" exists.
+- v1.2.0 (2025-05-20):
+    - Removed multiple species population; now adds a single "Equine" species.
+    - Updated sample locations to use new detailed address fields and provided data.
 """
 
 import sys
 import os
-import hashlib  # Added for password hashing
-import logging  # Added for better logging
+import hashlib
+import logging
+from datetime import date
+from decimal import Decimal
 
-# Ensure the project root is in the Python path
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from config.database_config import db_manager
-
-# Import all models that this script interacts with or that are needed for db setup
 from models import (
     Species,
     StateProvince,
@@ -42,7 +44,7 @@ from models import (
     Location,
     User,
     Role,
-    UserRole,  # Added User, Role, UserRole
+    UserRole,
     Horse,
     Owner,
     HorseOwner,
@@ -59,45 +61,37 @@ from models import (
     SystemConfig,
     HorseLocation,
     HorseBilling,
-    OwnerBillingHistory,
     OwnerPayment,
 )
-from config.app_config import (
-    LOG_DIR,
-    APP_LOG_FILE,
-    LOGGING_LEVEL,
-)  # For direct logging setup if needed
+from config.app_config import LOG_DIR, APP_LOG_FILE, LOGGING_LEVEL
 
-# Setup basic logging for the script
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("add_initial_data_script")
 if not logger.hasHandlers():
     log_file_path = os.path.join(LOG_DIR, "add_initial_data.log")
-    handler = logging.FileHandler(log_file_path, mode="a")  # Append mode
+    os.makedirs(LOG_DIR, exist_ok=True)
+    handler = logging.FileHandler(
+        log_file_path, mode="w"
+    )  # Overwrite log each run for clarity
     formatter = logging.Formatter(
         "%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s"
     )
     handler.setFormatter(formatter)
     logger.addHandler(handler)
-    logger.setLevel(LOGGING_LEVEL)  # Use level from app_config
-
-    # Also log to console for immediate feedback
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
+    logger.setLevel(LOGGING_LEVEL)
 
 
 def _hash_password(password: str) -> str:
-    """Hashes a password using SHA-256. Matches UserController logic."""
     return hashlib.sha256(password.lower().encode("utf-8")).hexdigest()
 
 
 def add_default_admin_user(session):
-    """Adds a default admin user if one doesn't exist."""
+    logger.info("Processing default admin user...")
     admin_user_id = "ADMIN"
     admin_username = "System Administrator"
-    # IMPORTANT: This default password should be changed immediately after first login.
     admin_password = "admin1234"
-
     try:
         existing_admin = (
             session.query(User).filter(User.user_id == admin_user_id).first()
@@ -109,27 +103,493 @@ def add_default_admin_user(session):
                 user_name=admin_username,
                 password_hash=hashed_password,
                 is_active=True,
+                created_by="SCRIPT",
+                modified_by="SCRIPT",
             )
             session.add(admin_user)
-            session.commit()  # Commit user creation separately
+            session.commit()
             logger.info(f"Default admin user '{admin_user_id}' created successfully.")
         else:
-            logger.info(
-                f"Admin user '{admin_user_id}' already exists. No action taken for user creation."
-            )
+            logger.info(f"Admin user '{admin_user_id}' already exists.")
     except Exception as e:
         session.rollback()
         logger.error(f"Error creating default admin user: {e}", exc_info=True)
-        # Do not re-raise here, allow other data addition to proceed if possible
+
+
+def add_species_data(session):
+    logger.info("Processing species data (Equine only)...")
+    equine_species_name = "Equine"
+    items_added_count = 0
+    try:
+        existing_species = (
+            session.query(Species).filter(Species.name == equine_species_name).first()
+        )
+        if not existing_species:
+            equine = Species(
+                name=equine_species_name,
+                description="Horses",
+                created_by="SCRIPT",
+                modified_by="SCRIPT",
+            )
+            session.add(equine)
+            items_added_count += 1
+            logger.info(f"Staged species '{equine_species_name}'.")
+        else:
+            logger.info(f"Species '{equine_species_name}' already exists.")
+
+        if items_added_count > 0:
+            session.commit()
+            logger.info(f"Committed {items_added_count} species item(s).")
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Error processing species data: {e}", exc_info=True)
+
+
+def add_states_provinces_data(session):
+    logger.info("Adding states/provinces data...")
+    states_data = [
+        ("NJ", "New Jersey", "USA", True),
+        ("NY", "New York", "USA", True),
+        ("PA", "Pennsylvania", "USA", True),
+        ("DE", "Delaware", "USA", True),
+        ("MD", "Maryland", "USA", True),
+        ("AL", "Alabama", "USA", True),
+        ("AK", "Alaska", "USA", True),
+        ("AZ", "Arizona", "USA", True),
+        ("AR", "Arkansas", "USA", True),
+        ("CA", "California", "USA", True),
+        ("CO", "Colorado", "USA", True),
+        ("CT", "Connecticut", "USA", True),
+        ("FL", "Florida", "USA", True),
+        ("GA", "Georgia", "USA", True),
+        ("HI", "Hawaii", "USA", True),
+        ("ID", "Idaho", "USA", True),
+        ("IL", "Illinois", "USA", True),
+        ("IN", "Indiana", "USA", True),
+        ("IA", "Iowa", "USA", True),
+        ("KS", "Kansas", "USA", True),
+        ("KY", "Kentucky", "USA", True),
+        ("LA", "Louisiana", "USA", True),
+        ("ME", "Maine", "USA", True),
+        ("MA", "Massachusetts", "USA", True),
+        ("MI", "Michigan", "USA", True),
+        ("MN", "Minnesota", "USA", True),
+        ("MS", "Mississippi", "USA", True),
+        ("MO", "Missouri", "USA", True),
+        ("MT", "Montana", "USA", True),
+        ("NE", "Nebraska", "USA", True),
+        ("NV", "Nevada", "USA", True),
+        ("NH", "New Hampshire", "USA", True),
+        ("NM", "New Mexico", "USA", True),
+        ("NC", "North Carolina", "USA", True),
+        ("ND", "North Dakota", "USA", True),
+        ("OH", "Ohio", "USA", True),
+        ("OK", "Oklahoma", "USA", True),
+        ("OR", "Oregon", "USA", True),
+        ("RI", "Rhode Island", "USA", True),
+        ("SC", "South Carolina", "USA", True),
+        ("SD", "South Dakota", "USA", True),
+        ("TN", "Tennessee", "USA", True),
+        ("TX", "Texas", "USA", True),
+        ("UT", "Utah", "USA", True),
+        ("VT", "Vermont", "USA", True),
+        ("VA", "Virginia", "USA", True),
+        ("WA", "Washington", "USA", True),
+        ("WV", "West Virginia", "USA", True),
+        ("WI", "Wisconsin", "USA", True),
+        ("WY", "Wyoming", "USA", True),
+        ("ON", "Ontario", "CAN", True),
+        ("QC", "Quebec", "CAN", True),
+    ]
+    items_to_add = []
+    try:
+        for code, name, country, is_active_val in states_data:
+            if (
+                not session.query(StateProvince)
+                .filter(StateProvince.state_code == code)
+                .first()
+            ):
+                state = StateProvince(
+                    state_code=code,
+                    state_name=name,
+                    country_code=country,
+                    is_active=is_active_val,
+                    created_by="SCRIPT",
+                    modified_by="SCRIPT",
+                )
+                items_to_add.append(state)
+                logger.info(f"Staging State/Province: {code} - {name}")
+            else:
+                logger.info(f"State/Province {code} - {name} already exists. Skipping.")
+        if items_to_add:
+            session.add_all(items_to_add)
+            session.commit()
+            logger.info(f"Committed {len(items_to_add)} new states/provinces.")
+        else:
+            logger.info("No new states/provinces to add.")
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Error processing states/provinces data: {e}", exc_info=True)
+
+
+def add_sample_locations_data(session):
+    logger.info("Adding sample locations data...")
+    locations_data = [
+        (
+            "Gaited Farms",
+            "204 Carranza Rd.",
+            None,
+            "Tabernacle",
+            "NJ",
+            "08088",
+            "Amy Redman",
+            "609-785-1634",
+            True,
+            None,
+            "USA",
+        ),
+        (
+            "Beacon Hill",
+            "55 Laird Rd.",
+            None,
+            "Colts Neck",
+            "NJ",
+            "07722",
+            "George Wilson",
+            "732-332-0880",
+            True,
+            None,
+            "USA",
+        ),
+        (
+            "Hayfever Farms",
+            "334 Tom Brown Rd.",
+            None,
+            "Moorestown",
+            "NJ",
+            "08057",
+            "Ralph Hayes",
+            "856-789-1286",
+            True,
+            None,
+            "USA",
+        ),
+    ]
+    items_to_add = []
+    try:
+        for (
+            name,
+            addr1,
+            addr2,
+            city,
+            state_code_loc,
+            zip_code,
+            contact,
+            phone,
+            active,
+            email,
+            country,
+        ) in locations_data:
+            if (
+                not session.query(Location)
+                .filter(Location.location_name == name)
+                .first()
+            ):
+                state_obj = (
+                    session.query(StateProvince)
+                    .filter(StateProvince.state_code == state_code_loc)
+                    .first()
+                )
+                if not state_obj:
+                    logger.warning(
+                        f"State code '{state_code_loc}' for location '{name}' not found. Skipping this location."
+                    )
+                    continue
+                location = Location(
+                    location_name=name,
+                    address_line1=addr1,
+                    address_line2=addr2,
+                    city=city,
+                    state_code=state_code_loc,
+                    zip_code=zip_code,
+                    country_code=country if country else state_obj.country_code,
+                    phone=phone,
+                    email=email,
+                    contact_person=contact,
+                    is_active=active,
+                    description=f"{name} at {addr1}",
+                    created_by="SCRIPT",
+                    modified_by="SCRIPT",
+                )
+                items_to_add.append(location)
+                logger.info(f"Staging Location: {name}")
+            else:
+                logger.info(f"Location {name} already exists. Skipping.")
+        if items_to_add:
+            session.add_all(items_to_add)
+            session.commit()
+            logger.info(f"Committed {len(items_to_add)} new locations.")
+        else:
+            logger.info("No new locations to add.")
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Error processing sample locations data: {e}", exc_info=True)
+
+
+def add_sample_charge_codes_data(session):
+    logger.info("Adding sample charge codes data...")
+    charge_codes_data = [
+        (
+            "413",
+            "PWBEN",
+            "Paste Worm with Benzelmin",
+            "Veterinary Anthelmintics Administered",
+            14.00,
+            True,
+        ),
+        ("650", "AF", "Attend Foaling", "Veterinary Call Fees", 100.00, True),
+        ("100", "FC", "Farm Call", "Veterinary Call Fees", 100.00, True),
+        (
+            "32",
+            "BLBS",
+            "Diagnostic Basisesmoid Nerve Block",
+            "Veterinary Diagnostic Procedures Nerve Blocks",
+            50.00,
+            True,
+        ),
+    ]
+    items_to_add = []
+    try:
+        for code, alt_code, desc, category, charge, active in charge_codes_data:
+            if not session.query(ChargeCode).filter(ChargeCode.code == code).first():
+                charge_item = ChargeCode(
+                    code=code,
+                    alternate_code=alt_code,
+                    description=desc,
+                    category=category,
+                    standard_charge=Decimal(str(charge)),
+                    is_active=active,
+                    created_by="SCRIPT",
+                    modified_by="SCRIPT",
+                )
+                items_to_add.append(charge_item)
+                logger.info(f"Staging ChargeCode: {code}")
+            else:
+                logger.info(f"ChargeCode {code} already exists. Skipping.")
+        if items_to_add:
+            session.add_all(items_to_add)
+            session.commit()
+            logger.info(f"Committed {len(items_to_add)} new charge codes.")
+        else:
+            logger.info("No new charge codes to add.")
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Error processing sample charge codes data: {e}", exc_info=True)
+
+
+def add_sample_veterinarian_data(session):
+    logger.info("Adding single veterinarian data...")
+    vet_data = {
+        "first_name": "Michael",
+        "last_name": "Williams",
+        "license_number": "DVM002",
+        "phone": "856-555-0102",
+        "email": "m.williams@example.com",
+        "is_active": True,
+    }
+    items_added_count = 0
+    try:
+        existing_vet = (
+            session.query(Veterinarian)
+            .filter(Veterinarian.license_number == vet_data["license_number"])
+            .first()
+        )
+        if not existing_vet:
+            vet = Veterinarian(
+                first_name=vet_data["first_name"],
+                last_name=vet_data["last_name"],
+                license_number=vet_data["license_number"],
+                phone=vet_data["phone"],
+                email=vet_data["email"],
+                is_active=vet_data["is_active"],
+                created_by="SCRIPT",
+                modified_by="SCRIPT",
+            )
+            session.add(vet)
+            items_added_count += 1
+            logger.info(
+                f"Staging Veterinarian: {vet_data['first_name']} {vet_data['last_name']}"
+            )
+        else:
+            logger.info(
+                f"Veterinarian with license '{vet_data['license_number']}' already exists."
+            )
+
+        if items_added_count > 0:
+            session.commit()
+            logger.info(f"Committed {items_added_count} veterinarian item(s).")
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Error processing veterinarian data: {e}", exc_info=True)
+
+
+def add_sample_horses_data(session):
+    logger.info("Adding sample horses data...")
+    equine_species = session.query(Species).filter(Species.name == "Equine").first()
+    if not equine_species:
+        logger.error("Could not find 'Equine' species. Skipping horse creation.")
+        return
+    equine_species_id = equine_species.species_id
+
+    horses_data = [
+        ("Donatello", "011884"),
+        ("Lorena 90", "006345"),
+        ("Soul Rebel", "002356"),
+        ("Daisy", "008243"),
+        ("Thunder", "009456"),
+        ("Thunderblade", "886302"),
+        ("Ironheart", "330291"),
+    ]
+    items_to_add = []
+    try:
+        for name, acc_num in horses_data:
+            if (
+                not session.query(Horse)
+                .filter(Horse.horse_name == name, Horse.account_number == acc_num)
+                .first()
+            ):
+                horse = Horse(
+                    horse_name=name,
+                    account_number=acc_num,
+                    species_id=equine_species_id,
+                    is_active=True,
+                    created_by="SCRIPT",
+                    modified_by="SCRIPT",
+                )
+                items_to_add.append(horse)
+                logger.info(f"Staging Horse: {name}")
+            else:
+                logger.info(
+                    f"Horse {name} with account {acc_num} already exists. Skipping."
+                )
+        if items_to_add:
+            session.add_all(items_to_add)
+            session.commit()
+            logger.info(f"Committed {len(items_to_add)} new horses.")
+        else:
+            logger.info("No new horses to add.")
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Error processing sample horses data: {e}", exc_info=True)
+
+
+def add_sample_owners_data(session):
+    logger.info("Adding sample owners data...")
+    owners_data = [
+        {
+            "full_name": "Amy Reed",
+            "address1": "22 Carrigan Rd.",
+            "city_state_zip": "Medford, NJ 08055",
+            "country": "USA",
+            "phone": "609-640-9823",
+        },
+        {
+            "full_name": "Brian Walsh",
+            "address1": "301 Westminster Blvd",
+            "city_state_zip": "Colts Neck, NJ 07093",
+            "country": "USA",
+            "phone": "732-983-3029",
+        },
+        {
+            "full_name": "Sam White",
+            "address1": "457 White Birch Rd",
+            "city_state_zip": "Sewell, NJ 08002",
+            "country": "USA",
+            "phone": "609-823-0923",
+        },
+        {
+            "full_name": "John Hill",
+            "address1": "30 Laird Rd",
+            "city_state_zip": "Moorestown, NJ 08057",
+            "country": "USA",
+            "phone": "856-302-9899",
+        },
+    ]
+    items_to_add = []
+    try:
+        for owner_entry in owners_data:
+            name_parts = owner_entry["full_name"].split(" ", 1)
+            first_name = name_parts[0]
+            last_name = name_parts[1] if len(name_parts) > 1 else None
+
+            city_state_zip_parts = owner_entry["city_state_zip"].split(",")
+            city = (
+                city_state_zip_parts[0].strip() if len(city_state_zip_parts) > 0 else ""
+            )
+            state_code = ""
+            zip_code = ""
+            if len(city_state_zip_parts) > 1:
+                state_zip_part = city_state_zip_parts[1].strip().split(" ")
+                state_code = state_zip_part[0].strip()
+                zip_code = state_zip_part[1].strip() if len(state_zip_part) > 1 else ""
+
+            query = session.query(Owner).filter(Owner.phone == owner_entry["phone"])
+            if first_name:
+                query = query.filter(Owner.first_name == first_name)
+            if last_name:
+                query = query.filter(Owner.last_name == last_name)
+
+            if not query.first():
+                if not state_code:
+                    logger.warning(
+                        f"Could not parse state code for owner '{owner_entry['full_name']}'. Skipping this owner."
+                    )
+                    continue
+                state_obj = (
+                    session.query(StateProvince)
+                    .filter(StateProvince.state_code == state_code)
+                    .first()
+                )
+                if not state_obj:
+                    logger.warning(
+                        f"State code '{state_code}' for owner '{owner_entry['full_name']}' not found. Skipping this owner."
+                    )
+                    continue
+
+                owner = Owner(
+                    first_name=first_name,
+                    last_name=last_name,
+                    address_line1=owner_entry["address1"],
+                    city=city,
+                    state_code=state_code,
+                    zip_code=zip_code,
+                    country_name=owner_entry["country"],
+                    phone=owner_entry["phone"],
+                    is_active=True,
+                    created_by="SCRIPT",
+                    modified_by="SCRIPT",
+                )
+                items_to_add.append(owner)
+                logger.info(f"Staging Owner: {owner_entry['full_name']}")
+            else:
+                logger.info(
+                    f"Owner {owner_entry['full_name']} with phone {owner_entry['phone']} already exists. Skipping."
+                )
+        if items_to_add:
+            session.add_all(items_to_add)
+            session.commit()
+            logger.info(f"Committed {len(items_to_add)} new owners.")
+        else:
+            logger.info("No new owners to add.")
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Error processing sample owners data: {e}", exc_info=True)
 
 
 def add_initial_data():
-    """Add initial reference data to the database"""
     logger.info("Starting to add initial reference data...")
-
     try:
-        # Initialize database (this will also call create_tables if db file doesn't exist or manager not init)
-        db_manager.initialize_database()  # Uses DATABASE_URL from app_config
+        db_manager.initialize_database()  # This also calls create_tables if DB doesn't exist
         logger.info("Database initialized by db_manager.")
     except Exception as e:
         logger.critical(
@@ -139,284 +599,46 @@ def add_initial_data():
             f"CRITICAL: Database initialization failed: {e}. Cannot proceed.",
             file=sys.stderr,
         )
-        return  # Stop if DB can't be initialized
+        return
 
     session = None
     try:
         session = db_manager.get_session()
         logger.info("Database session obtained.")
 
-        # 1. Add Default Admin User
-        logger.info("Attempting to add/verify default admin user...")
-        add_default_admin_user(session)  # session.commit() is inside this function
+        # Each function now handles its own commit/rollback for its specific data type
+        add_default_admin_user(session)
+        add_species_data(session)
+        add_states_provinces_data(session)
+        add_sample_locations_data(session)
+        add_sample_charge_codes_data(session)
+        add_sample_veterinarian_data(session)
+        add_sample_horses_data(session)
+        add_sample_owners_data(session)
 
-        # 2. Add species
-        logger.info("Adding species data...")
-        species_data = [
-            ("EQ", "Equine"),
-            ("BO", "Bovine"),
-            ("CA", "Canine"),
-            ("FE", "Feline"),
-            ("OV", "Ovine"),
-            ("PO", "Porcine"),
-            ("AV", "Avian"),
-        ]
-        for code, name in species_data:
-            # In models, Species PK is species_id (auto-increment), name is unique.
-            # Let's assume 'name' is the primary way to check for existence here if code isn't a direct field.
-            # Current Species model has species_id (auto), name (unique), description.
-            # If the old COBOL system used 'code', this script needs adjustment or the model does.
-            # For now, assuming 'name' is the key identifier for checking.
-            # Let's assume the model has 'species_code' and 'species_name' for now as per original script intent.
-            # If Species model is: species_id (PK), name, description
-            # then:
-            if not session.query(Species).filter(Species.name == name).first():
-                # species = Species(name=name, description=f"Species code was {code}") # Example if code is just for description
-                # Assuming the model is: species_id, species_code, species_name
-                # The current model `reference_models.py` has `species_id, name, description`.
-                # The original `add_initial_data.py` had `species_code`, `species_name` for `Species`.
-                # Let's stick to the current model `Species(name=name, description=description)`.
-                # The provided `species_data` has `code` and `name`. I will assume `name` is `Species.name`
-                # and `code` could be part of the description or a separate (now non-existent) field.
-                # For safety, I'll use the `name` field from `species_data` for `Species.name`.
-                species = Species(
-                    name=name, description=f"Original code reference: {code}"
-                )
-                session.add(species)
-        logger.info("Species data processed.")
-
-        # 3. Add states/provinces
-        logger.info("Adding states/provinces data...")
-        states_data = [
-            ("AL", "Alabama", "USA"),
-            ("AK", "Alaska", "USA"),
-            ("AZ", "Arizona", "USA"),
-            ("AR", "Arkansas", "USA"),
-            ("CA", "California", "USA"),
-            ("CO", "Colorado", "USA"),
-            ("CT", "Connecticut", "USA"),
-            ("DE", "Delaware", "USA"),
-            ("FL", "Florida", "USA"),
-            ("GA", "Georgia", "USA"),
-            ("HI", "Hawaii", "USA"),
-            ("ID", "Idaho", "USA"),
-            ("IL", "Illinois", "USA"),
-            ("IN", "Indiana", "USA"),
-            ("IA", "Iowa", "USA"),
-            ("KS", "Kansas", "USA"),
-            ("KY", "Kentucky", "USA"),  # Add KY
-            ("LA", "Louisiana", "USA"),
-            ("ME", "Maine", "USA"),
-            ("MD", "Maryland", "USA"),
-            ("MA", "Massachusetts", "USA"),
-            ("MI", "Michigan", "USA"),
-            ("MN", "Minnesota", "USA"),
-            ("MS", "Mississippi", "USA"),
-            ("MO", "Missouri", "USA"),
-            ("MT", "Montana", "USA"),
-            ("NE", "Nebraska", "USA"),
-            ("NV", "Nevada", "USA"),
-            ("NH", "New Hampshire", "USA"),
-            ("NJ", "New Jersey", "USA"),
-            ("NM", "New Mexico", "USA"),
-            ("NY", "New York", "USA"),
-            ("NC", "North Carolina", "USA"),
-            ("ND", "North Dakota", "USA"),
-            ("OH", "Ohio", "USA"),
-            ("OK", "Oklahoma", "USA"),
-            ("OR", "Oregon", "USA"),
-            ("PA", "Pennsylvania", "USA"),
-            ("RI", "Rhode Island", "USA"),
-            ("SC", "South Carolina", "USA"),
-            ("SD", "South Dakota", "USA"),
-            ("TN", "Tennessee", "USA"),
-            ("TX", "Texas", "USA"),
-            ("UT", "Utah", "USA"),
-            ("VT", "Vermont", "USA"),
-            ("VA", "Virginia", "USA"),
-            ("WA", "Washington", "USA"),
-            ("WV", "West Virginia", "USA"),
-            ("WI", "Wisconsin", "USA"),
-            ("WY", "Wyoming", "USA"),
-            # Add Canadian provinces or other regions if needed
-            ("ON", "Ontario", "CAN"),
-            ("QC", "Quebec", "CAN"),
-        ]
-
-        for code, name, country in states_data:
-            if (
-                not session.query(StateProvince)
-                .filter(StateProvince.state_code == code)
-                .first()
-            ):
-                state = StateProvince(
-                    state_code=code, state_name=name, country_code=country
-                )
-                session.add(state)
-        logger.info("States/provinces data processed.")
-
-        # 4. Add sample locations
-        logger.info("Adding sample locations data...")
-        locations_data = [
-            # (name, addr1, addr2, city, state_code, zip_code, description, is_active)
-            (
-                "Main Barn",
-                "123 Farm Road",
-                "",
-                "Lexington",
-                "KY",
-                "40508",
-                "Primary stabling barn",
-                True,
-            ),
-            (
-                "Paddock A",
-                "Front Pasture",
-                "",
-                "Lexington",
-                "KY",
-                "40508",
-                "Turnout paddock A",
-                True,
-            ),
-            (
-                "Quarantine Barn",
-                "Isolation Area",
-                "",
-                "Lexington",
-                "KY",
-                "40508",
-                "For new or sick horses",
-                True,
-            ),
-        ]
-        for (
-            name,
-            addr1,
-            addr2,
-            city,
-            state_code_loc,
-            zip_code,
-            desc,
-            active,
-        ) in locations_data:
-            if (
-                not session.query(Location)
-                .filter(Location.location_name == name)
-                .first()
-            ):
-                # The Location model now has a description field.
-                # The original script did not provide values for description or is_active directly.
-                # I'm adding them based on common sense for sample data.
-                # State code for location needs to exist in StateProvince table.
-                state_obj = (
-                    session.query(StateProvince)
-                    .filter(StateProvince.state_code == state_code_loc)
-                    .first()
-                )
-                if not state_obj:
-                    logger.warning(
-                        f"State code '{state_code_loc}' for location '{name}' not found. Skipping location."
-                    )
-                    continue
-
-                location = Location(
-                    location_name=name,
-                    # The model Location in reference_models.py does not have address fields.
-                    # It has: location_id, location_name, description, is_active
-                    # I will use addr1 as part of description.
-                    description=f"{addr1} {addr2}, {city}, {state_code_loc} {zip_code}. {desc}".strip(
-                        ", . "
-                    ),
-                    is_active=active,
-                )
-                session.add(location)
-        logger.info("Sample locations data processed.")
-
-        # 5. Add sample charge codes
-        logger.info("Adding sample charge codes data...")
-        charge_codes_data = [
-            # code, alternate_code, description, category, standard_charge, is_active
-            ("EXAM", "E001", "Routine Examination", "Veterinary", 75.00, True),
-            ("VACC", "V001", "Standard Vaccination", "Veterinary", 45.00, True),
-            ("BOARD", "B001", "Daily Boarding Fee", "Boarding", 35.00, True),
-            (
-                "FC",
-                "FARMCL",
-                "Farm Call - Standard",
-                "Veterinary - Call Fees",
-                60.00,
-                True,
-            ),
-        ]
-        for code, alt_code, desc, category, charge, active in charge_codes_data:
-            if not session.query(ChargeCode).filter(ChargeCode.code == code).first():
-                charge_item = ChargeCode(
-                    code=code,
-                    alternate_code=alt_code,
-                    description=desc,
-                    category=category,
-                    standard_charge=charge,
-                    is_active=active,
-                )
-                session.add(charge_item)
-        logger.info("Sample charge codes data processed.")
-
-        # 6. Add sample veterinarians
-        logger.info("Adding sample veterinarians data...")
-        vets_data = [
-            # first_name, last_name, license_number, phone, email, is_active
-            ("Sarah", "Johnson", "DVM001", "555-0101", "s.johnson@example.com", True),
-            (
-                "Michael",
-                "Williams",
-                "DVM002",
-                "555-0102",
-                "m.williams@example.com",
-                True,
-            ),
-        ]
-        for fname, lname, lic, phone, email, active in vets_data:
-            # Veterinarian model has vet_id (auto), first_name, last_name, license_number, etc.
-            if (
-                not session.query(Veterinarian)
-                .filter(Veterinarian.license_number == lic)
-                .first()
-            ):
-                vet = Veterinarian(
-                    first_name=fname,
-                    last_name=lname,
-                    license_number=lic,
-                    phone=phone,
-                    email=email,
-                    is_active=active,
-                )
-                session.add(vet)
-        logger.info("Sample veterinarians data processed.")
-
-        # Commit all other data additions
-        session.commit()
-        logger.info(
-            "Initial reference data (species, states, locations, charges, vets) committed."
-        )
+        logger.info("All initial data processing functions called.")
 
     except Exception as e:
-        if session:
+        # This broad exception is a fallback if something outside the helper functions fails
+        # or if a helper re-raises an exception (which they currently don't).
+        if session:  # Ensure session exists before trying to rollback
             session.rollback()
-        logger.error(f"Error adding initial data: {e}", exc_info=True)
+        logger.error(
+            f"Critical error during main initial data addition sequence: {e}",
+            exc_info=True,
+        )
         print(
-            f"Error adding initial data: {e}. Check logs for details.", file=sys.stderr
+            f"Critical error adding initial data: {e}. Check logs for details.",
+            file=sys.stderr,
         )
     finally:
         if session:
             session.close()
             logger.info("Database session closed.")
-        # db_manager.close() # close method not defined on db_manager in provided code
-
-    logger.info("Finished adding initial reference data.")
+    logger.info("Finished add_initial_data script.")
 
 
 if __name__ == "__main__":
     print("Running script to add initial data to the database...")
     add_initial_data()
-    print("Script execution finished. Check logs for details.")
+    print("Script execution finished. Check logs for details and potential warnings.")

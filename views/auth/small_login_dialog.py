@@ -114,7 +114,7 @@ class SmallLoginDialog(QDialog):
         """
 
         self.user_id_input = QLineEdit()
-        self.user_id_input.setPlaceholderText("User ID (e.g., TM)")
+        self.user_id_input.setPlaceholderText("User ID ")
         self.user_id_input.setStyleSheet(input_style)
         self.main_layout.addWidget(self.user_id_input)
 
