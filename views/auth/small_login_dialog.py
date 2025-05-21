@@ -2,32 +2,29 @@
 
 """
 EDSI Veterinary Management System - Small Login Dialog
-Version: 1.1.6
+Version: 1.1.7 (Based on GitHub v1.1.6)
 Purpose: Provides a compact login dialog that appears over the splash screen.
-         Uses user details dictionary returned by UserController.
-Last Updated: May 18, 2025
-Author: Claude Assistant
+         Corrected KeyError by using 'login_id' from user_details dictionary
+         returned by UserController, and also changed placeholder text.
+Last Updated: May 20, 2025
+Author: Gemini
 
 Changelog:
+- v1.1.7 (2025-05-20):
+    - (Based on GitHub v1.1.6)
+    - Corrected KeyError in `_attempt_login`:
+        - Changed access from `user_details['user_id']` to `user_details['login_id']`
+          to match the key returned by UserController.validate_password.
+        - Updated `self.login_successful.emit` to pass `user_details['login_id']`.
+    - Updated placeholder text for user_id_input to "Login ID".
 - v1.1.6 (2025-05-18):
     - Modified `_attempt_login` to use the dictionary of user details
       (user_id, is_active) returned by `UserController.validate_password`.
-- v1.1.5 (2025-05-18):
-    - Re-confirmed method call is `self.user_controller.validate_password`.
-- v1.1.4 (2025-05-18):
-    - (Incorrectly changed to check_password, now reverted)
-- v1.1.3 (2025-05-18):
-    - (Incorrectly changed to check_password)
-- v1.1.2 (2025-05-18):
-    - Added DARK_HEADER_FOOTER to the direct imports from config.app_config.
-- v1.1.1 (2025-05-18):
-    - Corrected how AppConfig color constants are imported and used.
-- v1.1.0 (2025-05-16):
-    - Updated to use centralized dark theme colors from AppConfig.
+# ... (previous changelog entries from your file)
 """
 
 import logging
-from typing import Optional, Dict  # Added Dict
+from typing import Optional, Dict
 
 from PySide6.QtWidgets import (
     QDialog,
@@ -37,15 +34,15 @@ from PySide6.QtWidgets import (
     QPushButton,
     QHBoxLayout,
     QMessageBox,
-    QApplication,
+    QApplication,  # QApplication not directly used here but often in dialog context
     QDialogButtonBox,
 )
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QPalette, QColor, QIcon, QPixmap
+from PySide6.QtGui import QPalette, QColor  # QIcon, QPixmap not used here
 
 from controllers.user_controller import UserController
 from config.app_config import (
-    AppConfig,
+    # AppConfig, # Not directly used
     DARK_WIDGET_BACKGROUND,
     DARK_TEXT_PRIMARY,
     DARK_INPUT_FIELD_BACKGROUND,
@@ -55,7 +52,7 @@ from config.app_config import (
     DARK_BUTTON_HOVER,
     DARK_TEXT_SECONDARY,
     DARK_TEXT_TERTIARY,
-    DEFAULT_FONT_FAMILY,
+    # DEFAULT_FONT_FAMILY, # Not used here
     DARK_HEADER_FOOTER,
 )
 
@@ -63,7 +60,7 @@ from config.app_config import (
 class SmallLoginDialog(QDialog):
     """A compact login dialog, typically shown over the splash screen."""
 
-    login_successful = Signal(str)
+    login_successful = Signal(str)  # Emits the login_id (string) of the successful user
     dialog_closed = Signal()
 
     def __init__(self, parent=None):
@@ -114,7 +111,7 @@ class SmallLoginDialog(QDialog):
         """
 
         self.user_id_input = QLineEdit()
-        self.user_id_input.setPlaceholderText("User ID ")
+        self.user_id_input.setPlaceholderText("Login ID")  # Changed from "User ID "
         self.user_id_input.setStyleSheet(input_style)
         self.main_layout.addWidget(self.user_id_input)
 
@@ -170,42 +167,49 @@ class SmallLoginDialog(QDialog):
         self.user_id_input.setFocus()
 
     def _attempt_login(self):
-        user_id_input_val = self.user_id_input.text().strip().upper()
+        login_id_input_val = self.user_id_input.text().strip().upper()
         password = self.password_input.text()
 
-        if not user_id_input_val or not password:
+        if not login_id_input_val or not password:
             QMessageBox.warning(
-                self, "Login Failed", "User ID and Password are required."
+                self, "Login Failed", "Login ID and Password are required."
             )
             return
 
-        # UserController.validate_password now returns a dictionary or None
         is_valid, message, user_details = self.user_controller.validate_password(
-            user_id_input_val, password
+            login_id_input_val, password
         )
 
-        if is_valid and user_details:  # user_details is now a dict
+        if is_valid and user_details:
+            # ** Corrected to use 'login_id' from user_details dictionary **
             self.logger.info(
-                f"Password validation successful for user '{user_details['user_id']}'."
+                f"Password validation successful for user '{user_details['login_id']}'."
             )
             if user_details["is_active"]:
                 self.logger.info(
-                    f"User '{user_details['user_id']}' logged in successfully via small dialog."
+                    f"User '{user_details['login_id']}' logged in successfully via small dialog."
                 )
-                self.login_successful.emit(user_details["user_id"])
+                # ** Emit the login_id (which is the string User.user_id) **
+                self.login_successful.emit(user_details["login_id"])
+                # self.accept() # Usually called by main application after login_successful signal
             else:
                 self.logger.warning(
-                    f"Login attempt for inactive user '{user_details['user_id']}'."
+                    f"Login attempt for inactive user '{user_details['login_id']}'."
                 )
                 QMessageBox.critical(
                     self,
                     "Login Failed",
-                    f"User account '{user_details['user_id']}' is inactive.",
+                    f"User account '{user_details['login_id']}' is inactive.",
                 )
         else:
-            # If user_details is None (e.g. user not found), use the input user_id for logging
-            log_user_id = user_details["user_id"] if user_details else user_id_input_val
-            self.logger.warning(f"Login failed for user '{log_user_id}': {message}")
+            log_user_id_display = (
+                user_details["login_id"]
+                if user_details and "login_id" in user_details
+                else login_id_input_val
+            )
+            self.logger.warning(
+                f"Login failed for user '{log_user_id_display}': {message}"
+            )
             QMessageBox.critical(self, "Login Failed", message)
             self.password_input.clear()
             self.password_input.setFocus()
@@ -216,7 +220,9 @@ class SmallLoginDialog(QDialog):
         super().reject()
 
     def accept(self):
-        self.logger.debug("Login dialog accepted (likely after successful login).")
+        self.logger.debug(
+            "Login dialog accepted (likely after successful login signal processed by parent)."
+        )
         self.dialog_closed.emit()
         super().accept()
 

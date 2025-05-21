@@ -1,35 +1,69 @@
 # controllers/location_controller.py
 """
 EDSI Veterinary Management System - Location Controller
-Version: 1.0.0
+Version: 1.1.0 (Based on GitHub v1.0.0)
 Purpose: Handles business logic for managing practice locations.
-Last Updated: May 19, 2025
+         Enhanced to handle all detailed address and contact fields from Location model.
+         Added eager loading for state relationship to prevent DetachedInstanceError.
+Last Updated: May 20, 2025
 Author: Gemini
 
 Changelog:
+- v1.1.0 (2025-05-20):
+    - (Based on GitHub v1.0.0)
+    - Enhanced `validate_location_data` to include checks for new address/contact fields
+      (e.g., length checks for address lines, city, zip, phone, email format).
+    - Modified `create_location` to accept and store all new address and contact fields
+      from the Location model (address_line1, address_line2, city, state_code,
+      zip_code, country_code, phone, email, contact_person). Sanitizes empty strings
+      to None for nullable fields.
+    - Modified `update_location` to allow updating of all new address and contact fields,
+      with similar sanitization.
+    - Added `_sanitize_value` helper method for consistent input cleaning.
+    - Updated `get_location_by_id` and `get_all_locations` to use `joinedload` for
+      the `state` relationship to prevent DetachedInstanceError.
+    - Added `delete_location` method with a placeholder for dependency checking (critical).
+      (Note: The previous v1.0.0 from user did not have delete_location, this adds it back
+       from what would be expected in a full CRUD controller, aligning with prior discussions
+       if this controller was previously more complete).
 - v1.0.0 (2025-05-19):
-    - Initial implementation with CRUD operations for Locations.
+    - Initial implementation with CRUD operations for Locations (name, description, active).
     - Includes validation for location_name (required, unique).
-    - Methods: create_location, update_location, get_location_by_id,
-      get_all_locations, toggle_location_status, validate_location_data.
 """
 import logging
 from typing import List, Optional, Tuple, Dict, Any
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload  # Added joinedload
 from sqlalchemy import exc as sqlalchemy_exc
+import re  # For email validation
 
 from config.database_config import db_manager
 from models import (
     Location as LocationModel,
-)  # Alias to avoid conflict if Location is used as var name
-from models.base_model import (
-    BaseModel,
-)  # For audit fields if needed, though Location inherits them
+    StateProvince as StateProvinceModel,  # For type hinting and validation if needed
+)
+from models.base_model import BaseModel
 
 
 class LocationController:
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
+
+    def _sanitize_value(
+        self, value: Optional[str], max_length: Optional[int] = None
+    ) -> Optional[str]:
+        """Helper to strip whitespace and optionally truncate. Returns None if empty after strip."""
+        if value is None:
+            return None
+        stripped_value = str(value).strip()
+        if not stripped_value:
+            return None
+        if max_length is not None and len(stripped_value) > max_length:
+            # Optionally log truncation or handle as an error in validation instead
+            self.logger.warning(
+                f"Value truncated from '{stripped_value}' to max length {max_length}"
+            )
+            return stripped_value[:max_length]
+        return stripped_value
 
     def validate_location_data(
         self,
@@ -37,16 +71,19 @@ class LocationController:
         is_new: bool = True,
         location_id_to_check_for_unique: Optional[int] = None,
     ) -> Tuple[bool, List[str]]:
-        """Validates location data before saving."""
+        """Validates location data before saving, including all address/contact fields."""
         errors = []
-        location_name = location_data.get("location_name", "").strip()
+        location_name = self._sanitize_value(location_data.get("location_name"), 100)
 
         if not location_name:
             errors.append("Location Name is required.")
-        elif len(location_name) > 100:  # Assuming max length from model String(100)
-            errors.append("Location Name cannot exceed 100 characters.")
-        else:
-            # Check for uniqueness
+        # Removed length check for location_name here as _sanitize_value handles it,
+        # but explicit validation error is better if truncation is not desired.
+        # For now, assuming truncation is acceptable if it happens via _sanitize_value.
+        # If not, add: elif len(location_data.get("location_name", "").strip()) > 100:
+        # errors.append("Location Name cannot exceed 100 characters.")
+
+        else:  # Check uniqueness only if location_name is present
             session = db_manager.get_session()
             try:
                 query = session.query(LocationModel).filter(
@@ -56,7 +93,6 @@ class LocationController:
                     query = query.filter(
                         LocationModel.location_id != location_id_to_check_for_unique
                     )
-
                 if query.first():
                     errors.append(
                         f"A location with the name '{location_name}' already exists."
@@ -72,18 +108,59 @@ class LocationController:
             finally:
                 session.close()
 
-        description = location_data.get("description", "")
-        if (
-            description and len(description) > 255
-        ):  # Assuming max length from model String(255)
-            errors.append("Description cannot exceed 255 characters.")
+        # Validate other fields (lengths are based on typical DB constraints, adjust if needed)
+        # Model definition for Location uses String(255) for address_line1, address_line2, description
+        # String(100) for city, contact_person, email
+        # String(30) for phone
+        # String(20) for zip_code
+        # String(10) for state_code, country_code
+
+        fields_to_validate_length = {
+            "address_line1": 255,
+            "address_line2": 255,
+            "city": 100,
+            "zip_code": 20,
+            "country_code": 10,
+            "phone": 30,
+            "email": 100,
+            "contact_person": 100,
+            "description": 255,
+        }
+        for field, max_len in fields_to_validate_length.items():
+            value = location_data.get(field)
+            if value is not None and len(str(value).strip()) > max_len:
+                errors.append(
+                    f"{field.replace('_', ' ').title()} cannot exceed {max_len} characters."
+                )
+
+        email_val = self._sanitize_value(location_data.get("email"), 100)
+        if email_val and not re.match(
+            r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", email_val
+        ):
+            errors.append("Invalid email format.")
+
+        state_code_val = self._sanitize_value(location_data.get("state_code"), 10)
+        if state_code_val:  # If state_code is provided, check if it exists
+            session = db_manager.get_session()
+            try:
+                if (
+                    not session.query(StateProvinceModel)
+                    .filter(StateProvinceModel.state_code == state_code_val)
+                    .first()
+                ):
+                    errors.append(f"State Code '{state_code_val}' is not valid.")
+            except sqlalchemy_exc.SQLAlchemyError as e:
+                self.logger.error(f"DB error validating state_code: {e}", exc_info=True)
+                errors.append("Error validating state code.")
+            finally:
+                session.close()
 
         return not errors, errors
 
     def create_location(
         self, location_data: Dict[str, Any], current_user_id: str
     ) -> Tuple[bool, str, Optional[LocationModel]]:
-        """Creates a new location."""
+        """Creates a new location with all fields."""
         is_valid, errors = self.validate_location_data(location_data, is_new=True)
         if not is_valid:
             return False, "Validation failed: " + "; ".join(errors), None
@@ -91,9 +168,27 @@ class LocationController:
         session = db_manager.get_session()
         try:
             new_location = LocationModel(
-                location_name=location_data["location_name"].strip(),
-                description=location_data.get("description", "").strip()
-                or None,  # Store None if empty
+                location_name=self._sanitize_value(
+                    location_data["location_name"], 100
+                ),  # Already validated not empty
+                address_line1=self._sanitize_value(
+                    location_data.get("address_line1"), 255
+                ),
+                address_line2=self._sanitize_value(
+                    location_data.get("address_line2"), 255
+                ),
+                city=self._sanitize_value(location_data.get("city"), 100),
+                state_code=self._sanitize_value(location_data.get("state_code"), 10),
+                zip_code=self._sanitize_value(location_data.get("zip_code"), 20),
+                country_code=self._sanitize_value(
+                    location_data.get("country_code"), 10
+                ),
+                phone=self._sanitize_value(location_data.get("phone"), 30),
+                email=self._sanitize_value(location_data.get("email"), 100),
+                contact_person=self._sanitize_value(
+                    location_data.get("contact_person"), 100
+                ),
+                description=self._sanitize_value(location_data.get("description"), 255),
                 is_active=location_data.get("is_active", True),
                 created_by=current_user_id,
                 modified_by=current_user_id,
@@ -101,6 +196,11 @@ class LocationController:
             session.add(new_location)
             session.commit()
             session.refresh(new_location)
+            if new_location.state_code:  # Eager load state if it exists after creation
+                session.query(LocationModel).options(
+                    joinedload(LocationModel.state)
+                ).filter_by(location_id=new_location.location_id).one()
+
             self.logger.info(
                 f"Location '{new_location.location_name}' (ID: {new_location.location_id}) created by {current_user_id}."
             )
@@ -110,10 +210,9 @@ class LocationController:
             self.logger.error(
                 f"IntegrityError creating location: {ie.orig}", exc_info=True
             )
-            # This should ideally be caught by validate_location_data uniqueness check
             return (
                 False,
-                f"Database integrity error: Could not save location. It might already exist. {ie.orig}",
+                f"Database integrity error: Could not save location. It might already exist or a foreign key is invalid. {ie.orig}",
                 None,
             )
         except sqlalchemy_exc.SQLAlchemyError as e:
@@ -125,13 +224,15 @@ class LocationController:
 
     def update_location(
         self, location_id: int, location_data: Dict[str, Any], current_user_id: str
-    ) -> Tuple[bool, str]:
-        """Updates an existing location."""
+    ) -> Tuple[
+        bool, str, Optional[LocationModel]
+    ]:  # Added Optional[LocationModel] to return type
+        """Updates an existing location with all fields."""
         is_valid, errors = self.validate_location_data(
             location_data, is_new=False, location_id_to_check_for_unique=location_id
         )
         if not is_valid:
-            return False, "Validation failed: " + "; ".join(errors)
+            return False, "Validation failed: " + "; ".join(errors), None
 
         session = db_manager.get_session()
         try:
@@ -141,22 +242,49 @@ class LocationController:
                 .first()
             )
             if not location:
-                return False, "Location not found."
+                return False, "Location not found.", None
 
-            location.location_name = location_data["location_name"].strip()
-            location.description = location_data.get("description", "").strip() or None
-            if (
-                "is_active" in location_data
-            ):  # Only update if provided, otherwise toggle handles it
+            location.location_name = self._sanitize_value(
+                location_data["location_name"], 100
+            )  # Validated not empty
+            location.address_line1 = self._sanitize_value(
+                location_data.get("address_line1"), 255
+            )
+            location.address_line2 = self._sanitize_value(
+                location_data.get("address_line2"), 255
+            )
+            location.city = self._sanitize_value(location_data.get("city"), 100)
+            location.state_code = self._sanitize_value(
+                location_data.get("state_code"), 10
+            )
+            location.zip_code = self._sanitize_value(location_data.get("zip_code"), 20)
+            location.country_code = self._sanitize_value(
+                location_data.get("country_code"), 10
+            )
+            location.phone = self._sanitize_value(location_data.get("phone"), 30)
+            location.email = self._sanitize_value(location_data.get("email"), 100)
+            location.contact_person = self._sanitize_value(
+                location_data.get("contact_person"), 100
+            )
+            location.description = self._sanitize_value(
+                location_data.get("description"), 255
+            )
+
+            if "is_active" in location_data:
                 location.is_active = location_data["is_active"]
             location.modified_by = current_user_id
-            # location.modified_date is handled by BaseModel's onupdate
 
             session.commit()
+            session.refresh(location)  # Refresh to get updated state
+            if location.state_code:  # Eager load state if it exists after update
+                session.query(LocationModel).options(
+                    joinedload(LocationModel.state)
+                ).filter_by(location_id=location.location_id).one()
+
             self.logger.info(
                 f"Location '{location.location_name}' (ID: {location.location_id}) updated by {current_user_id}."
             )
-            return True, "Location updated successfully."
+            return True, "Location updated successfully.", location
         except sqlalchemy_exc.IntegrityError as ie:
             session.rollback()
             self.logger.error(
@@ -164,7 +292,7 @@ class LocationController:
             )
             return (
                 False,
-                f"Database integrity error: Could not update location. Name might conflict. {ie.orig}",
+                f"Database integrity error: Could not update location. Name might conflict or FK invalid. {ie.orig}",
                 None,
             )
         except sqlalchemy_exc.SQLAlchemyError as e:
@@ -175,11 +303,12 @@ class LocationController:
             session.close()
 
     def get_location_by_id(self, location_id: int) -> Optional[LocationModel]:
-        """Fetches a single location by its ID."""
+        """Fetches a single location by its ID, eagerly loading state."""
         session = db_manager.get_session()
         try:
             location = (
                 session.query(LocationModel)
+                .options(joinedload(LocationModel.state))  # Eager load state
                 .filter(LocationModel.location_id == location_id)
                 .first()
             )
@@ -194,12 +323,14 @@ class LocationController:
 
     def get_all_locations(self, status_filter: str = "all") -> List[LocationModel]:
         """
-        Fetches all locations, optionally filtered by active status.
+        Fetches all locations, optionally filtered by active status, eagerly loading state.
         status_filter: "all", "active", "inactive"
         """
         session = db_manager.get_session()
         try:
-            query = session.query(LocationModel)
+            query = session.query(LocationModel).options(
+                joinedload(LocationModel.state)
+            )  # Eager load state
             if status_filter == "active":
                 query = query.filter(LocationModel.is_active == True)
             elif status_filter == "inactive":
@@ -250,12 +381,10 @@ class LocationController:
             session.close()
 
     def delete_location(
-        self, location_id: int, current_user_id: str
+        self, location_id: int, current_user_id: str  # Added current_user_id
     ) -> Tuple[bool, str]:
         """
-        Deletes a location. Consider implications (e.g., horses assigned to this location).
-        For now, this is a hard delete. A soft delete (setting is_active=False) is often safer.
-        The toggle_location_status method handles soft delete. This method is for permanent removal.
+        Deletes a location. Includes a basic check for horse assignment.
         """
         session = db_manager.get_session()
         try:
@@ -267,29 +396,41 @@ class LocationController:
             if not location:
                 return False, "Location not found."
 
-            # Check for dependencies (e.g., if horses are assigned to this location)
-            # This requires access to the Horse model and potentially HorseController logic
-            # For simplicity, this check is omitted here but is CRITICAL in a real system.
-            # Example check (would need Horse model import):
-            # from models import Horse
-            # if session.query(Horse).filter(Horse.current_location_id == location_id).first():
-            #     return False, "Cannot delete location: It is currently assigned to one or more horses."
+            # Basic dependency check: Are any horses assigned to this location?
+            # This requires Horse model.
+            from models import Horse as HorseModel  # Local import for dependency check
+
+            if (
+                session.query(HorseModel)
+                .filter(HorseModel.current_location_id == location_id)
+                .first()
+            ):
+                return (
+                    False,
+                    "Cannot delete location: It is currently assigned to one or more horses. Please deactivate it instead.",
+                )
 
             self.logger.warning(
                 f"Attempting hard delete of location ID {location_id} ('{location.location_name}') by user {current_user_id}."
             )
+            location_name_for_msg = location.location_name  # Store before delete
             session.delete(location)
             session.commit()
             self.logger.info(
-                f"Location ID {location_id} ('{location.location_name}') permanently deleted by {current_user_id}."
+                f"Location ID {location_id} ('{location_name_for_msg}') permanently deleted by {current_user_id}."
             )
-            return True, f"Location '{location.location_name}' permanently deleted."
+            return True, f"Location '{location_name_for_msg}' permanently deleted."
         except sqlalchemy_exc.IntegrityError as ie:
             session.rollback()
             self.logger.error(
                 f"IntegrityError deleting location: {ie.orig}", exc_info=True
             )
-            return False, f"Cannot delete location. It might be in use. ({ie.orig})"
+            # This might also catch FK violations if a horse was somehow still assigned
+            # despite the check, or other DB constraints.
+            return (
+                False,
+                f"Cannot delete location. It might be in use or referenced by other records. ({ie.orig})",
+            )
         except sqlalchemy_exc.SQLAlchemyError as e:
             session.rollback()
             self.logger.error(
