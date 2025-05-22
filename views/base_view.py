@@ -2,13 +2,16 @@
 
 """
 EDSI Veterinary Management System - Base View
-Version: 1.1.4
+Version: 1.1.5
 Purpose: Base class for all application windows using PySide6.
-         Ensured setup_ui() is called before styling in __init__.
-Last Updated: May 18, 2025
+         Added logging to setup_ui to track layout management.
+Last Updated: May 21, 2025
 Author: Claude Assistant
 
 Changelog:
+- v1.1.5 (2025-05-21):
+    - Added detailed logging in setup_ui() to trace layout initialization
+      on self.central_widget.
 - v1.1.4 (2025-05-18):
     - Modified __init__ to call self.setup_ui() before
       self.apply_dark_theme_palette_and_global_styles(), aligning
@@ -74,38 +77,50 @@ class BaseView(QMainWindow):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.central_widget = QWidget(self)
         self.setCentralWidget(self.central_widget)
+        self.logger.info(
+            f"BaseView __init__ for {self.__class__.__name__}: central_widget created."
+        )
 
-        # --- MODIFIED ORDER ---
-        # Call setup_ui FIRST - this is where subclasses (like HorseUnifiedManagement)
-        # create their UI elements (e.g., self.search_input, self.status_label).
         if hasattr(self, "setup_ui") and callable(self.setup_ui):
-            self.setup_ui()
+            self.logger.info(
+                f"BaseView __init__ for {self.__class__.__name__}: Calling overridden setup_ui()."
+            )
+            self.setup_ui()  # This will call the subclass's setup_ui if overridden
         else:
-            # Apply a default layout if subclass doesn't provide setup_ui
-            # or if setup_ui doesn't set a layout for central_widget.
+            # This else block should ideally not be hit if subclasses always define setup_ui
+            self.logger.warning(
+                f"BaseView __init__ for {self.__class__.__name__}: No setup_ui defined or not callable. Applying default layout logic."
+            )
             if not self.central_widget.layout():
                 base_layout = QVBoxLayout(self.central_widget)
-                self.central_widget.setLayout(base_layout)
-                self.logger.debug(
-                    f"BaseView: Applied default QVBoxLayout to central_widget for {self.__class__.__name__} as setup_ui was not fully implemented by subclass or did not set a layout."
+                # self.central_widget.setLayout(base_layout) # QVBoxLayout(parent) already sets it.
+                self.logger.info(
+                    f"BaseView __init__ (fallback): Applied default QVBoxLayout to central_widget for {self.__class__.__name__}."
+                )
+            else:
+                self.logger.info(
+                    f"BaseView __init__ (fallback): central_widget for {self.__class__.__name__} already had a layout."
                 )
 
-        # Then apply theme and styles
         self.apply_dark_theme_palette_and_global_styles()
-        # --- END MODIFIED ORDER ---
 
     def setup_ui(self):
         """
         Intended to be overridden by subclasses to set their own layouts and widgets.
-        If a subclass defines this, it's responsible for setting up its central_widget's layout.
+        If a subclass calls super().setup_ui() or doesn't override, this default runs.
         """
+        self.logger.info(f"BaseView.setup_ui() CALLED for {self.__class__.__name__}.")
         # Default implementation: if subclass calls super().setup_ui() or doesn't override,
         # ensure central_widget has a layout.
         if not self.central_widget.layout():
             base_layout = QVBoxLayout(self.central_widget)
-            self.central_widget.setLayout(base_layout)
-            self.logger.debug(
-                f"BaseView setup_ui: Applied default QVBoxLayout to central_widget for {self.__class__.__name__}"
+            # self.central_widget.setLayout(base_layout) # QVBoxLayout(parent) constructor already sets the layout
+            self.logger.info(
+                f"BaseView.setup_ui(): Applied new default QVBoxLayout to central_widget for {self.__class__.__name__} because it had no layout."
+            )
+        else:
+            self.logger.info(
+                f"BaseView.setup_ui(): central_widget for {self.__class__.__name__} ALREADY HAS a layout ({type(self.central_widget.layout())}). No new default layout applied by BaseView.setup_ui."
             )
 
     def apply_dark_theme_palette_and_global_styles(self):
@@ -181,9 +196,9 @@ class BaseView(QMainWindow):
                 }}
                 QFrame {{ }}
                 QLabel {{
-                    color: {DARK_TEXT_PRIMARY}; 
-                    background-color: transparent; 
-                    padding: 1px; 
+                    color: {DARK_TEXT_PRIMARY};
+                    background-color: transparent;
+                    padding: 1px;
                 }}
                 QPushButton {{
                     background-color: {DARK_BUTTON_BG};
@@ -191,13 +206,13 @@ class BaseView(QMainWindow):
                     border: 1px solid {DARK_BORDER};
                     padding: 8px 16px;
                     border-radius: 4px;
-                    font-weight: 500; 
-                    min-height: 30px; 
+                    font-weight: 500;
+                    min-height: 30px;
                 }}
                 QPushButton:hover {{ background-color: {DARK_BUTTON_HOVER}; }}
                 QPushButton:pressed {{ background-color: {QColor(DARK_BUTTON_HOVER).darker(110).name()}; }}
                 QPushButton:disabled {{
-                    background-color: {DARK_HEADER_FOOTER}; 
+                    background-color: {DARK_HEADER_FOOTER};
                     color: {DARK_TEXT_TERTIARY};
                     border-color: {DARK_BORDER};
                 }}
@@ -205,9 +220,9 @@ class BaseView(QMainWindow):
                     background-color: {DARK_INPUT_FIELD_BACKGROUND};
                     border: 1px solid {DARK_BORDER};
                     border-radius: 4px;
-                    padding: 6px 8px; 
+                    padding: 6px 8px;
                     color: {DARK_TEXT_PRIMARY};
-                    min-height: 20px; 
+                    min-height: 20px;
                 }}
                 QLineEdit:focus, QTextEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QComboBox:focus, QDateEdit:focus {{
                     border-color: {DARK_PRIMARY_ACTION};
@@ -217,12 +232,12 @@ class BaseView(QMainWindow):
                     color: {DARK_TEXT_TERTIARY};
                 }}
                 QComboBox::drop-down {{ border: none; }}
-                QComboBox QAbstractItemView {{ 
-                    background-color: {DARK_WIDGET_BACKGROUND}; 
-                    color: {DARK_TEXT_PRIMARY}; 
-                    border: 1px solid {DARK_BORDER}; 
-                    selection-background-color: {DARK_HIGHLIGHT_BG}; 
-                    selection-color: {DARK_HIGHLIGHT_TEXT}; 
+                QComboBox QAbstractItemView {{
+                    background-color: {DARK_WIDGET_BACKGROUND};
+                    color: {DARK_TEXT_PRIMARY};
+                    border: 1px solid {DARK_BORDER};
+                    selection-background-color: {DARK_HIGHLIGHT_BG};
+                    selection-color: {DARK_HIGHLIGHT_TEXT};
                 }}
                 QStatusBar {{
                     font-size: {SMALL_FONT_SIZE}pt;

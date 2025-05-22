@@ -1,27 +1,24 @@
 # controllers/user_controller.py
 """
 EDSI Veterinary Management System - User Controller
-Version: 1.2.1 (Based on GitHub v1.1.1)
+Version: 1.2.3
 Purpose: Handles user authentication, CRUD operations.
-         Aligned with User model v1.1.0 (String user_id as PK/login, user_name for display name).
-         Fixed circular import by moving AddEditUserDialog import into methods.
-Last Updated: May 20, 2025
+         Aligns with User model v1.1.1 (with email field).
+Last Updated: May 21, 2025
 Author: Gemini
 
 Changelog:
+- v1.2.3 (2025-05-21):
+    - Modified `create_user` and `update_user` to correctly pass the `email`
+      field to the User model, now that the User model has an email column.
+    - Ensured role assignment logic in `create_user` and `update_user` is robust.
+- v1.2.2 (2025-05-21):
+    - Modified `validate_user_data` to correctly handle cases where 'email'
+      in `user_data` might be None, preventing an AttributeError on `None.strip()`.
 - v1.2.1 (2025-05-20):
-    - (Based on GitHub v1.1.1, incorporating v1.2.0 changes)
-    - Fixed circular import with `AddEditUserDialog` by moving the import
-      statement into the methods (`validate_user_data`, `create_user`, `update_user`)
-      that require access to `AddEditUserDialog.USER_ROLES`.
+    - Fixed circular import with `AddEditUserDialog`.
 - v1.2.0 (2025-05-20):
-    - Aligned all User model attribute access with user_models.py v1.1.0:
-        - `User.user_id` (String Primary Key) is now correctly used for login identification.
-        - `User.user_name` is now correctly used for the user's display name.
-    - `validate_password`: Now queries against `User.user_id` (string login ID).
-    - `get_user_by_login_id`: Fetches by `User.user_id` (string PK).
-    - `create_user`, `update_user`, `validate_user_data` updated for correct field mapping.
-    - Temporarily simplified direct role string assignment.
+    - Aligned with User model v1.1.0 (String user_id, user_name).
 - v1.1.1 (2025-05-18):
     - Modified `validate_password` to return a dictionary of user details.
 """
@@ -36,7 +33,7 @@ from datetime import datetime
 from config.database_config import db_manager
 from models.user_models import User, Role, UserRole
 
-# Removed top-level import that caused circular dependency:
+# Import for USER_ROLES is moved into methods that need it
 # from views.admin.dialogs.add_edit_user_dialog import AddEditUserDialog
 
 
@@ -52,6 +49,7 @@ class UserController:
     def validate_password(
         self, login_id_str: str, password_attempt: str
     ) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
+        # This method remains unchanged from v1.2.2
         self.logger.debug(
             f"Attempting to validate password for login_id: {login_id_str}"
         )
@@ -117,11 +115,10 @@ class UserController:
             session.close()
 
     def get_all_users(self, include_inactive: bool = True) -> List[User]:
+        # This method remains unchanged from v1.2.2
         session = db_manager.get_session()
         try:
-            query = session.query(User).options(
-                joinedload(User.roles)
-            )  # Eager load roles for display
+            query = session.query(User).options(joinedload(User.roles))
             if not include_inactive:
                 query = query.filter(User.is_active == True)
             users = query.order_by(User.user_id).all()
@@ -133,6 +130,7 @@ class UserController:
             session.close()
 
     def get_user_by_login_id(self, login_id_str: str) -> Optional[User]:
+        # This method remains unchanged from v1.2.2
         session = db_manager.get_session()
         try:
             user = (
@@ -156,22 +154,27 @@ class UserController:
         is_new: bool = True,
         original_login_id_to_ignore: Optional[str] = None,
     ) -> Tuple[bool, List[str]]:
-        # Import here to avoid circular dependency at module level
+        # This method's logic for email validation is already robust for None
+        # from v1.2.2. We ensure it uses the correct dialog for USER_ROLES.
         from views.admin.dialogs.add_edit_user_dialog import AddEditUserDialog
 
         errors = []
-        login_id = user_data.get("user_id", "").strip()
-        display_name = user_data.get("user_name", "").strip()
+        login_id = user_data.get("username", user_data.get("user_id", "")).strip()
+        display_name = user_data.get(
+            "full_name", user_data.get("user_name", "")
+        ).strip()
         password = user_data.get("password", "")
-        email = user_data.get("email", "").strip()
+
+        email_value = user_data.get("email")
+        email = email_value.strip() if isinstance(email_value, str) else None
 
         if not login_id:
-            errors.append("Login ID is required.")
+            errors.append("Login ID (Username) is required.")
         elif len(login_id) > 20:
-            errors.append("Login ID cannot exceed 20 characters.")
+            errors.append("Login ID (Username) cannot exceed 20 characters.")
         elif " " in login_id:
-            errors.append("Login ID cannot contain spaces.")
-        else:
+            errors.append("Login ID (Username) cannot contain spaces.")
+        else:  # Check uniqueness
             session = db_manager.get_session()
             try:
                 query = session.query(User).filter(
@@ -182,28 +185,53 @@ class UserController:
                         func.upper(User.user_id) != original_login_id_to_ignore.upper()
                     )
                 if query.first():
-                    errors.append(f"Login ID '{login_id}' already exists.")
+                    errors.append(f"Login ID (Username) '{login_id}' already exists.")
+
+                # Check email uniqueness if email is provided
+                if email:
+                    email_query = session.query(User).filter(User.email == email)
+                    if not is_new and original_login_id_to_ignore is not None:
+                        # Exclude current user if their email hasn't changed or if they are the one with this email
+                        user_being_updated = (
+                            session.query(User)
+                            .filter(
+                                func.upper(User.user_id)
+                                == original_login_id_to_ignore.upper()
+                            )
+                            .first()
+                        )
+                        if user_being_updated and user_being_updated.email == email:
+                            pass  # It's the same user's existing email, allow
+                        elif email_query.first():
+                            errors.append(
+                                f"Email '{email}' is already in use by another user."
+                            )
+                    elif email_query.first():  # For new user
+                        errors.append(f"Email '{email}' is already in use.")
+
             except sqlalchemy_exc.SQLAlchemyError as e_db:
                 self.logger.error(
-                    f"DB error validating login_id uniqueness: {e_db}", exc_info=True
+                    f"DB error validating login_id/email uniqueness: {e_db}",
+                    exc_info=True,
                 )
-                errors.append("Error validating login_id uniqueness.")
+                errors.append("Error validating login_id/email uniqueness.")
             finally:
                 session.close()
 
         if not display_name:
-            errors.append("Display Name (user_name) is required.")
+            errors.append("Full Name (User Name) is required.")
         elif len(display_name) > 100:
-            errors.append("Display Name (user_name) cannot exceed 100 characters.")
+            errors.append("Full Name (User Name) cannot exceed 100 characters.")
 
         if is_new:
             if not password:
                 errors.append("Password is required for new users.")
             elif len(password) < 6:
                 errors.append("Password must be at least 6 characters long.")
-        elif password and len(password) < 6:
+        elif password and len(password) < 6:  # If password is provided for update
             errors.append("New password must be at least 6 characters long.")
 
+        # Email format check (if email is not None)
         if email and (
             len(email) > 100 or ("@" not in email or "." not in email.split("@")[-1])
         ):
@@ -212,7 +240,13 @@ class UserController:
             )
 
         role_str = user_data.get("role")
-        if role_str and role_str not in AddEditUserDialog.USER_ROLES:
+        if not role_str and is_new:  # Role is mandatory for new users
+            errors.append("Role is required for new users.")
+        elif (
+            role_str
+            and hasattr(AddEditUserDialog, "USER_ROLES")
+            and role_str not in AddEditUserDialog.USER_ROLES
+        ):
             errors.append(
                 f"Selected role '{role_str}' is not a recognized role option."
             )
@@ -222,46 +256,65 @@ class UserController:
     def create_user(
         self, user_data: Dict[str, Any], current_admin_id: Optional[str] = None
     ) -> Tuple[bool, str, Optional[User]]:
-        # Import here to avoid circular dependency at module level
         from views.admin.dialogs.add_edit_user_dialog import AddEditUserDialog
 
-        if (
-            user_data.get("role") not in AddEditUserDialog.USER_ROLES
-        ):  # Check against dialog's defined roles
-            return False, f"Invalid role: {user_data.get('role')}", None
+        data_for_processing = {
+            "user_id": user_data.get("username", "").strip().upper(),
+            "user_name": user_data.get("full_name", "").strip(),
+            "password": user_data.get("password", ""),
+            "email": user_data.get("email"),  # Passed as is (can be None or string)
+            "role": user_data.get("role"),
+            "is_active": user_data.get("is_active", True),
+        }
 
-        is_valid, errors = self.validate_user_data(user_data, is_new=True)
+        is_valid, errors = self.validate_user_data(data_for_processing, is_new=True)
         if not is_valid:
             return False, "Validation failed: " + "; ".join(errors), None
 
         session = db_manager.get_session()
         try:
+            # Prepare email: None if empty after strip, else the stripped value
+            processed_email = (
+                data_for_processing["email"].strip()
+                if isinstance(data_for_processing["email"], str)
+                else None
+            )
+            if processed_email == "":
+                processed_email = None
+
             new_user = User(
-                user_id=user_data["user_id"].strip().upper(),
-                user_name=user_data["user_name"].strip(),
-                password_hash=self._hash_password(user_data["password"]),
-                email=user_data.get("email", "").strip() or None,
-                is_active=user_data.get("is_active", True),
-                created_by=current_admin_id,  # Add audit field
-                modified_by=current_admin_id,  # Add audit field
+                user_id=data_for_processing["user_id"],
+                user_name=data_for_processing["user_name"],
+                password_hash=self._hash_password(data_for_processing["password"]),
+                email=processed_email,  # Now User model has this field
+                is_active=data_for_processing.get("is_active", True),
+                created_by=current_admin_id,
+                modified_by=current_admin_id,
             )
 
-            role_to_assign = user_data.get("role")
-            if role_to_assign:
+            role_to_assign_str = data_for_processing.get("role")
+            if (
+                role_to_assign_str
+            ):  # Role should be validated as existing by validate_user_data
                 role_obj = (
-                    session.query(Role).filter(Role.name == role_to_assign).first()
+                    session.query(Role).filter(Role.name == role_to_assign_str).first()
                 )
                 if role_obj:
-                    new_user.roles.append(role_obj)  # Manages UserRole association
-                else:
-                    self.logger.warning(
-                        f"Role object for '{role_to_assign}' not found. Cannot assign to new user."
+                    new_user.roles.append(role_obj)
+                else:  # Should not happen if validation is correct
+                    self.logger.error(
+                        f"Role '{role_to_assign_str}' not found in DB despite validation. User '{new_user.user_id}' created without role."
                     )
-                    # Optionally, you could make this a hard error by returning False
+            else:  # Should also be caught by validation if role is mandatory
+                self.logger.warning(
+                    f"No role provided for new user '{new_user.user_id}'. Created without role."
+                )
 
             session.add(new_user)
             session.commit()
-            session.refresh(new_user)
+            session.refresh(
+                new_user
+            )  # To get potentially auto-generated fields like created_date
             self.logger.info(
                 f"User '{new_user.user_id}' created successfully by {current_admin_id}."
             )
@@ -269,16 +322,29 @@ class UserController:
         except sqlalchemy_exc.IntegrityError as e:
             session.rollback()
             self.logger.error(
-                f"Error creating user '{user_data.get('user_id')}': {e.orig}",
+                f"Error creating user '{data_for_processing.get('user_id')}': {e.orig}",
                 exc_info=True,
             )
-            if "UNIQUE constraint failed: users.user_id" in str(e.orig).lower():
-                return False, f"Login ID '{user_data['user_id']}' already exists.", None
+            # More specific error check
+            error_str = str(e.orig).lower()
+            if "unique constraint failed: users.user_id" in error_str:
+                return (
+                    False,
+                    f"Login ID (Username) '{data_for_processing['user_id']}' already exists.",
+                    None,
+                )
+            elif "unique constraint failed: users.email" in error_str:
+                return (
+                    False,
+                    f"Email '{data_for_processing['email']}' is already in use.",
+                    None,
+                )
             return False, f"Database integrity error: {e.orig}", None
         except sqlalchemy_exc.SQLAlchemyError as e:
             session.rollback()
             self.logger.error(
-                f"Error creating user '{user_data.get('user_id')}': {e}", exc_info=True
+                f"Error creating user '{data_for_processing.get('user_id')}': {e}",
+                exc_info=True,
             )
             return False, f"Failed to create user: {e}", None
         finally:
@@ -290,7 +356,6 @@ class UserController:
         user_data: Dict[str, Any],
         current_admin_id: Optional[str] = None,
     ) -> Tuple[bool, str]:
-        # Import here to avoid circular dependency at module level
         from views.admin.dialogs.add_edit_user_dialog import AddEditUserDialog
 
         session = db_manager.get_session()
@@ -304,52 +369,62 @@ class UserController:
             if not user:
                 return False, f"User with Login ID '{login_id_str_pk}' not found."
 
-            # Role check using USER_ROLES from dialog
-            if (
-                "role" in user_data
-                and user_data.get("role") not in AddEditUserDialog.USER_ROLES
-            ):
-                return False, f"Invalid role: {user_data.get('role')}"
-
-            validation_payload = {
+            validation_data = {
                 "user_id": login_id_str_pk,
-                "user_name": user_data.get("user_name", user.user_name),
-                "email": user_data.get("email", user.email),
-                "role": user_data.get(
-                    "role"
-                ),  # For validation against AddEditUserDialog.USER_ROLES
+                "user_name": user_data.get(
+                    "full_name", user_data.get("user_name", user.user_name)
+                ),
+                "email": user_data.get(
+                    "email", user.email
+                ),  # Pass current email if not in user_data
+                "role": user_data.get("role"),
             }
             if "password" in user_data and user_data["password"]:
-                validation_payload["password"] = user_data["password"]
+                validation_data["password"] = user_data["password"]
 
             is_valid, errors = self.validate_user_data(
-                validation_payload,
+                validation_data,
                 is_new=False,
                 original_login_id_to_ignore=login_id_str_pk,
             )
             if not is_valid:
                 return False, "Validation failed: " + "; ".join(errors)
 
-            if "user_name" in user_data:
+            if "full_name" in user_data:
+                user.user_name = user_data["full_name"].strip()
+            elif "user_name" in user_data:
                 user.user_name = user_data["user_name"].strip()
-            if "email" in user_data:
-                user.email = user_data["email"].strip() or None
+
+            if "email" in user_data:  # Check if email key is present
+                email_val = user_data["email"]
+                user.email = email_val.strip() if isinstance(email_val, str) else None
 
             new_role_str = user_data.get("role")
             if new_role_str:
+                if (
+                    hasattr(AddEditUserDialog, "USER_ROLES")
+                    and new_role_str not in AddEditUserDialog.USER_ROLES
+                ):
+                    return (
+                        False,
+                        f"Invalid role: {new_role_str}",
+                    )  # Should be caught by validation
+
                 current_role_names = [r.name for r in user.roles]
                 if (
                     new_role_str not in current_role_names
-                ):  # Basic check if single role changed
-                    user.roles.clear()  # Clear existing roles before adding new one
+                    or len(user.roles) > 1
+                    or not user.roles
+                ):
+                    user.roles.clear()
                     role_obj = (
                         session.query(Role).filter(Role.name == new_role_str).first()
                     )
                     if role_obj:
                         user.roles.append(role_obj)
-                    else:
-                        self.logger.warning(
-                            f"Role object for '{new_role_str}' not found. Cannot update role for user '{user.user_id}'."
+                    else:  # Should not happen if validation and AddEditUserDialog.USER_ROLES are aligned
+                        self.logger.error(
+                            f"Role object for '{new_role_str}' not found. Role not updated for user '{user.user_id}'."
                         )
 
             if "password" in user_data and user_data["password"]:
@@ -357,26 +432,42 @@ class UserController:
 
             if "is_active" in user_data:
                 if user.user_id.upper() == "ADMIN" and not user_data["is_active"]:
-                    active_admin_query = session.query(func.count(User.user_id)).filter(
-                        User.is_active == True,
-                        func.upper(User.user_id) == "ADMIN",
-                        User.user_id != user.user_id,
+                    active_admin_count = (
+                        session.query(User)
+                        .filter(
+                            User.is_active == True,
+                            func.upper(User.user_id) == "ADMIN",
+                            User.user_id != user.user_id,
+                        )
+                        .count()
                     )
-                    active_admin_count_others = active_admin_query.scalar()
-                    if active_admin_count_others == 0:
+                    if active_admin_count == 0:
                         self.logger.warning(
                             f"Attempt to deactivate the last active ADMIN user ('{user.user_id}') was prevented."
                         )
                         return False, "Cannot deactivate the last active ADMIN user."
                 user.is_active = user_data["is_active"]
 
-            user.modified_by = current_admin_id  # Add audit field
+            user.modified_by = current_admin_id
 
             session.commit()
             self.logger.info(
                 f"User '{user.user_id}' updated successfully by {current_admin_id}."
             )
             return True, "User updated successfully."
+        except (
+            sqlalchemy_exc.IntegrityError
+        ) as e:  # Catch potential unique constraint on email update
+            session.rollback()
+            self.logger.error(
+                f"Error updating user '{login_id_str_pk}': {e.orig}", exc_info=True
+            )
+            if "unique constraint failed: users.email" in str(e.orig).lower():
+                return (
+                    False,
+                    f"Email '{validation_data['email']}' is already in use by another user.",
+                )
+            return False, f"Database integrity error: {e.orig}"
         except sqlalchemy_exc.SQLAlchemyError as e:
             session.rollback()
             self.logger.error(
@@ -392,6 +483,7 @@ class UserController:
         new_password: str,
         current_admin_id: Optional[str] = None,
     ) -> Tuple[bool, str]:
+        # This method remains unchanged from v1.2.2
         if not new_password or len(new_password) < 6:
             return False, "New password must be at least 6 characters long."
         session = db_manager.get_session()
@@ -404,7 +496,7 @@ class UserController:
             if not user:
                 return False, f"User '{login_id_str}' not found."
             user.password_hash = self._hash_password(new_password)
-            user.modified_by = current_admin_id  # Audit password change
+            user.modified_by = current_admin_id
             session.commit()
             self.logger.info(
                 f"Password changed successfully for user '{login_id_str}' by {current_admin_id}."
@@ -420,6 +512,7 @@ class UserController:
             session.close()
 
     def get_user_roles(self, login_id_str: str) -> List[str]:
+        # This method remains unchanged from v1.2.2
         session = db_manager.get_session()
         try:
             user = (
@@ -428,9 +521,9 @@ class UserController:
                 .filter(func.upper(User.user_id) == login_id_str.upper())
                 .first()
             )
-            if user and user.roles:  # Check if user.roles is not empty
+            if user and user.roles:
                 return [role.name for role in user.roles]
-            return []  # Return empty list if no user or no roles
+            return []
         except sqlalchemy_exc.SQLAlchemyError as e:
             self.logger.error(
                 f"Error fetching roles for user '{login_id_str}': {e}", exc_info=True
@@ -439,7 +532,52 @@ class UserController:
         finally:
             session.close()
 
-    # Placeholder for full Role CRUD if needed later, not fleshed out to avoid further import issues now.
-    # def create_role ...
-    # def assign_role_to_user (would take login_id_str, role_name_str) ...
-    # def remove_role_from_user ...
+    def delete_user_permanently(
+        self, user_id_to_delete: str, current_admin_id: str
+    ) -> Tuple[bool, str]:
+        # This method remains unchanged from v1.2.2
+        session = db_manager.get_session()
+        try:
+            user = session.query(User).filter(User.user_id == user_id_to_delete).first()
+            if not user:
+                return False, f"User '{user_id_to_delete}' not found."
+
+            if user.user_id.upper() == "ADMIN":
+                active_admin_count = (
+                    session.query(User)
+                    .filter(User.is_active == True, func.upper(User.user_id) == "ADMIN")
+                    .count()
+                )
+                if active_admin_count <= 1:
+                    self.logger.warning(
+                        f"Attempt to delete the last (or only) ADMIN user ('{user_id_to_delete}') by '{current_admin_id}' was prevented."
+                    )
+                    return (
+                        False,
+                        "Cannot delete the primary ADMIN account if it's the last one.",
+                    )
+
+            session.delete(user)
+            session.commit()
+            self.logger.info(
+                f"User '{user_id_to_delete}' permanently deleted by admin '{current_admin_id}'."
+            )
+            return True, f"User '{user_id_to_delete}' deleted successfully."
+        except sqlalchemy_exc.IntegrityError as e:
+            session.rollback()
+            self.logger.error(
+                f"Database integrity error deleting user '{user_id_to_delete}': {e.orig}",
+                exc_info=True,
+            )
+            return (
+                False,
+                f"Cannot delete user. They may be referenced by other records. ({e.orig})",
+            )
+        except Exception as e:
+            session.rollback()
+            self.logger.error(
+                f"Error deleting user '{user_id_to_delete}': {e}", exc_info=True
+            )
+            return False, f"Failed to delete user: {str(e)}"
+        finally:
+            session.close()

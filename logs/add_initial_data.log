@@ -1,94 +1,94 @@
-2025-05-20 20:10:16,638 - INFO - add_initial_data.py:602 - Starting to add initial reference data...
-2025-05-20 20:10:16,942 - INFO - add_initial_data.py:605 - Database initialized by db_manager.
-2025-05-20 20:10:16,942 - INFO - add_initial_data.py:619 - Database session obtained.
-2025-05-20 20:10:16,943 - INFO - add_initial_data.py:96 - Processing default admin user...
-2025-05-20 20:10:16,966 - INFO - add_initial_data.py:116 - Default admin user 'ADMIN' created successfully.
-2025-05-20 20:10:16,966 - INFO - add_initial_data.py:125 - Processing species data (Equine only)...
-2025-05-20 20:10:16,967 - INFO - add_initial_data.py:141 - Staged species 'Equine'.
-2025-05-20 20:10:16,972 - INFO - add_initial_data.py:147 - Committed 1 species item(s).
-2025-05-20 20:10:16,972 - INFO - add_initial_data.py:154 - Adding states/provinces data...
-2025-05-20 20:10:16,974 - INFO - add_initial_data.py:226 - Staging State/Province: NJ - New Jersey
-2025-05-20 20:10:16,974 - INFO - add_initial_data.py:226 - Staging State/Province: NY - New York
-2025-05-20 20:10:16,975 - INFO - add_initial_data.py:226 - Staging State/Province: PA - Pennsylvania
-2025-05-20 20:10:16,975 - INFO - add_initial_data.py:226 - Staging State/Province: DE - Delaware
-2025-05-20 20:10:16,975 - INFO - add_initial_data.py:226 - Staging State/Province: MD - Maryland
-2025-05-20 20:10:16,976 - INFO - add_initial_data.py:226 - Staging State/Province: AL - Alabama
-2025-05-20 20:10:16,976 - INFO - add_initial_data.py:226 - Staging State/Province: AK - Alaska
-2025-05-20 20:10:16,977 - INFO - add_initial_data.py:226 - Staging State/Province: AZ - Arizona
-2025-05-20 20:10:16,977 - INFO - add_initial_data.py:226 - Staging State/Province: AR - Arkansas
-2025-05-20 20:10:16,977 - INFO - add_initial_data.py:226 - Staging State/Province: CA - California
-2025-05-20 20:10:16,977 - INFO - add_initial_data.py:226 - Staging State/Province: CO - Colorado
-2025-05-20 20:10:16,978 - INFO - add_initial_data.py:226 - Staging State/Province: CT - Connecticut
-2025-05-20 20:10:16,978 - INFO - add_initial_data.py:226 - Staging State/Province: FL - Florida
-2025-05-20 20:10:16,978 - INFO - add_initial_data.py:226 - Staging State/Province: GA - Georgia
-2025-05-20 20:10:16,979 - INFO - add_initial_data.py:226 - Staging State/Province: HI - Hawaii
-2025-05-20 20:10:16,980 - INFO - add_initial_data.py:226 - Staging State/Province: ID - Idaho
-2025-05-20 20:10:16,980 - INFO - add_initial_data.py:226 - Staging State/Province: IL - Illinois
-2025-05-20 20:10:16,981 - INFO - add_initial_data.py:226 - Staging State/Province: IN - Indiana
-2025-05-20 20:10:16,981 - INFO - add_initial_data.py:226 - Staging State/Province: IA - Iowa
-2025-05-20 20:10:16,981 - INFO - add_initial_data.py:226 - Staging State/Province: KS - Kansas
-2025-05-20 20:10:16,982 - INFO - add_initial_data.py:226 - Staging State/Province: KY - Kentucky
-2025-05-20 20:10:16,982 - INFO - add_initial_data.py:226 - Staging State/Province: LA - Louisiana
-2025-05-20 20:10:16,982 - INFO - add_initial_data.py:226 - Staging State/Province: ME - Maine
-2025-05-20 20:10:16,983 - INFO - add_initial_data.py:226 - Staging State/Province: MA - Massachusetts
-2025-05-20 20:10:16,983 - INFO - add_initial_data.py:226 - Staging State/Province: MI - Michigan
-2025-05-20 20:10:16,983 - INFO - add_initial_data.py:226 - Staging State/Province: MN - Minnesota
-2025-05-20 20:10:16,984 - INFO - add_initial_data.py:226 - Staging State/Province: MS - Mississippi
-2025-05-20 20:10:16,984 - INFO - add_initial_data.py:226 - Staging State/Province: MO - Missouri
-2025-05-20 20:10:16,984 - INFO - add_initial_data.py:226 - Staging State/Province: MT - Montana
-2025-05-20 20:10:16,984 - INFO - add_initial_data.py:226 - Staging State/Province: NE - Nebraska
-2025-05-20 20:10:16,985 - INFO - add_initial_data.py:226 - Staging State/Province: NV - Nevada
-2025-05-20 20:10:16,985 - INFO - add_initial_data.py:226 - Staging State/Province: NH - New Hampshire
-2025-05-20 20:10:16,985 - INFO - add_initial_data.py:226 - Staging State/Province: NM - New Mexico
-2025-05-20 20:10:16,986 - INFO - add_initial_data.py:226 - Staging State/Province: NC - North Carolina
-2025-05-20 20:10:16,986 - INFO - add_initial_data.py:226 - Staging State/Province: ND - North Dakota
-2025-05-20 20:10:16,986 - INFO - add_initial_data.py:226 - Staging State/Province: OH - Ohio
-2025-05-20 20:10:16,987 - INFO - add_initial_data.py:226 - Staging State/Province: OK - Oklahoma
-2025-05-20 20:10:16,987 - INFO - add_initial_data.py:226 - Staging State/Province: OR - Oregon
-2025-05-20 20:10:16,987 - INFO - add_initial_data.py:226 - Staging State/Province: RI - Rhode Island
-2025-05-20 20:10:16,988 - INFO - add_initial_data.py:226 - Staging State/Province: SC - South Carolina
-2025-05-20 20:10:16,988 - INFO - add_initial_data.py:226 - Staging State/Province: SD - South Dakota
-2025-05-20 20:10:16,988 - INFO - add_initial_data.py:226 - Staging State/Province: TN - Tennessee
-2025-05-20 20:10:16,989 - INFO - add_initial_data.py:226 - Staging State/Province: TX - Texas
-2025-05-20 20:10:16,989 - INFO - add_initial_data.py:226 - Staging State/Province: UT - Utah
-2025-05-20 20:10:16,989 - INFO - add_initial_data.py:226 - Staging State/Province: VT - Vermont
-2025-05-20 20:10:16,990 - INFO - add_initial_data.py:226 - Staging State/Province: VA - Virginia
-2025-05-20 20:10:16,990 - INFO - add_initial_data.py:226 - Staging State/Province: WA - Washington
-2025-05-20 20:10:16,990 - INFO - add_initial_data.py:226 - Staging State/Province: WV - West Virginia
-2025-05-20 20:10:16,991 - INFO - add_initial_data.py:226 - Staging State/Province: WI - Wisconsin
-2025-05-20 20:10:16,991 - INFO - add_initial_data.py:226 - Staging State/Province: WY - Wyoming
-2025-05-20 20:10:16,991 - INFO - add_initial_data.py:226 - Staging State/Province: ON - Ontario
-2025-05-20 20:10:16,992 - INFO - add_initial_data.py:226 - Staging State/Province: QC - Quebec
-2025-05-20 20:10:16,998 - INFO - add_initial_data.py:232 - Committed 52 new states/provinces.
-2025-05-20 20:10:16,998 - INFO - add_initial_data.py:241 - Adding sample locations data...
-2025-05-20 20:10:16,999 - INFO - add_initial_data.py:330 - Staging Location: Gaited Farms
-2025-05-20 20:10:17,000 - INFO - add_initial_data.py:330 - Staging Location: Beacon Hill
-2025-05-20 20:10:17,000 - INFO - add_initial_data.py:330 - Staging Location: Hayfever Farms
-2025-05-20 20:10:17,005 - INFO - add_initial_data.py:336 - Committed 3 new locations.
-2025-05-20 20:10:17,005 - INFO - add_initial_data.py:345 - Adding sample charge codes data...
-2025-05-20 20:10:17,006 - INFO - add_initial_data.py:388 - Staging ChargeCode: 413
-2025-05-20 20:10:17,007 - INFO - add_initial_data.py:388 - Staging ChargeCode: 650
-2025-05-20 20:10:17,007 - INFO - add_initial_data.py:388 - Staging ChargeCode: 100
-2025-05-20 20:10:17,007 - INFO - add_initial_data.py:388 - Staging ChargeCode: 32
-2025-05-20 20:10:17,012 - INFO - add_initial_data.py:394 - Committed 4 new charge codes.
-2025-05-20 20:10:17,012 - INFO - add_initial_data.py:403 - Adding single veterinarian data...
-2025-05-20 20:10:17,013 - INFO - add_initial_data.py:432 - Staging Veterinarian: Michael Williams
-2025-05-20 20:10:17,017 - INFO - add_initial_data.py:442 - Committed 1 veterinarian item(s).
-2025-05-20 20:10:17,017 - INFO - add_initial_data.py:449 - Adding sample horses data...
-2025-05-20 20:10:17,018 - INFO - add_initial_data.py:482 - Staging Horse: Donatello
-2025-05-20 20:10:17,019 - INFO - add_initial_data.py:482 - Staging Horse: Lorena 90
-2025-05-20 20:10:17,019 - INFO - add_initial_data.py:482 - Staging Horse: Soul Rebel
-2025-05-20 20:10:17,020 - INFO - add_initial_data.py:482 - Staging Horse: Daisy
-2025-05-20 20:10:17,020 - INFO - add_initial_data.py:482 - Staging Horse: Thunder
-2025-05-20 20:10:17,021 - INFO - add_initial_data.py:482 - Staging Horse: Thunderblade
-2025-05-20 20:10:17,021 - INFO - add_initial_data.py:482 - Staging Horse: Ironheart
-2025-05-20 20:10:17,025 - INFO - add_initial_data.py:490 - Committed 7 new horses.
-2025-05-20 20:10:17,025 - INFO - add_initial_data.py:499 - Adding sample owners data...
-2025-05-20 20:10:17,027 - INFO - add_initial_data.py:585 - Staging Owner: Amy Reed
-2025-05-20 20:10:17,028 - INFO - add_initial_data.py:585 - Staging Owner: Brian Walsh
-2025-05-20 20:10:17,028 - INFO - add_initial_data.py:585 - Staging Owner: Sam White
-2025-05-20 20:10:17,028 - INFO - add_initial_data.py:585 - Staging Owner: John Hill
-2025-05-20 20:10:17,033 - INFO - add_initial_data.py:593 - Committed 4 new owners.
-2025-05-20 20:10:17,033 - INFO - add_initial_data.py:631 - All initial data processing functions called.
-2025-05-20 20:10:17,033 - INFO - add_initial_data.py:649 - Database session closed.
-2025-05-20 20:10:17,033 - INFO - add_initial_data.py:650 - Finished add_initial_data script.
+2025-05-21 19:59:19,225 - INFO - add_initial_data.py:602 - Starting to add initial reference data...
+2025-05-21 19:59:19,517 - INFO - add_initial_data.py:605 - Database initialized by db_manager.
+2025-05-21 19:59:19,517 - INFO - add_initial_data.py:619 - Database session obtained.
+2025-05-21 19:59:19,518 - INFO - add_initial_data.py:96 - Processing default admin user...
+2025-05-21 19:59:19,540 - INFO - add_initial_data.py:116 - Default admin user 'ADMIN' created successfully.
+2025-05-21 19:59:19,540 - INFO - add_initial_data.py:125 - Processing species data (Equine only)...
+2025-05-21 19:59:19,542 - INFO - add_initial_data.py:141 - Staged species 'Equine'.
+2025-05-21 19:59:19,546 - INFO - add_initial_data.py:147 - Committed 1 species item(s).
+2025-05-21 19:59:19,546 - INFO - add_initial_data.py:154 - Adding states/provinces data...
+2025-05-21 19:59:19,547 - INFO - add_initial_data.py:226 - Staging State/Province: NJ - New Jersey
+2025-05-21 19:59:19,547 - INFO - add_initial_data.py:226 - Staging State/Province: NY - New York
+2025-05-21 19:59:19,547 - INFO - add_initial_data.py:226 - Staging State/Province: PA - Pennsylvania
+2025-05-21 19:59:19,548 - INFO - add_initial_data.py:226 - Staging State/Province: DE - Delaware
+2025-05-21 19:59:19,548 - INFO - add_initial_data.py:226 - Staging State/Province: MD - Maryland
+2025-05-21 19:59:19,548 - INFO - add_initial_data.py:226 - Staging State/Province: AL - Alabama
+2025-05-21 19:59:19,549 - INFO - add_initial_data.py:226 - Staging State/Province: AK - Alaska
+2025-05-21 19:59:19,549 - INFO - add_initial_data.py:226 - Staging State/Province: AZ - Arizona
+2025-05-21 19:59:19,550 - INFO - add_initial_data.py:226 - Staging State/Province: AR - Arkansas
+2025-05-21 19:59:19,550 - INFO - add_initial_data.py:226 - Staging State/Province: CA - California
+2025-05-21 19:59:19,550 - INFO - add_initial_data.py:226 - Staging State/Province: CO - Colorado
+2025-05-21 19:59:19,550 - INFO - add_initial_data.py:226 - Staging State/Province: CT - Connecticut
+2025-05-21 19:59:19,551 - INFO - add_initial_data.py:226 - Staging State/Province: FL - Florida
+2025-05-21 19:59:19,551 - INFO - add_initial_data.py:226 - Staging State/Province: GA - Georgia
+2025-05-21 19:59:19,551 - INFO - add_initial_data.py:226 - Staging State/Province: HI - Hawaii
+2025-05-21 19:59:19,552 - INFO - add_initial_data.py:226 - Staging State/Province: ID - Idaho
+2025-05-21 19:59:19,552 - INFO - add_initial_data.py:226 - Staging State/Province: IL - Illinois
+2025-05-21 19:59:19,552 - INFO - add_initial_data.py:226 - Staging State/Province: IN - Indiana
+2025-05-21 19:59:19,552 - INFO - add_initial_data.py:226 - Staging State/Province: IA - Iowa
+2025-05-21 19:59:19,553 - INFO - add_initial_data.py:226 - Staging State/Province: KS - Kansas
+2025-05-21 19:59:19,553 - INFO - add_initial_data.py:226 - Staging State/Province: KY - Kentucky
+2025-05-21 19:59:19,553 - INFO - add_initial_data.py:226 - Staging State/Province: LA - Louisiana
+2025-05-21 19:59:19,554 - INFO - add_initial_data.py:226 - Staging State/Province: ME - Maine
+2025-05-21 19:59:19,554 - INFO - add_initial_data.py:226 - Staging State/Province: MA - Massachusetts
+2025-05-21 19:59:19,554 - INFO - add_initial_data.py:226 - Staging State/Province: MI - Michigan
+2025-05-21 19:59:19,555 - INFO - add_initial_data.py:226 - Staging State/Province: MN - Minnesota
+2025-05-21 19:59:19,555 - INFO - add_initial_data.py:226 - Staging State/Province: MS - Mississippi
+2025-05-21 19:59:19,555 - INFO - add_initial_data.py:226 - Staging State/Province: MO - Missouri
+2025-05-21 19:59:19,555 - INFO - add_initial_data.py:226 - Staging State/Province: MT - Montana
+2025-05-21 19:59:19,557 - INFO - add_initial_data.py:226 - Staging State/Province: NE - Nebraska
+2025-05-21 19:59:19,557 - INFO - add_initial_data.py:226 - Staging State/Province: NV - Nevada
+2025-05-21 19:59:19,558 - INFO - add_initial_data.py:226 - Staging State/Province: NH - New Hampshire
+2025-05-21 19:59:19,558 - INFO - add_initial_data.py:226 - Staging State/Province: NM - New Mexico
+2025-05-21 19:59:19,558 - INFO - add_initial_data.py:226 - Staging State/Province: NC - North Carolina
+2025-05-21 19:59:19,558 - INFO - add_initial_data.py:226 - Staging State/Province: ND - North Dakota
+2025-05-21 19:59:19,559 - INFO - add_initial_data.py:226 - Staging State/Province: OH - Ohio
+2025-05-21 19:59:19,559 - INFO - add_initial_data.py:226 - Staging State/Province: OK - Oklahoma
+2025-05-21 19:59:19,559 - INFO - add_initial_data.py:226 - Staging State/Province: OR - Oregon
+2025-05-21 19:59:19,559 - INFO - add_initial_data.py:226 - Staging State/Province: RI - Rhode Island
+2025-05-21 19:59:19,560 - INFO - add_initial_data.py:226 - Staging State/Province: SC - South Carolina
+2025-05-21 19:59:19,562 - INFO - add_initial_data.py:226 - Staging State/Province: SD - South Dakota
+2025-05-21 19:59:19,562 - INFO - add_initial_data.py:226 - Staging State/Province: TN - Tennessee
+2025-05-21 19:59:19,562 - INFO - add_initial_data.py:226 - Staging State/Province: TX - Texas
+2025-05-21 19:59:19,563 - INFO - add_initial_data.py:226 - Staging State/Province: UT - Utah
+2025-05-21 19:59:19,563 - INFO - add_initial_data.py:226 - Staging State/Province: VT - Vermont
+2025-05-21 19:59:19,563 - INFO - add_initial_data.py:226 - Staging State/Province: VA - Virginia
+2025-05-21 19:59:19,564 - INFO - add_initial_data.py:226 - Staging State/Province: WA - Washington
+2025-05-21 19:59:19,564 - INFO - add_initial_data.py:226 - Staging State/Province: WV - West Virginia
+2025-05-21 19:59:19,564 - INFO - add_initial_data.py:226 - Staging State/Province: WI - Wisconsin
+2025-05-21 19:59:19,564 - INFO - add_initial_data.py:226 - Staging State/Province: WY - Wyoming
+2025-05-21 19:59:19,565 - INFO - add_initial_data.py:226 - Staging State/Province: ON - Ontario
+2025-05-21 19:59:19,565 - INFO - add_initial_data.py:226 - Staging State/Province: QC - Quebec
+2025-05-21 19:59:19,570 - INFO - add_initial_data.py:232 - Committed 52 new states/provinces.
+2025-05-21 19:59:19,571 - INFO - add_initial_data.py:241 - Adding sample locations data...
+2025-05-21 19:59:19,572 - INFO - add_initial_data.py:330 - Staging Location: Gaited Farms
+2025-05-21 19:59:19,572 - INFO - add_initial_data.py:330 - Staging Location: Beacon Hill
+2025-05-21 19:59:19,573 - INFO - add_initial_data.py:330 - Staging Location: Hayfever Farms
+2025-05-21 19:59:19,577 - INFO - add_initial_data.py:336 - Committed 3 new locations.
+2025-05-21 19:59:19,577 - INFO - add_initial_data.py:345 - Adding sample charge codes data...
+2025-05-21 19:59:19,579 - INFO - add_initial_data.py:388 - Staging ChargeCode: 413
+2025-05-21 19:59:19,579 - INFO - add_initial_data.py:388 - Staging ChargeCode: 650
+2025-05-21 19:59:19,579 - INFO - add_initial_data.py:388 - Staging ChargeCode: 100
+2025-05-21 19:59:19,580 - INFO - add_initial_data.py:388 - Staging ChargeCode: 32
+2025-05-21 19:59:19,584 - INFO - add_initial_data.py:394 - Committed 4 new charge codes.
+2025-05-21 19:59:19,584 - INFO - add_initial_data.py:403 - Adding single veterinarian data...
+2025-05-21 19:59:19,585 - INFO - add_initial_data.py:432 - Staging Veterinarian: Michael Williams
+2025-05-21 19:59:19,588 - INFO - add_initial_data.py:442 - Committed 1 veterinarian item(s).
+2025-05-21 19:59:19,589 - INFO - add_initial_data.py:449 - Adding sample horses data...
+2025-05-21 19:59:19,590 - INFO - add_initial_data.py:482 - Staging Horse: Donatello
+2025-05-21 19:59:19,591 - INFO - add_initial_data.py:482 - Staging Horse: Lorena 90
+2025-05-21 19:59:19,592 - INFO - add_initial_data.py:482 - Staging Horse: Soul Rebel
+2025-05-21 19:59:19,592 - INFO - add_initial_data.py:482 - Staging Horse: Daisy
+2025-05-21 19:59:19,593 - INFO - add_initial_data.py:482 - Staging Horse: Thunder
+2025-05-21 19:59:19,593 - INFO - add_initial_data.py:482 - Staging Horse: Thunderblade
+2025-05-21 19:59:19,593 - INFO - add_initial_data.py:482 - Staging Horse: Ironheart
+2025-05-21 19:59:19,598 - INFO - add_initial_data.py:490 - Committed 7 new horses.
+2025-05-21 19:59:19,598 - INFO - add_initial_data.py:499 - Adding sample owners data...
+2025-05-21 19:59:19,600 - INFO - add_initial_data.py:585 - Staging Owner: Amy Reed
+2025-05-21 19:59:19,601 - INFO - add_initial_data.py:585 - Staging Owner: Brian Walsh
+2025-05-21 19:59:19,601 - INFO - add_initial_data.py:585 - Staging Owner: Sam White
+2025-05-21 19:59:19,602 - INFO - add_initial_data.py:585 - Staging Owner: John Hill
+2025-05-21 19:59:19,606 - INFO - add_initial_data.py:593 - Committed 4 new owners.
+2025-05-21 19:59:19,606 - INFO - add_initial_data.py:631 - All initial data processing functions called.
+2025-05-21 19:59:19,607 - INFO - add_initial_data.py:649 - Database session closed.
+2025-05-21 19:59:19,607 - INFO - add_initial_data.py:650 - Finished add_initial_data script.

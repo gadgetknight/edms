@@ -2,37 +2,25 @@
 
 """
 EDSI Veterinary Management System - Horse Basic Info Tab
-Version: 1.2.0
+Version: 1.2.1
 Purpose: Provides a tab widget for displaying basic horse information.
-         Location management buttons removed; now only displays current location.
-         Prepares to receive location updates via a dedicated slot.
-Last Updated: May 20, 2025
+         Adjusted location display width and added logging for location updates.
+Last Updated: May 21, 2025
 Author: Gemini
 
 Changelog:
+- v1.2.1 (2025-05-21):
+    - Adjusted column span for location_display_label in _setup_location_display_ui
+      to make it narrower.
+    - Added detailed logging to update_displayed_location slot.
 - v1.2.0 (2025-05-20):
     - Removed location management buttons ("Set/Change", "Create & Assign", "Clear")
-      and their associated handlers (_handle_set_change_location,
-      _handle_create_assign_location, _handle_clear_location).
+      and their associated handlers.
     - Kept location_display_label for displaying the current location name.
-    - _current_location_id and _current_location_name are still used for data and display.
-    - Added update_displayed_location slot to be connected to a signal from the new LocationTab.
+    - Added update_displayed_location slot.
     - get_data() still provides current_location_id.
     - populate_fields() still updates location_display_label.
-- v1.1.0 (2025-05-20):
-    - Replaced 'current_location_id' QComboBox with a QLabel (location_display_label).
-    - Added buttons: "Set/Change Location", "Create & Assign New Location", "Clear Location".
-- v1.0.4 (2025-05-19):
-    - Modified `update_buttons_state` to enable Save/Discard buttons if
-      `has_modifications` is true AND the form is currently editable.
-- v1.0.3 (2025-05-19):
-    - Added `_emit_data_modified` slot.
-- v1.0.2 (2025-05-18):
-    - Corrected AppConfig constant usage.
-- v1.0.1 (2025-05-17):
-    - Added `from typing import List`.
-- v1.0.0 (2025-05-17):
-    - Initial extraction from horse_unified_management.py.
+# ... (rest of previous changelog)
 """
 
 import logging
@@ -71,11 +59,6 @@ from config.app_config import (
 )
 from models import Horse, Location as LocationModel
 
-# Dialogs are no longer directly opened from this tab for location.
-# from controllers.location_controller import LocationController # Not directly used now
-# from views.admin.dialogs.add_edit_location_dialog import AddEditLocationDialog
-# from views.horse.dialogs.select_existing_location_dialog import SelectExistingLocationDialog
-
 
 class BasicInfoTab(QWidget):
     """Tab widget for displaying and editing basic horse information."""
@@ -90,7 +73,6 @@ class BasicInfoTab(QWidget):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.parent_view = parent_view
         self.horse_controller = horse_controller
-        # self.location_controller = LocationController() # No longer directly needed here
 
         self.current_horse_is_active: Optional[bool] = None
         self._current_location_id: Optional[int] = None
@@ -135,13 +117,11 @@ class BasicInfoTab(QWidget):
         ]
 
         self._setup_form_fields(self.form_layout)
-        self._setup_location_display_ui(
-            self.form_layout
-        )  # Changed from _setup_location_management_ui
+        self._setup_location_display_ui(self.form_layout)
         self._setup_action_buttons(self.form_layout)
 
-        self.form_layout.setColumnStretch(1, 1)
-        self.form_layout.setColumnStretch(3, 1)
+        self.form_layout.setColumnStretch(1, 1)  # Stretch for first field column
+        self.form_layout.setColumnStretch(3, 1)  # Stretch for second field column
         self.form_layout.setRowStretch(self.form_layout.rowCount(), 1)
 
         scroll_area.setWidget(form_container_widget)
@@ -168,6 +148,9 @@ class BasicInfoTab(QWidget):
         )
 
     def _emit_data_modified(self, *args):
+        self.logger.debug(
+            f"BasicInfoTab: _emit_data_modified called by: {self.sender()}"
+        )
         self.data_modified.emit()
 
     def _setup_form_fields(self, form_layout: QGridLayout):
@@ -177,7 +160,7 @@ class BasicInfoTab(QWidget):
         for i, (label_text, field_name, field_type, required) in enumerate(
             self._fields_config
         ):
-            row, col = i // 2, (i % 2)
+            row, col = i // 2, (i % 2)  # Creates a 2-column form structure for fields
             label_str = label_text + ("*" if required else "") + ":"
             label = QLabel(label_str)
             label.setStyleSheet(
@@ -209,13 +192,12 @@ class BasicInfoTab(QWidget):
             if field_widget:
                 field_widget.setStyleSheet(input_style)
                 field_widget.setMinimumHeight(32)
+                # Add label to col*2, field to col*2 + 1
                 form_layout.addWidget(label, row, col * 2)
                 form_layout.addWidget(field_widget, row, col * 2 + 1)
                 self.form_fields[field_name] = field_widget
 
     def _setup_location_display_ui(self, form_layout: QGridLayout):
-        # Start after the last standard field row.
-        # Each field in _fields_config takes up one row in a 2-column layout, so num_rows = len // 2.
         current_row = (len(self._fields_config) + 1) // 2
 
         location_label_title = QLabel("Location:")
@@ -226,20 +208,26 @@ class BasicInfoTab(QWidget):
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
         )
 
-        self.location_display_label = QLabel("N/A")  # Default display
+        self.location_display_label = QLabel("N/A")
         self.location_display_label.setStyleSheet(
             f"color: {DARK_TEXT_PRIMARY}; font-size: 13px; background-color: {DARK_INPUT_FIELD_BACKGROUND}; "
             f"border: 1px solid {DARK_BORDER}; border-radius: 4px; padding: 6px 10px; min-height: 20px;"
         )
         self.location_display_label.setWordWrap(True)
-        # Add to the first column (0), spanning all available columns for the value display (e.g. 3 if buttons were in col 2,3).
-        # Since there are no buttons here now, it can span the remaining columns of its row.
+
+        # Add to the first column (0), spanning 1 column for the value display
         form_layout.addWidget(location_label_title, current_row, 0)
         form_layout.addWidget(
-            self.location_display_label, current_row, 1, 1, 3
-        )  # Span 1 row, 3 columns for display
+            self.location_display_label,
+            current_row,
+            1,
+            1,
+            1,  # Changed col span from 3 to 1
+        )
+        # Placeholder for Owner display - we'll add it to column 2 and 3
+        # You might want a QLabel("Owner(s):") in column 2 and the actual display in column 3
+        # For now, let's just make sure the location label is narrower.
 
-        # Store the next row index for action buttons
         self.action_buttons_row_index = current_row + 1
 
     def _setup_action_buttons(self, form_layout: QGridLayout):
@@ -286,11 +274,12 @@ class BasicInfoTab(QWidget):
         button_layout.addWidget(self.discard_btn)
         button_layout.addWidget(self.save_btn)
 
-        # Use the stored row index for placing action buttons
         action_button_row = getattr(
             self, "action_buttons_row_index", self.form_layout.rowCount()
         )
-        form_layout.addLayout(button_layout, action_button_row, 0, 1, 4)
+        form_layout.addLayout(
+            button_layout, action_button_row, 0, 1, 4
+        )  # Span all 4 columns
 
     def _on_toggle_active_clicked(self):
         if self.current_horse_is_active is not None:
@@ -305,7 +294,7 @@ class BasicInfoTab(QWidget):
                 field_widget.blockSignals(True)
 
         if not horse:
-            self.clear_fields()  # This also resets location display and internal IDs
+            self.clear_fields()
             self.current_horse_is_active = None
             self.set_form_read_only(True)
             self.update_buttons_state(False, False)
@@ -319,6 +308,9 @@ class BasicInfoTab(QWidget):
             horse.location.location_name if horse.location else "N/A"
         )
         self.location_display_label.setText(self._current_location_name)
+        self.logger.debug(
+            f"Populating fields: Location set to ID={self._current_location_id}, Name='{self._current_location_name}'"
+        )
 
         self.form_fields["horse_name"].setText(horse.horse_name or "")
         self.form_fields["account_number"].setText(horse.account_number or "")
@@ -364,8 +356,11 @@ class BasicInfoTab(QWidget):
                 "tattoo": self.form_fields["tattoo"].text().strip(),
                 "brand": self.form_fields["brand"].text().strip(),
                 "band_tag_number": self.form_fields["band_tag_number"].text().strip(),
-                "current_location_id": self._current_location_id,  # Return internal ID
+                "current_location_id": self._current_location_id,
             }
+            self.logger.debug(
+                f"BasicInfoTab.get_data() returning with location_id: {self._current_location_id}"
+            )
             return data
         except Exception as e:
             self.logger.error(
@@ -378,6 +373,7 @@ class BasicInfoTab(QWidget):
         self._current_location_id = None
         self._current_location_name = "N/A"
         self.location_display_label.setText(self._current_location_name)
+        self.logger.debug("BasicInfoTab.clear_fields(): Location display reset.")
 
         for field_name, field_widget in self.form_fields.items():
             if not field_widget:
@@ -391,13 +387,16 @@ class BasicInfoTab(QWidget):
             elif isinstance(field_widget, QDateEdit):
                 field_widget.setDate(QDate.currentDate())
             field_widget.blockSignals(was_blocked)
-        self.set_form_read_only(False)
+        self.set_form_read_only(False)  # Should be editable for new mode
         self.update_buttons_state(False, False)
 
     def set_new_mode(self):
         self.clear_fields()
+        self.set_form_read_only(False)  # Ensure form is editable
         if "horse_name" in self.form_fields and self.form_fields["horse_name"]:
             self.form_fields["horse_name"].setFocus()
+        # For new mode, changes are inherent, so enable save/discard
+        self.update_buttons_state(True, False)
 
     def set_form_read_only(self, read_only: bool):
         for field_name, field_widget in self.form_fields.items():
@@ -407,19 +406,22 @@ class BasicInfoTab(QWidget):
                 field_widget.setReadOnly(read_only)
             else:
                 field_widget.setEnabled(not read_only)
-        # Location display label itself is not interactive for editing here
         self.logger.debug(f"BasicInfoTab form read-only state set to: {read_only}")
 
     def update_buttons_state(
         self, has_modifications: bool, is_existing_horse_selected: bool
     ):
         form_is_currently_editable = False
-        if "horse_name" in self.form_fields and self.form_fields["horse_name"]:
+        if (
+            "horse_name" in self.form_fields and self.form_fields["horse_name"]
+        ):  # Check a representative field
             if hasattr(self.form_fields["horse_name"], "isReadOnly"):
                 form_is_currently_editable = not self.form_fields[
                     "horse_name"
                 ].isReadOnly()
-            elif hasattr(self.form_fields["horse_name"], "isEnabled"):
+            elif hasattr(
+                self.form_fields["horse_name"], "isEnabled"
+            ):  # Fallback for widgets like QComboBox
                 form_is_currently_editable = self.form_fields["horse_name"].isEnabled()
 
         can_save_or_discard = has_modifications and form_is_currently_editable
@@ -441,22 +443,15 @@ class BasicInfoTab(QWidget):
                     self.parent_view.get_toolbar_button_style(warn_color)
                 )
         else:
-            self.toggle_active_btn.setText("Toggle Active")
-            if hasattr(self.parent_view, "get_generic_button_style"):
+            self.toggle_active_btn.setText("Toggle Active")  # Default text
+            if hasattr(self.parent_view, "get_generic_button_style"):  # Default style
                 self.toggle_active_btn.setStyleSheet(
                     self.parent_view.get_generic_button_style()
                 )
 
-    # This public slot will be called by HorseUnifiedManagementScreen
-    # when the new (yet to be created) LocationTab signals a change.
     def update_displayed_location(
         self, location_id: Optional[int], location_name: Optional[str]
     ):
-        """
-        Updates the displayed location information and internal state.
-        This method is intended to be called via a signal from the main management screen
-        after the dedicated LocationTab has successfully linked/unlinked a location.
-        """
         self.logger.info(
             f"BasicInfoTab received update_displayed_location: ID={location_id}, Name='{location_name}'"
         )
@@ -465,11 +460,26 @@ class BasicInfoTab(QWidget):
         self._current_location_id = location_id
         self._current_location_name = location_name if location_name else "N/A"
         self.location_display_label.setText(self._current_location_name)
+        self.logger.debug(
+            f"Location display updated to: '{self._current_location_name}', internal ID: {self._current_location_id}"
+        )
 
-        # If the location ID actually changed, consider it a modification
         if old_location_id != self._current_location_id:
-            if not self.form_fields[
-                "horse_name"
-            ].isReadOnly():  # Only emit if form is editable
+            self.logger.info(
+                f"Location ID changed from {old_location_id} to {self._current_location_id}. Emitting data_modified."
+            )
+            # Only emit if form is currently editable
+            # Check a representative field like horse_name for its read-only state
+            form_is_editable = False
+            if "horse_name" in self.form_fields and self.form_fields["horse_name"]:
+                if hasattr(self.form_fields["horse_name"], "isReadOnly"):
+                    form_is_editable = not self.form_fields["horse_name"].isReadOnly()
+
+            if form_is_editable:
                 self._emit_data_modified()
-        self.logger.debug(f"Location display updated to: {self._current_location_name}")
+            else:
+                self.logger.debug(
+                    "Form is read-only, data_modified not emitted for location change."
+                )
+        else:
+            self.logger.debug("Location ID did not change. data_modified not emitted.")

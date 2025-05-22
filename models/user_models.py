@@ -2,12 +2,15 @@
 
 """
 EDSI Veterinary Management System - User and Role Models
-Version: 1.1.0
+Version: 1.1.1
 Purpose: Defines User, Role, and UserRole SQLAlchemy models.
-Last Updated: May 18, 2025
-Author: Claude Assistant
+         Added 'email' column to User model.
+Last Updated: May 21, 2025
+Author: Claude Assistant (Modified by Gemini)
 
 Changelog:
+- v1.1.1 (2025-05-21):
+    - Added `email = Column(String(100), unique=True, index=True, nullable=True)` to User model.
 - v1.1.0 (2025-05-18):
     - Added Role model (role_id, name, description).
     - Added UserRole association model (user_id, role_id).
@@ -21,10 +24,9 @@ from sqlalchemy.orm import relationship
 from .base_model import (
     BaseModel,
     Base,
-)  # Ensure Base is imported if UserRole is defined using it directly
+)
 
 
-# --- Role Model ---
 class Role(BaseModel):
     __tablename__ = "roles"
 
@@ -32,10 +34,6 @@ class Role(BaseModel):
     name = Column(String(50), unique=True, index=True, nullable=False)
     description = Column(String(255))
 
-    # Relationship to users (many-to-many through UserRole)
-    # users = relationship("User", secondary="user_roles", back_populates="roles")
-    # The secondary table string name "user_roles" will be resolved by SQLAlchemy.
-    # Or, if UserRole is defined as a model:
     users = relationship(
         "User", secondary=lambda: UserRole.__table__, back_populates="roles"
     )
@@ -44,16 +42,8 @@ class Role(BaseModel):
         return f"<Role(role_id={self.role_id}, name='{self.name}')>"
 
 
-# --- UserRole Association Table/Model ---
-# This can be defined as a simple table or as a model class inheriting Base.
-# Using a model class is often preferred if you might want to add extra columns
-# to the association later (e.g., date_assigned).
-
-
-class UserRole(Base):  # Inherit from Base directly for association tables
+class UserRole(Base):
     __tablename__ = "user_roles"
-    # No BaseModel features like created_date needed for a simple join table usually
-
     user_id = Column(String(20), ForeignKey("users.user_id"), primary_key=True)
     role_id = Column(Integer, ForeignKey("roles.role_id"), primary_key=True)
 
@@ -61,22 +51,23 @@ class UserRole(Base):  # Inherit from Base directly for association tables
         return f"<UserRole(user_id='{self.user_id}', role_id={self.role_id})>"
 
 
-# --- User Model ---
 class User(BaseModel):
     """User table for login and authentication"""
 
     __tablename__ = "users"
 
-    user_id = Column(String(20), primary_key=True, index=True)  # Added index
+    user_id = Column(String(20), primary_key=True, index=True)
     password_hash = Column(String(255), nullable=False)
     user_name = Column(String(100))
+
+    # ADDED EMAIL COLUMN HERE
+    email = Column(String(100), unique=True, index=True, nullable=True)
+
     is_active = Column(Boolean, default=True)
     last_login = Column(DateTime)
-    printer_id = Column(String(20))  # Nullable by default
-    default_screen_colors = Column(String(100))  # Nullable by default
+    printer_id = Column(String(20))
+    default_screen_colors = Column(String(100))
 
-    # Relationship to roles (many-to-many through UserRole)
-    # The secondary argument points to the UserRole association table/model.
     roles = relationship("Role", secondary=UserRole.__table__, back_populates="users")
 
     def __repr__(self):
