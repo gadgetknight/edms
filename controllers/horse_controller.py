@@ -77,11 +77,10 @@ class HorseController:
             breed_val = self._sanitize_value(horse_data.get("breed"))
             color_val = self._sanitize_value(horse_data.get("color"))
             notes_val = horse_data.get("notes")
-
+            
             current_location_id_val = horse_data.get("current_location_id")
-            self.logger.info(
-                f"HorseController.create_horse: Received current_location_id = {current_location_id_val}"
-            )
+            self.logger.info(f"HorseController.create_horse: Received current_location_id = {current_location_id_val}")
+
 
             horse = Horse(
                 horse_name=horse_name_val,
@@ -122,9 +121,7 @@ class HorseController:
                 )
             elif "UNIQUE constraint failed" in str(ie.orig):
                 failed_field_info = str(ie.orig).split(":")[-1].strip()
-                user_friendly_field_name = failed_field_info.split(".")[-1].replace(
-                    "_", " "
-                )
+                user_friendly_field_name = failed_field_info.split(".")[-1].replace("_", " ")
                 return (
                     False,
                     f"Error: A horse with this {user_friendly_field_name} already exists.",
@@ -153,29 +150,21 @@ class HorseController:
                 return False, "Horse name is required"
             horse.horse_name = horse_name_val
 
-            horse.account_number = self._sanitize_value(
-                horse_data.get("account_number")
-            )
+            horse.account_number = self._sanitize_value(horse_data.get("account_number"))
             horse.breed = self._sanitize_value(horse_data.get("breed"))
             horse.color = self._sanitize_value(horse_data.get("color"))
             horse.sex = horse_data.get("sex")
             horse.date_of_birth = self._parse_date(horse_data.get("date_of_birth"))
-            horse.registration_number = self._sanitize_value(
-                horse_data.get("registration_number")
-            )
+            horse.registration_number = self._sanitize_value(horse_data.get("registration_number"))
             horse.microchip_id = self._sanitize_value(horse_data.get("microchip_id"))
             horse.tattoo = self._sanitize_value(horse_data.get("tattoo"))
             horse.brand = self._sanitize_value(horse_data.get("brand"))
-            horse.band_tag_number = self._sanitize_value(
-                horse_data.get("band_tag_number")
-            )
-
+            horse.band_tag_number = self._sanitize_value(horse_data.get("band_tag_number"))
+            
             current_location_id_val = horse_data.get("current_location_id")
-            self.logger.info(
-                f"HorseController.update_horse ID {horse_id}: Received current_location_id = {current_location_id_val}"
-            )
+            self.logger.info(f"HorseController.update_horse ID {horse_id}: Received current_location_id = {current_location_id_val}")
             horse.current_location_id = current_location_id_val
-
+            
             horse.species_id = horse_data.get("species_id")
             horse.notes = horse_data.get("notes")
             horse.is_active = horse_data.get("is_active", horse.is_active)
@@ -198,9 +187,7 @@ class HorseController:
                 )
             elif "UNIQUE constraint failed" in str(ie.orig):
                 failed_field_info = str(ie.orig).split(":")[-1].strip()
-                user_friendly_field_name = failed_field_info.split(".")[-1].replace(
-                    "_", " "
-                )
+                user_friendly_field_name = failed_field_info.split(".")[-1].replace("_", " ")
                 return (
                     False,
                     f"Error: Another horse with this {user_friendly_field_name} already exists.",
@@ -221,8 +208,8 @@ class HorseController:
             horse = (
                 session.query(Horse)
                 .options(
-                    joinedload(Horse.location),
-                    joinedload(Horse.species),
+                    joinedload(Horse.location), 
+                    joinedload(Horse.species), 
                     joinedload(Horse.owners).joinedload(HorseOwner.owner),
                 )
                 .filter(Horse.horse_id == horse_id)
@@ -243,22 +230,24 @@ class HorseController:
         session = db_manager.get_session()
         try:
             query = session.query(Horse).options(
-                joinedload(Horse.location),
-                joinedload(Horse.species),
+                joinedload(Horse.location), 
+                joinedload(Horse.species), 
             )
 
             if status == "active":
                 query = query.filter(Horse.is_active == True)
             elif status == "inactive":
                 query = query.filter(Horse.is_active == False)
-            elif status != "all":
+            elif status != "all": 
                 self.logger.warning(
                     f"Invalid status '{status}' for search_horses. Defaulting to 'active'."
                 )
                 query = query.filter(Horse.is_active == True)
 
             if search_term:
-                search_pattern = f"%{search_term.lower()}%"
+                search_pattern = (
+                    f"%{search_term.lower()}%" 
+                )
                 query = query.filter(
                     or_(
                         func.lower(Horse.horse_name).like(search_pattern),
@@ -307,7 +296,7 @@ class HorseController:
                 birth_date = self._parse_date(horse_data["date_of_birth"])
                 if birth_date and birth_date > date.today():
                     errors.append("Date of birth cannot be in the future.")
-            except Exception:
+            except Exception: 
                 errors.append("Invalid date of birth format or value.")
 
         unique_check_fields = {
@@ -322,7 +311,7 @@ class HorseController:
             for field_key, display_name in unique_check_fields.items():
                 value_from_form = horse_data.get(field_key)
                 sanitized_value_for_check = self._sanitize_value(value_from_form)
-                if sanitized_value_for_check:
+                if (sanitized_value_for_check): 
                     query = session.query(Horse).filter(
                         getattr(Horse, field_key) == sanitized_value_for_check
                     )
@@ -349,13 +338,13 @@ class HorseController:
             return None
         if isinstance(date_value, date):
             return date_value
-        if isinstance(date_value, datetime):
+        if isinstance(date_value, datetime): 
             return date_value.date()
         if isinstance(date_value, str):
             stripped_date_value = date_value.strip()
-            if not stripped_date_value:
+            if not stripped_date_value: 
                 return None
-            formats_to_try = ["%Y-%m-%d", "%m/%d/%Y", "%m-%d-%Y"]
+            formats_to_try = ["%Y-%m-%d", "%m/%d/%Y", "%m-%d-%Y"] 
             for fmt in formats_to_try:
                 try:
                     return datetime.strptime(stripped_date_value, fmt).date()
@@ -364,14 +353,14 @@ class HorseController:
             self.logger.warning(
                 f"Could not parse date string: '{stripped_date_value}' with known formats."
             )
-            return None
+            return None 
         if hasattr(date_value, "toPython") and callable(date_value.toPython):
             try:
                 py_date = date_value.toPython()
                 if isinstance(py_date, date):
                     return py_date
-            except Exception:
-                pass
+            except Exception: 
+                pass 
 
         self.logger.warning(
             f"Could not parse date input: {date_value} (type: {type(date_value)})"
@@ -437,17 +426,17 @@ class HorseController:
                 session.query(HorseOwner, Owner)
                 .join(Owner, HorseOwner.owner_id == Owner.owner_id)
                 .filter(HorseOwner.horse_id == horse_id)
-                .order_by(Owner.farm_name, Owner.last_name, Owner.first_name)
+                .order_by(
+                    Owner.farm_name, Owner.last_name, Owner.first_name
+                ) 
                 .all()
             )
 
             result_list = []
             for assoc, owner_obj in horse_owners_associations:
                 name_parts = []
-                if owner_obj.first_name:
-                    name_parts.append(owner_obj.first_name)
-                if owner_obj.last_name:
-                    name_parts.append(owner_obj.last_name)
+                if owner_obj.first_name: name_parts.append(owner_obj.first_name)
+                if owner_obj.last_name: name_parts.append(owner_obj.last_name)
                 individual_name_str = " ".join(name_parts)
 
                 display_name_str = owner_obj.farm_name if owner_obj.farm_name else ""
@@ -455,23 +444,19 @@ class HorseController:
                     display_name_str += f" ({individual_name_str})"
                 elif not owner_obj.farm_name and individual_name_str:
                     display_name_str = individual_name_str
-                elif not display_name_str:  # Fallback if no names at all
+                elif not display_name_str: # Fallback if no names at all
                     display_name_str = f"Owner ID: {owner_obj.owner_id}"
-
-                account_str = (
-                    f" [Acct: {owner_obj.account_number}]"
-                    if owner_obj.account_number
-                    else ""
-                )
-
+                
+                account_str = f" [Acct: {owner_obj.account_number}]" if owner_obj.account_number else ""
+                
                 result_list.append(
                     {
                         "owner_id": owner_obj.owner_id,
-                        "owner_name": display_name_str,
+                        "owner_name": display_name_str, 
                         "account_number": owner_obj.account_number,
-                        "display_name": display_name_str + account_str,
+                        "display_name": display_name_str + account_str, 
                         "percentage": assoc.ownership_percentage,
-                        "is_primary": getattr(assoc, "is_primary_owner", False),
+                        "is_primary": getattr(assoc, "is_primary_owner", False), 
                     }
                 )
             return result_list
@@ -502,55 +487,35 @@ class HorseController:
             )
             if existing_assoc:
                 owner_display_parts = []
-                if owner.first_name:
-                    owner_display_parts.append(owner.first_name)
-                if owner.last_name:
-                    owner_display_parts.append(owner.last_name)
+                if owner.first_name: owner_display_parts.append(owner.first_name)
+                if owner.last_name: owner_display_parts.append(owner.last_name)
                 owner_individual_display = " ".join(owner_display_parts)
                 owner_display = owner.farm_name if owner.farm_name else ""
-                if owner.farm_name and owner_individual_display:
-                    owner_display += f" ({owner_individual_display})"
-                elif not owner.farm_name and owner_individual_display:
-                    owner_display = owner_individual_display
-                elif not owner_display:
-                    owner_display = f"ID {owner.owner_id}"
-                return (
-                    False,
-                    f"Owner '{owner_display}' is already associated with horse '{horse.horse_name}'.",
-                )
+                if owner.farm_name and owner_individual_display: owner_display += f" ({owner_individual_display})"
+                elif not owner.farm_name and owner_individual_display: owner_display = owner_individual_display
+                elif not owner_display: owner_display = f"ID {owner.owner_id}"
+                return (False, f"Owner '{owner_display}' is already associated with horse '{horse.horse_name}'.")
 
             if not (0 <= percentage <= 100):
-                return (
-                    False,
-                    "Ownership percentage must be between 0 and 100 (inclusive).",
-                )
+                return (False, "Ownership percentage must be between 0 and 100 (inclusive).")
 
             current_total_percentage = (
                 session.query(func.sum(HorseOwner.ownership_percentage))
                 .filter(HorseOwner.horse_id == horse_id)
-                .scalar()
-                or 0.0
+                .scalar() or 0.0
             )
-            if float(current_total_percentage) + float(percentage) > 100.001:
-                precise_total = sum(
-                    ho.ownership_percentage
-                    for ho in session.query(HorseOwner.ownership_percentage)
-                    .filter(HorseOwner.horse_id == horse_id)
-                    .all()
-                )
+            if float(current_total_percentage) + float(percentage) > 100.001: 
+                precise_total = sum(ho.ownership_percentage for ho in session.query(HorseOwner.ownership_percentage).filter(HorseOwner.horse_id == horse_id).all())
                 if float(precise_total) + float(percentage) > 100.001:
-                    return (
-                        False,
-                        f"Adding {percentage:.2f}% would exceed 100% total ownership (current total: {precise_total:.2f}%).",
-                    )
+                    return (False, f"Adding {percentage:.2f}% would exceed 100% total ownership (current total: {precise_total:.2f}%).")
 
             new_horse_owner = HorseOwner(
                 horse_id=horse_id,
                 owner_id=owner_id,
                 ownership_percentage=percentage,
-                start_date=date.today(),
-                created_by=current_user,
-                modified_by=current_user,
+                start_date=date.today(), 
+                created_by=current_user, 
+                modified_by=current_user, 
             )
             session.add(new_horse_owner)
             session.commit()
@@ -585,36 +550,20 @@ class HorseController:
                 return False, "Ownership association not found."
 
             if not (0 <= new_percentage <= 100):
-                return (
-                    False,
-                    "Ownership percentage must be between 0 and 100 (inclusive).",
-                )
+                return (False, "Ownership percentage must be between 0 and 100 (inclusive).")
 
             other_owners_percentage = (
                 session.query(func.sum(HorseOwner.ownership_percentage))
-                .filter(
-                    HorseOwner.horse_id == horse_id, HorseOwner.owner_id != owner_id
-                )
-                .scalar()
-                or 0.0
+                .filter(HorseOwner.horse_id == horse_id, HorseOwner.owner_id != owner_id)
+                .scalar() or 0.0
             )
             if float(other_owners_percentage) + float(new_percentage) > 100.001:
-                precise_other_total = sum(
-                    ho.ownership_percentage
-                    for ho in session.query(HorseOwner.ownership_percentage)
-                    .filter(
-                        HorseOwner.horse_id == horse_id, HorseOwner.owner_id != owner_id
-                    )
-                    .all()
-                )
+                precise_other_total = sum(ho.ownership_percentage for ho in session.query(HorseOwner.ownership_percentage).filter(HorseOwner.horse_id == horse_id, HorseOwner.owner_id != owner_id).all())
                 if float(precise_other_total) + float(new_percentage) > 100.001:
-                    return (
-                        False,
-                        f"Updating to {new_percentage:.2f}% would exceed 100% total ownership (other owners currently have {precise_other_total:.2f}%).",
-                    )
+                    return (False, f"Updating to {new_percentage:.2f}% would exceed 100% total ownership (other owners currently have {precise_other_total:.2f}%).")
 
             assoc.ownership_percentage = new_percentage
-            if hasattr(assoc, "modified_by"):
+            if hasattr(assoc, "modified_by"): 
                 assoc.modified_by = current_user
             session.commit()
             self.logger.info(
@@ -624,24 +573,18 @@ class HorseController:
         except sqlalchemy_exc.IntegrityError as ie:
             session.rollback()
             self.logger.error(
-                f"IntegrityError updating ownership percentage: {ie.orig}",
-                exc_info=True,
+                f"IntegrityError updating ownership percentage: {ie.orig}", exc_info=True
             )
             return False, f"Database integrity error: {ie.orig}"
         except Exception as e:
             session.rollback()
-            self.logger.error(
-                f"Error updating ownership percentage: {e}", exc_info=True
-            )
+            self.logger.error(f"Error updating ownership percentage: {e}", exc_info=True)
             return False, f"Failed to update percentage: {e}"
         finally:
             session.close()
 
     def remove_owner_from_horse(
-        self,
-        horse_id: int,
-        owner_id: int,
-        current_user: str,
+        self, horse_id: int, owner_id: int, current_user: str,
     ) -> Tuple[bool, str]:
         session = db_manager.get_session()
         try:
@@ -659,7 +602,7 @@ class HorseController:
                 f"Removed owner ID {owner_id} from horse ID {horse_id} by {current_user}."
             )
             return True, "Owner removed from horse successfully."
-        except sqlalchemy_exc.IntegrityError as ie:
+        except sqlalchemy_exc.IntegrityError as ie: 
             session.rollback()
             self.logger.error(
                 f"IntegrityError removing owner from horse: {ie.orig}", exc_info=True

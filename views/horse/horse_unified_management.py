@@ -2,49 +2,23 @@
 
 """
 EDSI Veterinary Management System - Unified Horse Management Screen (Dark Theme)
-Version: 1.7.10
+Version: 1.7.13
 Purpose: Unified interface for horse management.
-         Added try-except block in setup_horse_tabs for robust error catching.
+         Added granular prints in display_empty_state to find where tab_widget becomes None.
 Last Updated: May 21, 2025
 Author: Gemini
 
 Changelog:
-- v1.7.10 (2025-05-21):
-    - Wrapped the entire content of `setup_horse_tabs` in a try-except block
-      to catch and print any exceptions occurring within it.
-- v1.7.9 (2025-05-21):
-    - Added unconditional `print()` at the start of `setup_horse_header_details`.
-    - Added unconditional `print()` statements immediately before and after
-      the call to `setup_horse_tabs` within `setup_horse_details_panel`.
-- v1.7.8 (2025-05-21):
-    - Added unconditional `print()` statements at the beginning of
-      `setup_main_content` and `setup_horse_details_panel` for call tracing.
-- v1.7.7 (2025-05-21):
-    - Added an unconditional `print()` statement at the very beginning of
-      `HorseUnifiedManagement.setup_ui()` to definitively check if the method is entered.
-- v1.7.6 (2025-05-21):
-    - Added detailed logging at the start of `setup_ui`, `setup_main_content`,
-      and `setup_horse_details_panel` to trace the call flow towards `setup_horse_tabs`.
-- v1.7.5 (2025-05-21):
-    - Re-verified and ensured all diagnostic logging for `self.tab_widget`
-      initialization and state checks are present in `setup_horse_tabs`,
-      `display_empty_state`, `display_details_state`, and `on_selection_changed`.
-- v1.7.4 (2025-05-21):
-    - Added diagnostic logging in `display_empty_state`, `display_details_state`,
-      and `on_selection_changed` to trace `self.tab_widget` type.
-- v1.7.3 (2025-05-21):
-    - Added diagnostic logging in `setup_horse_tabs` to trace `self.tab_widget` initialization.
-    - Added diagnostic logging and a defensive check in `edit_selected_horse` for `self.tab_widget`.
-- v1.7.2 (2025-05-21):
-    - Added logging in `save_changes` to display the `current_location_id`
-      from the data being sent to the horse controller.
-- v1.7.1 (2025-05-20):
-    - (Based on GitHub v1.7.0)
-    - Modified `__init__` to call `self.load_initial_data()` via a
-      `QTimer.singleShot` with a short delay (e.g., 100ms).
-- v1.7.0 (2025-05-20):
-    - Integrated LocationTab, connected its signals, and updated related logic.
-# ... other previous changelog entries
+- v1.7.13 (2025-05-21):
+    - Added granular unconditional `print()` statements within `display_empty_state`
+      to pinpoint where `self.tab_widget` becomes `None`.
+- v1.7.12 (2025-05-21):
+    - Added unconditional `print()` at the start of `showEvent`, `load_initial_data`,
+      `load_horses`, and `load_horse_details` to track `self.tab_widget` state.
+- v1.7.11 (2025-05-21):
+    - Replaced `self.logger.debug` calls within `setup_horse_tabs` with
+      unconditional `print()` statements for definitive execution tracing.
+# ... (rest of previous changelog entries are omitted for brevity but assumed present)
 """
 
 import logging
@@ -129,7 +103,10 @@ class HorseUnifiedManagement(BaseView):
         self.owner_controller = OwnerController()
         self.location_controller = LocationController()
 
-        super().__init__()  # This calls self.setup_ui() which should be defined below
+        # Initialize tab_widget to None before super().__init__ which calls setup_ui
+        self.tab_widget: Optional[QTabWidget] = None
+
+        super().__init__()  # This calls self.setup_ui()
 
         self.horses_list: List[Horse] = []
         self.current_horse: Optional[Horse] = None
@@ -143,15 +120,21 @@ class HorseUnifiedManagement(BaseView):
         self.basic_info_tab: Optional[BasicInfoTab] = None
         self.owners_tab: Optional[OwnersTab] = None
         self.location_tab: Optional[LocationTab] = None
-        self.tab_widget: Optional[QTabWidget] = None  # Explicitly None initially
+        # self.tab_widget is initialized in setup_horse_tabs
 
         QTimer.singleShot(100, self.load_initial_data)
 
         self.logger.info(
             "HorseUnifiedManagement screen __init__ finished (initial data load deferred)."
         )
+        print(
+            f"--- HORSEUNIFIEDMANAGEMENT.__INIT__ END: self.tab_widget is {type(self.tab_widget)} ---"
+        )
 
     def showEvent(self, event: QShowEvent):
+        print(
+            f"--- HORSEUNIFIEDMANAGEMENT.SHOWEVENT START: self.tab_widget is {type(self.tab_widget)} ---"
+        )
         self.logger.info("HorseUnifiedManagement showEvent triggered.")
         super().showEvent(event)
         # Ensure details panel visibility is correct based on current_horse
@@ -248,6 +231,9 @@ class HorseUnifiedManagement(BaseView):
         self.setup_footer(main_layout)
         self.setup_connections()  # Connect signals after all UI elements are created
         self.logger.debug("HorseUnifiedManagement.setup_ui: END")
+        print(
+            f"--- HORSEUNIFIEDMANAGEMENT.SETUP_UI END: self.tab_widget is {type(self.tab_widget)} ---"
+        )
 
     def setup_header(self, parent_layout):
         self.logger.debug("setup_header: START")
@@ -577,8 +563,12 @@ class HorseUnifiedManagement(BaseView):
         self, parent_layout_for_tabs
     ):  # Parent is details_content_layout
         try:
-            self.logger.debug("setup_horse_tabs: START")
+            print("--- SETUP_HORSE_TABS: START (UNCONDITIONAL PRINT) ---")
+            self.logger.debug("setup_horse_tabs: START")  # Keep logger for file log
             self.tab_widget = QTabWidget()
+            print(
+                f"--- SETUP_HORSE_TABS: self.tab_widget INITIALIZED TO TYPE: {type(self.tab_widget)} (UNCONDITIONAL PRINT) ---"
+            )
             self.logger.debug(
                 f"setup_horse_tabs: self.tab_widget initialized to: {type(self.tab_widget)}"
             )
@@ -654,13 +644,14 @@ class HorseUnifiedManagement(BaseView):
             parent_layout_for_tabs.addWidget(
                 self.tab_widget, 1
             )  # Tabs take up remaining vertical space
+            print(
+                f"--- SETUP_HORSE_TABS: END. self.tab_widget TYPE IS: {type(self.tab_widget)}, VISIBLE: {self.tab_widget.isVisible() if self.tab_widget else 'N/A'} (UNCONDITIONAL PRINT) ---"
+            )
             self.logger.debug(
                 f"setup_horse_tabs: END, self.tab_widget is now: {type(self.tab_widget)}, visible: {self.tab_widget.isVisible() if self.tab_widget else 'N/A'}"
             )
         except Exception as e:
-            print(
-                f"--- EXCEPTION IN setup_horse_tabs: {e} ---"
-            )  # ADDED EXCEPTION PRINTING
+            print(f"--- EXCEPTION IN setup_horse_tabs: {e} ---")
             self.logger.error(f"CRITICAL ERROR in setup_horse_tabs: {e}", exc_info=True)
             self.tab_widget = None  # Ensure it's None if setup fails
 
@@ -890,12 +881,18 @@ class HorseUnifiedManagement(BaseView):
         )
 
     def load_initial_data(self):
+        print(
+            f"--- HORSEUNIFIEDMANAGEMENT.LOAD_INITIAL_DATA START: self.tab_widget is {type(self.tab_widget)} ---"
+        )
         self.logger.info("load_initial_data called.")
         self.load_horses()
         self.update_status("Initialization complete. Ready.")
         # Any other initial setup like loading combo box data for tabs can go here
 
     def load_horses(self):
+        print(
+            f"--- HORSEUNIFIEDMANAGEMENT.LOAD_HORSES START: self.tab_widget is {type(self.tab_widget)} ---"
+        )
         try:
             if not hasattr(self, "search_input") or not hasattr(self, "status_label"):
                 self.logger.error(
@@ -1156,6 +1153,9 @@ class HorseUnifiedManagement(BaseView):
         QMessageBox.information(self, "Help", "Help content will be displayed here.")
 
     def load_horse_details(self, horse_id: int):
+        print(
+            f"--- HORSEUNIFIEDMANAGEMENT.LOAD_HORSE_DETAILS START: self.tab_widget is {type(self.tab_widget)} ---"
+        )
         self.logger.info(f"Loading details for horse ID: {horse_id}")
         horse = self.horse_controller.get_horse_by_id(
             horse_id
@@ -1195,40 +1195,69 @@ class HorseUnifiedManagement(BaseView):
         self.update_status(f"Viewing: {horse.horse_name or 'Unnamed Horse'}")
 
     def display_empty_state(self):
+        print(
+            f"--- DISPLAY_EMPTY_STATE: START. self.tab_widget is {type(self.tab_widget)} ---"
+        )  # New Print
         self.logger.debug(
             f"display_empty_state called. self.tab_widget BEFORE HIDE: {type(self.tab_widget)}"
         )
-        if hasattr(self, "empty_frame") and self.empty_frame:  # Defensive check
+
+        print(
+            f"--- DISPLAY_EMPTY_STATE: Before hide/show. self.tab_widget is {type(self.tab_widget)} ---"
+        )
+        if hasattr(self, "empty_frame") and self.empty_frame:
             self.empty_frame.show()
         if (
             hasattr(self, "horse_details_content_widget")
             and self.horse_details_content_widget
-        ):  # Defensive check
+        ):
             self.horse_details_content_widget.hide()
+        print(
+            f"--- DISPLAY_EMPTY_STATE: After hide/show. self.tab_widget is {type(self.tab_widget)} ---"
+        )
 
         self.current_horse = None
         self._has_changes_in_active_tab = False
+
+        print(
+            f"--- DISPLAY_EMPTY_STATE: Before basic_info_tab.clear_fields(). self.tab_widget is {type(self.tab_widget)} ---"
+        )
         if self.basic_info_tab:
             self.basic_info_tab.clear_fields()
+        print(
+            f"--- DISPLAY_EMPTY_STATE: After basic_info_tab.clear_fields(). self.tab_widget is {type(self.tab_widget)} ---"
+        )
+
         if self.owners_tab:
             self.owners_tab.load_owners_for_horse(None)
+        print(
+            f"--- DISPLAY_EMPTY_STATE: After owners_tab.load_owners_for_horse(None). self.tab_widget is {type(self.tab_widget)} ---"
+        )
+
         if self.location_tab:
             self.location_tab.load_location_for_horse(None)
+        print(
+            f"--- DISPLAY_EMPTY_STATE: After location_tab.load_location_for_horse(None). self.tab_widget is {type(self.tab_widget)} ---"
+        )
+
         self.update_main_action_buttons_state()
         self.logger.debug(
             f"display_empty_state finished. self.tab_widget AFTER HIDE: {type(self.tab_widget)}"
         )
+        print(
+            f"--- DISPLAY_EMPTY_STATE: END. self.tab_widget is {type(self.tab_widget)} ---"
+        )  # New Print
 
     def display_details_state(self):
         self.logger.debug(
             f"display_details_state called. self.tab_widget BEFORE SHOW: {type(self.tab_widget)}"
         )
-        if hasattr(self, "empty_frame") and self.empty_frame:  # Defensive check
+        if hasattr(self, "empty_frame") and self.empty_frame:
             self.empty_frame.hide()
         if (
             hasattr(self, "horse_details_content_widget")
             and self.horse_details_content_widget
-        ):  # Defensive check
+        ):
             self.horse_details_content_widget.show()
         self.logger.debug(
             f"display_details_state finished. self.tab_widget AFTER SHOW: {type(self.tab_widget)}"
@@ -1254,12 +1283,12 @@ class HorseUnifiedManagement(BaseView):
         can_edit = (
             self.current_horse is not None and not self._has_changes_in_active_tab
         )
-        if hasattr(self, "edit_horse_btn") and self.edit_horse_btn:  # Defensive check
+        if hasattr(self, "edit_horse_btn") and self.edit_horse_btn:
             self.edit_horse_btn.setEnabled(can_edit)
-        if hasattr(self, "add_horse_btn") and self.add_horse_btn:  # Defensive check
+        if hasattr(self, "add_horse_btn") and self.add_horse_btn:
             self.add_horse_btn.setEnabled(not self._has_changes_in_active_tab)
 
-        if self.tab_widget:  # Ensure tab_widget exists
+        if self.tab_widget:
             current_tab = self.tab_widget.currentWidget()
             if hasattr(current_tab, "update_buttons_state"):
                 if current_tab == self.basic_info_tab and self.basic_info_tab:
@@ -1370,7 +1399,7 @@ class HorseUnifiedManagement(BaseView):
             self.horse_list.itemSelectionChanged.connect(self.on_selection_changed)
 
         # Connect signals from tabs to appropriate handlers or slots
-        if self.basic_info_tab:
+        if self.basic_info_tab:  # Check if tab exists before connecting
             self.basic_info_tab.data_modified.connect(self._on_tab_data_modified)
             self.basic_info_tab.save_requested.connect(self.save_changes)
             self.basic_info_tab.discard_requested.connect(self.discard_changes)
@@ -1378,7 +1407,7 @@ class HorseUnifiedManagement(BaseView):
                 self.handle_toggle_active_status_from_tab
             )
 
-        if self.owners_tab:
+        if self.owners_tab:  # Check if tab exists
             self.owners_tab.owner_association_changed.connect(
                 self._on_owner_association_changed
             )

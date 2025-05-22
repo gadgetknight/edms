@@ -2,14 +2,17 @@
 
 """
 EDSI Veterinary Management System - Initial Data Setup
-Version: 1.2.3
+Version: 1.2.4
 Purpose: Adds initial reference data with more robust commits and detailed logging
          for each data type to help diagnose population issues. Corrects Owner
          instantiation by removing direct country_name argument.
-Last Updated: May 20, 2025
+         Removed sample horse data population.
+Last Updated: May 21, 2025
 Author: Gemini
 
 Changelog:
+- v1.2.4 (2025-05-21):
+    - Removed the `add_sample_horses_data` function and its call from `add_initial_data`.
 - v1.2.3 (2025-05-20):
     - Removed `country_name` as a direct keyword argument when creating `Owner`
       instances in `add_sample_owners_data` to align with the `Owner` model
@@ -50,7 +53,7 @@ from models import (
     User,
     Role,
     UserRole,
-    Horse,
+    Horse,  # Still need Horse model for other potential uses or if re-added later
     Owner,
     HorseOwner,
     Transaction,
@@ -445,56 +448,6 @@ def add_sample_veterinarian_data(session):
         logger.error(f"Error processing veterinarian data: {e}", exc_info=True)
 
 
-def add_sample_horses_data(session):
-    logger.info("Adding sample horses data...")
-    equine_species = session.query(Species).filter(Species.name == "Equine").first()
-    if not equine_species:
-        logger.error("Could not find 'Equine' species. Skipping horse creation.")
-        return
-    equine_species_id = equine_species.species_id
-
-    horses_data = [
-        ("Donatello", "011884"),
-        ("Lorena 90", "006345"),
-        ("Soul Rebel", "002356"),
-        ("Daisy", "008243"),
-        ("Thunder", "009456"),
-        ("Thunderblade", "886302"),
-        ("Ironheart", "330291"),
-    ]
-    items_to_add = []
-    try:
-        for name, acc_num in horses_data:
-            if (
-                not session.query(Horse)
-                .filter(Horse.horse_name == name, Horse.account_number == acc_num)
-                .first()
-            ):
-                horse = Horse(
-                    horse_name=name,
-                    account_number=acc_num,
-                    species_id=equine_species_id,
-                    is_active=True,
-                    created_by="SCRIPT",
-                    modified_by="SCRIPT",
-                )
-                items_to_add.append(horse)
-                logger.info(f"Staging Horse: {name}")
-            else:
-                logger.info(
-                    f"Horse {name} with account {acc_num} already exists. Skipping."
-                )
-        if items_to_add:
-            session.add_all(items_to_add)
-            session.commit()
-            logger.info(f"Committed {len(items_to_add)} new horses.")
-        else:
-            logger.info("No new horses to add.")
-    except Exception as e:
-        session.rollback()
-        logger.error(f"Error processing sample horses data: {e}", exc_info=True)
-
-
 def add_sample_owners_data(session):
     logger.info("Adding sample owners data...")
     owners_data = [
@@ -625,7 +578,7 @@ def add_initial_data():
         add_sample_locations_data(session)
         add_sample_charge_codes_data(session)
         add_sample_veterinarian_data(session)
-        add_sample_horses_data(session)
+        # add_sample_horses_data(session) # Removed this line
         add_sample_owners_data(session)
 
         logger.info("All initial data processing functions called.")
