@@ -1516,3 +1516,591 @@ TypeError: 'email' is an invalid keyword argument for User
 2025-05-21 20:00:04,807 - INFO - HorseUnifiedManagement - horse_unified_management:129 - HorseUnifiedManagement showEvent triggered.
 2025-05-21 20:00:04,808 - INFO - HorseUnifiedManagement - horse_unified_management:131 - HorseUnifiedManagement is now visible.
 2025-05-21 20:00:04,818 - INFO - EDSIApplication - main:222 - Horse Management Screen show() called.
+2025-05-21 20:09:32,416 - INFO - root - main:125 - Logging configured (Console and File).
+2025-05-21 20:09:32,417 - INFO - EDSIApplication - main:82 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-21 20:09:32,417 - INFO - EDSIApplication - main:85 - Python version: 3.11.4 (tags/v3.11.4:d2340ef, Jun  7 2023, 05:45:37) [MSC v.1934 64 bit (AMD64)]
+2025-05-21 20:09:32,417 - INFO - EDSIApplication - main:86 - Qt version: 6.9.0
+2025-05-21 20:09:32,417 - INFO - EDSIApplication - main:134 - Initializing database...
+2025-05-21 20:09:32,417 - INFO - DatabaseManager - database_config:79 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-21 20:09:32,425 - INFO - DatabaseManager - database_config:85 - Database engine and session factory created successfully.
+2025-05-21 20:09:32,425 - INFO - DatabaseManager - database_config:149 - Models known by Base.metadata before create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-21 20:09:32,427 - INFO - DatabaseManager - database_config:154 - Database tables created (if they didn't exist).
+2025-05-21 20:09:32,427 - INFO - DatabaseManager - database_config:156 - Models known by Base.metadata after create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-21 20:09:32,427 - INFO - EDSIApplication - main:139 - Database initialized successfully.
+2025-05-21 20:09:32,428 - INFO - SplashScreen - splash_screen:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-21 20:09:32,432 - INFO - SplashScreen - splash_screen:138 - Splash screen UI setup complete.
+2025-05-21 20:09:32,470 - INFO - EDSIApplication - main:154 - Splash screen displayed.
+2025-05-21 20:09:32,470 - INFO - EDSIApplication - main:316 - Starting EDSI Veterinary Management System event loop (sys.excepthook is set)...
+2025-05-21 20:09:36,178 - INFO - EDSIApplication - main:157 - Login area clicked on splash screen.
+2025-05-21 20:09:56,795 - INFO - UserController - user_controller:95 - Password validated successfully for active user 'ADMIN'.
+2025-05-21 20:09:56,795 - INFO - SmallLoginDialog - small_login_dialog:185 - Password validation successful for user 'ADMIN'.
+2025-05-21 20:09:56,796 - INFO - SmallLoginDialog - small_login_dialog:189 - User 'ADMIN' logged in successfully via small dialog.
+2025-05-21 20:09:56,796 - INFO - EDSIApplication - main:186 - User 'ADMIN' logged in successfully.
+2025-05-21 20:09:56,806 - INFO - HorseUnifiedManagement - horse_unified_management:98 - HorseUnifiedManagement __init__ started for user: ADMIN
+2025-05-21 20:09:56,806 - INFO - HorseUnifiedManagement - base_view:80 - BaseView __init__ for HorseUnifiedManagement: central_widget created.
+2025-05-21 20:09:56,807 - INFO - HorseUnifiedManagement - base_view:85 - BaseView __init__ for HorseUnifiedManagement: Calling overridden setup_ui().
+2025-05-21 20:09:57,022 - INFO - HorseUnifiedManagement - horse_unified_management:124 - HorseUnifiedManagement screen __init__ finished (initial data load deferred).
+2025-05-21 20:09:57,023 - INFO - EDSIApplication - main:220 - About to call self.horse_management_screen.show()
+2025-05-21 20:09:57,076 - INFO - HorseUnifiedManagement - horse_unified_management:129 - HorseUnifiedManagement showEvent triggered.
+2025-05-21 20:09:57,077 - INFO - HorseUnifiedManagement - horse_unified_management:131 - HorseUnifiedManagement is now visible.
+2025-05-21 20:09:57,086 - INFO - EDSIApplication - main:222 - Horse Management Screen show() called.
+2025-05-21 20:09:57,130 - INFO - HorseUnifiedManagement - horse_unified_management:821 - load_initial_data called.
+2025-05-21 20:09:57,130 - INFO - HorseUnifiedManagement - horse_unified_management:841 - Loading horses (Status: active, Search: '')
+2025-05-21 20:09:57,144 - INFO - HorseUnifiedManagement - horse_unified_management:1064 - Loading details for horse ID: 4
+2025-05-21 20:10:33,185 - INFO - HorseUnifiedManagement - horse_unified_management:1064 - Loading details for horse ID: 1
+2025-05-21 20:10:43,273 - INFO - UserManagementScreen - user_management_screen:373 - UserManagementScreen __init__ started by user: ADMIN
+2025-05-21 20:10:43,274 - INFO - UserManagementScreen - base_view:80 - BaseView __init__ for UserManagementScreen: central_widget created.
+2025-05-21 20:10:43,275 - INFO - UserManagementScreen - base_view:85 - BaseView __init__ for UserManagementScreen: Calling overridden setup_ui().
+2025-05-21 20:10:43,275 - CRITICAL - UserManagementScreen - user_management_screen:476 - ****** UserManagementScreen.setup_ui() (v1.10.7.2) ENTERED ******
+2025-05-21 20:10:43,275 - INFO - UserManagementScreen - user_management_screen:483 - UserManagementScreen.setup_ui: central_widget has no layout, creating new QVBoxLayout.
+2025-05-21 20:10:43,321 - INFO - UserManagementScreen - user_management_screen:574 - UserManagementScreen.setup_ui (v1.10.7.2) FINISHED.
+2025-05-21 20:10:43,332 - INFO - UserManagementScreen - user_management_screen:1052 - Loading users data...
+2025-05-21 20:10:43,334 - INFO - UserManagementScreen - user_management_screen:1076 - Loaded 1 users.
+2025-05-21 20:10:43,335 - INFO - UserManagementScreen - user_management_screen:1225 - User selected: ADMIN
+2025-05-21 20:10:43,337 - INFO - UserManagementScreen - user_management_screen:1087 - Loading master owners data...
+2025-05-21 20:10:43,338 - INFO - UserManagementScreen - user_management_screen:1127 - Loaded 4 master owners.
+2025-05-21 20:10:43,339 - INFO - UserManagementScreen - user_management_screen:1250 - Master owner selected: ID 4
+2025-05-21 20:10:43,342 - INFO - UserManagementScreen - user_management_screen:1137 - Loading charge codes data...
+2025-05-21 20:10:43,343 - INFO - UserManagementScreen - user_management_screen:1175 - Loaded 4 charge codes.
+2025-05-21 20:10:43,343 - INFO - UserManagementScreen - user_management_screen:1182 - Loading locations data...
+2025-05-21 20:10:43,344 - INFO - UserManagementScreen - user_management_screen:1213 - Loaded 3 locations.
+2025-05-21 20:10:43,345 - INFO - UserManagementScreen - user_management_screen:436 - UserManagementScreen initialized with Tabbed Interface (v1.10.7.2).
+2025-05-21 20:10:43,371 - INFO - EDSIApplication - main:260 - User Management Screen displayed.
+2025-05-21 20:10:46,653 - INFO - UserManagementScreen - user_management_screen:1480 - Add User button clicked.
+2025-05-21 20:10:46,657 - INFO - AddEditUserDialog - add_edit_user_dialog:84 - AddEditUserDialog initialized. Edit mode: False
+2025-05-21 20:11:04,738 - INFO - AddEditUserDialog - add_edit_user_dialog:344 - Attempting to create new user: tm
+2025-05-21 20:11:04,739 - ERROR - UserController - user_controller:305 - Role 'vet' not found in DB despite validation. User 'TM' created without role.
+2025-05-21 20:11:04,745 - INFO - UserController - user_controller:318 - User 'TM' created successfully by None.
+2025-05-21 20:11:04,745 - INFO - AddEditUserDialog - add_edit_user_dialog:352 - User operation successful: User created successfully.
+2025-05-21 20:11:04,751 - INFO - UserManagementScreen - base_view:308 - Displaying Info: User Action - New user processed by dialog.
+2025-05-21 20:11:06,470 - INFO - UserManagementScreen - user_management_screen:1052 - Loading users data...
+2025-05-21 20:11:06,472 - INFO - UserManagementScreen - user_management_screen:1239 - User selection cleared.
+2025-05-21 20:11:06,472 - INFO - UserManagementScreen - user_management_screen:1076 - Loaded 2 users.
+2025-05-21 20:11:06,473 - INFO - UserManagementScreen - user_management_screen:1225 - User selected: ADMIN
+2025-05-21 20:11:15,939 - INFO - UserManagementScreen - user_management_screen:1679 - Saving changes for master owner: 4
+2025-05-21 20:11:15,947 - INFO - OwnerController - owner_controller:315 - Master Owner 'John Hill' (ID: 4) updated by ADMIN.
+2025-05-21 20:11:15,947 - INFO - UserManagementScreen - base_view:308 - Displaying Info: Owner Updated - Owner updated successfully.
+2025-05-21 20:11:17,710 - INFO - UserManagementScreen - user_management_screen:1087 - Loading master owners data...
+2025-05-21 20:11:17,711 - INFO - UserManagementScreen - user_management_screen:1250 - Master owner selected: ID 1
+2025-05-21 20:11:17,713 - INFO - UserManagementScreen - user_management_screen:1250 - Master owner selected: ID 1
+2025-05-21 20:11:17,714 - INFO - UserManagementScreen - user_management_screen:1268 - Master owner selection cleared.
+2025-05-21 20:11:17,714 - INFO - UserManagementScreen - user_management_screen:1127 - Loaded 4 master owners.
+2025-05-21 20:11:17,714 - INFO - UserManagementScreen - user_management_screen:1250 - Master owner selected: ID 4
+2025-05-21 20:11:18,757 - INFO - UserManagementScreen - user_management_screen:1250 - Master owner selected: ID 1
+2025-05-21 20:11:25,494 - INFO - UserManagementScreen - user_management_screen:1679 - Saving changes for master owner: 1
+2025-05-21 20:11:25,500 - INFO - OwnerController - owner_controller:315 - Master Owner 'Amy Reed' (ID: 1) updated by ADMIN.
+2025-05-21 20:11:25,500 - INFO - UserManagementScreen - base_view:308 - Displaying Info: Owner Updated - Owner updated successfully.
+2025-05-21 20:11:27,143 - INFO - UserManagementScreen - user_management_screen:1087 - Loading master owners data...
+2025-05-21 20:11:27,145 - INFO - UserManagementScreen - user_management_screen:1250 - Master owner selected: ID 2
+2025-05-21 20:11:27,146 - INFO - UserManagementScreen - user_management_screen:1250 - Master owner selected: ID 2
+2025-05-21 20:11:27,146 - INFO - UserManagementScreen - user_management_screen:1268 - Master owner selection cleared.
+2025-05-21 20:11:27,148 - INFO - UserManagementScreen - user_management_screen:1127 - Loaded 4 master owners.
+2025-05-21 20:11:27,148 - INFO - UserManagementScreen - user_management_screen:1250 - Master owner selected: ID 1
+2025-05-21 20:11:29,301 - INFO - UserManagementScreen - user_management_screen:1250 - Master owner selected: ID 3
+2025-05-21 20:11:39,177 - INFO - UserManagementScreen - user_management_screen:1679 - Saving changes for master owner: 3
+2025-05-21 20:11:39,183 - INFO - OwnerController - owner_controller:315 - Master Owner 'Sam White' (ID: 3) updated by ADMIN.
+2025-05-21 20:11:39,184 - INFO - UserManagementScreen - base_view:308 - Displaying Info: Owner Updated - Owner updated successfully.
+2025-05-21 20:11:40,858 - INFO - UserManagementScreen - user_management_screen:1087 - Loading master owners data...
+2025-05-21 20:11:40,859 - INFO - UserManagementScreen - user_management_screen:1250 - Master owner selected: ID 3
+2025-05-21 20:11:40,861 - INFO - UserManagementScreen - user_management_screen:1268 - Master owner selection cleared.
+2025-05-21 20:11:40,861 - INFO - UserManagementScreen - user_management_screen:1127 - Loaded 4 master owners.
+2025-05-21 20:11:40,861 - INFO - UserManagementScreen - user_management_screen:1250 - Master owner selected: ID 3
+2025-05-21 20:11:42,504 - INFO - UserManagementScreen - user_management_screen:1250 - Master owner selected: ID 2
+2025-05-21 20:11:48,641 - INFO - UserManagementScreen - user_management_screen:1679 - Saving changes for master owner: 2
+2025-05-21 20:11:48,646 - INFO - OwnerController - owner_controller:315 - Master Owner 'Brian Walsh' (ID: 2) updated by ADMIN.
+2025-05-21 20:11:48,647 - INFO - UserManagementScreen - base_view:308 - Displaying Info: Owner Updated - Owner updated successfully.
+2025-05-21 20:11:49,964 - INFO - UserManagementScreen - user_management_screen:1087 - Loading master owners data...
+2025-05-21 20:11:49,964 - INFO - UserManagementScreen - user_management_screen:1250 - Master owner selected: ID 4
+2025-05-21 20:11:49,966 - INFO - UserManagementScreen - user_management_screen:1250 - Master owner selected: ID 4
+2025-05-21 20:11:49,967 - INFO - UserManagementScreen - user_management_screen:1268 - Master owner selection cleared.
+2025-05-21 20:11:49,967 - INFO - UserManagementScreen - user_management_screen:1127 - Loaded 4 master owners.
+2025-05-21 20:11:49,967 - INFO - UserManagementScreen - user_management_screen:1250 - Master owner selected: ID 2
+2025-05-21 20:11:58,529 - INFO - EDSIApplication - main:270 - Exiting Admin Screen. User: 'ADMIN'. Returning to Horse Management.
+2025-05-21 20:11:58,530 - INFO - UserManagementScreen - user_management_screen:1929 - User Management screen closing.
+2025-05-21 20:11:58,543 - INFO - HorseUnifiedManagement - horse_unified_management:129 - HorseUnifiedManagement showEvent triggered.
+2025-05-21 20:11:58,544 - INFO - HorseUnifiedManagement - horse_unified_management:131 - HorseUnifiedManagement is now visible.
+2025-05-21 20:12:11,807 - INFO - HorseUnifiedManagement - horse_unified_management:1064 - Loading details for horse ID: 4
+2025-05-21 20:12:15,871 - INFO - HorseUnifiedManagement - horse_unified_management:1064 - Loading details for horse ID: 1
+2025-05-21 20:12:18,131 - INFO - HorseUnifiedManagement - horse_unified_management:1064 - Loading details for horse ID: 4
+2025-05-21 20:12:18,960 - CRITICAL - GlobalExceptionHook - main:57 - Unhandled exception caught by global hook:
+Type: AttributeError
+Value: 'NoneType' object has no attribute 'currentWidget'
+Traceback:
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\views\horse\horse_unified_management.py", line 996, in edit_selected_horse
+    current_tab_widget = self.tab_widget.currentWidget()
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'currentWidget'
+Traceback (most recent call last):
+  File "C:\Projects\EDMS\views\horse\horse_unified_management.py", line 996, in edit_selected_horse
+    current_tab_widget = self.tab_widget.currentWidget()
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'currentWidget'
+2025-05-21 20:19:16,573 - INFO - HorseUnifiedManagement - horse_unified_management:1183 - User 'ADMIN' requested logout from menu.
+2025-05-21 20:19:16,573 - INFO - EDSIApplication - main:263 - User 'ADMIN' logging out from Horse Management.
+2025-05-21 20:19:16,575 - WARNING - HorseUnifiedManagement - horse_unified_management:134 - HorseUnifiedManagement closeEvent triggered. Event type: 19
+2025-05-21 20:19:16,576 - WARNING - EDSIApplication - main:196 - DIAGNOSTIC: HorseUnifiedManagement screen emitted 'closing' signal!
+2025-05-21 20:19:16,576 - WARNING - EDSIApplication - main:196 - DIAGNOSTIC: HorseUnifiedManagement screen emitted 'closing' signal!
+2025-05-21 20:19:16,576 - WARNING - HorseUnifiedManagement - horse_unified_management:139 - HorseUnifiedManagement has finished processing closeEvent.
+2025-05-21 20:19:16,585 - INFO - SplashScreen - splash_screen:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-21 20:19:16,587 - INFO - SplashScreen - splash_screen:138 - Splash screen UI setup complete.
+2025-05-21 20:19:16,627 - INFO - EDSIApplication - main:154 - Splash screen displayed.
+2025-05-21 20:19:17,985 - INFO - EDSIApplication - main:311 - Quit application requested.
+2025-05-21 20:19:17,992 - INFO - EDSIApplication - main:321 - EDSI Veterinary Management System event loop finished. Exit code: 0
+2025-05-21 20:19:17,993 - INFO - root - main:334 - Application exiting with code 0.
+2025-05-21 20:22:36,654 - INFO - root - main:125 - Logging configured (Console and File).
+2025-05-21 20:22:36,654 - INFO - EDSIApplication - main:82 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-21 20:22:36,656 - INFO - EDSIApplication - main:85 - Python version: 3.11.4 (tags/v3.11.4:d2340ef, Jun  7 2023, 05:45:37) [MSC v.1934 64 bit (AMD64)]
+2025-05-21 20:22:36,656 - INFO - EDSIApplication - main:86 - Qt version: 6.9.0
+2025-05-21 20:22:36,656 - INFO - EDSIApplication - main:134 - Initializing database...
+2025-05-21 20:22:36,656 - INFO - DatabaseManager - database_config:79 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-21 20:22:36,663 - INFO - DatabaseManager - database_config:85 - Database engine and session factory created successfully.
+2025-05-21 20:22:36,664 - INFO - DatabaseManager - database_config:149 - Models known by Base.metadata before create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-21 20:22:36,666 - INFO - DatabaseManager - database_config:154 - Database tables created (if they didn't exist).
+2025-05-21 20:22:36,668 - INFO - DatabaseManager - database_config:156 - Models known by Base.metadata after create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-21 20:22:36,669 - INFO - EDSIApplication - main:139 - Database initialized successfully.
+2025-05-21 20:22:36,669 - INFO - SplashScreen - splash_screen:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-21 20:22:36,673 - INFO - SplashScreen - splash_screen:138 - Splash screen UI setup complete.
+2025-05-21 20:22:36,711 - INFO - EDSIApplication - main:154 - Splash screen displayed.
+2025-05-21 20:22:36,711 - INFO - EDSIApplication - main:316 - Starting EDSI Veterinary Management System event loop (sys.excepthook is set)...
+2025-05-21 20:22:40,519 - INFO - EDSIApplication - main:157 - Login area clicked on splash screen.
+2025-05-21 20:22:52,520 - INFO - UserController - user_controller:95 - Password validated successfully for active user 'TM'.
+2025-05-21 20:22:52,521 - INFO - SmallLoginDialog - small_login_dialog:185 - Password validation successful for user 'TM'.
+2025-05-21 20:22:52,522 - INFO - SmallLoginDialog - small_login_dialog:189 - User 'TM' logged in successfully via small dialog.
+2025-05-21 20:22:52,522 - INFO - EDSIApplication - main:186 - User 'TM' logged in successfully.
+2025-05-21 20:22:52,536 - INFO - HorseUnifiedManagement - horse_unified_management:101 - HorseUnifiedManagement __init__ started for user: TM
+2025-05-21 20:22:52,536 - INFO - HorseUnifiedManagement - base_view:80 - BaseView __init__ for HorseUnifiedManagement: central_widget created.
+2025-05-21 20:22:52,537 - INFO - HorseUnifiedManagement - base_view:85 - BaseView __init__ for HorseUnifiedManagement: Calling overridden setup_ui().
+2025-05-21 20:22:52,747 - INFO - HorseUnifiedManagement - horse_unified_management:127 - HorseUnifiedManagement screen __init__ finished (initial data load deferred).
+2025-05-21 20:22:52,747 - INFO - EDSIApplication - main:220 - About to call self.horse_management_screen.show()
+2025-05-21 20:22:52,798 - INFO - HorseUnifiedManagement - horse_unified_management:132 - HorseUnifiedManagement showEvent triggered.
+2025-05-21 20:22:52,799 - WARNING - HorseUnifiedManagement - horse_unified_management:1196 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 20:22:52,800 - INFO - HorseUnifiedManagement - horse_unified_management:139 - HorseUnifiedManagement is now visible.
+2025-05-21 20:22:52,810 - INFO - EDSIApplication - main:222 - Horse Management Screen show() called.
+2025-05-21 20:22:52,857 - INFO - HorseUnifiedManagement - horse_unified_management:840 - load_initial_data called.
+2025-05-21 20:22:52,857 - INFO - HorseUnifiedManagement - horse_unified_management:860 - Loading horses (Status: active, Search: '')
+2025-05-21 20:22:52,871 - INFO - HorseUnifiedManagement - horse_unified_management:1103 - Loading details for horse ID: 4
+2025-05-21 20:22:52,879 - WARNING - HorseUnifiedManagement - horse_unified_management:1196 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 20:22:52,879 - WARNING - HorseUnifiedManagement - horse_unified_management:1196 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 20:23:01,333 - INFO - HorseUnifiedManagement - horse_unified_management:1103 - Loading details for horse ID: 1
+2025-05-21 20:23:01,334 - WARNING - HorseUnifiedManagement - horse_unified_management:1196 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 20:23:01,334 - WARNING - HorseUnifiedManagement - horse_unified_management:1196 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 20:23:03,219 - INFO - HorseUnifiedManagement - horse_unified_management:1103 - Loading details for horse ID: 4
+2025-05-21 20:23:03,220 - WARNING - HorseUnifiedManagement - horse_unified_management:1196 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 20:23:03,220 - WARNING - HorseUnifiedManagement - horse_unified_management:1196 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 20:23:08,266 - INFO - UserManagementScreen - user_management_screen:373 - UserManagementScreen __init__ started by user: TM
+2025-05-21 20:23:08,267 - INFO - UserManagementScreen - base_view:80 - BaseView __init__ for UserManagementScreen: central_widget created.
+2025-05-21 20:23:08,268 - INFO - UserManagementScreen - base_view:85 - BaseView __init__ for UserManagementScreen: Calling overridden setup_ui().
+2025-05-21 20:23:08,268 - CRITICAL - UserManagementScreen - user_management_screen:476 - ****** UserManagementScreen.setup_ui() (v1.10.7.2) ENTERED ******
+2025-05-21 20:23:08,268 - INFO - UserManagementScreen - user_management_screen:483 - UserManagementScreen.setup_ui: central_widget has no layout, creating new QVBoxLayout.
+2025-05-21 20:23:08,312 - INFO - UserManagementScreen - user_management_screen:574 - UserManagementScreen.setup_ui (v1.10.7.2) FINISHED.
+2025-05-21 20:23:08,323 - INFO - UserManagementScreen - user_management_screen:1052 - Loading users data...
+2025-05-21 20:23:08,325 - INFO - UserManagementScreen - user_management_screen:1076 - Loaded 2 users.
+2025-05-21 20:23:08,326 - INFO - UserManagementScreen - user_management_screen:1225 - User selected: ADMIN
+2025-05-21 20:23:08,329 - INFO - UserManagementScreen - user_management_screen:1087 - Loading master owners data...
+2025-05-21 20:23:08,330 - INFO - UserManagementScreen - user_management_screen:1127 - Loaded 4 master owners.
+2025-05-21 20:23:08,331 - INFO - UserManagementScreen - user_management_screen:1250 - Master owner selected: ID 4
+2025-05-21 20:23:08,334 - INFO - UserManagementScreen - user_management_screen:1137 - Loading charge codes data...
+2025-05-21 20:23:08,335 - INFO - UserManagementScreen - user_management_screen:1175 - Loaded 4 charge codes.
+2025-05-21 20:23:08,335 - INFO - UserManagementScreen - user_management_screen:1182 - Loading locations data...
+2025-05-21 20:23:08,337 - INFO - UserManagementScreen - user_management_screen:1213 - Loaded 3 locations.
+2025-05-21 20:23:08,337 - INFO - UserManagementScreen - user_management_screen:436 - UserManagementScreen initialized with Tabbed Interface (v1.10.7.2).
+2025-05-21 20:23:08,362 - INFO - EDSIApplication - main:260 - User Management Screen displayed.
+2025-05-21 20:23:15,644 - INFO - EDSIApplication - main:270 - Exiting Admin Screen. User: 'TM'. Returning to Horse Management.
+2025-05-21 20:23:15,644 - INFO - UserManagementScreen - user_management_screen:1929 - User Management screen closing.
+2025-05-21 20:23:15,657 - INFO - HorseUnifiedManagement - horse_unified_management:132 - HorseUnifiedManagement showEvent triggered.
+2025-05-21 20:23:15,658 - INFO - HorseUnifiedManagement - horse_unified_management:139 - HorseUnifiedManagement is now visible.
+2025-05-21 20:23:25,575 - INFO - HorseUnifiedManagement - horse_unified_management:1103 - Loading details for horse ID: 6
+2025-05-21 20:23:25,576 - WARNING - HorseUnifiedManagement - horse_unified_management:1196 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 20:23:25,577 - WARNING - HorseUnifiedManagement - horse_unified_management:1196 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 20:23:51,911 - INFO - HorseUnifiedManagement - horse_unified_management:1103 - Loading details for horse ID: 4
+2025-05-21 20:23:51,912 - WARNING - HorseUnifiedManagement - horse_unified_management:1196 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 20:23:51,912 - WARNING - HorseUnifiedManagement - horse_unified_management:1196 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 20:26:56,829 - INFO - HorseUnifiedManagement - horse_unified_management:1227 - User 'TM' requested logout from menu.
+2025-05-21 20:26:56,829 - INFO - EDSIApplication - main:263 - User 'TM' logging out from Horse Management.
+2025-05-21 20:26:56,829 - WARNING - HorseUnifiedManagement - horse_unified_management:142 - HorseUnifiedManagement closeEvent triggered. Event type: 19
+2025-05-21 20:26:56,829 - WARNING - EDSIApplication - main:196 - DIAGNOSTIC: HorseUnifiedManagement screen emitted 'closing' signal!
+2025-05-21 20:26:56,830 - WARNING - EDSIApplication - main:196 - DIAGNOSTIC: HorseUnifiedManagement screen emitted 'closing' signal!
+2025-05-21 20:26:56,830 - WARNING - HorseUnifiedManagement - horse_unified_management:147 - HorseUnifiedManagement has finished processing closeEvent.
+2025-05-21 20:26:56,837 - INFO - SplashScreen - splash_screen:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-21 20:26:56,839 - INFO - SplashScreen - splash_screen:138 - Splash screen UI setup complete.
+2025-05-21 20:26:56,880 - INFO - EDSIApplication - main:154 - Splash screen displayed.
+2025-05-21 20:26:58,797 - INFO - EDSIApplication - main:311 - Quit application requested.
+2025-05-21 20:26:58,807 - INFO - EDSIApplication - main:321 - EDSI Veterinary Management System event loop finished. Exit code: 0
+2025-05-21 20:26:58,808 - INFO - root - main:334 - Application exiting with code 0.
+2025-05-21 20:31:14,784 - INFO - root - main:125 - Logging configured (Console and File).
+2025-05-21 20:31:14,784 - INFO - EDSIApplication - main:82 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-21 20:31:14,785 - INFO - EDSIApplication - main:85 - Python version: 3.11.4 (tags/v3.11.4:d2340ef, Jun  7 2023, 05:45:37) [MSC v.1934 64 bit (AMD64)]
+2025-05-21 20:31:14,786 - INFO - EDSIApplication - main:86 - Qt version: 6.9.0
+2025-05-21 20:31:14,786 - INFO - EDSIApplication - main:134 - Initializing database...
+2025-05-21 20:31:14,786 - INFO - DatabaseManager - database_config:79 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-21 20:31:14,793 - INFO - DatabaseManager - database_config:85 - Database engine and session factory created successfully.
+2025-05-21 20:31:14,793 - INFO - DatabaseManager - database_config:149 - Models known by Base.metadata before create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-21 20:31:14,795 - INFO - DatabaseManager - database_config:154 - Database tables created (if they didn't exist).
+2025-05-21 20:31:14,796 - INFO - DatabaseManager - database_config:156 - Models known by Base.metadata after create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-21 20:31:14,796 - INFO - EDSIApplication - main:139 - Database initialized successfully.
+2025-05-21 20:31:14,797 - INFO - SplashScreen - splash_screen:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-21 20:31:14,801 - INFO - SplashScreen - splash_screen:138 - Splash screen UI setup complete.
+2025-05-21 20:31:14,840 - INFO - EDSIApplication - main:154 - Splash screen displayed.
+2025-05-21 20:31:14,840 - INFO - EDSIApplication - main:316 - Starting EDSI Veterinary Management System event loop (sys.excepthook is set)...
+2025-05-21 20:31:16,824 - INFO - EDSIApplication - main:157 - Login area clicked on splash screen.
+2025-05-21 20:31:23,919 - INFO - UserController - user_controller:95 - Password validated successfully for active user 'TM'.
+2025-05-21 20:31:23,920 - INFO - SmallLoginDialog - small_login_dialog:185 - Password validation successful for user 'TM'.
+2025-05-21 20:31:23,922 - INFO - SmallLoginDialog - small_login_dialog:189 - User 'TM' logged in successfully via small dialog.
+2025-05-21 20:31:23,923 - INFO - EDSIApplication - main:186 - User 'TM' logged in successfully.
+2025-05-21 20:31:23,932 - INFO - HorseUnifiedManagement - horse_unified_management:104 - HorseUnifiedManagement __init__ started for user: TM
+2025-05-21 20:31:23,933 - INFO - HorseUnifiedManagement - base_view:80 - BaseView __init__ for HorseUnifiedManagement: central_widget created.
+2025-05-21 20:31:23,933 - INFO - HorseUnifiedManagement - base_view:85 - BaseView __init__ for HorseUnifiedManagement: Calling overridden setup_ui().
+2025-05-21 20:31:24,155 - INFO - HorseUnifiedManagement - horse_unified_management:130 - HorseUnifiedManagement screen __init__ finished (initial data load deferred).
+2025-05-21 20:31:24,155 - INFO - EDSIApplication - main:220 - About to call self.horse_management_screen.show()
+2025-05-21 20:31:24,211 - INFO - HorseUnifiedManagement - horse_unified_management:135 - HorseUnifiedManagement showEvent triggered.
+2025-05-21 20:31:24,211 - WARNING - HorseUnifiedManagement - horse_unified_management:1214 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 20:31:24,212 - INFO - HorseUnifiedManagement - horse_unified_management:142 - HorseUnifiedManagement is now visible.
+2025-05-21 20:31:24,224 - INFO - EDSIApplication - main:222 - Horse Management Screen show() called.
+2025-05-21 20:43:18,290 - INFO - root - main:125 - Logging configured (Console and File).
+2025-05-21 20:43:18,290 - INFO - EDSIApplication - main:82 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-21 20:43:18,291 - INFO - EDSIApplication - main:85 - Python version: 3.11.4 (tags/v3.11.4:d2340ef, Jun  7 2023, 05:45:37) [MSC v.1934 64 bit (AMD64)]
+2025-05-21 20:43:18,291 - INFO - EDSIApplication - main:86 - Qt version: 6.9.0
+2025-05-21 20:43:18,291 - INFO - EDSIApplication - main:134 - Initializing database...
+2025-05-21 20:43:18,291 - INFO - DatabaseManager - database_config:79 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-21 20:43:18,299 - INFO - DatabaseManager - database_config:85 - Database engine and session factory created successfully.
+2025-05-21 20:43:18,299 - INFO - DatabaseManager - database_config:149 - Models known by Base.metadata before create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-21 20:43:18,301 - INFO - DatabaseManager - database_config:154 - Database tables created (if they didn't exist).
+2025-05-21 20:43:18,301 - INFO - DatabaseManager - database_config:156 - Models known by Base.metadata after create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-21 20:43:18,302 - INFO - EDSIApplication - main:139 - Database initialized successfully.
+2025-05-21 20:43:18,302 - INFO - SplashScreen - splash_screen:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-21 20:43:18,307 - INFO - SplashScreen - splash_screen:138 - Splash screen UI setup complete.
+2025-05-21 20:43:18,343 - INFO - EDSIApplication - main:154 - Splash screen displayed.
+2025-05-21 20:43:18,343 - INFO - EDSIApplication - main:316 - Starting EDSI Veterinary Management System event loop (sys.excepthook is set)...
+2025-05-21 20:43:20,007 - INFO - EDSIApplication - main:157 - Login area clicked on splash screen.
+2025-05-21 20:43:29,445 - INFO - UserController - user_controller:95 - Password validated successfully for active user 'ADMIN'.
+2025-05-21 20:43:29,446 - INFO - SmallLoginDialog - small_login_dialog:185 - Password validation successful for user 'ADMIN'.
+2025-05-21 20:43:29,447 - INFO - SmallLoginDialog - small_login_dialog:189 - User 'ADMIN' logged in successfully via small dialog.
+2025-05-21 20:43:29,447 - INFO - EDSIApplication - main:186 - User 'ADMIN' logged in successfully.
+2025-05-21 20:43:29,459 - INFO - HorseUnifiedManagement - horse_unified_management:104 - HorseUnifiedManagement __init__ started for user: ADMIN
+2025-05-21 20:43:29,459 - INFO - HorseUnifiedManagement - base_view:80 - BaseView __init__ for HorseUnifiedManagement: central_widget created.
+2025-05-21 20:43:29,459 - INFO - HorseUnifiedManagement - base_view:85 - BaseView __init__ for HorseUnifiedManagement: Calling overridden setup_ui().
+2025-05-21 20:43:29,666 - INFO - HorseUnifiedManagement - horse_unified_management:130 - HorseUnifiedManagement screen __init__ finished (initial data load deferred).
+2025-05-21 20:43:29,667 - INFO - EDSIApplication - main:220 - About to call self.horse_management_screen.show()
+2025-05-21 20:43:29,720 - INFO - HorseUnifiedManagement - horse_unified_management:135 - HorseUnifiedManagement showEvent triggered.
+2025-05-21 20:43:29,720 - WARNING - HorseUnifiedManagement - horse_unified_management:1214 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 20:43:29,721 - INFO - HorseUnifiedManagement - horse_unified_management:142 - HorseUnifiedManagement is now visible.
+2025-05-21 20:43:29,733 - INFO - EDSIApplication - main:222 - Horse Management Screen show() called.
+2025-05-21 20:53:59,858 - INFO - root - main:125 - Logging configured (Console and File).
+2025-05-21 20:53:59,858 - INFO - EDSIApplication - main:82 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-21 20:53:59,859 - INFO - EDSIApplication - main:85 - Python version: 3.11.4 (tags/v3.11.4:d2340ef, Jun  7 2023, 05:45:37) [MSC v.1934 64 bit (AMD64)]
+2025-05-21 20:53:59,859 - INFO - EDSIApplication - main:86 - Qt version: 6.9.0
+2025-05-21 20:53:59,859 - INFO - EDSIApplication - main:134 - Initializing database...
+2025-05-21 20:53:59,859 - INFO - DatabaseManager - database_config:79 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-21 20:53:59,867 - INFO - DatabaseManager - database_config:85 - Database engine and session factory created successfully.
+2025-05-21 20:53:59,867 - INFO - DatabaseManager - database_config:149 - Models known by Base.metadata before create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-21 20:53:59,869 - INFO - DatabaseManager - database_config:154 - Database tables created (if they didn't exist).
+2025-05-21 20:53:59,870 - INFO - DatabaseManager - database_config:156 - Models known by Base.metadata after create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-21 20:53:59,871 - INFO - EDSIApplication - main:139 - Database initialized successfully.
+2025-05-21 20:53:59,871 - INFO - SplashScreen - splash_screen:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-21 20:53:59,875 - INFO - SplashScreen - splash_screen:138 - Splash screen UI setup complete.
+2025-05-21 20:53:59,913 - INFO - EDSIApplication - main:154 - Splash screen displayed.
+2025-05-21 20:53:59,914 - INFO - EDSIApplication - main:316 - Starting EDSI Veterinary Management System event loop (sys.excepthook is set)...
+2025-05-21 20:54:02,053 - INFO - EDSIApplication - main:157 - Login area clicked on splash screen.
+2025-05-21 20:54:20,989 - INFO - UserController - user_controller:95 - Password validated successfully for active user 'ADMIN'.
+2025-05-21 20:54:20,990 - INFO - SmallLoginDialog - small_login_dialog:185 - Password validation successful for user 'ADMIN'.
+2025-05-21 20:54:20,991 - INFO - SmallLoginDialog - small_login_dialog:189 - User 'ADMIN' logged in successfully via small dialog.
+2025-05-21 20:54:20,991 - INFO - EDSIApplication - main:186 - User 'ADMIN' logged in successfully.
+2025-05-21 20:54:21,003 - INFO - HorseUnifiedManagement - horse_unified_management:108 - HorseUnifiedManagement __init__ started for user: ADMIN
+2025-05-21 20:54:21,003 - INFO - HorseUnifiedManagement - base_view:80 - BaseView __init__ for HorseUnifiedManagement: central_widget created.
+2025-05-21 20:54:21,004 - INFO - HorseUnifiedManagement - base_view:85 - BaseView __init__ for HorseUnifiedManagement: Calling overridden setup_ui().
+2025-05-21 20:54:21,233 - INFO - HorseUnifiedManagement - horse_unified_management:134 - HorseUnifiedManagement screen __init__ finished (initial data load deferred).
+2025-05-21 20:54:21,233 - INFO - EDSIApplication - main:220 - About to call self.horse_management_screen.show()
+2025-05-21 20:54:21,287 - INFO - HorseUnifiedManagement - horse_unified_management:139 - HorseUnifiedManagement showEvent triggered.
+2025-05-21 20:54:21,287 - WARNING - HorseUnifiedManagement - horse_unified_management:1218 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 20:54:21,288 - INFO - HorseUnifiedManagement - horse_unified_management:146 - HorseUnifiedManagement is now visible.
+2025-05-21 20:54:21,299 - INFO - EDSIApplication - main:222 - Horse Management Screen show() called.
+2025-05-21 20:59:04,938 - INFO - root - main:125 - Logging configured (Console and File).
+2025-05-21 20:59:04,939 - INFO - EDSIApplication - main:82 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-21 20:59:04,939 - INFO - EDSIApplication - main:85 - Python version: 3.11.4 (tags/v3.11.4:d2340ef, Jun  7 2023, 05:45:37) [MSC v.1934 64 bit (AMD64)]
+2025-05-21 20:59:04,939 - INFO - EDSIApplication - main:86 - Qt version: 6.9.0
+2025-05-21 20:59:04,939 - INFO - EDSIApplication - main:134 - Initializing database...
+2025-05-21 20:59:04,939 - INFO - DatabaseManager - database_config:79 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-21 20:59:04,946 - INFO - DatabaseManager - database_config:85 - Database engine and session factory created successfully.
+2025-05-21 20:59:04,947 - INFO - DatabaseManager - database_config:149 - Models known by Base.metadata before create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-21 20:59:04,949 - INFO - DatabaseManager - database_config:154 - Database tables created (if they didn't exist).
+2025-05-21 20:59:04,950 - INFO - DatabaseManager - database_config:156 - Models known by Base.metadata after create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-21 20:59:04,950 - INFO - EDSIApplication - main:139 - Database initialized successfully.
+2025-05-21 20:59:04,951 - INFO - SplashScreen - splash_screen:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-21 20:59:04,954 - INFO - SplashScreen - splash_screen:138 - Splash screen UI setup complete.
+2025-05-21 20:59:04,991 - INFO - EDSIApplication - main:154 - Splash screen displayed.
+2025-05-21 20:59:04,992 - INFO - EDSIApplication - main:316 - Starting EDSI Veterinary Management System event loop (sys.excepthook is set)...
+2025-05-21 20:59:06,706 - INFO - EDSIApplication - main:157 - Login area clicked on splash screen.
+2025-05-21 20:59:17,175 - INFO - UserController - user_controller:95 - Password validated successfully for active user 'ADMIN'.
+2025-05-21 20:59:17,175 - INFO - SmallLoginDialog - small_login_dialog:185 - Password validation successful for user 'ADMIN'.
+2025-05-21 20:59:17,176 - INFO - SmallLoginDialog - small_login_dialog:189 - User 'ADMIN' logged in successfully via small dialog.
+2025-05-21 20:59:17,177 - INFO - EDSIApplication - main:186 - User 'ADMIN' logged in successfully.
+2025-05-21 20:59:17,191 - INFO - HorseUnifiedManagement - horse_unified_management:111 - HorseUnifiedManagement __init__ started for user: ADMIN
+2025-05-21 20:59:17,191 - INFO - HorseUnifiedManagement - base_view:80 - BaseView __init__ for HorseUnifiedManagement: central_widget created.
+2025-05-21 20:59:17,192 - INFO - HorseUnifiedManagement - base_view:85 - BaseView __init__ for HorseUnifiedManagement: Calling overridden setup_ui().
+2025-05-21 20:59:17,402 - INFO - HorseUnifiedManagement - horse_unified_management:137 - HorseUnifiedManagement screen __init__ finished (initial data load deferred).
+2025-05-21 20:59:17,403 - INFO - EDSIApplication - main:220 - About to call self.horse_management_screen.show()
+2025-05-21 20:59:17,459 - INFO - HorseUnifiedManagement - horse_unified_management:142 - HorseUnifiedManagement showEvent triggered.
+2025-05-21 20:59:17,459 - WARNING - HorseUnifiedManagement - horse_unified_management:1234 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 20:59:17,459 - INFO - HorseUnifiedManagement - horse_unified_management:149 - HorseUnifiedManagement is now visible.
+2025-05-21 20:59:17,471 - INFO - EDSIApplication - main:222 - Horse Management Screen show() called.
+2025-05-21 20:59:17,505 - INFO - HorseUnifiedManagement - horse_unified_management:852 - load_initial_data called.
+2025-05-21 20:59:17,505 - INFO - HorseUnifiedManagement - horse_unified_management:872 - Loading horses (Status: active, Search: '')
+2025-05-21 20:59:17,521 - INFO - HorseUnifiedManagement - horse_unified_management:1118 - Loading details for horse ID: 4
+2025-05-21 20:59:17,529 - WARNING - HorseUnifiedManagement - horse_unified_management:1234 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 20:59:17,529 - WARNING - HorseUnifiedManagement - horse_unified_management:1234 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 20:59:27,415 - INFO - HorseUnifiedManagement - horse_unified_management:1118 - Loading details for horse ID: 1
+2025-05-21 20:59:27,416 - WARNING - HorseUnifiedManagement - horse_unified_management:1234 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 20:59:27,417 - WARNING - HorseUnifiedManagement - horse_unified_management:1234 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 20:59:41,663 - INFO - HorseUnifiedManagement - horse_unified_management:1118 - Loading details for horse ID: 4
+2025-05-21 20:59:41,664 - WARNING - HorseUnifiedManagement - horse_unified_management:1234 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 20:59:41,665 - WARNING - HorseUnifiedManagement - horse_unified_management:1234 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:05:27,390 - INFO - HorseUnifiedManagement - horse_unified_management:1265 - User 'ADMIN' requested logout from menu.
+2025-05-21 21:05:27,390 - INFO - EDSIApplication - main:263 - User 'ADMIN' logging out from Horse Management.
+2025-05-21 21:05:27,391 - WARNING - HorseUnifiedManagement - horse_unified_management:152 - HorseUnifiedManagement closeEvent triggered. Event type: 19
+2025-05-21 21:05:27,391 - WARNING - EDSIApplication - main:196 - DIAGNOSTIC: HorseUnifiedManagement screen emitted 'closing' signal!
+2025-05-21 21:05:27,391 - WARNING - EDSIApplication - main:196 - DIAGNOSTIC: HorseUnifiedManagement screen emitted 'closing' signal!
+2025-05-21 21:05:27,391 - WARNING - HorseUnifiedManagement - horse_unified_management:157 - HorseUnifiedManagement has finished processing closeEvent.
+2025-05-21 21:05:27,399 - INFO - SplashScreen - splash_screen:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-21 21:05:27,401 - INFO - SplashScreen - splash_screen:138 - Splash screen UI setup complete.
+2025-05-21 21:05:27,448 - INFO - EDSIApplication - main:154 - Splash screen displayed.
+2025-05-21 21:05:29,241 - INFO - EDSIApplication - main:311 - Quit application requested.
+2025-05-21 21:05:29,250 - INFO - EDSIApplication - main:321 - EDSI Veterinary Management System event loop finished. Exit code: 0
+2025-05-21 21:05:29,251 - INFO - root - main:334 - Application exiting with code 0.
+2025-05-21 21:06:46,835 - INFO - root - main:125 - Logging configured (Console and File).
+2025-05-21 21:06:46,835 - INFO - EDSIApplication - main:82 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-21 21:06:46,836 - INFO - EDSIApplication - main:85 - Python version: 3.11.4 (tags/v3.11.4:d2340ef, Jun  7 2023, 05:45:37) [MSC v.1934 64 bit (AMD64)]
+2025-05-21 21:06:46,836 - INFO - EDSIApplication - main:86 - Qt version: 6.9.0
+2025-05-21 21:06:46,836 - INFO - EDSIApplication - main:134 - Initializing database...
+2025-05-21 21:06:46,837 - INFO - DatabaseManager - database_config:79 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-21 21:06:46,845 - INFO - DatabaseManager - database_config:85 - Database engine and session factory created successfully.
+2025-05-21 21:06:46,845 - INFO - DatabaseManager - database_config:149 - Models known by Base.metadata before create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-21 21:06:46,848 - INFO - DatabaseManager - database_config:154 - Database tables created (if they didn't exist).
+2025-05-21 21:06:46,848 - INFO - DatabaseManager - database_config:156 - Models known by Base.metadata after create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-21 21:06:46,849 - INFO - EDSIApplication - main:139 - Database initialized successfully.
+2025-05-21 21:06:46,849 - INFO - SplashScreen - splash_screen:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-21 21:06:46,853 - INFO - SplashScreen - splash_screen:138 - Splash screen UI setup complete.
+2025-05-21 21:06:46,892 - INFO - EDSIApplication - main:154 - Splash screen displayed.
+2025-05-21 21:06:46,893 - INFO - EDSIApplication - main:316 - Starting EDSI Veterinary Management System event loop (sys.excepthook is set)...
+2025-05-21 21:06:58,997 - INFO - EDSIApplication - main:157 - Login area clicked on splash screen.
+2025-05-21 21:07:11,462 - INFO - UserController - user_controller:95 - Password validated successfully for active user 'ADMIN'.
+2025-05-21 21:07:11,463 - INFO - SmallLoginDialog - small_login_dialog:185 - Password validation successful for user 'ADMIN'.
+2025-05-21 21:07:11,464 - INFO - SmallLoginDialog - small_login_dialog:189 - User 'ADMIN' logged in successfully via small dialog.
+2025-05-21 21:07:11,464 - INFO - EDSIApplication - main:186 - User 'ADMIN' logged in successfully.
+2025-05-21 21:07:11,474 - INFO - HorseUnifiedManagement - horse_unified_management:114 - HorseUnifiedManagement __init__ started for user: ADMIN
+2025-05-21 21:07:11,474 - INFO - HorseUnifiedManagement - base_view:80 - BaseView __init__ for HorseUnifiedManagement: central_widget created.
+2025-05-21 21:07:11,474 - INFO - HorseUnifiedManagement - base_view:85 - BaseView __init__ for HorseUnifiedManagement: Calling overridden setup_ui().
+2025-05-21 21:07:11,702 - INFO - HorseUnifiedManagement - horse_unified_management:140 - HorseUnifiedManagement screen __init__ finished (initial data load deferred).
+2025-05-21 21:07:11,702 - INFO - EDSIApplication - main:220 - About to call self.horse_management_screen.show()
+2025-05-21 21:07:11,765 - INFO - HorseUnifiedManagement - horse_unified_management:145 - HorseUnifiedManagement showEvent triggered.
+2025-05-21 21:07:11,766 - WARNING - HorseUnifiedManagement - horse_unified_management:1240 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:07:11,766 - INFO - HorseUnifiedManagement - horse_unified_management:152 - HorseUnifiedManagement is now visible.
+2025-05-21 21:07:11,775 - INFO - EDSIApplication - main:222 - Horse Management Screen show() called.
+2025-05-21 21:07:11,801 - INFO - HorseUnifiedManagement - horse_unified_management:858 - load_initial_data called.
+2025-05-21 21:07:11,801 - INFO - HorseUnifiedManagement - horse_unified_management:878 - Loading horses (Status: active, Search: '')
+2025-05-21 21:07:11,815 - INFO - HorseUnifiedManagement - horse_unified_management:1124 - Loading details for horse ID: 4
+2025-05-21 21:07:11,825 - WARNING - HorseUnifiedManagement - horse_unified_management:1240 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:07:11,825 - WARNING - HorseUnifiedManagement - horse_unified_management:1240 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:07:15,099 - INFO - HorseUnifiedManagement - horse_unified_management:1124 - Loading details for horse ID: 1
+2025-05-21 21:07:15,102 - WARNING - HorseUnifiedManagement - horse_unified_management:1240 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:07:15,103 - WARNING - HorseUnifiedManagement - horse_unified_management:1240 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:07:16,344 - INFO - HorseUnifiedManagement - horse_unified_management:1124 - Loading details for horse ID: 7
+2025-05-21 21:07:16,346 - WARNING - HorseUnifiedManagement - horse_unified_management:1240 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:07:16,346 - WARNING - HorseUnifiedManagement - horse_unified_management:1240 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:07:17,546 - INFO - HorseUnifiedManagement - horse_unified_management:1124 - Loading details for horse ID: 2
+2025-05-21 21:07:17,547 - WARNING - HorseUnifiedManagement - horse_unified_management:1240 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:07:17,547 - WARNING - HorseUnifiedManagement - horse_unified_management:1240 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:12:22,415 - INFO - HorseUnifiedManagement - horse_unified_management:1271 - User 'ADMIN' requested logout from menu.
+2025-05-21 21:12:22,416 - INFO - EDSIApplication - main:263 - User 'ADMIN' logging out from Horse Management.
+2025-05-21 21:12:22,417 - WARNING - HorseUnifiedManagement - horse_unified_management:155 - HorseUnifiedManagement closeEvent triggered. Event type: 19
+2025-05-21 21:12:22,418 - WARNING - EDSIApplication - main:196 - DIAGNOSTIC: HorseUnifiedManagement screen emitted 'closing' signal!
+2025-05-21 21:12:22,418 - WARNING - EDSIApplication - main:196 - DIAGNOSTIC: HorseUnifiedManagement screen emitted 'closing' signal!
+2025-05-21 21:12:22,418 - WARNING - HorseUnifiedManagement - horse_unified_management:160 - HorseUnifiedManagement has finished processing closeEvent.
+2025-05-21 21:12:22,439 - INFO - SplashScreen - splash_screen:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-21 21:12:22,443 - INFO - SplashScreen - splash_screen:138 - Splash screen UI setup complete.
+2025-05-21 21:12:22,474 - INFO - EDSIApplication - main:154 - Splash screen displayed.
+2025-05-21 21:12:23,984 - INFO - EDSIApplication - main:311 - Quit application requested.
+2025-05-21 21:12:24,004 - INFO - EDSIApplication - main:321 - EDSI Veterinary Management System event loop finished. Exit code: 0
+2025-05-21 21:12:24,005 - INFO - root - main:334 - Application exiting with code 0.
+2025-05-21 21:12:34,577 - INFO - root - main:125 - Logging configured (Console and File).
+2025-05-21 21:12:34,577 - INFO - EDSIApplication - main:82 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-21 21:12:34,578 - INFO - EDSIApplication - main:85 - Python version: 3.11.4 (tags/v3.11.4:d2340ef, Jun  7 2023, 05:45:37) [MSC v.1934 64 bit (AMD64)]
+2025-05-21 21:12:34,578 - INFO - EDSIApplication - main:86 - Qt version: 6.9.0
+2025-05-21 21:12:34,578 - INFO - EDSIApplication - main:134 - Initializing database...
+2025-05-21 21:12:34,578 - INFO - DatabaseManager - database_config:79 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-21 21:12:34,585 - INFO - DatabaseManager - database_config:85 - Database engine and session factory created successfully.
+2025-05-21 21:12:34,585 - INFO - DatabaseManager - database_config:149 - Models known by Base.metadata before create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-21 21:12:34,588 - INFO - DatabaseManager - database_config:154 - Database tables created (if they didn't exist).
+2025-05-21 21:12:34,589 - INFO - DatabaseManager - database_config:156 - Models known by Base.metadata after create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-21 21:12:34,589 - INFO - EDSIApplication - main:139 - Database initialized successfully.
+2025-05-21 21:12:34,590 - INFO - SplashScreen - splash_screen:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-21 21:12:34,594 - INFO - SplashScreen - splash_screen:138 - Splash screen UI setup complete.
+2025-05-21 21:12:34,630 - INFO - EDSIApplication - main:154 - Splash screen displayed.
+2025-05-21 21:12:34,631 - INFO - EDSIApplication - main:316 - Starting EDSI Veterinary Management System event loop (sys.excepthook is set)...
+2025-05-21 21:12:37,034 - INFO - EDSIApplication - main:157 - Login area clicked on splash screen.
+2025-05-21 21:12:50,255 - INFO - UserController - user_controller:95 - Password validated successfully for active user 'ADMIN'.
+2025-05-21 21:12:50,256 - INFO - SmallLoginDialog - small_login_dialog:185 - Password validation successful for user 'ADMIN'.
+2025-05-21 21:12:50,257 - INFO - SmallLoginDialog - small_login_dialog:189 - User 'ADMIN' logged in successfully via small dialog.
+2025-05-21 21:12:50,257 - INFO - EDSIApplication - main:186 - User 'ADMIN' logged in successfully.
+2025-05-21 21:12:50,266 - INFO - HorseUnifiedManagement - horse_unified_management:117 - HorseUnifiedManagement __init__ started for user: ADMIN
+2025-05-21 21:12:50,267 - INFO - HorseUnifiedManagement - base_view:80 - BaseView __init__ for HorseUnifiedManagement: central_widget created.
+2025-05-21 21:12:50,267 - INFO - HorseUnifiedManagement - base_view:85 - BaseView __init__ for HorseUnifiedManagement: Calling overridden setup_ui().
+2025-05-21 21:12:50,486 - INFO - HorseUnifiedManagement - horse_unified_management:143 - HorseUnifiedManagement screen __init__ finished (initial data load deferred).
+2025-05-21 21:12:50,486 - INFO - EDSIApplication - main:220 - About to call self.horse_management_screen.show()
+2025-05-21 21:12:50,536 - INFO - HorseUnifiedManagement - horse_unified_management:148 - HorseUnifiedManagement showEvent triggered.
+2025-05-21 21:12:50,536 - WARNING - HorseUnifiedManagement - horse_unified_management:1247 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:12:50,537 - INFO - HorseUnifiedManagement - horse_unified_management:155 - HorseUnifiedManagement is now visible.
+2025-05-21 21:12:50,547 - INFO - EDSIApplication - main:222 - Horse Management Screen show() called.
+2025-05-21 21:12:50,582 - INFO - HorseUnifiedManagement - horse_unified_management:865 - load_initial_data called.
+2025-05-21 21:12:50,583 - INFO - HorseUnifiedManagement - horse_unified_management:885 - Loading horses (Status: active, Search: '')
+2025-05-21 21:12:50,596 - INFO - HorseUnifiedManagement - horse_unified_management:1131 - Loading details for horse ID: 4
+2025-05-21 21:12:50,604 - WARNING - HorseUnifiedManagement - horse_unified_management:1247 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:12:50,604 - WARNING - HorseUnifiedManagement - horse_unified_management:1247 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:12:54,485 - INFO - HorseUnifiedManagement - horse_unified_management:1131 - Loading details for horse ID: 1
+2025-05-21 21:12:54,486 - WARNING - HorseUnifiedManagement - horse_unified_management:1247 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:12:54,487 - WARNING - HorseUnifiedManagement - horse_unified_management:1247 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:13:08,786 - INFO - HorseUnifiedManagement - horse_unified_management:1131 - Loading details for horse ID: 7
+2025-05-21 21:13:08,787 - WARNING - HorseUnifiedManagement - horse_unified_management:1247 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:13:08,787 - WARNING - HorseUnifiedManagement - horse_unified_management:1247 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:24:25,031 - INFO - HorseUnifiedManagement - horse_unified_management:1278 - User 'ADMIN' requested logout from menu.
+2025-05-21 21:24:25,031 - INFO - EDSIApplication - main:263 - User 'ADMIN' logging out from Horse Management.
+2025-05-21 21:24:25,033 - WARNING - HorseUnifiedManagement - horse_unified_management:158 - HorseUnifiedManagement closeEvent triggered. Event type: 19
+2025-05-21 21:24:25,034 - WARNING - EDSIApplication - main:196 - DIAGNOSTIC: HorseUnifiedManagement screen emitted 'closing' signal!
+2025-05-21 21:24:25,034 - WARNING - EDSIApplication - main:196 - DIAGNOSTIC: HorseUnifiedManagement screen emitted 'closing' signal!
+2025-05-21 21:24:25,035 - WARNING - HorseUnifiedManagement - horse_unified_management:163 - HorseUnifiedManagement has finished processing closeEvent.
+2025-05-21 21:24:25,053 - INFO - SplashScreen - splash_screen:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-21 21:24:25,056 - INFO - SplashScreen - splash_screen:138 - Splash screen UI setup complete.
+2025-05-21 21:24:25,087 - INFO - EDSIApplication - main:154 - Splash screen displayed.
+2025-05-21 21:24:26,666 - INFO - EDSIApplication - main:311 - Quit application requested.
+2025-05-21 21:24:26,688 - INFO - EDSIApplication - main:321 - EDSI Veterinary Management System event loop finished. Exit code: 0
+2025-05-21 21:24:26,690 - INFO - root - main:334 - Application exiting with code 0.
+2025-05-21 21:24:33,789 - INFO - root - main:125 - Logging configured (Console and File).
+2025-05-21 21:24:33,789 - INFO - EDSIApplication - main:82 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-21 21:24:33,790 - INFO - EDSIApplication - main:85 - Python version: 3.11.4 (tags/v3.11.4:d2340ef, Jun  7 2023, 05:45:37) [MSC v.1934 64 bit (AMD64)]
+2025-05-21 21:24:33,790 - INFO - EDSIApplication - main:86 - Qt version: 6.9.0
+2025-05-21 21:24:33,790 - INFO - EDSIApplication - main:134 - Initializing database...
+2025-05-21 21:24:33,790 - INFO - DatabaseManager - database_config:79 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-21 21:24:33,797 - INFO - DatabaseManager - database_config:85 - Database engine and session factory created successfully.
+2025-05-21 21:24:33,798 - INFO - DatabaseManager - database_config:149 - Models known by Base.metadata before create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-21 21:24:33,800 - INFO - DatabaseManager - database_config:154 - Database tables created (if they didn't exist).
+2025-05-21 21:24:33,800 - INFO - DatabaseManager - database_config:156 - Models known by Base.metadata after create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-21 21:24:33,801 - INFO - EDSIApplication - main:139 - Database initialized successfully.
+2025-05-21 21:24:33,801 - INFO - SplashScreen - splash_screen:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-21 21:24:33,806 - INFO - SplashScreen - splash_screen:138 - Splash screen UI setup complete.
+2025-05-21 21:24:33,842 - INFO - EDSIApplication - main:154 - Splash screen displayed.
+2025-05-21 21:24:33,843 - INFO - EDSIApplication - main:316 - Starting EDSI Veterinary Management System event loop (sys.excepthook is set)...
+2025-05-21 21:24:37,626 - INFO - EDSIApplication - main:157 - Login area clicked on splash screen.
+2025-05-21 21:24:47,816 - INFO - UserController - user_controller:95 - Password validated successfully for active user 'ADMIN'.
+2025-05-21 21:24:47,817 - INFO - SmallLoginDialog - small_login_dialog:185 - Password validation successful for user 'ADMIN'.
+2025-05-21 21:24:47,818 - INFO - SmallLoginDialog - small_login_dialog:189 - User 'ADMIN' logged in successfully via small dialog.
+2025-05-21 21:24:47,818 - INFO - EDSIApplication - main:186 - User 'ADMIN' logged in successfully.
+2025-05-21 21:24:47,835 - INFO - HorseUnifiedManagement - horse_unified_management:121 - HorseUnifiedManagement __init__ started for user: ADMIN
+2025-05-21 21:24:47,835 - INFO - HorseUnifiedManagement - base_view:80 - BaseView __init__ for HorseUnifiedManagement: central_widget created.
+2025-05-21 21:24:47,836 - INFO - HorseUnifiedManagement - base_view:85 - BaseView __init__ for HorseUnifiedManagement: Calling overridden setup_ui().
+2025-05-21 21:24:48,055 - INFO - HorseUnifiedManagement - horse_unified_management:147 - HorseUnifiedManagement screen __init__ finished (initial data load deferred).
+2025-05-21 21:24:48,055 - INFO - EDSIApplication - main:220 - About to call self.horse_management_screen.show()
+2025-05-21 21:24:48,109 - INFO - HorseUnifiedManagement - horse_unified_management:152 - HorseUnifiedManagement showEvent triggered.
+2025-05-21 21:24:48,109 - WARNING - HorseUnifiedManagement - horse_unified_management:1265 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:24:48,110 - INFO - HorseUnifiedManagement - horse_unified_management:159 - HorseUnifiedManagement is now visible.
+2025-05-21 21:24:48,124 - INFO - EDSIApplication - main:222 - Horse Management Screen show() called.
+2025-05-21 21:25:00,075 - INFO - root - main:125 - Logging configured (Console and File).
+2025-05-21 21:25:00,075 - INFO - EDSIApplication - main:82 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-21 21:25:00,076 - INFO - EDSIApplication - main:85 - Python version: 3.11.4 (tags/v3.11.4:d2340ef, Jun  7 2023, 05:45:37) [MSC v.1934 64 bit (AMD64)]
+2025-05-21 21:25:00,077 - INFO - EDSIApplication - main:86 - Qt version: 6.9.0
+2025-05-21 21:25:00,077 - INFO - EDSIApplication - main:134 - Initializing database...
+2025-05-21 21:25:00,077 - INFO - DatabaseManager - database_config:79 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-21 21:25:00,085 - INFO - DatabaseManager - database_config:85 - Database engine and session factory created successfully.
+2025-05-21 21:25:00,085 - INFO - DatabaseManager - database_config:149 - Models known by Base.metadata before create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-21 21:25:00,088 - INFO - DatabaseManager - database_config:154 - Database tables created (if they didn't exist).
+2025-05-21 21:25:00,088 - INFO - DatabaseManager - database_config:156 - Models known by Base.metadata after create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-21 21:25:00,089 - INFO - EDSIApplication - main:139 - Database initialized successfully.
+2025-05-21 21:25:00,089 - INFO - SplashScreen - splash_screen:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-21 21:25:00,094 - INFO - SplashScreen - splash_screen:138 - Splash screen UI setup complete.
+2025-05-21 21:25:00,137 - INFO - EDSIApplication - main:154 - Splash screen displayed.
+2025-05-21 21:25:00,138 - INFO - EDSIApplication - main:316 - Starting EDSI Veterinary Management System event loop (sys.excepthook is set)...
+2025-05-21 21:25:02,229 - INFO - EDSIApplication - main:157 - Login area clicked on splash screen.
+2025-05-21 21:25:12,363 - INFO - UserController - user_controller:95 - Password validated successfully for active user 'ADMIN'.
+2025-05-21 21:25:12,363 - INFO - SmallLoginDialog - small_login_dialog:185 - Password validation successful for user 'ADMIN'.
+2025-05-21 21:25:12,364 - INFO - SmallLoginDialog - small_login_dialog:189 - User 'ADMIN' logged in successfully via small dialog.
+2025-05-21 21:25:12,364 - INFO - EDSIApplication - main:186 - User 'ADMIN' logged in successfully.
+2025-05-21 21:25:12,374 - INFO - HorseUnifiedManagement - horse_unified_management:121 - HorseUnifiedManagement __init__ started for user: ADMIN
+2025-05-21 21:25:12,375 - INFO - HorseUnifiedManagement - base_view:80 - BaseView __init__ for HorseUnifiedManagement: central_widget created.
+2025-05-21 21:25:12,375 - INFO - HorseUnifiedManagement - base_view:85 - BaseView __init__ for HorseUnifiedManagement: Calling overridden setup_ui().
+2025-05-21 21:25:12,589 - INFO - HorseUnifiedManagement - horse_unified_management:147 - HorseUnifiedManagement screen __init__ finished (initial data load deferred).
+2025-05-21 21:25:12,590 - INFO - EDSIApplication - main:220 - About to call self.horse_management_screen.show()
+2025-05-21 21:25:12,646 - INFO - HorseUnifiedManagement - horse_unified_management:152 - HorseUnifiedManagement showEvent triggered.
+2025-05-21 21:25:12,646 - WARNING - HorseUnifiedManagement - horse_unified_management:1265 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:25:12,647 - INFO - HorseUnifiedManagement - horse_unified_management:159 - HorseUnifiedManagement is now visible.
+2025-05-21 21:25:12,658 - INFO - EDSIApplication - main:222 - Horse Management Screen show() called.
+2025-05-21 21:25:12,691 - INFO - HorseUnifiedManagement - horse_unified_management:883 - load_initial_data called.
+2025-05-21 21:25:12,692 - INFO - HorseUnifiedManagement - horse_unified_management:903 - Loading horses (Status: active, Search: '')
+2025-05-21 21:25:12,707 - INFO - HorseUnifiedManagement - horse_unified_management:1149 - Loading details for horse ID: 4
+2025-05-21 21:25:12,717 - WARNING - HorseUnifiedManagement - horse_unified_management:1265 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:25:12,717 - WARNING - HorseUnifiedManagement - horse_unified_management:1265 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:25:16,962 - INFO - HorseUnifiedManagement - horse_unified_management:1149 - Loading details for horse ID: 1
+2025-05-21 21:25:16,964 - WARNING - HorseUnifiedManagement - horse_unified_management:1265 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:25:16,964 - WARNING - HorseUnifiedManagement - horse_unified_management:1265 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:35:51,750 - INFO - HorseUnifiedManagement - horse_unified_management:1296 - User 'ADMIN' requested logout from menu.
+2025-05-21 21:35:51,750 - INFO - EDSIApplication - main:263 - User 'ADMIN' logging out from Horse Management.
+2025-05-21 21:35:51,752 - WARNING - HorseUnifiedManagement - horse_unified_management:162 - HorseUnifiedManagement closeEvent triggered. Event type: 19
+2025-05-21 21:35:51,752 - WARNING - EDSIApplication - main:196 - DIAGNOSTIC: HorseUnifiedManagement screen emitted 'closing' signal!
+2025-05-21 21:35:51,753 - WARNING - EDSIApplication - main:196 - DIAGNOSTIC: HorseUnifiedManagement screen emitted 'closing' signal!
+2025-05-21 21:35:51,753 - WARNING - HorseUnifiedManagement - horse_unified_management:167 - HorseUnifiedManagement has finished processing closeEvent.
+2025-05-21 21:35:51,770 - INFO - SplashScreen - splash_screen:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-21 21:35:51,774 - INFO - SplashScreen - splash_screen:138 - Splash screen UI setup complete.
+2025-05-21 21:35:51,808 - INFO - EDSIApplication - main:154 - Splash screen displayed.
+2025-05-21 21:35:53,308 - INFO - EDSIApplication - main:311 - Quit application requested.
+2025-05-21 21:35:53,329 - INFO - EDSIApplication - main:321 - EDSI Veterinary Management System event loop finished. Exit code: 0
+2025-05-21 21:35:53,331 - INFO - root - main:334 - Application exiting with code 0.
+2025-05-21 21:36:01,826 - INFO - root - main:125 - Logging configured (Console and File).
+2025-05-21 21:36:01,827 - INFO - EDSIApplication - main:82 - Starting EDSI Veterinary Management System v1.3.1
+2025-05-21 21:36:01,828 - INFO - EDSIApplication - main:85 - Python version: 3.11.4 (tags/v3.11.4:d2340ef, Jun  7 2023, 05:45:37) [MSC v.1934 64 bit (AMD64)]
+2025-05-21 21:36:01,828 - INFO - EDSIApplication - main:86 - Qt version: 6.9.0
+2025-05-21 21:36:01,828 - INFO - EDSIApplication - main:134 - Initializing database...
+2025-05-21 21:36:01,828 - INFO - DatabaseManager - database_config:79 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-21 21:36:01,836 - INFO - DatabaseManager - database_config:85 - Database engine and session factory created successfully.
+2025-05-21 21:36:01,836 - INFO - DatabaseManager - database_config:149 - Models known by Base.metadata before create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-21 21:36:01,838 - INFO - DatabaseManager - database_config:154 - Database tables created (if they didn't exist).
+2025-05-21 21:36:01,839 - INFO - DatabaseManager - database_config:156 - Models known by Base.metadata after create_all: ['roles', 'user_roles', 'users', 'system_config', 'species', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'invoices', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'horses', 'horse_owners', 'horse_locations', 'horse_billing', 'owners', 'owner_billing_history', 'owner_payments']
+2025-05-21 21:36:01,840 - INFO - EDSIApplication - main:139 - Database initialized successfully.
+2025-05-21 21:36:01,840 - INFO - SplashScreen - splash_screen:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-21 21:36:01,844 - INFO - SplashScreen - splash_screen:138 - Splash screen UI setup complete.
+2025-05-21 21:36:01,883 - INFO - EDSIApplication - main:154 - Splash screen displayed.
+2025-05-21 21:36:01,883 - INFO - EDSIApplication - main:316 - Starting EDSI Veterinary Management System event loop (sys.excepthook is set)...
+2025-05-21 21:37:30,632 - INFO - EDSIApplication - main:157 - Login area clicked on splash screen.
+2025-05-21 21:37:42,111 - INFO - UserController - user_controller:95 - Password validated successfully for active user 'ADMIN'.
+2025-05-21 21:37:42,111 - INFO - SmallLoginDialog - small_login_dialog:185 - Password validation successful for user 'ADMIN'.
+2025-05-21 21:37:42,112 - INFO - SmallLoginDialog - small_login_dialog:189 - User 'ADMIN' logged in successfully via small dialog.
+2025-05-21 21:37:42,112 - INFO - EDSIApplication - main:186 - User 'ADMIN' logged in successfully.
+2025-05-21 21:37:42,128 - INFO - HorseUnifiedManagement - horse_unified_management:124 - HorseUnifiedManagement __init__ started for user: ADMIN
+2025-05-21 21:37:42,128 - INFO - HorseUnifiedManagement - base_view:80 - BaseView __init__ for HorseUnifiedManagement: central_widget created.
+2025-05-21 21:37:42,128 - INFO - HorseUnifiedManagement - base_view:85 - BaseView __init__ for HorseUnifiedManagement: Calling overridden setup_ui().
+2025-05-21 21:37:42,344 - INFO - HorseUnifiedManagement - horse_unified_management:150 - HorseUnifiedManagement screen __init__ finished (initial data load deferred).
+2025-05-21 21:37:42,344 - INFO - EDSIApplication - main:220 - About to call self.horse_management_screen.show()
+2025-05-21 21:37:42,400 - INFO - HorseUnifiedManagement - horse_unified_management:155 - HorseUnifiedManagement showEvent triggered.
+2025-05-21 21:37:42,400 - WARNING - HorseUnifiedManagement - horse_unified_management:1275 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:37:42,400 - INFO - HorseUnifiedManagement - horse_unified_management:162 - HorseUnifiedManagement is now visible.
+2025-05-21 21:37:42,413 - INFO - EDSIApplication - main:222 - Horse Management Screen show() called.
+2025-05-21 21:37:42,445 - INFO - HorseUnifiedManagement - horse_unified_management:893 - load_initial_data called.
+2025-05-21 21:37:42,445 - INFO - HorseUnifiedManagement - horse_unified_management:913 - Loading horses (Status: active, Search: '')
+2025-05-21 21:37:42,459 - INFO - HorseUnifiedManagement - horse_unified_management:1159 - Loading details for horse ID: 4
+2025-05-21 21:37:42,467 - WARNING - HorseUnifiedManagement - horse_unified_management:1275 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:37:42,467 - WARNING - HorseUnifiedManagement - horse_unified_management:1275 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:37:50,272 - INFO - HorseUnifiedManagement - horse_unified_management:1159 - Loading details for horse ID: 1
+2025-05-21 21:37:50,273 - WARNING - HorseUnifiedManagement - horse_unified_management:1275 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:37:50,273 - WARNING - HorseUnifiedManagement - horse_unified_management:1275 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:37:51,025 - INFO - HorseUnifiedManagement - horse_unified_management:1159 - Loading details for horse ID: 7
+2025-05-21 21:37:51,026 - WARNING - HorseUnifiedManagement - horse_unified_management:1275 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:37:51,027 - WARNING - HorseUnifiedManagement - horse_unified_management:1275 - update_main_action_buttons_state: self.tab_widget is None, cannot update tab buttons.
+2025-05-21 21:38:32,898 - INFO - HorseUnifiedManagement - horse_unified_management:1306 - User 'ADMIN' requested logout from menu.
+2025-05-21 21:38:32,898 - INFO - EDSIApplication - main:263 - User 'ADMIN' logging out from Horse Management.
+2025-05-21 21:38:32,900 - WARNING - HorseUnifiedManagement - horse_unified_management:165 - HorseUnifiedManagement closeEvent triggered. Event type: 19
+2025-05-21 21:38:32,900 - WARNING - EDSIApplication - main:196 - DIAGNOSTIC: HorseUnifiedManagement screen emitted 'closing' signal!
+2025-05-21 21:38:32,900 - WARNING - EDSIApplication - main:196 - DIAGNOSTIC: HorseUnifiedManagement screen emitted 'closing' signal!
+2025-05-21 21:38:32,900 - WARNING - HorseUnifiedManagement - horse_unified_management:170 - HorseUnifiedManagement has finished processing closeEvent.
+2025-05-21 21:38:32,910 - INFO - SplashScreen - splash_screen:73 - Attempting to load splash image from: C:\Projects\EDMS\assets\splash_screen.jpg
+2025-05-21 21:38:32,912 - INFO - SplashScreen - splash_screen:138 - Splash screen UI setup complete.
+2025-05-21 21:38:32,956 - INFO - EDSIApplication - main:154 - Splash screen displayed.
+2025-05-21 21:38:35,037 - INFO - EDSIApplication - main:311 - Quit application requested.
+2025-05-21 21:38:35,045 - INFO - EDSIApplication - main:321 - EDSI Veterinary Management System event loop finished. Exit code: 0
+2025-05-21 21:38:35,046 - INFO - root - main:334 - Application exiting with code 0.
