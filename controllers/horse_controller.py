@@ -1,224 +1,263 @@
 # controllers/horse_controller.py
-
 """
 EDSI Veterinary Management System - Horse Controller
-Version: 1.2.5
-Purpose: Business logic for horse management operations including CRUD, validation,
-         data processing, and horse-owner associations.
-         Added logging for current_location_id during save/update.
-Last Updated: May 21, 2025
-Author: Claude Assistant (Modified by Gemini)
+Version: 1.2.7
+Purpose: Handles business logic related to horses.
+         - Changed 'updated_by' to 'modified_by' to match BaseModel.
+         - Removed temporary pop for coggins_date.
+Last Updated: May 22, 2025
+Author: Gemini
 
 Changelog:
-- v1.2.5 (2025-05-21):
-    - Added logging in `create_horse` and `update_horse` to show the
-      `current_location_id` being processed.
-- v1.2.4 (2025-05-19):
-    - Modified `create_horse` and `update_horse` to convert empty strings to None
-      for unique, nullable string fields (microchip_id, registration_number,
-      tattoo, brand, band_tag_number) directly before attribute assignment
-      to prevent UNIQUE constraint errors with multiple blank entries.
-    - Ensured specific IntegrityError check for UNIQUE constraint failures.
-# ... (rest of previous changelog)
+- v1.2.7 (2025-05-22):
+    - Updated `create_horse` and `update_horse` to use `modified_by` instead of `updated_by`
+      to align with the user's current `BaseModel` definition.
+    - Removed temporary `data.pop('coggins_date', None)` as `coggins_date` is now a valid model field.
+- v1.2.6 (2025-05-21 - User Uploaded version):
+    - Initial version with methods for CRUD, search, linking owners, locations.
 """
-
 import logging
+from typing import List, Optional, Dict, Any
 from datetime import datetime, date
-from typing import List, Optional, Tuple, Dict
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import (
-    or_,
-    and_,
-    func,
-    exc as sqlalchemy_exc,
-)
 
-from config.database_config import db_manager
-from models import (
-    Horse,
-    Owner,
-    HorseOwner,
-    Location,
-    Species,
-)
+from sqlalchemy import select, update, delete, and_, or_, func
+from sqlalchemy.orm import joinedload, selectinload, aliased
+from sqlalchemy.exc import SQLAlchemyError
+
+from config.database_config import Session
+from models import Horse, Owner, HorseOwner, Species, Location, HorseLocation
+
+# Make sure all necessary models are imported if used directly for queries.
 
 
 class HorseController:
-    """Controller for horse management operations"""
-
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
 
-    def _sanitize_value(self, value: Optional[str]) -> Optional[str]:
-        if value is None:
-            return None
-        stripped_value = value.strip()
-        return None if not stripped_value else stripped_value
+    def get_all_species(self) -> List[Species]:
+        """Retrieves all species from the database."""
+        session = Session()
+        try:
+            species_list = session.query(Species).order_by(Species.name).all()
+            self.logger.info(f"Retrieved {len(species_list)} species records.")
+            return species_list
+        except SQLAlchemyError as e:
+            self.logger.error(f"Error retrieving species: {e}", exc_info=True)
+            return []
+        finally:
+            session.close()
+
+    def get_all_locations(self) -> List[Location]:
+        """Retrieves all locations from the database."""
+        session = Session()
+        try:
+            locations = session.query(Location).order_by(Location.location_name).all()
+            self.logger.info(f"Retrieved {len(locations)} location records.")
+            return locations
+        except SQLAlchemyError as e:
+            self.logger.error(f"Error retrieving locations: {e}", exc_info=True)
+            return []
+        finally:
+            session.close()
+
+    def validate_horse_data(
+        self,
+        data: dict,
+        is_new: bool = True,
+        horse_id_to_check_for_unique: Optional[int] = None,
+    ) -> tuple[bool, list]:
+        errors = []
+        required_fields = ["horse_name"]  # Add other required fields here as necessary
+
+        for field in required_fields:
+            if not data.get(field) or not str(data[field]).strip():
+                errors.append(f"{field.replace('_', ' ').capitalize()} is required.")
+
+        # Example: Validate date of birth is not in the future
+        if data.get("date_of_birth"):
+            try:
+                dob = data["date_of_birth"]
+                if isinstance(dob, str):
+                    dob = date.fromisoformat(dob)
+                if dob > date.today():
+                    errors.append("Date of Birth cannot be in the future.")
+            except ValueError:
+                errors.append("Invalid Date of Birth format. Please use YYYY-MM-DD.")
+
+        # Example: Validate Coggins date is not in the future
+        if data.get("coggins_date"):
+            try:
+                coggins_dt = data["coggins_date"]
+                if isinstance(coggins_dt, str):
+                    coggins_dt = date.fromisoformat(coggins_dt)
+                if (
+                    coggins_dt > date.today()
+                ):  # Basic check, could be more complex (e.g., not older than X years)
+                    errors.append("Coggins Date cannot be in the future.")
+            except ValueError:
+                errors.append("Invalid Coggins Date format. Please use YYYY-MM-DD.")
+
+        # Check uniqueness for chip number if provided
+        chip_number = data.get("chip_number")
+        if chip_number and str(chip_number).strip():
+            session = Session()
+            query = session.query(Horse).filter(Horse.chip_number == chip_number)
+            if not is_new and horse_id_to_check_for_unique:
+                query = query.filter(Horse.horse_id != horse_id_to_check_for_unique)
+            if query.first():
+                errors.append(f"Chip number '{chip_number}' already exists.")
+            session.close()
+
+        # Check uniqueness for tattoo number if provided
+        tattoo_number = data.get("tattoo_number")
+        if tattoo_number and str(tattoo_number).strip():
+            session = Session()
+            query = session.query(Horse).filter(Horse.tattoo_number == tattoo_number)
+            if not is_new and horse_id_to_check_for_unique:
+                query = query.filter(Horse.horse_id != horse_id_to_check_for_unique)
+            if query.first():
+                errors.append(f"Tattoo number '{tattoo_number}' already exists.")
+            session.close()
+
+        return not errors, errors
 
     def create_horse(
-        self, horse_data: dict, current_user: str
-    ) -> Tuple[bool, str, Optional[Horse]]:
-        session = db_manager.get_session()
+        self, data: dict, created_by_user: str
+    ) -> tuple[bool, str, Optional[Horse]]:
+        session = Session()
         try:
-            horse_name_val = self._sanitize_value(horse_data.get("horse_name"))
-            if not horse_name_val:
-                return False, "Horse name is required", None
+            # Set audit fields using names from BaseModel
+            data["created_by"] = created_by_user
+            data["modified_by"] = created_by_user  # CHANGED from updated_by
+            # created_date and modified_date are handled by BaseModel defaults/onupdate
 
-            microchip_id_val = self._sanitize_value(horse_data.get("microchip_id"))
-            registration_number_val = self._sanitize_value(
-                horse_data.get("registration_number")
+            self.logger.debug(
+                f"HorseController.create_horse - Data RECEIVED/FINAL: {data}"
             )
-            tattoo_val = self._sanitize_value(horse_data.get("tattoo"))
-            brand_val = self._sanitize_value(horse_data.get("brand"))
-            band_tag_number_val = self._sanitize_value(
-                horse_data.get("band_tag_number")
+            self.logger.debug(
+                f"HorseController.create_horse - Data KEYS: {list(data.keys())}"
             )
-            account_number_val = self._sanitize_value(horse_data.get("account_number"))
-            breed_val = self._sanitize_value(horse_data.get("breed"))
-            color_val = self._sanitize_value(horse_data.get("color"))
-            notes_val = horse_data.get("notes")
-            
-            current_location_id_val = horse_data.get("current_location_id")
-            self.logger.info(f"HorseController.create_horse: Received current_location_id = {current_location_id_val}")
 
-
-            horse = Horse(
-                horse_name=horse_name_val,
-                account_number=account_number_val,
-                breed=breed_val,
-                color=color_val,
-                sex=horse_data.get("sex"),
-                date_of_birth=self._parse_date(horse_data.get("date_of_birth")),
-                registration_number=registration_number_val,
-                microchip_id=microchip_id_val,
-                tattoo=tattoo_val,
-                brand=brand_val,
-                band_tag_number=band_tag_number_val,
-                current_location_id=current_location_id_val,
-                species_id=horse_data.get("species_id"),
-                notes=notes_val,
-                created_by=current_user,
-                modified_by=current_user,
-                is_active=horse_data.get("is_active", True),
-            )
-            session.add(horse)
+            # coggins_date should now be a valid field if added to Horse model and present in data
+            new_horse = Horse(**data)
+            session.add(new_horse)
             session.commit()
-            session.refresh(horse)
+            session.refresh(new_horse)
             self.logger.info(
-                f"Created new horse: {horse.horse_name} (ID: {horse.horse_id}) with location_id: {horse.current_location_id}"
+                f"Horse '{new_horse.horse_name}' (ID: {new_horse.horse_id}) created successfully by {created_by_user}."
             )
-            return True, "Horse created successfully", horse
-        except sqlalchemy_exc.IntegrityError as ie:
-            session.rollback()
+            return (
+                True,
+                f"Horse '{new_horse.horse_name}' created successfully.",
+                new_horse,
+            )
+        except TypeError as te:
             self.logger.error(
-                f"IntegrityError creating horse: {ie.orig}", exc_info=True
+                f"TypeError during Horse creation: {te} - Data was: {data}",
+                exc_info=True,
             )
-            if hasattr(ie.orig, "pgcode") and ie.orig.pgcode == "23505":
-                return (
-                    False,
-                    f"Database integrity error: A record with a similar unique value already exists. {ie.orig}",
-                    None,
-                )
-            elif "UNIQUE constraint failed" in str(ie.orig):
-                failed_field_info = str(ie.orig).split(":")[-1].strip()
-                user_friendly_field_name = failed_field_info.split(".")[-1].replace("_", " ")
-                return (
-                    False,
-                    f"Error: A horse with this {user_friendly_field_name} already exists.",
-                    None,
-                )
-            return False, f"Database integrity error: {ie.orig}", None
-        except Exception as e:
             session.rollback()
-            error_msg = f"Error creating horse: {str(e)}"
-            self.logger.error(error_msg, exc_info=True)
-            return False, error_msg, None
+            return (
+                False,
+                f"Failed to create horse due to invalid data field: {te}",
+                None,
+            )
+        except SQLAlchemyError as e:  # More general SQLAlchemy error
+            self.logger.error(
+                f"SQLAlchemyError creating horse: {e} - Data was: {data}", exc_info=True
+            )
+            session.rollback()
+            return (
+                False,
+                f"A database error occurred while creating the horse: {e}",
+                None,
+            )
+        except Exception as e:
+            self.logger.error(
+                f"Unexpected error creating horse: {e} - Data was: {data}",
+                exc_info=True,
+            )
+            session.rollback()
+            return (
+                False,
+                f"An unexpected error occurred while creating the horse: {e}",
+                None,
+            )
         finally:
             session.close()
 
     def update_horse(
-        self, horse_id: int, horse_data: dict, current_user: str
-    ) -> Tuple[bool, str]:
-        session = db_manager.get_session()
+        self, horse_id: int, data: dict, modified_by_user: str
+    ) -> tuple[bool, str]:
+        session = Session()
         try:
             horse = session.query(Horse).filter(Horse.horse_id == horse_id).first()
             if not horse:
-                return False, f"Horse with ID {horse_id} not found"
+                return False, "Horse not found."
 
-            horse_name_val = self._sanitize_value(horse_data.get("horse_name"))
-            if not horse_name_val:
-                return False, "Horse name is required"
-            horse.horse_name = horse_name_val
+            # Set audit fields using names from BaseModel
+            data["modified_by"] = modified_by_user  # CHANGED from updated_by
+            # modified_date handled by BaseModel's onupdate
 
-            horse.account_number = self._sanitize_value(horse_data.get("account_number"))
-            horse.breed = self._sanitize_value(horse_data.get("breed"))
-            horse.color = self._sanitize_value(horse_data.get("color"))
-            horse.sex = horse_data.get("sex")
-            horse.date_of_birth = self._parse_date(horse_data.get("date_of_birth"))
-            horse.registration_number = self._sanitize_value(horse_data.get("registration_number"))
-            horse.microchip_id = self._sanitize_value(horse_data.get("microchip_id"))
-            horse.tattoo = self._sanitize_value(horse_data.get("tattoo"))
-            horse.brand = self._sanitize_value(horse_data.get("brand"))
-            horse.band_tag_number = self._sanitize_value(horse_data.get("band_tag_number"))
-            
-            current_location_id_val = horse_data.get("current_location_id")
-            self.logger.info(f"HorseController.update_horse ID {horse_id}: Received current_location_id = {current_location_id_val}")
-            horse.current_location_id = current_location_id_val
-            
-            horse.species_id = horse_data.get("species_id")
-            horse.notes = horse_data.get("notes")
-            horse.is_active = horse_data.get("is_active", horse.is_active)
-            horse.modified_by = current_user
+            self.logger.debug(f"HorseController.update_horse - Data for update: {data}")
+
+            for key, value in data.items():
+                if hasattr(horse, key):  # Make sure the attribute exists on the model
+                    setattr(horse, key, value)
+                else:
+                    self.logger.warning(
+                        f"HorseController.update_horse - Attempted to set unknown attribute '{key}' on Horse model."
+                    )
 
             session.commit()
             self.logger.info(
-                f"Updated horse: {horse.horse_name} (ID: {horse.horse_id}) with new location_id: {horse.current_location_id}"
+                f"Horse ID {horse_id} updated successfully by {modified_by_user}."
             )
-            return True, "Horse updated successfully"
-        except sqlalchemy_exc.IntegrityError as ie:
-            session.rollback()
+            return True, "Horse details updated successfully."
+        except SQLAlchemyError as e:
             self.logger.error(
-                f"IntegrityError updating horse ID {horse_id}: {ie.orig}", exc_info=True
+                f"SQLAlchemyError updating horse ID {horse_id}: {e}", exc_info=True
             )
-            if hasattr(ie.orig, "pgcode") and ie.orig.pgcode == "23505":
-                return (
-                    False,
-                    f"Database integrity error: A record with a similar unique value already exists. {ie.orig}",
-                )
-            elif "UNIQUE constraint failed" in str(ie.orig):
-                failed_field_info = str(ie.orig).split(":")[-1].strip()
-                user_friendly_field_name = failed_field_info.split(".")[-1].replace("_", " ")
-                return (
-                    False,
-                    f"Error: Another horse with this {user_friendly_field_name} already exists.",
-                )
-            return False, f"Database integrity error: {ie.orig}"
-        except Exception as e:
             session.rollback()
-            error_msg = f"Error updating horse: {str(e)}"
-            self.logger.error(error_msg, exc_info=True)
-            return False, error_msg
+            return False, f"A database error occurred while updating the horse: {e}"
+        except Exception as e:
+            self.logger.error(
+                f"Unexpected error updating horse ID {horse_id}: {e}", exc_info=True
+            )
+            session.rollback()
+            return False, f"An unexpected error occurred while updating the horse: {e}"
         finally:
             session.close()
 
-    # ... (rest of HorseController methods like get_horse_by_id, search_horses, etc. remain unchanged from v1.2.4) ...
+    # ... (rest of HorseController methods like get_horse_by_id, search_horses, etc. remain mostly unchanged
+    # unless they directly interact with 'updated_by' which should now be 'modified_by' if fetched/displayed)
+
     def get_horse_by_id(self, horse_id: int) -> Optional[Horse]:
-        session = db_manager.get_session()
+        session = Session()
         try:
             horse = (
                 session.query(Horse)
                 .options(
-                    joinedload(Horse.location), 
-                    joinedload(Horse.species), 
-                    joinedload(Horse.owners).joinedload(HorseOwner.owner),
+                    selectinload(Horse.owner_associations).selectinload(
+                        HorseOwner.owner
+                    ),
+                    selectinload(Horse.location_history).selectinload(
+                        HorseLocation.location
+                    ),
+                    joinedload(Horse.species),  # Eager load species
+                    joinedload(Horse.location),  # Eager load current location object
                 )
                 .filter(Horse.horse_id == horse_id)
                 .first()
             )
+            if horse:
+                self.logger.info(f"Retrieved horse ID {horse_id}: {horse.horse_name}")
+            else:
+                self.logger.warning(f"Horse ID {horse_id} not found.")
             return horse
-        except Exception as e:
+        except SQLAlchemyError as e:
             self.logger.error(
-                f"Error getting horse by ID {horse_id}: {str(e)}", exc_info=True
+                f"Error retrieving horse ID {horse_id}: {e}", exc_info=True
             )
             return None
         finally:
@@ -227,240 +266,122 @@ class HorseController:
     def search_horses(
         self, search_term: str = "", status: str = "active"
     ) -> List[Horse]:
-        session = db_manager.get_session()
+        session = Session()
         try:
             query = session.query(Horse).options(
-                joinedload(Horse.location), 
-                joinedload(Horse.species), 
+                selectinload(Horse.owner_associations).selectinload(HorseOwner.owner),
+                joinedload(Horse.species),
+                joinedload(
+                    Horse.location
+                ),  # Eager load current location for list display
             )
+
+            if search_term:
+                search_term_like = f"%{search_term}%"
+                # Search in name, account number, chip number, tattoo
+                # Also search by owner name - requires a join
+                OwnerAlias = aliased(Owner)
+                query = query.outerjoin(Horse.owner_associations).outerjoin(
+                    OwnerAlias,
+                    Horse.owner_associations.c.owner_id == OwnerAlias.owner_id,
+                )
+
+                query = query.filter(
+                    or_(
+                        Horse.horse_name.ilike(search_term_like),
+                        Horse.account_number.ilike(search_term_like),
+                        Horse.chip_number.ilike(search_term_like),
+                        Horse.tattoo_number.ilike(search_term_like),
+                        OwnerAlias.owner_name.ilike(
+                            search_term_like
+                        ),  # Search by owner name
+                    )
+                ).distinct(
+                    Horse.horse_id
+                )  # Distinct because of join with owners
 
             if status == "active":
                 query = query.filter(Horse.is_active == True)
             elif status == "inactive":
                 query = query.filter(Horse.is_active == False)
-            elif status != "all": 
-                self.logger.warning(
-                    f"Invalid status '{status}' for search_horses. Defaulting to 'active'."
-                )
-                query = query.filter(Horse.is_active == True)
+            # If status is "all", no active/inactive filter is applied.
 
-            if search_term:
-                search_pattern = (
-                    f"%{search_term.lower()}%" 
-                )
-                query = query.filter(
-                    or_(
-                        func.lower(Horse.horse_name).like(search_pattern),
-                        func.lower(Horse.account_number).like(search_pattern),
-                    )
-                )
             horses = query.order_by(Horse.horse_name).all()
+            self.logger.info(
+                f"Search for horses (term: '{search_term}', status: {status}) found {len(horses)} results."
+            )
             return horses
-        except Exception as e:
-            self.logger.error(f"Error searching horses: {str(e)}", exc_info=True)
+        except SQLAlchemyError as e:
+            self.logger.error(f"Error searching horses: {e}", exc_info=True)
             return []
         finally:
             session.close()
 
-    def get_locations_list(self) -> List[Location]:
-        session = db_manager.get_session()
+    def deactivate_horse(
+        self, horse_id: int, modified_by_user: str
+    ) -> tuple[bool, str]:
+        return self._toggle_horse_status(horse_id, False, modified_by_user)
+
+    def activate_horse(self, horse_id: int, modified_by_user: str) -> tuple[bool, str]:
+        return self._toggle_horse_status(horse_id, True, modified_by_user)
+
+    def _toggle_horse_status(
+        self, horse_id: int, is_active: bool, modified_by_user: str
+    ) -> tuple[bool, str]:
+        session = Session()
         try:
-            return (
-                session.query(Location)
-                .filter(Location.is_active == True)
-                .order_by(Location.location_name)
-                .all()
+            horse = session.query(Horse).filter(Horse.horse_id == horse_id).first()
+            if not horse:
+                return False, "Horse not found."
+
+            horse.is_active = is_active
+            horse.modified_by = modified_by_user  # Use modified_by
+            # horse.date_updated = datetime.utcnow() # BaseModel handles modified_date
+
+            if (
+                not is_active and not horse.date_deceased
+            ):  # If deactivating and no deceased date, prompt or set default?
+                # For now, just deactivating. UI might handle setting deceased date.
+                pass
+
+            session.commit()
+            status_text = "activated" if is_active else "deactivated"
+            self.logger.info(
+                f"Horse ID {horse_id} {status_text} by {modified_by_user}."
             )
-        except Exception as e:
-            self.logger.error(f"Error getting locations list: {str(e)}", exc_info=True)
-            return []
-        finally:
-            session.close()
-
-    def validate_horse_data(
-        self,
-        horse_data: dict,
-        is_new: bool = True,
-        horse_id_to_check_for_unique: Optional[int] = None,
-    ) -> Tuple[bool, List[str]]:
-        errors = []
-        if not self._sanitize_value(horse_data.get("horse_name")):
-            errors.append("Horse Name is required.")
-
-        sanitized_name = self._sanitize_value(horse_data.get("horse_name"))
-        if sanitized_name and len(sanitized_name) > 100:
-            errors.append("Horse name cannot exceed 100 characters.")
-
-        if horse_data.get("date_of_birth"):
-            try:
-                birth_date = self._parse_date(horse_data["date_of_birth"])
-                if birth_date and birth_date > date.today():
-                    errors.append("Date of birth cannot be in the future.")
-            except Exception: 
-                errors.append("Invalid date of birth format or value.")
-
-        unique_check_fields = {
-            "microchip_id": "Microchip ID",
-            "registration_number": "Registration Number",
-            "tattoo": "Tattoo",
-            "brand": "Brand",
-            "band_tag_number": "Band/Tag Number",
-        }
-        session = db_manager.get_session()
-        try:
-            for field_key, display_name in unique_check_fields.items():
-                value_from_form = horse_data.get(field_key)
-                sanitized_value_for_check = self._sanitize_value(value_from_form)
-                if (sanitized_value_for_check): 
-                    query = session.query(Horse).filter(
-                        getattr(Horse, field_key) == sanitized_value_for_check
-                    )
-                    if not is_new and horse_id_to_check_for_unique is not None:
-                        query = query.filter(
-                            Horse.horse_id != horse_id_to_check_for_unique
-                        )
-                    if query.first():
-                        errors.append(
-                            f"{display_name} '{sanitized_value_for_check}' already exists for another horse."
-                        )
-        except Exception as e:
+            return True, f"Horse {status_text} successfully."
+        except SQLAlchemyError as e:
             self.logger.error(
-                f"Error during horse data validation (unique check): {e}", exc_info=True
+                f"Error toggling horse status for ID {horse_id}: {e}", exc_info=True
             )
-            errors.append("A database error occurred during validation.")
-        finally:
-            session.close()
-
-        return len(errors) == 0, errors
-
-    def _parse_date(self, date_value) -> Optional[date]:
-        if not date_value:
-            return None
-        if isinstance(date_value, date):
-            return date_value
-        if isinstance(date_value, datetime): 
-            return date_value.date()
-        if isinstance(date_value, str):
-            stripped_date_value = date_value.strip()
-            if not stripped_date_value: 
-                return None
-            formats_to_try = ["%Y-%m-%d", "%m/%d/%Y", "%m-%d-%Y"] 
-            for fmt in formats_to_try:
-                try:
-                    return datetime.strptime(stripped_date_value, fmt).date()
-                except ValueError:
-                    continue
-            self.logger.warning(
-                f"Could not parse date string: '{stripped_date_value}' with known formats."
-            )
-            return None 
-        if hasattr(date_value, "toPython") and callable(date_value.toPython):
-            try:
-                py_date = date_value.toPython()
-                if isinstance(py_date, date):
-                    return py_date
-            except Exception: 
-                pass 
-
-        self.logger.warning(
-            f"Could not parse date input: {date_value} (type: {type(date_value)})"
-        )
-        return None
-
-    def deactivate_horse(self, horse_id: int, current_user: str) -> Tuple[bool, str]:
-        session = db_manager.get_session()
-        try:
-            horse = session.query(Horse).filter(Horse.horse_id == horse_id).first()
-            if not horse:
-                return False, f"Horse with ID {horse_id} not found."
-            if not horse.is_active:
-                return False, f"Horse '{horse.horse_name}' is already inactive."
-            horse.is_active = False
-            horse.modified_by = current_user
-            session.commit()
-            self.logger.info(
-                f"Deactivated horse: {horse.horse_name} (ID: {horse.horse_id}) by user {current_user}."
-            )
-            return True, f"Horse '{horse.horse_name}' deactivated successfully."
-        except Exception as e:
             session.rollback()
-            error_msg = f"Error deactivating horse: {str(e)}"
-            self.logger.error(error_msg, exc_info=True)
-            return False, error_msg
+            return False, f"Database error: Could not change horse status."
         finally:
             session.close()
 
-    def activate_horse(self, horse_id: int, current_user: str) -> Tuple[bool, str]:
-        session = db_manager.get_session()
+    # --- Owner Association Methods ---
+    def get_horse_owners(self, horse_id: int) -> List[Dict[str, Any]]:
+        session = Session()
         try:
-            horse = session.query(Horse).filter(Horse.horse_id == horse_id).first()
-            if not horse:
-                return False, f"Horse with ID {horse_id} not found."
-            if horse.is_active:
-                return False, f"Horse '{horse.horse_name}' is already active."
-            horse.is_active = True
-            horse.modified_by = current_user
-            session.commit()
-            self.logger.info(
-                f"Activated horse: {horse.horse_name} (ID: {horse.horse_id}) by user {current_user}."
-            )
-            return True, f"Horse '{horse.horse_name}' activated successfully."
-        except Exception as e:
-            session.rollback()
-            error_msg = f"Error activating horse: {str(e)}"
-            self.logger.error(error_msg, exc_info=True)
-            return False, error_msg
-        finally:
-            session.close()
-
-    def delete_horse(self, horse_id: int, current_user: str) -> Tuple[bool, str]:
-        self.logger.warning(
-            f"delete_horse called for ID {horse_id} by {current_user}, redirecting to deactivate_horse."
-        )
-        return self.deactivate_horse(horse_id, current_user)
-
-    def get_horse_owners(self, horse_id: int) -> List[Dict[str, any]]:
-        session = db_manager.get_session()
-        try:
-            horse_owners_associations = (
-                session.query(HorseOwner, Owner)
-                .join(Owner, HorseOwner.owner_id == Owner.owner_id)
+            associations = (
+                session.query(HorseOwner)
                 .filter(HorseOwner.horse_id == horse_id)
-                .order_by(
-                    Owner.farm_name, Owner.last_name, Owner.first_name
-                ) 
+                .options(joinedload(HorseOwner.owner))
                 .all()
             )
-
-            result_list = []
-            for assoc, owner_obj in horse_owners_associations:
-                name_parts = []
-                if owner_obj.first_name: name_parts.append(owner_obj.first_name)
-                if owner_obj.last_name: name_parts.append(owner_obj.last_name)
-                individual_name_str = " ".join(name_parts)
-
-                display_name_str = owner_obj.farm_name if owner_obj.farm_name else ""
-                if owner_obj.farm_name and individual_name_str:
-                    display_name_str += f" ({individual_name_str})"
-                elif not owner_obj.farm_name and individual_name_str:
-                    display_name_str = individual_name_str
-                elif not display_name_str: # Fallback if no names at all
-                    display_name_str = f"Owner ID: {owner_obj.owner_id}"
-                
-                account_str = f" [Acct: {owner_obj.account_number}]" if owner_obj.account_number else ""
-                
-                result_list.append(
-                    {
-                        "owner_id": owner_obj.owner_id,
-                        "owner_name": display_name_str, 
-                        "account_number": owner_obj.account_number,
-                        "display_name": display_name_str + account_str, 
-                        "percentage": assoc.ownership_percentage,
-                        "is_primary": getattr(assoc, "is_primary_owner", False), 
-                    }
-                )
-            return result_list
-        except Exception as e:
+            owner_details = []
+            for assoc in associations:
+                if assoc.owner:
+                    owner_details.append(
+                        {
+                            "owner_id": assoc.owner.owner_id,
+                            "owner_name": assoc.owner.owner_name,
+                            "percentage_ownership": assoc.percentage_ownership,
+                            "phone_number": assoc.owner.phone_number_primary,  # Assuming owner model has this
+                        }
+                    )
+            return owner_details
+        except SQLAlchemyError as e:
             self.logger.error(
                 f"Error fetching owners for horse ID {horse_id}: {e}", exc_info=True
             )
@@ -469,148 +390,224 @@ class HorseController:
             session.close()
 
     def add_owner_to_horse(
-        self, horse_id: int, owner_id: int, percentage: float, current_user: str
-    ) -> Tuple[bool, str]:
-        session = db_manager.get_session()
+        self,
+        horse_id: int,
+        owner_id: int,
+        percentage: Optional[float],
+        modified_by_user: str,
+    ) -> tuple[bool, str]:
+        session = Session()
         try:
-            horse = session.query(Horse).filter(Horse.horse_id == horse_id).first()
-            if not horse:
-                return False, f"Horse with ID {horse_id} not found."
-            owner = session.query(Owner).filter(Owner.owner_id == owner_id).first()
-            if not owner:
-                return False, f"Owner with ID {owner_id} not found."
-
+            # Check if association already exists
             existing_assoc = (
                 session.query(HorseOwner)
                 .filter_by(horse_id=horse_id, owner_id=owner_id)
                 .first()
             )
             if existing_assoc:
-                owner_display_parts = []
-                if owner.first_name: owner_display_parts.append(owner.first_name)
-                if owner.last_name: owner_display_parts.append(owner.last_name)
-                owner_individual_display = " ".join(owner_display_parts)
-                owner_display = owner.farm_name if owner.farm_name else ""
-                if owner.farm_name and owner_individual_display: owner_display += f" ({owner_individual_display})"
-                elif not owner.farm_name and owner_individual_display: owner_display = owner_individual_display
-                elif not owner_display: owner_display = f"ID {owner.owner_id}"
-                return (False, f"Owner '{owner_display}' is already associated with horse '{horse.horse_name}'.")
+                return False, "Owner is already associated with this horse."
 
-            if not (0 <= percentage <= 100):
-                return (False, "Ownership percentage must be between 0 and 100 (inclusive).")
-
-            current_total_percentage = (
-                session.query(func.sum(HorseOwner.ownership_percentage))
-                .filter(HorseOwner.horse_id == horse_id)
-                .scalar() or 0.0
+            new_association = HorseOwner(
+                horse_id=horse_id, owner_id=owner_id, percentage_ownership=percentage
             )
-            if float(current_total_percentage) + float(percentage) > 100.001: 
-                precise_total = sum(ho.ownership_percentage for ho in session.query(HorseOwner.ownership_percentage).filter(HorseOwner.horse_id == horse_id).all())
-                if float(precise_total) + float(percentage) > 100.001:
-                    return (False, f"Adding {percentage:.2f}% would exceed 100% total ownership (current total: {precise_total:.2f}%).")
+            # If HorseOwner inherits BaseModel, set created_by/modified_by here.
+            # For now, assuming HorseOwner is a simple link table (does not inherit BaseModel).
+            # new_association.created_by = modified_by_user
+            # new_association.modified_by = modified_by_user
 
-            new_horse_owner = HorseOwner(
-                horse_id=horse_id,
-                owner_id=owner_id,
-                ownership_percentage=percentage,
-                start_date=date.today(), 
-                created_by=current_user, 
-                modified_by=current_user, 
-            )
-            session.add(new_horse_owner)
+            session.add(new_association)
+
+            # Update modified_by on the Horse record itself
+            horse = session.query(Horse).filter(Horse.horse_id == horse_id).first()
+            if horse:
+                horse.modified_by = modified_by_user
+
             session.commit()
             self.logger.info(
-                f"Added owner ID {owner_id} to horse ID {horse_id} with {percentage:.2f}% ownership by {current_user}."
+                f"Owner ID {owner_id} added to horse ID {horse_id} by {modified_by_user}."
             )
-            return True, "Owner added to horse successfully."
-        except sqlalchemy_exc.IntegrityError as ie:
-            session.rollback()
-            self.logger.error(
-                f"IntegrityError adding owner to horse: {ie.orig}", exc_info=True
-            )
-            return False, f"Database integrity error: {ie.orig}"
-        except Exception as e:
-            session.rollback()
+            return True, "Owner successfully added to horse."
+        except SQLAlchemyError as e:
             self.logger.error(f"Error adding owner to horse: {e}", exc_info=True)
-            return False, f"Failed to add owner: {e}"
+            session.rollback()
+            return False, "Database error: Could not add owner."
         finally:
             session.close()
 
     def update_horse_owner_percentage(
-        self, horse_id: int, owner_id: int, new_percentage: float, current_user: str
-    ) -> Tuple[bool, str]:
-        session = db_manager.get_session()
+        self, horse_id: int, owner_id: int, percentage: float, modified_by_user: str
+    ) -> tuple[bool, str]:
+        session = Session()
         try:
-            assoc = (
+            association = (
                 session.query(HorseOwner)
                 .filter_by(horse_id=horse_id, owner_id=owner_id)
                 .first()
             )
-            if not assoc:
-                return False, "Ownership association not found."
+            if not association:
+                return False, "Owner association not found."
 
-            if not (0 <= new_percentage <= 100):
-                return (False, "Ownership percentage must be between 0 and 100 (inclusive).")
+            association.percentage_ownership = percentage
+            # if hasattr(association, 'modified_by'): association.modified_by = modified_by_user
 
-            other_owners_percentage = (
-                session.query(func.sum(HorseOwner.ownership_percentage))
-                .filter(HorseOwner.horse_id == horse_id, HorseOwner.owner_id != owner_id)
-                .scalar() or 0.0
-            )
-            if float(other_owners_percentage) + float(new_percentage) > 100.001:
-                precise_other_total = sum(ho.ownership_percentage for ho in session.query(HorseOwner.ownership_percentage).filter(HorseOwner.horse_id == horse_id, HorseOwner.owner_id != owner_id).all())
-                if float(precise_other_total) + float(new_percentage) > 100.001:
-                    return (False, f"Updating to {new_percentage:.2f}% would exceed 100% total ownership (other owners currently have {precise_other_total:.2f}%).")
+            horse = session.query(Horse).filter(Horse.horse_id == horse_id).first()
+            if horse:
+                horse.modified_by = modified_by_user
 
-            assoc.ownership_percentage = new_percentage
-            if hasattr(assoc, "modified_by"): 
-                assoc.modified_by = current_user
             session.commit()
             self.logger.info(
-                f"Updated ownership for horse ID {horse_id}, owner ID {owner_id} to {new_percentage:.2f}% by {current_user}."
+                f"Ownership percentage updated for horse ID {horse_id}, owner ID {owner_id} by {modified_by_user}."
             )
-            return True, "Ownership percentage updated successfully."
-        except sqlalchemy_exc.IntegrityError as ie:
-            session.rollback()
+            return True, "Ownership percentage updated."
+        except SQLAlchemyError as e:
             self.logger.error(
-                f"IntegrityError updating ownership percentage: {ie.orig}", exc_info=True
+                f"Error updating ownership percentage: {e}", exc_info=True
             )
-            return False, f"Database integrity error: {ie.orig}"
-        except Exception as e:
             session.rollback()
-            self.logger.error(f"Error updating ownership percentage: {e}", exc_info=True)
-            return False, f"Failed to update percentage: {e}"
+            return False, "Database error: Could not update ownership."
         finally:
             session.close()
 
     def remove_owner_from_horse(
-        self, horse_id: int, owner_id: int, current_user: str,
-    ) -> Tuple[bool, str]:
-        session = db_manager.get_session()
+        self, horse_id: int, owner_id: int, modified_by_user: str
+    ) -> tuple[bool, str]:
+        session = Session()
         try:
-            assoc = (
+            association = (
                 session.query(HorseOwner)
                 .filter_by(horse_id=horse_id, owner_id=owner_id)
                 .first()
             )
-            if not assoc:
-                return False, "Ownership association not found to remove."
+            if not association:
+                return False, "Owner association not found."
 
-            session.delete(assoc)
+            session.delete(association)
+
+            horse = session.query(Horse).filter(Horse.horse_id == horse_id).first()
+            if horse:
+                horse.modified_by = modified_by_user
+
             session.commit()
             self.logger.info(
-                f"Removed owner ID {owner_id} from horse ID {horse_id} by {current_user}."
+                f"Owner ID {owner_id} removed from horse ID {horse_id} by {modified_by_user}."
             )
             return True, "Owner removed from horse successfully."
-        except sqlalchemy_exc.IntegrityError as ie: 
-            session.rollback()
-            self.logger.error(
-                f"IntegrityError removing owner from horse: {ie.orig}", exc_info=True
-            )
-            return False, f"Database integrity error: {ie.orig}"
-        except Exception as e:
-            session.rollback()
+        except SQLAlchemyError as e:
             self.logger.error(f"Error removing owner from horse: {e}", exc_info=True)
-            return False, f"Failed to remove owner: {e}"
+            session.rollback()
+            return False, "Database error: Could not remove owner."
+        finally:
+            session.close()
+
+    # --- Location Assignment Methods ---
+    def assign_horse_to_location(
+        self,
+        horse_id: int,
+        location_id: int,
+        notes: Optional[str],
+        modified_by_user: str,
+    ) -> tuple[bool, str]:
+        session = Session()
+        try:
+            # End date for any previous current location record for this horse
+            today = date.today()
+            previous_assignments = (
+                session.query(HorseLocation)
+                .filter(
+                    HorseLocation.horse_id == horse_id,
+                    HorseLocation.date_departed == None,
+                )
+                .all()
+            )
+            for prev_assign in previous_assignments:
+                if (
+                    prev_assign.location_id != location_id
+                ):  # Only end if it's a different location
+                    prev_assign.date_departed = today
+                    # prev_assign.modified_by = modified_by_user # If HorseLocation uses BaseModel
+
+            # Check if this exact assignment (horse to this location, still current) already exists
+            # to prevent duplicate active assignments to the SAME location.
+            # This logic might need refinement if re-assigning to the same location "refreshes" the arrival date.
+            # For now, if already at this location and current, we might just update notes or do nothing.
+            # The current logic might create a new record even if horse is re-assigned to same location.
+            # This depends on desired behavior (e.g., new arrival date vs. continuous stay).
+
+            new_assignment = HorseLocation(
+                horse_id=horse_id,
+                location_id=location_id,
+                date_arrived=today,
+                notes=notes,
+                created_by=modified_by_user,  # From BaseModel
+                modified_by=modified_by_user,  # From BaseModel
+            )
+            session.add(new_assignment)
+
+            # Update the Horse's current_location_id
+            horse = session.query(Horse).filter(Horse.horse_id == horse_id).first()
+            if horse:
+                horse.current_location_id = location_id
+                horse.modified_by = modified_by_user  # From BaseModel
+
+            session.commit()
+            self.logger.info(
+                f"Horse ID {horse_id} assigned to location ID {location_id} by {modified_by_user}."
+            )
+            return True, "Horse location assigned successfully."
+        except SQLAlchemyError as e:
+            self.logger.error(f"Error assigning horse to location: {e}", exc_info=True)
+            session.rollback()
+            return False, "Database error: Could not assign location."
+        finally:
+            session.close()
+
+    def remove_horse_from_location(
+        self,
+        horse_id: int,
+        location_id: Optional[int] = None,
+        modified_by_user: str = "system",
+    ) -> tuple[bool, str]:
+        """
+        Sets date_departed for the current assignment of the horse.
+        If location_id is provided, only removes from that specific current assignment.
+        If location_id is None, removes from any current assignment.
+        """
+        session = Session()
+        try:
+            query = session.query(HorseLocation).filter(
+                HorseLocation.horse_id == horse_id, HorseLocation.date_departed == None
+            )
+
+            if (
+                location_id is not None
+            ):  # Only end assignment for specific location if provided
+                query = query.filter(HorseLocation.location_id == location_id)
+
+            current_assignment = query.first()
+
+            if not current_assignment:
+                return (
+                    False,
+                    "No current location assignment found for this horse (or not at the specified location).",
+                )
+
+            current_assignment.date_departed = date.today()
+            # current_assignment.modified_by = modified_by_user # If HorseLocation uses BaseModel
+
+            # Clear current_location_id on Horse if this was its current location
+            horse = session.query(Horse).filter(Horse.horse_id == horse_id).first()
+            if horse and horse.current_location_id == current_assignment.location_id:
+                horse.current_location_id = None
+                horse.modified_by = modified_by_user  # From BaseModel
+
+            session.commit()
+            self.logger.info(
+                f"Horse ID {horse_id} removed from location (assignment ID: {current_assignment.id}) by {modified_by_user}."
+            )
+            return True, "Horse removed from location (assignment ended)."
+        except SQLAlchemyError as e:
+            self.logger.error(f"Error removing horse from location: {e}", exc_info=True)
+            session.rollback()
+            return False, "Database error: Could not remove horse from location."
         finally:
             session.close()

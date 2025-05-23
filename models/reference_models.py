@@ -1,15 +1,16 @@
 # models/reference_models.py
-
 """
 EDSI Veterinary Management System - Reference Data Models
-Version: 1.1.8
+Version: 1.1.13
 Purpose: Defines SQLAlchemy models for various reference tables.
-         Enhanced Location model with full address, contact, phone, and email fields.
-Last Updated: May 20, 2025
-Author: Claude Assistant
+         SystemConfig class definition removed to defer implementation.
+Last Updated: May 23, 2025
+Author: Gemini (based on user's v1.1.8 by Claude Assistant)
 
 Changelog:
-- v1.1.8 (2025-05-20):
+- v1.1.13 (2025-05-23):
+    - Removed SystemConfig class definition.
+- v1.1.8 (2025-05-20 - User Uploaded Version):
     - Further enhanced `Location` model to include:
         - address_line1, address_line2, city, state_code (ForeignKey),
           zip_code, country_code, phone, email, contact_person.
@@ -53,11 +54,9 @@ class Species(BaseModel):
 
 class StateProvince(BaseModel):
     __tablename__ = "state_provinces"
-    state_code = Column(
-        String(10), primary_key=True, index=True
-    )  # e.g., "NY", "TX", "ON"
+    state_code = Column(String(10), primary_key=True, index=True)
     state_name = Column(String(100), nullable=False, unique=True)
-    country_code = Column(String(10), nullable=False, default="USA")  # e.g., USA, CAN
+    country_code = Column(String(10), nullable=False, default="USA")
     is_active = Column(Boolean, default=True, nullable=False, index=True)
 
     def __repr__(self):
@@ -96,8 +95,6 @@ class Location(BaseModel):
     __tablename__ = "locations"
     location_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     location_name = Column(String(100), unique=True, nullable=False, index=True)
-
-    # Address Fields
     address_line1 = Column(String(255), nullable=True)
     address_line2 = Column(String(255), nullable=True)
     city = Column(String(100), nullable=True)
@@ -105,23 +102,13 @@ class Location(BaseModel):
         String(10), ForeignKey("state_provinces.state_code"), nullable=True, index=True
     )
     zip_code = Column(String(20), nullable=True)
-    country_code = Column(
-        String(10), nullable=True
-    )  # Can be defaulted or derived from state
-
-    # Contact Fields
+    country_code = Column(String(10), nullable=True)
     phone = Column(String(30), nullable=True)
     email = Column(String(100), nullable=True, index=True)
     contact_person = Column(String(100), nullable=True)
-
-    # General Fields
-    description = Column(String(255), nullable=True)  # General notes or main purpose
+    description = Column(String(255), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False, index=True)
-
-    # Relationship to StateProvince
-    state = relationship(
-        "StateProvince", backref="locations"
-    )  # 'locations' backref on StateProvince
+    state = relationship("StateProvince", backref="locations")
 
     def __repr__(self):
         return (
@@ -129,7 +116,11 @@ class Location(BaseModel):
         )
 
 
-# --- Transaction and Billing Related Models ---
+# --- SystemConfig class definition is intentionally OMITTED from this file ---
+# --- It will be added back when the user is ready to implement it. ---
+
+
+# --- Transaction and Billing Related Models (from user's v1.1.8) ---
 class Transaction(BaseModel):
     __tablename__ = "transactions"
     transaction_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
@@ -173,7 +164,7 @@ class Invoice(BaseModel):
     status = Column(String(20), default="Unpaid")
 
 
-# --- Medical Record Related Models ---
+# --- Medical Record Related Models (from user's v1.1.8) ---
 class Procedure(BaseModel):
     __tablename__ = "procedures"
     procedure_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
