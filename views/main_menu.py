@@ -2,12 +2,16 @@
 
 """
 EDSI Veterinary Management System - Main Menu
-Version: 1.0.1
+Version: 1.0.2
 Purpose: Modern unified main menu with consolidated management screens.
-Last Updated: May 12, 2025
+         Fixed PyQt6 to PySide6 imports for consistency.
+Last Updated: May 24, 2025
 Author: Claude Assistant
 
 Changelog:
+- v1.0.2 (2025-05-24):
+    - Fixed imports from PyQt6 to PySide6 for consistency with rest of application
+    - Changed pyqtSignal to Signal from PySide6.QtCore
 - v1.0.1 (2025-05-12): Updated for unified management approach
   - Replaced separate horse operations (Add, Edit, Delete) with single "Horse Management"
   - Removed horse_review_update_selected, add_new_horse_selected, delete_horse_selected signals
@@ -21,7 +25,7 @@ Changelog:
   - Included proper styling and layout
 """
 
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QGridLayout,
@@ -32,8 +36,8 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
     QGroupBox,
 )
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QFont
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QFont
 from views.base_view import BaseView
 from config.app_config import AppConfig
 import logging
@@ -43,14 +47,14 @@ class MainMenu(BaseView):
     """Primary menu screen with unified management approach"""
 
     # Signals for menu selections
-    horse_management_selected = pyqtSignal()  # Option 1 - Unified horse operations
-    table_maintenance_selected = pyqtSignal()  # Option 2
-    print_reports_selected = pyqtSignal()  # Option 3
-    owners_ar_selected = pyqtSignal()  # Option 4
-    system_utilities_selected = pyqtSignal()  # Option 5
-    mass_update_selected = pyqtSignal()  # Option 6
-    logoff_exit_selected = pyqtSignal()  # Option 9
-    logoff_no_exit_selected = pyqtSignal()  # Option X
+    horse_management_selected = Signal()  # Option 1 - Unified horse operations
+    table_maintenance_selected = Signal()  # Option 2
+    print_reports_selected = Signal()  # Option 3
+    owners_ar_selected = Signal()  # Option 4
+    system_utilities_selected = Signal()  # Option 5
+    mass_update_selected = Signal()  # Option 6
+    logoff_exit_selected = Signal()  # Option 9
+    logoff_no_exit_selected = Signal()  # Option X
 
     def __init__(self, current_user=None):
         self.current_user = current_user or "Unknown"
@@ -85,7 +89,7 @@ class MainMenu(BaseView):
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title_label.setStyleSheet(
             f"""
-            color: {AppConfig.PRIMARY_COLOR};
+            color: {AppConfig.DARK_PRIMARY_ACTION};
             padding: 10px;
         """
         )
@@ -95,7 +99,7 @@ class MainMenu(BaseView):
         user_info_label.setAlignment(Qt.AlignmentFlag.AlignRight)
         user_info_label.setStyleSheet(
             f"""
-            color: {AppConfig.TEXT_SECONDARY};
+            color: {AppConfig.DARK_TEXT_SECONDARY};
             font-size: {AppConfig.DEFAULT_FONT_SIZE}pt;
             padding: 5px;
         """
@@ -120,7 +124,7 @@ class MainMenu(BaseView):
             QGroupBox {{
                 font-size: {AppConfig.DEFAULT_FONT_SIZE + 2}pt;
                 font-weight: bold;
-                color: {AppConfig.TEXT_COLOR};
+                color: {AppConfig.DARK_TEXT_PRIMARY};
                 padding-top: 15px;
             }}
             QGroupBox::title {{
@@ -178,7 +182,7 @@ class MainMenu(BaseView):
             button.setStyleSheet(
                 f"""
                 QPushButton {{
-                    background-color: {AppConfig.SECONDARY_COLOR};
+                    background-color: {AppConfig.DARK_DANGER_ACTION};
                     color: white;
                     border: none;
                     padding: 10px;
@@ -198,7 +202,7 @@ class MainMenu(BaseView):
             button.setStyleSheet(
                 f"""
                 QPushButton {{
-                    background-color: {AppConfig.PRIMARY_COLOR};
+                    background-color: {AppConfig.DARK_PRIMARY_ACTION};
                     color: white;
                     border: none;
                     padding: 10px;
@@ -229,7 +233,7 @@ class MainMenu(BaseView):
         instruction_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         instruction_label.setStyleSheet(
             f"""
-            color: {AppConfig.TEXT_SECONDARY};
+            color: {AppConfig.DARK_TEXT_SECONDARY};
             font-style: italic;
             font-size: {AppConfig.SMALL_FONT_SIZE + 1}pt;
             padding: 10px;

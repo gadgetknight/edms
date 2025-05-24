@@ -1,22 +1,25 @@
 # main.py
 
 """
-EDSI Veterinary Management System - Main Application
-Version: 1.3.12
-Purpose: Main entry point. Corrected signal connection for returning to Horse Management
-         from UserManagementScreen's header button.
-Last Updated: May 21, 2025
-Author: Claude Assistant (Modified by Gemini)
+EDSI Veterinary Management System - Main Application Entry Point
+Version: 2.0.0
+Purpose: Simplified main application with clean Splash → Login → Main Window flow.
+         Removed over-engineered complexity and focused on stable foundation.
+Last Updated: May 24, 2025
+Author: Claude Assistant
 
 Changelog:
-- v1.3.12 (2025-05-21):
-    - Connected UserManagementScreen.horse_management_requested signal to
-      EDSIApplication.handle_admin_screen_exit in show_user_management_screen.
-- v1.3.11 (2025-05-21):
-    - Corrected keyword argument in UserManagementScreen instantiation
-      from 'current_user_identifier' to 'current_user_id' to match
-      the __init__ signature of UserManagementScreen v1.10.7.
-# ... (rest of previous changelog)
+- v2.0.0 (2025-05-24):
+    - Complete rewrite for Phase 1 (Chunk 1) simplification
+    - Removed UserManagementScreen integration
+    - Simplified to basic Splash → Login → Main Window flow
+    - Removed complex signal/slot connections
+    - Fixed circular import issues
+    - Streamlined exception handling
+    - Removed unused screen management complexity
+    - Focused on stable foundation for horse management
+    - Clean separation of concerns
+    - Comprehensive logging without over-engineering
 """
 
 import sys
@@ -26,139 +29,225 @@ from logging.handlers import RotatingFileHandler
 from typing import Optional
 import traceback
 
-from PySide6.QtWidgets import QApplication, QMessageBox, QWidget
-from PySide6.QtCore import Qt, QTimer, qVersion
+from PySide6.QtWidgets import (
+    QApplication,
+    QMessageBox,
+    QMainWindow,
+    QLabel,
+    QVBoxLayout,
+    QWidget,
+)
+from PySide6.QtCore import Qt, QTimer
 from sqlalchemy import text
 
+# Ensure project root is in path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from config.database_config import db_manager
-from config.app_config import (
-    LOG_DIR,
-    APP_LOG_FILE,
-    LOGGING_LEVEL,
-    APP_NAME,
-    APP_VERSION,
-    DATABASE_URL,
-)
-
+from config.app_config import AppConfig
 from views.auth.splash_screen import SplashScreen
 from views.auth.small_login_dialog import SmallLoginDialog
-from views.horse.horse_unified_management import HorseUnifiedManagement
-from views.admin.user_management_screen import UserManagementScreen
 
+# Global exception handling
 exception_logger = logging.getLogger("GlobalExceptionHook")
 
 
 def global_exception_hook(exctype, value, tb):
+    """Handle uncaught exceptions globally"""
     formatted_traceback = "".join(traceback.format_exception(exctype, value, tb))
     exception_logger.critical(
-        f"Unhandled exception caught by global hook:\n"
-        f"Type: {exctype.__name__}\nValue: {value}\nTraceback:\n{formatted_traceback}",
+        f"Unhandled exception: {exctype.__name__}: {value}\n{formatted_traceback}",
         exc_info=(exctype, value, tb),
     )
+
     app_instance = QApplication.instance()
     if app_instance:
         QMessageBox.critical(
             None,
             "Critical Application Error",
-            f"A critical error occurred: {value}\n\nPlease check logs.",
+            f"A critical error occurred: {value}\n\nPlease check logs for details.",
         )
+
+
+class MainWindow(QMainWindow):
+    """Simple main window placeholder for horse management"""
+
+    def __init__(self, current_user: str, parent=None):
+        super().__init__(parent)
+        self.current_user = current_user
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.setup_ui()
+
+    def setup_ui(self):
+        """Setup basic main window UI"""
+        self.setWindowTitle(f"EDSI Horse Management - User: {self.current_user}")
+        self.setMinimumSize(1000, 700)
+
+        # Simple central widget with welcome message
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+
+        layout = QVBoxLayout(central_widget)
+
+        welcome_label = QLabel(
+            f"Welcome to EDSI Horse Management\n\nLogged in as: {self.current_user}"
+        )
+        welcome_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        welcome_label.setStyleSheet(
+            """
+            QLabel {
+                font-size: 18px;
+                font-weight: bold;
+                padding: 20px;
+                color: #E2E8F0;
+            }
+        """
+        )
+
+        layout.addWidget(welcome_label)
+
+        # Apply dark theme
+        self.setStyleSheet(
+            """
+            QMainWindow {
+                background-color: #2D3748;
+                color: #E2E8F0;
+            }
+        """
+        )
+
+        self.logger.info(f"Main window initialized for user: {self.current_user}")
 
 
 class EDSIApplication(QApplication):
+    """Main application class with simplified flow"""
+
     def __init__(self):
         super().__init__(sys.argv)
+
+        # Set global exception handler
         sys.excepthook = global_exception_hook
+
+        # Initialize application
         self.current_user_id: Optional[str] = None
         self.splash_screen: Optional[SplashScreen] = None
         self.login_dialog: Optional[SmallLoginDialog] = None
-        self.horse_management_screen: Optional[HorseUnifiedManagement] = None
-        self.user_management_screen: Optional[UserManagementScreen] = None
+        self.main_window: Optional[MainWindow] = None
+
+        # Setup logging first
         self.setup_logging()
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.info(
-            f"Starting {APP_NAME} v{APP_VERSION}"
-        )  # APP_VERSION should be updated here too
+
+        # Log startup info
+        self.logger.info(f"Starting {AppConfig.APP_NAME} v{AppConfig.APP_VERSION}")
         self.logger.info(f"Python version: {sys.version}")
-        self.logger.info(f"Qt version: {qVersion()}")
-        self.db_manager = db_manager
-        self.initialize_database()
-        self.setApplicationName(APP_NAME)
-        self.setApplicationVersion(APP_VERSION)  # And here
+        self.logger.info(f"PySide6 version: {self.applicationVersion()}")
+
+        # Set application properties
+        self.setApplicationName(AppConfig.APP_NAME)
+        self.setApplicationVersion(AppConfig.APP_VERSION)
         self.setOrganizationName("EDSI")
+
+        # Ensure required directories exist
+        AppConfig.ensure_directories()
+
+        # Initialize database
+        self.initialize_database()
+
+        # Start with splash screen
         self.show_splash_screen()
 
     def setup_logging(self):
-        log_directory = LOG_DIR
-        app_log_file = APP_LOG_FILE
-        log_level_str = os.environ.get("LOG_LEVEL", logging.getLevelName(LOGGING_LEVEL))
-        log_level = getattr(logging, log_level_str.upper(), LOGGING_LEVEL)
-        log_formatter = logging.Formatter(
-            "%(asctime)s - %(levelname)s - %(name)s - %(module)s:%(lineno)d - %(message)s"
-        )
+        """Setup application logging"""
+        log_config = AppConfig.get_logging_config()
+
+        # Create log directory if needed
+        if not os.path.exists(log_config["log_dir"]):
+            try:
+                os.makedirs(log_config["log_dir"])
+            except OSError as e:
+                print(f"Error creating log directory: {e}", file=sys.stderr)
+                return
+
+        # Configure root logger
         root_logger = logging.getLogger()
-        root_logger.setLevel(log_level)
+        root_logger.setLevel(log_config["level"])
+
+        # Clear existing handlers
         if root_logger.hasHandlers():
             root_logger.handlers.clear()
+
+        # Create formatter
+        formatter = logging.Formatter(
+            "%(asctime)s - %(levelname)s - %(name)s - %(module)s:%(lineno)d - %(message)s"
+        )
+
+        # Console handler
         console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setFormatter(log_formatter)
+        console_handler.setFormatter(formatter)
         root_logger.addHandler(console_handler)
-        if not os.path.exists(log_directory):
-            try:
-                os.makedirs(log_directory)
-            except OSError as e:
-                print(
-                    f"CRITICAL: Error creating log directory {log_directory}: {e}. File logging disabled.",
-                    file=sys.stderr,
-                )
-                logging.info("Logging configured (Console only).")
-                return
+
+        # File handler
         try:
             file_handler = RotatingFileHandler(
-                app_log_file, maxBytes=5 * 1024 * 1024, backupCount=3, encoding="utf-8"
+                log_config["app_log_file"],
+                maxBytes=5 * 1024 * 1024,  # 5MB
+                backupCount=3,
+                encoding="utf-8",
             )
-            file_handler.setFormatter(log_formatter)
+            file_handler.setFormatter(formatter)
             root_logger.addHandler(file_handler)
-            logging.info("Logging configured (Console and File).")
+            logging.info("Logging configured (Console and File)")
         except Exception as e:
-            print(
-                f"CRITICAL: Error setting up file logger {app_log_file}: {e}. File logging disabled.",
-                file=sys.stderr,
-            )
-            logging.info("Logging configured (Console only due to file handler error).")
+            print(f"Error setting up file logger: {e}", file=sys.stderr)
+            logging.info("Logging configured (Console only)")
 
     def initialize_database(self):
+        """Initialize database connection"""
         self.logger.info("Initializing database...")
         try:
-            self.db_manager.initialize_database(DATABASE_URL)
-            with self.db_manager.get_session() as session:
+            db_manager.initialize_database()
+
+            # Test connection
+            with db_manager.get_session() as session:
                 session.execute(text("SELECT 1"))
-            self.logger.info("Database initialized successfully.")
+
+            self.logger.info("Database initialized successfully")
+
         except Exception as e:
-            self.logger.critical(f"Failed to initialize database: {e}", exc_info=True)
+            self.logger.critical(f"Database initialization failed: {e}", exc_info=True)
             QMessageBox.critical(
-                None, "Database Error", f"Database error: {e}\nApp will exit."
+                None,
+                "Database Error",
+                f"Failed to initialize database: {e}\n\nApplication will exit.",
             )
             sys.exit(1)
 
     def show_splash_screen(self):
-        self.logger.debug("Attempting to show splash screen.")
-        self.close_all_screens()
+        """Display splash screen"""
+        self.logger.info("Showing splash screen")
+
+        # Clean up existing screens
+        self._cleanup_screens()
+
         self.splash_screen = SplashScreen()
         self.splash_screen.login_requested.connect(self.show_login_dialog)
         self.splash_screen.exit_requested.connect(self.quit_application)
         self.splash_screen.show()
-        self.logger.info("Splash screen displayed.")
 
     def show_login_dialog(self):
-        self.logger.info("Login area clicked on splash screen.")
+        """Show login dialog"""
+        self.logger.info("Showing login dialog")
+
+        # Don't create multiple login dialogs
         if self.login_dialog and self.login_dialog.isVisible():
             self.login_dialog.raise_()
             self.login_dialog.activateWindow()
             return
+
+        # Create login dialog
         parent_widget = (
             self.splash_screen
             if self.splash_screen and self.splash_screen.isVisible()
@@ -167,174 +256,102 @@ class EDSIApplication(QApplication):
         self.login_dialog = SmallLoginDialog(parent=parent_widget)
         self.login_dialog.login_successful.connect(self.handle_login_success)
         self.login_dialog.dialog_closed.connect(self.handle_login_dialog_closed)
+
+        # Show modal dialog
         self.login_dialog.setModal(True)
         self.login_dialog.show()
 
-    def handle_login_dialog_closed(self):
-        self.logger.debug("Login dialog reported closed.")
-        if not self.current_user_id and not (
-            (self.horse_management_screen and self.horse_management_screen.isVisible())
-            or (self.user_management_screen and self.user_management_screen.isVisible())
-        ):
-            if not (self.splash_screen and self.splash_screen.isVisible()):
-                self.logger.info(
-                    "Login dialog closed without login success and no screens active."
-                )
-
     def handle_login_success(self, user_id: str):
+        """Handle successful login"""
         self.current_user_id = user_id
-        self.logger.info(f"User '{self.current_user_id}' logged in successfully.")
+        self.logger.info(f"User '{user_id}' logged in successfully")
+
+        # Close login dialog and splash screen
         if self.login_dialog:
             self.login_dialog.close()
             self.login_dialog = None
+
         if self.splash_screen:
             self.splash_screen.close()
             self.splash_screen = None
-        self.show_horse_management_screen()
 
-    def handle_main_screen_closure_signal(self):
-        self.logger.warning(
-            "DIAGNOSTIC: HorseUnifiedManagement screen emitted 'closing' signal!"
-        )
+        # Show main window
+        self.show_main_window()
 
-    def show_horse_management_screen(self):
-        self.logger.debug("Attempting to show Horse Management Screen.")
-        self.close_all_screens()
+    def handle_login_dialog_closed(self):
+        """Handle login dialog closure"""
+        self.logger.debug("Login dialog closed")
+
+        # If no successful login and no main window, ensure splash is visible
+        if not self.current_user_id and not (
+            self.main_window and self.main_window.isVisible()
+        ):
+            if not (self.splash_screen and self.splash_screen.isVisible()):
+                self.show_splash_screen()
+
+    def show_main_window(self):
+        """Show main application window"""
         if not self.current_user_id:
-            self.logger.warning(
-                "Attempted to show horse management screen without login. Navigating to splash."
-            )
-            self.show_splash_screen()
-            return
-        self.horse_management_screen = HorseUnifiedManagement(
-            current_user=self.current_user_id
-        )
-        if hasattr(self.horse_management_screen, "closing"):
-            self.horse_management_screen.closing.connect(
-                self.handle_main_screen_closure_signal
-            )
-        self.horse_management_screen.exit_requested.connect(self.handle_logout)
-        self.horse_management_screen.setup_requested.connect(
-            self.show_user_management_screen
-        )
-        self.logger.info("About to call self.horse_management_screen.show()")
-        self.horse_management_screen.show()
-        self.logger.info("Horse Management Screen show() called.")
-
-    def show_user_management_screen(self):
-        self.logger.debug("Attempting to show User Management Screen.")
-
-        if self.horse_management_screen and self.horse_management_screen.isVisible():
-            self.logger.debug(
-                "Hiding HorseUnifiedManagement screen before showing UserManagementScreen."
-            )
-            self.horse_management_screen.hide()
-        else:
-            self.close_all_screens()
-
-        if not self.current_user_id:
-            self.logger.warning(
-                "Attempted to show user management screen without login. Navigating to splash."
-            )
+            self.logger.warning("Attempted to show main window without login")
             self.show_splash_screen()
             return
 
-        self.user_management_screen = UserManagementScreen(
-            current_user_id=self.current_user_id
-        )
-        # Connect the footer button's exit_requested signal
-        self.user_management_screen.exit_requested.connect(
-            self.handle_admin_screen_exit
-        )
-        # Connect the header button's horse_management_requested signal
-        if hasattr(self.user_management_screen, "horse_management_requested"):
-            self.user_management_screen.horse_management_requested.connect(
-                self.handle_admin_screen_exit  # Re-use same handler as it shows horse screen
-            )
-        else:
-            self.logger.warning(
-                "UserManagementScreen does not have 'horse_management_requested' signal."
-            )
+        self.logger.info(f"Showing main window for user: {self.current_user_id}")
 
-        self.user_management_screen.show()
-        self.logger.info("User Management Screen displayed.")
+        # Clean up existing screens
+        self._cleanup_screens()
 
-    def handle_logout(self):
-        self.logger.info(
-            f"User '{self.current_user_id}' logging out from Horse Management."
-        )
-        self.current_user_id = None
-        self.show_splash_screen()
-
-    def handle_admin_screen_exit(self):
-        self.logger.info(
-            f"Exiting Admin Screen. User: '{self.current_user_id}'. Returning to Horse Management."
-        )
-        if self.user_management_screen:
-            self.user_management_screen.close()
-            self.user_management_screen = None
-
-        if self.horse_management_screen:
-            self.logger.debug("Re-showing existing HorseUnifiedManagement screen.")
-            self.horse_management_screen.show()
-            self.horse_management_screen.activateWindow()
-        else:
-            self.logger.debug(
-                "No existing HorseUnifiedManagement screen, creating new."
-            )
-            self.show_horse_management_screen()
-
-    def close_all_screens(self, exclude: Optional[QWidget] = None):
-        self.logger.debug(
-            f"close_all_screens called, excluding: {exclude.__class__.__name__ if exclude else 'None'}"
-        )
-
-        screen_attrs = [
-            "login_dialog",
-            "user_management_screen",
-            "horse_management_screen",
-            "splash_screen",
-        ]
-
-        for attr_name in screen_attrs:
-            screen_instance = getattr(self, attr_name, None)
-            if (
-                screen_instance
-                and screen_instance is not exclude
-                and screen_instance.isVisible()
-            ):
-                self.logger.debug(f"Closing {attr_name}.")
-                screen_instance.close()
-                setattr(self, attr_name, None)
+        # Create and show main window
+        self.main_window = MainWindow(self.current_user_id)
+        self.main_window.show()
 
     def quit_application(self):
-        self.logger.info("Quit application requested.")
-        self.close_all_screens()
+        """Quit application cleanly"""
+        self.logger.info("Application quit requested")
+        self._cleanup_screens()
         self.quit()
 
+    def _cleanup_screens(self):
+        """Clean up all open screens"""
+        screens = [
+            ("splash_screen", self.splash_screen),
+            ("login_dialog", self.login_dialog),
+            ("main_window", self.main_window),
+        ]
+
+        for name, screen in screens:
+            if screen and screen.isVisible():
+                self.logger.debug(f"Closing {name}")
+                screen.close()
+
+        # Clear references
+        self.splash_screen = None
+        self.login_dialog = None
+        # Don't clear main_window reference as it may be reused
+
     def run(self):
-        self.logger.info(f"Starting {APP_NAME} event loop (sys.excepthook is set)...")
+        """Run the application"""
+        self.logger.info(f"Starting {AppConfig.APP_NAME} event loop")
         try:
-            # Update APP_VERSION here to match class attribute if necessary
-            # self.setApplicationVersion(APP_VERSION) # Already set in __init__
             exit_code = self.exec()
-            self.logger.info(f"{APP_NAME} event loop finished. Exit code: {exit_code}")
+            self.logger.info(f"Application finished with exit code: {exit_code}")
             return exit_code
         except Exception as e:
-            self.logger.critical(
-                f"CRITICAL UNCAUGHT ERROR IN EXEC LOOP: {e}", exc_info=True
-            )
+            self.logger.critical(f"Critical error in event loop: {e}", exc_info=True)
             return 1
 
 
 def main():
-    # Ensure APP_VERSION is consistent if used elsewhere before EDSIApplication instantiation
-    app_instance = EDSIApplication()
-    exit_code = app_instance.run()
-    logging.info(f"Application exiting with code {exit_code}.")
-    sys.exit(exit_code)
+    """Main entry point"""
+    try:
+        app = EDSIApplication()
+        exit_code = app.run()
+        logging.info(f"Application exiting with code {exit_code}")
+        sys.exit(exit_code)
+    except Exception as e:
+        print(f"Fatal error starting application: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
     main()
-

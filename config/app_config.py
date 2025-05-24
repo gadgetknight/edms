@@ -2,70 +2,55 @@
 
 """
 EDSI Veterinary Management System - Application Configuration
-Version: 1.1.1
-Purpose: Centralized configuration for application settings, paths, and constants.
-         Added missing window size and font size constants.
-Last Updated: May 18, 2025
+Version: 2.0.0
+Purpose: Simplified centralized configuration for application settings, paths, and constants.
+         Removed over-engineered complexity and focused on essential configuration.
+Last Updated: May 24, 2025
 Author: Claude Assistant
 
 Changelog:
-- v1.1.1 (2025-05-18):
-    - Added MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT.
-    - Added DEFAULT_FONT_SIZE, SMALL_FONT_SIZE.
-- v1.1.0 (2025-05-17): Added get_database_url() function.
-- v1.0.0 (2025-05-12): Initial version with paths and theme colors.
+- v2.0.0 (2025-05-24):
+    - Complete rewrite for Phase 1 (Chunk 1) simplification
+    - Consolidated all configuration into single AppConfig class
+    - Removed redundant constants and functions
+    - Simplified database URL handling
+    - Streamlined path management
+    - Cleaned up theme colors (kept only essential ones)
+    - Removed unnecessary environment variable complexity
+    - Added essential UI constants for stable foundation
+    - Focused on clean, maintainable configuration structure
 """
 
 import os
 import logging
-import sys  # Added for stderr print in case of log dir creation error
-from dotenv import load_dotenv
+from typing import Dict, Any
 
-# --- Path Configuration ---
+# --- Project Paths ---
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-dotenv_path = os.path.join(PROJECT_ROOT, ".env")
-load_dotenv(dotenv_path)
-
-# --- Logging Configuration ---
 LOG_DIR = os.path.join(PROJECT_ROOT, "logs")
-APP_LOG_FILE = os.path.join(LOG_DIR, "edsi_app.log")
-DB_LOG_FILE = os.path.join(LOG_DIR, "edsi_db.log")
-
-if not os.path.exists(LOG_DIR):
-    try:
-        os.makedirs(LOG_DIR)
-    except OSError as e:
-        print(f"Error creating log directory {LOG_DIR}: {e}", file=sys.stderr)
-
-LOGGING_LEVEL = logging.INFO
-
-# --- Database Configuration ---
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL", f"sqlite:///{os.path.join(PROJECT_ROOT, 'edsi_database.db')}"
-)
-print(f"Database URL set to: {DATABASE_URL}")
-
-
-def get_database_url():
-    """Returns the configured DATABASE_URL."""
-    return DATABASE_URL
-
+ASSETS_DIR = os.path.join(PROJECT_ROOT, "assets")
 
 # --- Application Information ---
 APP_NAME = "EDSI Veterinary Management System"
-APP_VERSION = "1.3.1"  # Match version in main.py if it's also there
-APP_AUTHOR = "GadgetKnight"
+APP_VERSION = "2.0.0"
+APP_AUTHOR = "EDSI"
+
+# --- Database Configuration ---
+DATABASE_URL = f"sqlite:///{os.path.join(PROJECT_ROOT, 'edsi_database.db')}"
+
+# --- Logging Configuration ---
+APP_LOG_FILE = os.path.join(LOG_DIR, "edsi_app.log")
+DB_LOG_FILE = os.path.join(LOG_DIR, "edsi_db.log")
+LOGGING_LEVEL = logging.INFO
 
 # --- UI Configuration ---
 DEFAULT_FONT_FAMILY = "Inter"
-# --- ADDED MISSING CONSTANTS ---
-DEFAULT_FONT_SIZE = 10  # Default font size in points
-SMALL_FONT_SIZE = 9  # Smaller font size for things like status bars
-MIN_WINDOW_WIDTH = 900  # Minimum window width for BaseView
-MIN_WINDOW_HEIGHT = 700  # Minimum window height for BaseView
-# --- END ADDED ---
+DEFAULT_FONT_SIZE = 10
+SMALL_FONT_SIZE = 9
+MIN_WINDOW_WIDTH = 900
+MIN_WINDOW_HEIGHT = 700
 
-# Centralized Dark Theme Colors (Hex Codes)
+# --- Dark Theme Colors (Essential Only) ---
 DARK_BACKGROUND = "#2D3748"
 DARK_WIDGET_BACKGROUND = "#1A202C"
 DARK_HEADER_FOOTER = "#222B38"
@@ -80,35 +65,147 @@ DARK_DANGER_ACTION = "#E53E3E"
 DARK_BUTTON_BG = "#4A5568"
 DARK_BUTTON_HOVER = "#718096"
 DARK_ITEM_HOVER = "#2C3543"
-DARK_HIGHLIGHT_BG = DARK_PRIMARY_ACTION  # Use primary action for highlight
+DARK_HIGHLIGHT_BG = "#3182CE"
 DARK_HIGHLIGHT_TEXT = "#FFFFFF"
 DARK_INPUT_FIELD_BACKGROUND = "#222B38"
-DARK_TOOLTIP_BASE = DARK_WIDGET_BACKGROUND  # Added for BaseView palette
-DARK_TOOLTIP_TEXT = DARK_TEXT_PRIMARY  # Added for BaseView palette
 
 
 class AppConfig:
     """
-    Provides methods to access application configuration settings.
+    Centralized application configuration class.
+    Provides clean access to all application settings.
     """
 
-    @staticmethod
-    def get_app_dir() -> str:
-        return PROJECT_ROOT
+    # Application Info
+    APP_NAME = APP_NAME
+    APP_VERSION = APP_VERSION
+    APP_AUTHOR = APP_AUTHOR
 
-    @staticmethod
-    def get_assets_dir() -> str:
-        return os.path.join(PROJECT_ROOT, "assets")
+    # Paths
+    PROJECT_ROOT = PROJECT_ROOT
+    LOG_DIR = LOG_DIR
+    ASSETS_DIR = ASSETS_DIR
 
-    @staticmethod
-    def get_logging_config() -> dict:
+    # Database
+    DATABASE_URL = DATABASE_URL
+
+    # Logging
+    APP_LOG_FILE = APP_LOG_FILE
+    DB_LOG_FILE = DB_LOG_FILE
+    LOGGING_LEVEL = LOGGING_LEVEL
+
+    # UI Settings
+    DEFAULT_FONT_FAMILY = DEFAULT_FONT_FAMILY
+    DEFAULT_FONT_SIZE = DEFAULT_FONT_SIZE
+    SMALL_FONT_SIZE = SMALL_FONT_SIZE
+    MIN_WINDOW_WIDTH = MIN_WINDOW_WIDTH
+    MIN_WINDOW_HEIGHT = MIN_WINDOW_HEIGHT
+
+    # Theme Colors
+    DARK_BACKGROUND = DARK_BACKGROUND
+    DARK_WIDGET_BACKGROUND = DARK_WIDGET_BACKGROUND
+    DARK_HEADER_FOOTER = DARK_HEADER_FOOTER
+    DARK_BORDER = DARK_BORDER
+    DARK_TEXT_PRIMARY = DARK_TEXT_PRIMARY
+    DARK_TEXT_SECONDARY = DARK_TEXT_SECONDARY
+    DARK_TEXT_TERTIARY = DARK_TEXT_TERTIARY
+    DARK_PRIMARY_ACTION = DARK_PRIMARY_ACTION
+    DARK_SUCCESS_ACTION = DARK_SUCCESS_ACTION
+    DARK_WARNING_ACTION = DARK_WARNING_ACTION
+    DARK_DANGER_ACTION = DARK_DANGER_ACTION
+    DARK_BUTTON_BG = DARK_BUTTON_BG
+    DARK_BUTTON_HOVER = DARK_BUTTON_HOVER
+    DARK_ITEM_HOVER = DARK_ITEM_HOVER
+    DARK_HIGHLIGHT_BG = DARK_HIGHLIGHT_BG
+    DARK_HIGHLIGHT_TEXT = DARK_HIGHLIGHT_TEXT
+    DARK_INPUT_FIELD_BACKGROUND = DARK_INPUT_FIELD_BACKGROUND
+
+    @classmethod
+    def get_database_url(cls) -> str:
+        """Get database URL"""
+        return cls.DATABASE_URL
+
+    @classmethod
+    def get_app_dir(cls) -> str:
+        """Get application root directory"""
+        return cls.PROJECT_ROOT
+
+    @classmethod
+    def get_assets_dir(cls) -> str:
+        """Get assets directory path"""
+        return cls.ASSETS_DIR
+
+    @classmethod
+    def get_app_info(cls) -> Dict[str, str]:
+        """Get application information"""
         return {
-            "level": LOGGING_LEVEL,
-            "app_log_file": APP_LOG_FILE,
-            "db_log_file": DB_LOG_FILE,
-            "log_dir": LOG_DIR,
+            "name": cls.APP_NAME,
+            "version": cls.APP_VERSION,
+            "author": cls.APP_AUTHOR,
         }
 
-    @staticmethod
-    def get_app_info() -> dict:
-        return {"name": APP_NAME, "version": APP_VERSION, "author": APP_AUTHOR}
+    @classmethod
+    def get_logging_config(cls) -> Dict[str, Any]:
+        """Get logging configuration"""
+        return {
+            "level": cls.LOGGING_LEVEL,
+            "app_log_file": cls.APP_LOG_FILE,
+            "db_log_file": cls.DB_LOG_FILE,
+            "log_dir": cls.LOG_DIR,
+        }
+
+    @classmethod
+    def get_ui_config(cls) -> Dict[str, Any]:
+        """Get UI configuration"""
+        return {
+            "font_family": cls.DEFAULT_FONT_FAMILY,
+            "font_size": cls.DEFAULT_FONT_SIZE,
+            "small_font_size": cls.SMALL_FONT_SIZE,
+            "min_window_width": cls.MIN_WINDOW_WIDTH,
+            "min_window_height": cls.MIN_WINDOW_HEIGHT,
+        }
+
+    @classmethod
+    def get_theme_colors(cls) -> Dict[str, str]:
+        """Get theme color palette"""
+        return {
+            "background": cls.DARK_BACKGROUND,
+            "widget_background": cls.DARK_WIDGET_BACKGROUND,
+            "header_footer": cls.DARK_HEADER_FOOTER,
+            "border": cls.DARK_BORDER,
+            "text_primary": cls.DARK_TEXT_PRIMARY,
+            "text_secondary": cls.DARK_TEXT_SECONDARY,
+            "text_tertiary": cls.DARK_TEXT_TERTIARY,
+            "primary_action": cls.DARK_PRIMARY_ACTION,
+            "success_action": cls.DARK_SUCCESS_ACTION,
+            "warning_action": cls.DARK_WARNING_ACTION,
+            "danger_action": cls.DARK_DANGER_ACTION,
+            "button_bg": cls.DARK_BUTTON_BG,
+            "button_hover": cls.DARK_BUTTON_HOVER,
+            "item_hover": cls.DARK_ITEM_HOVER,
+            "highlight_bg": cls.DARK_HIGHLIGHT_BG,
+            "highlight_text": cls.DARK_HIGHLIGHT_TEXT,
+            "input_field_background": cls.DARK_INPUT_FIELD_BACKGROUND,
+        }
+
+    @classmethod
+    def get_app_dir(cls) -> str:
+        """Get application root directory"""
+        return cls.PROJECT_ROOT
+
+    @classmethod
+    def get_assets_dir(cls) -> str:
+        """Get assets directory path"""
+        return cls.ASSETS_DIR
+
+    @classmethod
+    def ensure_directories(cls) -> None:
+        """Ensure required directories exist"""
+        directories = [cls.LOG_DIR, cls.ASSETS_DIR]
+
+        for directory in directories:
+            if not os.path.exists(directory):
+                try:
+                    os.makedirs(directory, exist_ok=True)
+                except OSError as e:
+                    print(f"Warning: Could not create directory {directory}: {e}")

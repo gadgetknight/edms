@@ -1,23 +1,25 @@
 # models/owner_models.py
-
 """
 EDSI Veterinary Management System - Owner Related Models
-Version: 1.1.3
+Version: 1.1.6
 Purpose: Defines SQLAlchemy models for Owner and related entities.
-         Explicitly sets foreign_keys for OwnerPayment.owner relationship.
-Last Updated: May 18, 2025
-Author: Claude Assistant
+         - Ensured Invoice model is correctly defined and func is imported for date default.
+Last Updated: May 23, 2025
+Author: Claude Assistant (Modified by Gemini)
 
 Changelog:
-- v1.1.3 (2025-05-18):
-    - Added `foreign_keys=[OwnerPayment.owner_id]` to the `OwnerPayment.owner` relationship.
-- v1.1.2 (2025-05-18):
-    - Ensured Owner.payments_made relationship targets "OwnerPayment".
-    - Ensured OwnerPayment.owner relationship correctly back_populates "payments_made".
-- v1.1.1 (2025-05-18):
-    - Added `DateTime` to the import from `sqlalchemy` to resolve NameError.
-- v1.1.0 (2025-05-18):
-    - Added `foreign_keys=[Owner.state_code]` to the `Owner.state` relationship.
+- v1.1.6 (2025-05-23):
+    - Ensured the `Invoice` class is correctly defined.
+    - Imported `sqlalchemy.sql.func` for `func.current_date()` default in `Invoice.invoice_date`.
+- v1.1.5 (2025-05-23):
+    - Owner.horses (many-to-many): Added `viewonly=True` to prevent conflicts
+      with other relationships managing the `horse_owners` association table,
+      addressing SQLAlchemy overlap warnings.
+- v1.1.4 (2025-05-23):
+    - Renamed the direct relationship from Owner to HorseOwner objects
+      from `horses` to `horse_associations` for clarity and consistency.
+    - Added a new many-to-many relationship `Owner.horses` (linking to Horse objects)
+      to correctly pair with `Horse.owners`.
 """
 
 from sqlalchemy import (
@@ -32,7 +34,10 @@ from sqlalchemy import (
     DateTime,
 )
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from sqlalchemy.sql import func  # Added for func.current_date()
+from datetime import (
+    datetime,
+)  # Keep for default values if not using sqlalchemy.sql.func
 
 from .base_model import BaseModel
 
@@ -73,9 +78,15 @@ class Owner(BaseModel):
     notes = Column(Text, nullable=True)
 
     state = relationship("StateProvince", foreign_keys=[state_code], backref="owners")
-    horses = relationship(
+
+    horse_associations = relationship(
         "HorseOwner", back_populates="owner", cascade="all, delete-orphan"
     )
+
+    horses = relationship(
+        "Horse", secondary="horse_owners", back_populates="owners", viewonly=True
+    )
+
     billing_history = relationship(
         "OwnerBillingHistory", back_populates="owner", cascade="all, delete-orphan"
     )
@@ -93,7 +104,7 @@ class Owner(BaseModel):
 
 
 class OwnerBillingHistory(BaseModel):
-    """Placeholder for owner's billing history entries."""
+    """Billing history entries for an owner."""  # Corrected docstring slightly
 
     __tablename__ = "owner_billing_history"
 
@@ -101,10 +112,12 @@ class OwnerBillingHistory(BaseModel):
     owner_id = Column(
         Integer, ForeignKey("owners.owner_id"), nullable=False, index=True
     )
-    entry_date = Column(DateTime, default=datetime.utcnow)
+    entry_date = Column(
+        DateTime, default=datetime.utcnow
+    )  # sqlalchemy.sql.func.now() is better for server default
     description = Column(String(255), nullable=False)
-    amount_change = Column(Numeric(10, 2))
-    new_balance = Column(Numeric(10, 2))
+    amount_change = Column(Numeric(10, 2))  # Should probably be nullable=False
+    new_balance = Column(Numeric(10, 2))  # Should probably be nullable=False
 
     owner = relationship("Owner", back_populates="billing_history")
 
@@ -121,17 +134,42 @@ class OwnerPayment(BaseModel):
     owner_id = Column(
         Integer, ForeignKey("owners.owner_id"), nullable=False, index=True
     )
-    payment_date = Column(Date, nullable=False, default=datetime.utcnow)
+    payment_date = Column(Date, nullable=False, default=func.current_date)  # Using func
     amount = Column(Numeric(10, 2), nullable=False)
-    payment_method = Column(String(50))
+    payment_method = Column(String(50))  # Consider nullable=False if always present
     reference_number = Column(String(100), nullable=True)
     notes = Column(Text)
 
-    # --- MODIFIED RELATIONSHIP: Explicitly state foreign_keys ---
     owner = relationship(
         "Owner", foreign_keys=[owner_id], back_populates="payments_made"
     )
-    # --- END MODIFICATION ---
 
     def __repr__(self):
         return f"<OwnerPayment(owner_id={self.owner_id}, date='{self.payment_date}', amount={self.amount})>"
+
+
+class Invoice(BaseModel):  # Ensured Invoice model is present
+    """Invoices for an owner."""
+
+    __tablename__ = "invoices"
+
+    invoice_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    owner_id = Column(
+        Integer, ForeignKey("owners.owner_id"), nullable=False, index=True
+    )
+    invoice_date = Column(Date, nullable=False, default=func.current_date)  # Using func
+    due_date = Column(Date, nullable=True)
+    total_amount = Column(Numeric(10, 2), nullable=False, default=0.00)
+    amount_paid = Column(Numeric(10, 2), nullable=False, default=0.00)
+    status = Column(
+        String(50), nullable=False, default="Draft"
+    )  # E.g., Draft, Sent, Paid, Void
+
+    # If Invoice can have multiple TransactionDetails or line items, define relationship here
+    # details = relationship("TransactionDetail", back_populates="invoice") # Example
+
+    # Relationship to Owner
+    # owner = relationship("Owner", back_populates="invoices") # Add 'invoices' to Owner model if needed
+
+    def __repr__(self):
+        return f"<Invoice(invoice_id={self.invoice_id}, owner_id={self.owner_id}, total={self.total_amount}, status='{self.status}')>"

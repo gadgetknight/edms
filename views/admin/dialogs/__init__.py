@@ -7,7 +7,7 @@ notably the UserManagementScreen.
 # Ensure NO leading spaces/tabs on the following import lines
 
 # Corrected to import from 'add_edit_change_code_dialog.py' as per user preference
-from .add_edit_change_code_dialog import AddEditChargeCodeDialog
+from .add_edit_charge_code_dialog import AddEditChargeCodeDialog
 from .add_edit_location_dialog import AddEditLocationDialog
 
 # Add other dialogs from this directory if they exist and need to be imported
