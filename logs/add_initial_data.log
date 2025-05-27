@@ -1,87 +1,94 @@
-2025-05-23 20:15:31,636 - INFO - add_initial_data.py:720 - Running script to add initial data to the database...
-2025-05-23 20:15:31,636 - INFO - database_config.py:64 - Initializing database with URL: sqlite:///C:\Projects\EDMS\edsi_database.db
-2025-05-23 20:15:31,643 - INFO - database_config.py:70 - Database engine and session factory created successfully.
-2025-05-23 20:15:31,644 - INFO - database_config.py:129 - Models known by Base.metadata before create_all: ['roles', 'user_roles', 'users', 'system_config', 'horse_owners', 'horse_locations', 'horses', 'owners', 'owner_billing_history', 'owner_payments', 'invoices', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments']
-2025-05-23 20:15:31,822 - INFO - database_config.py:133 - Database tables created (if they didn't exist).
-2025-05-23 20:15:31,822 - INFO - database_config.py:134 - Models known by Base.metadata after create_all: ['roles', 'user_roles', 'users', 'system_config', 'horse_owners', 'horse_locations', 'horses', 'owners', 'owner_billing_history', 'owner_payments', 'invoices', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments']
-2025-05-23 20:15:31,822 - INFO - add_initial_data.py:728 - Database initialized and tables created (if they didn't exist).
-2025-05-23 20:15:31,823 - INFO - add_initial_data.py:740 - Starting to add initial reference data...
-2025-05-23 20:15:31,839 - INFO - add_initial_data.py:94 - Prepared role: ADMIN
-2025-05-23 20:15:31,839 - INFO - add_initial_data.py:94 - Prepared role: MANAGER
-2025-05-23 20:15:31,839 - INFO - add_initial_data.py:94 - Prepared role: VETERINARIAN
-2025-05-23 20:15:31,839 - INFO - add_initial_data.py:94 - Prepared role: TECHNICIAN
-2025-05-23 20:15:31,840 - INFO - add_initial_data.py:94 - Prepared role: RECEPTIONIST
-2025-05-23 20:15:31,841 - INFO - add_initial_data.py:94 - Prepared role: CLIENT
-2025-05-23 20:15:31,841 - INFO - add_initial_data.py:100 - Successfully prepared 6 new roles.
-2025-05-23 20:15:31,999 - INFO - add_initial_data.py:133 - Admin user 'ADMIN' prepared with default password 'admin1234' and ADMIN role.
-2025-05-23 20:15:32,005 - INFO - add_initial_data.py:526 - Prepared state/province: Alabama
-2025-05-23 20:15:32,005 - INFO - add_initial_data.py:526 - Prepared state/province: Alaska
-2025-05-23 20:15:32,005 - INFO - add_initial_data.py:526 - Prepared state/province: Arizona
-2025-05-23 20:15:32,005 - INFO - add_initial_data.py:526 - Prepared state/province: Arkansas
-2025-05-23 20:15:32,005 - INFO - add_initial_data.py:526 - Prepared state/province: California
-2025-05-23 20:15:32,005 - INFO - add_initial_data.py:526 - Prepared state/province: Colorado
-2025-05-23 20:15:32,005 - INFO - add_initial_data.py:526 - Prepared state/province: Connecticut
-2025-05-23 20:15:32,005 - INFO - add_initial_data.py:526 - Prepared state/province: Delaware
-2025-05-23 20:15:32,005 - INFO - add_initial_data.py:526 - Prepared state/province: Florida
-2025-05-23 20:15:32,005 - INFO - add_initial_data.py:526 - Prepared state/province: Georgia
-2025-05-23 20:15:32,005 - INFO - add_initial_data.py:526 - Prepared state/province: Hawaii
-2025-05-23 20:15:32,005 - INFO - add_initial_data.py:526 - Prepared state/province: Idaho
-2025-05-23 20:15:32,005 - INFO - add_initial_data.py:526 - Prepared state/province: Illinois
-2025-05-23 20:15:32,005 - INFO - add_initial_data.py:526 - Prepared state/province: Indiana
-2025-05-23 20:15:32,005 - INFO - add_initial_data.py:526 - Prepared state/province: Iowa
-2025-05-23 20:15:32,005 - INFO - add_initial_data.py:526 - Prepared state/province: Kansas
-2025-05-23 20:15:32,005 - INFO - add_initial_data.py:526 - Prepared state/province: Kentucky
-2025-05-23 20:15:32,005 - INFO - add_initial_data.py:526 - Prepared state/province: Louisiana
-2025-05-23 20:15:32,005 - INFO - add_initial_data.py:526 - Prepared state/province: Maine
-2025-05-23 20:15:32,005 - INFO - add_initial_data.py:526 - Prepared state/province: Maryland
-2025-05-23 20:15:32,006 - INFO - add_initial_data.py:526 - Prepared state/province: Massachusetts
-2025-05-23 20:15:32,006 - INFO - add_initial_data.py:526 - Prepared state/province: Michigan
-2025-05-23 20:15:32,006 - INFO - add_initial_data.py:526 - Prepared state/province: Minnesota
-2025-05-23 20:15:32,006 - INFO - add_initial_data.py:526 - Prepared state/province: Mississippi
-2025-05-23 20:15:32,006 - INFO - add_initial_data.py:526 - Prepared state/province: Missouri
-2025-05-23 20:15:32,006 - INFO - add_initial_data.py:526 - Prepared state/province: Montana
-2025-05-23 20:15:32,006 - INFO - add_initial_data.py:526 - Prepared state/province: Nebraska
-2025-05-23 20:15:32,006 - INFO - add_initial_data.py:526 - Prepared state/province: Nevada
-2025-05-23 20:15:32,006 - INFO - add_initial_data.py:526 - Prepared state/province: New Hampshire
-2025-05-23 20:15:32,006 - INFO - add_initial_data.py:526 - Prepared state/province: New Jersey
-2025-05-23 20:15:32,006 - INFO - add_initial_data.py:526 - Prepared state/province: New Mexico
-2025-05-23 20:15:32,006 - INFO - add_initial_data.py:526 - Prepared state/province: New York
-2025-05-23 20:15:32,006 - INFO - add_initial_data.py:526 - Prepared state/province: North Carolina
-2025-05-23 20:15:32,007 - INFO - add_initial_data.py:526 - Prepared state/province: North Dakota
-2025-05-23 20:15:32,007 - INFO - add_initial_data.py:526 - Prepared state/province: Ohio
-2025-05-23 20:15:32,007 - INFO - add_initial_data.py:526 - Prepared state/province: Oklahoma
-2025-05-23 20:15:32,007 - INFO - add_initial_data.py:526 - Prepared state/province: Oregon
-2025-05-23 20:15:32,007 - INFO - add_initial_data.py:526 - Prepared state/province: Pennsylvania
-2025-05-23 20:15:32,007 - INFO - add_initial_data.py:526 - Prepared state/province: Rhode Island
-2025-05-23 20:15:32,007 - INFO - add_initial_data.py:526 - Prepared state/province: South Carolina
-2025-05-23 20:15:32,007 - INFO - add_initial_data.py:526 - Prepared state/province: South Dakota
-2025-05-23 20:15:32,007 - INFO - add_initial_data.py:526 - Prepared state/province: Tennessee
-2025-05-23 20:15:32,007 - INFO - add_initial_data.py:526 - Prepared state/province: Texas
-2025-05-23 20:15:32,007 - INFO - add_initial_data.py:526 - Prepared state/province: Utah
-2025-05-23 20:15:32,007 - INFO - add_initial_data.py:526 - Prepared state/province: Vermont
-2025-05-23 20:15:32,007 - INFO - add_initial_data.py:526 - Prepared state/province: Virginia
-2025-05-23 20:15:32,008 - INFO - add_initial_data.py:526 - Prepared state/province: Washington
-2025-05-23 20:15:32,008 - INFO - add_initial_data.py:526 - Prepared state/province: West Virginia
-2025-05-23 20:15:32,008 - INFO - add_initial_data.py:526 - Prepared state/province: Wisconsin
-2025-05-23 20:15:32,008 - INFO - add_initial_data.py:526 - Prepared state/province: Wyoming
-2025-05-23 20:15:32,008 - INFO - add_initial_data.py:526 - Prepared state/province: Alberta
-2025-05-23 20:15:32,008 - INFO - add_initial_data.py:526 - Prepared state/province: British Columbia
-2025-05-23 20:15:32,008 - INFO - add_initial_data.py:526 - Prepared state/province: Manitoba
-2025-05-23 20:15:32,008 - INFO - add_initial_data.py:526 - Prepared state/province: New Brunswick
-2025-05-23 20:15:32,008 - INFO - add_initial_data.py:526 - Prepared state/province: Newfoundland and Labrador
-2025-05-23 20:15:32,008 - INFO - add_initial_data.py:526 - Prepared state/province: Nova Scotia
-2025-05-23 20:15:32,008 - INFO - add_initial_data.py:526 - Prepared state/province: Ontario
-2025-05-23 20:15:32,009 - INFO - add_initial_data.py:526 - Prepared state/province: Prince Edward Island
-2025-05-23 20:15:32,009 - INFO - add_initial_data.py:526 - Prepared state/province: Quebec
-2025-05-23 20:15:32,009 - INFO - add_initial_data.py:526 - Prepared state/province: Saskatchewan
-2025-05-23 20:15:32,016 - INFO - add_initial_data.py:586 - Prepared location: Main Stable
-2025-05-23 20:15:32,017 - INFO - add_initial_data.py:586 - Prepared location: Quarantine Barn
-2025-05-23 20:15:32,017 - INFO - add_initial_data.py:586 - Prepared location: West Wing Stalls
-2025-05-23 20:15:32,018 - INFO - add_initial_data.py:662 - Prepared owner: Willow Creek Stables
-2025-05-23 20:15:32,018 - INFO - add_initial_data.py:662 - Prepared owner: Davis
-2025-05-23 20:15:32,019 - INFO - add_initial_data.py:662 - Prepared owner: Blue Ribbon Equine
-2025-05-23 20:15:32,019 - INFO - add_initial_data.py:711 - Prepared charge code: EXAM001
-2025-05-23 20:15:32,019 - INFO - add_initial_data.py:711 - Prepared charge code: VACC001
-2025-05-23 20:15:32,019 - INFO - add_initial_data.py:711 - Prepared charge code: XRAY001
-2025-05-23 20:15:32,025 - INFO - add_initial_data.py:769 - Initial data setup process completed and committed successfully.
-2025-05-23 20:15:32,025 - INFO - add_initial_data.py:787 - Database session closed.
+2025-05-25 20:27:14,814 - INFO - add_initial_data.py:720 - Running script to add initial data to the database...
+2025-05-25 20:27:14,814 - INFO - database_config.py:70 - Initializing database: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-05-25 20:27:14,827 - INFO - database_config.py:85 - Database engine and session factory created
+2025-05-25 20:27:14,828 - INFO - database_config.py:133 - Creating database tables...
+2025-05-25 20:27:14,830 - INFO - database_config.py:144 - Database tables created: ['roles', 'user_roles', 'users', 'horse_owners', 'horse_locations', 'horses', 'owners', 'owner_billing_history', 'owner_payments', 'invoices', 'state_provinces', 'charge_codes', 'veterinarians', 'locations', 'transactions', 'transaction_details', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments']
+2025-05-25 20:27:14,831 - INFO - database_config.py:181 - Database connection test successful
+2025-05-25 20:27:14,831 - INFO - database_config.py:202 - Ensuring default ADMIN user exists with correct credentials
+2025-05-25 20:27:14,848 - INFO - database_config.py:217 - Created admin role
+2025-05-25 20:27:14,850 - INFO - database_config.py:263 - Created new ADMIN user
+2025-05-25 20:27:14,851 - INFO - database_config.py:278 - Linked ADMIN user to admin role
+2025-05-25 20:27:14,854 - INFO - database_config.py:283 - Default ADMIN user ready (Username: ADMIN, Password: admin1234)
+2025-05-25 20:27:14,854 - INFO - database_config.py:96 - Database initialization completed successfully
+2025-05-25 20:27:14,854 - INFO - add_initial_data.py:728 - Database initialized and tables created (if they didn't exist).
+2025-05-25 20:27:14,855 - INFO - add_initial_data.py:740 - Starting to add initial reference data...
+2025-05-25 20:27:14,855 - INFO - add_initial_data.py:94 - Prepared role: ADMIN
+2025-05-25 20:27:14,855 - INFO - add_initial_data.py:94 - Prepared role: MANAGER
+2025-05-25 20:27:14,855 - INFO - add_initial_data.py:94 - Prepared role: VETERINARIAN
+2025-05-25 20:27:14,855 - INFO - add_initial_data.py:94 - Prepared role: TECHNICIAN
+2025-05-25 20:27:14,856 - INFO - add_initial_data.py:94 - Prepared role: RECEPTIONIST
+2025-05-25 20:27:14,856 - INFO - add_initial_data.py:94 - Prepared role: CLIENT
+2025-05-25 20:27:14,856 - INFO - add_initial_data.py:100 - Successfully prepared 6 new roles.
+2025-05-25 20:27:14,861 - INFO - add_initial_data.py:137 - Admin user 'ADMIN' already exists.
+2025-05-25 20:27:14,862 - INFO - add_initial_data.py:151 - ADMIN role assigned to existing user 'ADMIN'.
+2025-05-25 20:27:14,867 - INFO - add_initial_data.py:526 - Prepared state/province: Alabama
+2025-05-25 20:27:14,867 - INFO - add_initial_data.py:526 - Prepared state/province: Alaska
+2025-05-25 20:27:14,867 - INFO - add_initial_data.py:526 - Prepared state/province: Arizona
+2025-05-25 20:27:14,867 - INFO - add_initial_data.py:526 - Prepared state/province: Arkansas
+2025-05-25 20:27:14,867 - INFO - add_initial_data.py:526 - Prepared state/province: California
+2025-05-25 20:27:14,867 - INFO - add_initial_data.py:526 - Prepared state/province: Colorado
+2025-05-25 20:27:14,867 - INFO - add_initial_data.py:526 - Prepared state/province: Connecticut
+2025-05-25 20:27:14,867 - INFO - add_initial_data.py:526 - Prepared state/province: Delaware
+2025-05-25 20:27:14,868 - INFO - add_initial_data.py:526 - Prepared state/province: Florida
+2025-05-25 20:27:14,868 - INFO - add_initial_data.py:526 - Prepared state/province: Georgia
+2025-05-25 20:27:14,868 - INFO - add_initial_data.py:526 - Prepared state/province: Hawaii
+2025-05-25 20:27:14,868 - INFO - add_initial_data.py:526 - Prepared state/province: Idaho
+2025-05-25 20:27:14,868 - INFO - add_initial_data.py:526 - Prepared state/province: Illinois
+2025-05-25 20:27:14,868 - INFO - add_initial_data.py:526 - Prepared state/province: Indiana
+2025-05-25 20:27:14,868 - INFO - add_initial_data.py:526 - Prepared state/province: Iowa
+2025-05-25 20:27:14,868 - INFO - add_initial_data.py:526 - Prepared state/province: Kansas
+2025-05-25 20:27:14,868 - INFO - add_initial_data.py:526 - Prepared state/province: Kentucky
+2025-05-25 20:27:14,868 - INFO - add_initial_data.py:526 - Prepared state/province: Louisiana
+2025-05-25 20:27:14,868 - INFO - add_initial_data.py:526 - Prepared state/province: Maine
+2025-05-25 20:27:14,868 - INFO - add_initial_data.py:526 - Prepared state/province: Maryland
+2025-05-25 20:27:14,869 - INFO - add_initial_data.py:526 - Prepared state/province: Massachusetts
+2025-05-25 20:27:14,869 - INFO - add_initial_data.py:526 - Prepared state/province: Michigan
+2025-05-25 20:27:14,869 - INFO - add_initial_data.py:526 - Prepared state/province: Minnesota
+2025-05-25 20:27:14,869 - INFO - add_initial_data.py:526 - Prepared state/province: Mississippi
+2025-05-25 20:27:14,869 - INFO - add_initial_data.py:526 - Prepared state/province: Missouri
+2025-05-25 20:27:14,869 - INFO - add_initial_data.py:526 - Prepared state/province: Montana
+2025-05-25 20:27:14,869 - INFO - add_initial_data.py:526 - Prepared state/province: Nebraska
+2025-05-25 20:27:14,869 - INFO - add_initial_data.py:526 - Prepared state/province: Nevada
+2025-05-25 20:27:14,869 - INFO - add_initial_data.py:526 - Prepared state/province: New Hampshire
+2025-05-25 20:27:14,869 - INFO - add_initial_data.py:526 - Prepared state/province: New Jersey
+2025-05-25 20:27:14,869 - INFO - add_initial_data.py:526 - Prepared state/province: New Mexico
+2025-05-25 20:27:14,870 - INFO - add_initial_data.py:526 - Prepared state/province: New York
+2025-05-25 20:27:14,870 - INFO - add_initial_data.py:526 - Prepared state/province: North Carolina
+2025-05-25 20:27:14,870 - INFO - add_initial_data.py:526 - Prepared state/province: North Dakota
+2025-05-25 20:27:14,870 - INFO - add_initial_data.py:526 - Prepared state/province: Ohio
+2025-05-25 20:27:14,870 - INFO - add_initial_data.py:526 - Prepared state/province: Oklahoma
+2025-05-25 20:27:14,870 - INFO - add_initial_data.py:526 - Prepared state/province: Oregon
+2025-05-25 20:27:14,870 - INFO - add_initial_data.py:526 - Prepared state/province: Pennsylvania
+2025-05-25 20:27:14,870 - INFO - add_initial_data.py:526 - Prepared state/province: Rhode Island
+2025-05-25 20:27:14,870 - INFO - add_initial_data.py:526 - Prepared state/province: South Carolina
+2025-05-25 20:27:14,870 - INFO - add_initial_data.py:526 - Prepared state/province: South Dakota
+2025-05-25 20:27:14,870 - INFO - add_initial_data.py:526 - Prepared state/province: Tennessee
+2025-05-25 20:27:14,870 - INFO - add_initial_data.py:526 - Prepared state/province: Texas
+2025-05-25 20:27:14,870 - INFO - add_initial_data.py:526 - Prepared state/province: Utah
+2025-05-25 20:27:14,870 - INFO - add_initial_data.py:526 - Prepared state/province: Vermont
+2025-05-25 20:27:14,871 - INFO - add_initial_data.py:526 - Prepared state/province: Virginia
+2025-05-25 20:27:14,871 - INFO - add_initial_data.py:526 - Prepared state/province: Washington
+2025-05-25 20:27:14,871 - INFO - add_initial_data.py:526 - Prepared state/province: West Virginia
+2025-05-25 20:27:14,871 - INFO - add_initial_data.py:526 - Prepared state/province: Wisconsin
+2025-05-25 20:27:14,871 - INFO - add_initial_data.py:526 - Prepared state/province: Wyoming
+2025-05-25 20:27:14,871 - INFO - add_initial_data.py:526 - Prepared state/province: Alberta
+2025-05-25 20:27:14,871 - INFO - add_initial_data.py:526 - Prepared state/province: British Columbia
+2025-05-25 20:27:14,871 - INFO - add_initial_data.py:526 - Prepared state/province: Manitoba
+2025-05-25 20:27:14,871 - INFO - add_initial_data.py:526 - Prepared state/province: New Brunswick
+2025-05-25 20:27:14,871 - INFO - add_initial_data.py:526 - Prepared state/province: Newfoundland and Labrador
+2025-05-25 20:27:14,872 - INFO - add_initial_data.py:526 - Prepared state/province: Nova Scotia
+2025-05-25 20:27:14,874 - INFO - add_initial_data.py:526 - Prepared state/province: Ontario
+2025-05-25 20:27:14,874 - INFO - add_initial_data.py:526 - Prepared state/province: Prince Edward Island
+2025-05-25 20:27:14,874 - INFO - add_initial_data.py:526 - Prepared state/province: Quebec
+2025-05-25 20:27:14,874 - INFO - add_initial_data.py:526 - Prepared state/province: Saskatchewan
+2025-05-25 20:27:14,880 - INFO - add_initial_data.py:586 - Prepared location: Main Stable
+2025-05-25 20:27:14,881 - INFO - add_initial_data.py:586 - Prepared location: Quarantine Barn
+2025-05-25 20:27:14,881 - INFO - add_initial_data.py:586 - Prepared location: West Wing Stalls
+2025-05-25 20:27:14,882 - INFO - add_initial_data.py:662 - Prepared owner: Willow Creek Stables
+2025-05-25 20:27:14,882 - INFO - add_initial_data.py:662 - Prepared owner: Davis
+2025-05-25 20:27:14,883 - INFO - add_initial_data.py:662 - Prepared owner: Blue Ribbon Equine
+2025-05-25 20:27:14,883 - INFO - add_initial_data.py:711 - Prepared charge code: EXAM001
+2025-05-25 20:27:14,883 - INFO - add_initial_data.py:711 - Prepared charge code: VACC001
+2025-05-25 20:27:14,884 - INFO - add_initial_data.py:711 - Prepared charge code: XRAY001
+2025-05-25 20:27:14,890 - INFO - add_initial_data.py:769 - Initial data setup process completed and committed successfully.
+2025-05-25 20:27:14,890 - INFO - add_initial_data.py:787 - Database session closed.

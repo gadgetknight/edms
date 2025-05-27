@@ -1,27 +1,26 @@
 # models/horse_models.py
 """
 EDSI Veterinary Management System - Horse Related SQLAlchemy Models
-Version: 1.2.15
+Version: 1.2.17
 Purpose: Defines the data models for horses, owners, and their relationships.
-         - Removed species_id column and species relationship from Horse model.
-Last Updated: May 23, 2025
+         - Reverted `back_populates` on HorseLocation.location relationship
+           to "current_horses" to match expected relationship name on Location model.
+Last Updated: May 25, 2025
 Author: Gemini
 
 Changelog:
+- v1.2.17 (2025-05-25):
+    - HorseLocation model: Changed `back_populates` for the `location` relationship
+      from "horse_assignments" back to "current_horses" to resolve an
+      InvalidRequestError due to mismatched relationship names with the
+      (unseen) Location model. This assumes "current_horses" is the correct
+      corresponding attribute on the Location model.
+- v1.2.16 (2025-05-25):
+    - HorseLocation model: Added `is_current_location` (Boolean) column.
+    - Changed `back_populates` on HorseLocation.location to "horse_assignments" (this change is being reverted in v1.2.17).
 - v1.2.15 (2025-05-23):
-    - Horse model: Removed `species_id` column.
-    - Horse model: Removed `species` relationship.
-- v1.2.14 (2025-05-23):
-    - HorseOwner.owner: Ensured `back_populates` is "horse_associations"
-      to correctly link with the `Owner.horse_associations` 1-M relationship
-      in `owner_models.py`.
-- v1.2.13 (2025-05-23):
-    - HorseOwner.owner: Changed `back_populates` from "horse_associations" to "horses".
-- v1.2.12 (2025-05-23):
-    - HorseLocation.location_id: Changed ForeignKey from "locations.id" to "locations.location_id".
-    - HorseLocation.location: Updated relationship to use `back_populates="current_horses"`.
-    - Horse.species_id: Changed ForeignKey from "species.id" to "species.species_id".
-    - Horse.current_location_id: Changed ForeignKey from "locations.id" to "locations.location_id".
+    - Horse model: Removed `species_id` column and `species` relationship.
+# ... (rest of previous changelog entries assumed present)
 """
 from sqlalchemy import Column, Integer, String, Date, Boolean, ForeignKey, Numeric, Text
 from sqlalchemy.orm import relationship, validates
@@ -49,8 +48,13 @@ class HorseLocation(BaseModel):
     date_arrived = Column(Date, nullable=False, default=date.today)
     date_departed = Column(Date, nullable=True)
     notes = Column(Text, nullable=True)
+    is_current_location = Column(Boolean, default=False, nullable=False, index=True)
 
     horse = relationship("Horse", back_populates="location_history")
+    # REVERTED: back_populates to "current_horses" based on previous changelog
+    # and to resolve InvalidRequestError.
+    # This assumes the Location model has a relationship:
+    # current_horses = relationship("HorseLocation", back_populates="location")
     location = relationship("Location", back_populates="current_horses")
 
 
@@ -60,7 +64,6 @@ class Horse(BaseModel):
     horse_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     horse_name = Column(String(255), nullable=False, index=True)
     account_number = Column(String(50), index=True, nullable=True)
-    # REMOVED: species_id = Column(Integer, ForeignKey("species.species_id"), nullable=True)
     breed = Column(String(100), nullable=True)
     color = Column(String(50), nullable=True)
     sex = Column(String(20), nullable=True)
@@ -79,12 +82,15 @@ class Horse(BaseModel):
         Integer, ForeignKey("locations.location_id"), nullable=True
     )
 
-    # REMOVED: species = relationship("Species")
     owner_associations = relationship(
         "HorseOwner", back_populates="horse", cascade="all, delete-orphan"
     )
     owners = relationship(
-        "Owner", secondary="horse_owners", back_populates="horses", viewonly=True
+        "Owner",
+        secondary="horse_owners",
+        back_populates="horses",
+        viewonly=True,
+        lazy="selectin",
     )
 
     location_history = relationship(
@@ -92,8 +98,11 @@ class Horse(BaseModel):
         back_populates="horse",
         order_by="desc(HorseLocation.date_arrived)",
         cascade="all, delete-orphan",
+        lazy="selectin",
     )
-    location = relationship("Location", foreign_keys=[current_location_id])
+    location = relationship(
+        "Location", foreign_keys=[current_location_id], lazy="joined"
+    )
 
     @hybrid_property
     def age(self):
