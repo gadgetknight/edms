@@ -1,19 +1,29 @@
 # views/admin/dialogs/add_edit_user_dialog.py
 """
 EDSI Veterinary Management System - Add/Edit User Dialog
-Version: 1.0.0
+Version: 1.0.4
 Purpose: Dialog for creating new users and editing existing user details.
-Last Updated: May 20, 2025
-Author: Gemini
+         Corrects attribute access in _populate_fields for User model.
+Last Updated: May 29, 2025
+Author: Gemini (Modified by User's AI Assistant)
 
 Changelog:
+- v1.0.4 (2025-05-29):
+    - Corrected attribute access in _populate_fields method:
+        - Changed self.current_user_object.username to self.current_user_object.user_id.
+        - Changed self.current_user_object.full_name to self.current_user_object.user_name.
+- v1.0.3 (2025-05-29):
+    - Modified USER_ROLES list to ["ADMIN", "VETERINARIAN"] as per user request
+      to limit roles available in the dialog dropdown.
+- v1.0.2 (2025-05-29):
+    - Refactored _get_dialog_button_style() to use a triple-quoted f-string
+      to prevent potential syntax errors with string concatenation.
+- v1.0.1 (2025-05-27):
+    - Modified get_user_data() to return 'user_id' instead of 'username'
+      and 'user_name' instead of 'full_name' to align with UserController.
+    - Changed 'vet' to 'VETERINARIAN' in USER_ROLES list.
 - v1.0.0 (2025-05-20):
     - Initial implementation.
-    - Provides form fields for username, full_name, email, password, role, and is_active.
-    - Handles both "add" and "edit" modes.
-    - Includes basic validation (required fields, password match).
-    - Interacts with UserController to save user data.
-    - Styled for dark theme.
 """
 
 import logging
@@ -34,7 +44,7 @@ from PySide6.QtGui import QPalette, QColor
 from PySide6.QtCore import Qt
 
 from controllers.user_controller import UserController
-from models.user_models import User  # Assuming User model is in user_models.py
+from models.user_models import User  # User model needed for type hinting
 from config.app_config import (
     DARK_WIDGET_BACKGROUND,
     DARK_TEXT_PRIMARY,
@@ -54,21 +64,23 @@ from config.app_config import (
 class AddEditUserDialog(QDialog):
     """Dialog for adding or editing user information."""
 
-    USER_ROLES = ["admin", "vet", "staff", "owner"]  # Define available roles
+    USER_ROLES = ["ADMIN", "VETERINARIAN"]
 
     def __init__(
         self,
-        parent_view,
+        parent_view,  # Should be the UserManagementScreen instance
         user_controller: UserController,
-        current_user_object: Optional[User] = None,
+        current_user_object: Optional[
+            User
+        ] = None,  # User object from models.user_models
     ):
-        super().__init__(parent_view)
+        super().__init__(parent_view)  # parent_view is the QWidget parent
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.parent_view = parent_view
-        self.user_controller = user_controller
-        self.current_user_object = (
-            current_user_object  # User object if editing, None if adding
+        self.parent_view = (
+            parent_view  # Storing reference if needed for other interactions
         )
+        self.user_controller = user_controller
+        self.current_user_object = current_user_object
 
         self.is_edit_mode = self.current_user_object is not None
 
@@ -92,19 +104,15 @@ class AddEditUserDialog(QDialog):
         palette.setColor(QPalette.ColorRole.Base, QColor(DARK_INPUT_FIELD_BACKGROUND))
         palette.setColor(
             QPalette.ColorRole.AlternateBase, QColor(DARK_WIDGET_BACKGROUND)
-        )  # for combobox dropdown
+        )
         palette.setColor(QPalette.ColorRole.ToolTipBase, QColor(DARK_WIDGET_BACKGROUND))
         palette.setColor(QPalette.ColorRole.ToolTipText, QColor(DARK_TEXT_PRIMARY))
         palette.setColor(QPalette.ColorRole.Text, QColor(DARK_TEXT_PRIMARY))
         palette.setColor(QPalette.ColorRole.Button, QColor(DARK_BUTTON_BG))
         palette.setColor(QPalette.ColorRole.ButtonText, QColor(DARK_TEXT_PRIMARY))
-        palette.setColor(
-            QPalette.ColorRole.BrightText, QColor(Qt.GlobalColor.red)
-        )  # For validation errors if needed
+        palette.setColor(QPalette.ColorRole.BrightText, QColor(Qt.GlobalColor.red))
         palette.setColor(QPalette.ColorRole.Link, QColor(DARK_PRIMARY_ACTION))
-        palette.setColor(
-            QPalette.ColorRole.Highlight, QColor(DARK_PRIMARY_ACTION)
-        )  # Selection in combobox
+        palette.setColor(QPalette.ColorRole.Highlight, QColor(DARK_PRIMARY_ACTION))
         palette.setColor(QPalette.ColorRole.HighlightedText, QColor(DARK_TEXT_PRIMARY))
         palette.setColor(QPalette.ColorRole.PlaceholderText, QColor(DARK_TEXT_TERTIARY))
         self.setPalette(palette)
@@ -118,16 +126,16 @@ class AddEditUserDialog(QDialog):
                 border: 1px solid {DARK_BORDER};
                 border-radius: 4px;
                 padding: 6px;
-                min-height: 20px; /* Ensure fields are not too small */
+                min-height: 20px;
             }}
             QLineEdit:focus, QComboBox:focus {{
                 border-color: {DARK_PRIMARY_ACTION};
             }}
-            QComboBox QAbstractItemView {{ /* Style for the dropdown list */
+            QComboBox QAbstractItemView {{
                 background-color: {DARK_WIDGET_BACKGROUND};
                 color: {DARK_TEXT_PRIMARY};
                 border: 1px solid {DARK_BORDER};
-                selection-background-color: {DARK_PRIMARY_ACTION}70; /* Alpha for selection */
+                selection-background-color: {DARK_PRIMARY_ACTION}70;
             }}
             QCheckBox {{
                 color: {DARK_TEXT_PRIMARY};
@@ -140,13 +148,19 @@ class AddEditUserDialog(QDialog):
         """
 
     def _get_dialog_button_style(self) -> str:
-        return (
-            f"QPushButton {{ background-color: {DARK_BUTTON_BG}; color: {DARK_TEXT_PRIMARY}; "
-            f"border: 1px solid {DARK_BORDER}; border-radius: 4px; padding: 8px 12px; "
-            f"font-size: 12px; font-weight: 500; min-height: 28px;}} "
-            f"QPushButton:hover {{ background-color: {DARK_BUTTON_HOVER}; }} "
-            f"QPushButton:disabled {{ background-color: {DARK_HEADER_FOOTER}; color: {DARK_TEXT_TERTIARY}; }}"
-        )
+        return f"""
+            QPushButton {{
+                background-color: {DARK_BUTTON_BG}; color: {DARK_TEXT_PRIMARY};
+                border: 1px solid {DARK_BORDER}; border-radius: 4px; padding: 8px 12px;
+                font-size: 12px; font-weight: 500; min-height: 28px;
+            }}
+            QPushButton:hover {{
+                background-color: {DARK_BUTTON_HOVER};
+            }}
+            QPushButton:disabled {{
+                background-color: {DARK_HEADER_FOOTER}; color: {DARK_TEXT_TERTIARY};
+            }}
+        """
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
@@ -155,18 +169,19 @@ class AddEditUserDialog(QDialog):
 
         form_layout = QFormLayout()
         form_layout.setSpacing(10)
-        form_layout.setLabelAlignment(
-            Qt.AlignmentFlag.AlignRight
-        )  # Align labels to the right
+        form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
         form_layout.setFieldGrowthPolicy(
             QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
         )
 
-        # Input fields
         self.username_input = QLineEdit()
-        self.username_input.setPlaceholderText("Enter unique username")
+        self.username_input.setPlaceholderText(
+            "Enter unique username (Login ID)"
+        )  # Clarified placeholder
         self.full_name_input = QLineEdit()
-        self.full_name_input.setPlaceholderText("Enter user's full name")
+        self.full_name_input.setPlaceholderText(
+            "Enter user's full name (Display Name)"
+        )  # Clarified placeholder
         self.email_input = QLineEdit()
         self.email_input.setPlaceholderText("Enter user's email address")
 
@@ -183,9 +198,8 @@ class AddEditUserDialog(QDialog):
         self.role_combo.addItems(self.USER_ROLES)
 
         self.is_active_checkbox = QCheckBox("User is Active")
-        self.is_active_checkbox.setChecked(True)  # Default for new users
+        self.is_active_checkbox.setChecked(True)
 
-        # Apply styles
         input_style = self._get_input_field_style()
         self.username_input.setStyleSheet(input_style)
         self.full_name_input.setStyleSheet(input_style)
@@ -193,12 +207,11 @@ class AddEditUserDialog(QDialog):
         self.password_input.setStyleSheet(input_style)
         self.confirm_password_input.setStyleSheet(input_style)
         self.role_combo.setStyleSheet(input_style)
-        self.is_active_checkbox.setStyleSheet(
-            input_style
-        )  # Checkbox style defined in input_style
+        self.is_active_checkbox.setStyleSheet(input_style)
 
-        # Add rows to form layout
-        form_layout.addRow(QLabel("Username*:"), self.username_input)
+        form_layout.addRow(
+            QLabel("Login ID*:"), self.username_input
+        )  # Changed label for clarity
         form_layout.addRow(QLabel("Full Name*:"), self.full_name_input)
         form_layout.addRow(QLabel("Email:"), self.email_input)
         form_layout.addRow(
@@ -209,7 +222,6 @@ class AddEditUserDialog(QDialog):
         form_layout.addRow(QLabel("Role*:"), self.role_combo)
         form_layout.addRow(QLabel("Status:"), self.is_active_checkbox)
 
-        # Styling for QLabel in QFormLayout (optional, could be global)
         for i in range(form_layout.rowCount()):
             label_widget = form_layout.labelForField(
                 form_layout.itemAt(i, QFormLayout.ItemRole.FieldRole).widget()
@@ -221,17 +233,16 @@ class AddEditUserDialog(QDialog):
 
         layout.addLayout(form_layout)
 
-        # Dialog buttons
         self.button_box = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
         ok_button = self.button_box.button(QDialogButtonBox.StandardButton.Ok)
         ok_button.setText("Save User" if self.is_edit_mode else "Add User")
 
-        # Apply generic style and then override for OK button
         dialog_button_style = self._get_dialog_button_style()
         for button in self.button_box.buttons():
             button.setStyleSheet(dialog_button_style)
+
         ok_button.setStyleSheet(
             dialog_button_style
             + f"QPushButton {{ background-color: {DARK_SUCCESS_ACTION}; color: white; }}"
@@ -244,45 +255,67 @@ class AddEditUserDialog(QDialog):
     def _populate_fields(self):
         """Populate fields if in edit mode."""
         if self.current_user_object:
-            self.username_input.setText(self.current_user_object.username)
-            self.username_input.setReadOnly(True)  # Username typically not editable
+            # MODIFIED: Use user_id for username_input
+            self.username_input.setText(self.current_user_object.user_id)
+            self.username_input.setReadOnly(True)
             self.username_input.setStyleSheet(
                 self._get_input_field_style()
                 + f"QLineEdit {{ background-color: {DARK_HEADER_FOOTER}; }}"
-            )  # Visually indicate read-only
-            self.full_name_input.setText(self.current_user_object.full_name or "")
-            self.email_input.setText(self.current_user_object.email or "")
-            # Password fields remain blank; only for setting new password
-            role_index = self.role_combo.findText(
-                self.current_user_object.role, Qt.MatchFlag.MatchExactly
             )
+            # MODIFIED: Use user_name for full_name_input
+            self.full_name_input.setText(self.current_user_object.user_name or "")
+            self.email_input.setText(self.current_user_object.email or "")
+
+            user_role_name_to_select = ""
+            if self.current_user_object.roles:
+                for role_obj in self.current_user_object.roles:
+                    if role_obj.name in self.USER_ROLES:
+                        user_role_name_to_select = role_obj.name
+                        break
+                if not user_role_name_to_select:
+                    self.logger.warning(
+                        f"User {self.current_user_object.user_id} has roles, but none match current dialog options: {[r.name for r in self.current_user_object.roles]}. Defaulting selection."
+                    )
+
+            role_index = -1
+            if user_role_name_to_select:
+                role_index = self.role_combo.findText(
+                    user_role_name_to_select, Qt.MatchFlag.MatchExactly
+                )
+
             if role_index >= 0:
                 self.role_combo.setCurrentIndex(role_index)
             else:
                 self.logger.warning(
-                    f"Role '{self.current_user_object.role}' not found in USER_ROLES. Defaulting."
+                    f"Role '{user_role_name_to_select}' for user '{self.current_user_object.user_id}' not found in USER_ROLES dropdown. Defaulting."
                 )
-                self.role_combo.setCurrentIndex(0)  # Default to first role if not found
+                if self.role_combo.count() > 0:
+                    self.role_combo.setCurrentIndex(0)
+                else:
+                    self.logger.error(
+                        "USER_ROLES is empty, cannot set default role index."
+                    )
+
             self.is_active_checkbox.setChecked(self.current_user_object.is_active)
 
     def _validate_input(self) -> bool:
-        """Performs basic validation on input fields."""
-        username = self.username_input.text().strip()
-        full_name = self.full_name_input.text().strip()
-        password = self.password_input.text()  # No strip, spaces might be intentional
+        # username_input now corresponds to user_id
+        login_id = self.username_input.text().strip()
+        # full_name_input now corresponds to user_name
+        user_name_val = self.full_name_input.text().strip()
+        password = self.password_input.text()
         confirm_password = self.confirm_password_input.text()
-        # email = self.email_input.text().strip() # Email validation can be complex
 
-        if not username:
-            QMessageBox.warning(self, "Validation Error", "Username cannot be empty.")
+        if not login_id:
+            QMessageBox.warning(self, "Validation Error", "Login ID cannot be empty.")
             self.username_input.setFocus()
             return False
-        if not full_name:
+        if not user_name_val:  # Changed from full_name to user_name_val
             QMessageBox.warning(self, "Validation Error", "Full Name cannot be empty.")
             self.full_name_input.setFocus()
             return False
 
-        if not self.is_edit_mode and not password:  # Password required for new user
+        if not self.is_edit_mode and not password:
             QMessageBox.warning(
                 self, "Validation Error", "Password cannot be empty for new users."
             )
@@ -294,7 +327,6 @@ class AddEditUserDialog(QDialog):
             self.confirm_password_input.setFocus()
             return False
 
-        # Basic email format check (very lenient)
         email = self.email_input.text().strip()
         if email and ("@" not in email or "." not in email.split("@")[-1]):
             QMessageBox.warning(
@@ -303,54 +335,58 @@ class AddEditUserDialog(QDialog):
             self.email_input.setFocus()
             return False
 
+        if self.role_combo.currentIndex() == -1 and self.USER_ROLES:
+            QMessageBox.warning(self, "Validation Error", "A role must be selected.")
+            self.role_combo.setFocus()
+            return False
+
         return True
 
     def get_user_data(self) -> Optional[Dict]:
-        """Collects and returns user data from the form fields."""
         if not self._validate_input():
             return None
 
         data = {
-            "username": self.username_input.text().strip(),
-            "full_name": self.full_name_input.text().strip(),
-            "email": self.email_input.text().strip()
-            or None,  # Allow empty email if not required
+            "user_id": self.username_input.text().strip(),
+            "user_name": self.full_name_input.text().strip(),
+            "email": self.email_input.text().strip() or None,
             "role": self.role_combo.currentText(),
             "is_active": self.is_active_checkbox.isChecked(),
         }
-        # Only include password if it's being set/changed
         password = self.password_input.text()
         if password:
-            data["password"] = password  # Controller will hash it
+            data["password"] = password
 
         return data
 
     def _on_accept(self):
-        """Handles the OK/Save button click."""
         user_data = self.get_user_data()
         if user_data is None:
-            return  # Validation failed or data issue
+            return
 
         try:
+            current_admin_id = None
+            if hasattr(self.parent_view, "current_user_id"):
+                current_admin_id = self.parent_view.current_user_id
+
             if self.is_edit_mode and self.current_user_object:
                 self.logger.info(
                     f"Attempting to update user ID: {self.current_user_object.user_id}"
                 )
-                # Username is not in user_data if it's read-only, controller needs user_id
                 success, message = self.user_controller.update_user(
-                    self.current_user_object.user_id, user_data
+                    self.current_user_object.user_id, user_data, current_admin_id
                 )
             else:
                 self.logger.info(
-                    f"Attempting to create new user: {user_data['username']}"
+                    f"Attempting to create new user: {user_data['user_id']}"
                 )
                 success, message, _ = self.user_controller.create_user(
-                    user_data
-                )  # create_user returns (success, msg, user_obj)
+                    user_data, current_admin_id
+                )
 
             if success:
                 self.logger.info(f"User operation successful: {message}")
-                self.accept()  # Closes the dialog with Accepted status
+                self.accept()
             else:
                 self.logger.warning(f"User operation failed: {message}")
                 QMessageBox.critical(self, "Operation Failed", message)

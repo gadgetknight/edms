@@ -2,13 +2,20 @@
 
 """
 EDSI Veterinary Management System - Simplified Login Dialog
-Version: 2.0.3
-Purpose: Clean, simple login dialog with proper authentication flow.
-         Removed over-engineered complexity and focused on stable login process.
-Last Updated: May 24, 2025
-Author: Claude Assistant
+Version: 2.0.4
+Purpose: Clean, simple login dialog using UserController for authentication.
+         Ensures consistent authentication mechanism (bcrypt) across the application.
+Last Updated: May 29, 2025
+Author: Claude Assistant (Refactored by Gemini)
 
 Changelog:
+- v2.0.4 (2025-05-29):
+    - Refactored to use UserController.authenticate_user() for login attempts.
+    - Removed internal _authenticate_user and _verify_password methods.
+    - Removed hashlib import and direct database session usage for authentication.
+    - Login ID is now passed to UserController without uppercasing;
+      controller handles case-insensitive lookup.
+    - User feedback messages now sourced from UserController.
 - v2.0.3 (2025-05-24):
     - Fixed RuntimeError: Internal C++ object already deleted
     - Added early return on successful login to prevent widget access after dialog closure
@@ -32,7 +39,8 @@ Changelog:
 """
 
 import logging
-import hashlib
+
+# REMOVED: import hashlib - No longer used
 from typing import Optional
 
 from PySide6.QtWidgets import (
@@ -43,14 +51,16 @@ from PySide6.QtWidgets import (
     QPushButton,
     QMessageBox,
     QDialogButtonBox,
-    QHBoxLayout,
+    QHBoxLayout,  # Retained, though not explicitly used in this version's example layout
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QPalette, QColor
 
 from config.app_config import AppConfig
-from config.database_config import get_db_session
-from models.user_models import User
+
+# REMOVED: from config.database_config import get_db_session - Controller handles session
+# REMOVED: from models.user_models import User - Controller returns user info
+from controllers.user_controller import UserController  # ADDED
 
 
 class SmallLoginDialog(QDialog):
@@ -66,6 +76,7 @@ class SmallLoginDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.user_controller = UserController()  # ADDED UserController instance
 
         self.setWindowTitle("EDSI Login")
         self.setModal(True)
@@ -80,7 +91,6 @@ class SmallLoginDialog(QDialog):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(15)
 
-        # Title
         title_label = QLabel("User Login")
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title_label.setStyleSheet(
@@ -94,43 +104,34 @@ class SmallLoginDialog(QDialog):
         )
         layout.addWidget(title_label)
 
-        # User ID input
         self.user_id_input = QLineEdit()
         self.user_id_input.setPlaceholderText("Login ID")
         self.user_id_input.setMaxLength(20)
         layout.addWidget(self.user_id_input)
 
-        # Password input
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("Password")
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self.password_input.setMaxLength(255)
+        self.password_input.setMaxLength(255)  # Max length for input field
         layout.addWidget(self.password_input)
 
-        # Connect Enter key to login
         self.password_input.returnPressed.connect(self._attempt_login)
 
-        # Button box
         self.button_box = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
 
-        # Customize buttons
         ok_button = self.button_box.button(QDialogButtonBox.StandardButton.Ok)
         ok_button.setText("Login")
 
-        # Connect signals
         self.button_box.accepted.connect(self._attempt_login)
         self.button_box.rejected.connect(self.reject)
 
         layout.addWidget(self.button_box)
-
-        # Set focus to user ID input
         self.user_id_input.setFocus()
 
     def _apply_theme(self):
         """Apply dark theme to the dialog"""
-        # Set palette
         palette = QPalette()
         palette.setColor(
             QPalette.ColorRole.Window, QColor(AppConfig.DARK_WIDGET_BACKGROUND)
@@ -151,18 +152,15 @@ class SmallLoginDialog(QDialog):
         )
         self.setPalette(palette)
 
-        # Apply stylesheet
         self.setStyleSheet(
             f"""
             QDialog {{
                 background-color: {AppConfig.DARK_WIDGET_BACKGROUND};
                 color: {AppConfig.DARK_TEXT_PRIMARY};
             }}
-            
             QLabel {{
                 color: {AppConfig.DARK_TEXT_PRIMARY};
             }}
-            
             QLineEdit {{
                 background-color: {AppConfig.DARK_INPUT_FIELD_BACKGROUND};
                 color: {AppConfig.DARK_TEXT_PRIMARY};
@@ -171,11 +169,9 @@ class SmallLoginDialog(QDialog):
                 padding: 8px;
                 font-size: 14px;
             }}
-            
             QLineEdit:focus {{
                 border-color: {AppConfig.DARK_PRIMARY_ACTION};
             }}
-            
             QPushButton {{
                 background-color: {AppConfig.DARK_BUTTON_BG};
                 color: {AppConfig.DARK_TEXT_PRIMARY};
@@ -185,32 +181,27 @@ class SmallLoginDialog(QDialog):
                 font-size: 13px;
                 min-width: 80px;
             }}
-            
             QPushButton:hover {{
                 background-color: {AppConfig.DARK_BUTTON_HOVER};
             }}
-            
             QPushButton:pressed {{
                 background-color: {AppConfig.DARK_ITEM_HOVER};
             }}
-            
             QPushButton[text="Login"] {{
                 background-color: {AppConfig.DARK_PRIMARY_ACTION};
                 color: {AppConfig.DARK_HIGHLIGHT_TEXT};
             }}
-            
             QPushButton[text="Login"]:hover {{
-                background-color: {AppConfig.DARK_PRIMARY_ACTION}dd;
+                background-color: {AppConfig.DARK_PRIMARY_ACTION}dd; /* Assuming alpha modification if supported */
             }}
         """
         )
 
     def _attempt_login(self):
-        """Attempt to authenticate the user"""
-        login_id = self.user_id_input.text().strip().upper()
+        """Attempt to authenticate the user using UserController"""
+        login_id = self.user_id_input.text().strip()  # REMOVED .upper()
         password = self.password_input.text()
 
-        # Validate input
         if not login_id:
             self._show_error("Login ID is required.")
             self.user_id_input.setFocus()
@@ -221,95 +212,61 @@ class SmallLoginDialog(QDialog):
             self.password_input.setFocus()
             return
 
-        # Authenticate user
+        # Authenticate user via UserController
         try:
-            user = self._authenticate_user(login_id, password)
-            if user:
-                if user.is_active:
-                    self.logger.info(f"User '{login_id}' logged in successfully")
+            # UserController.authenticate_user returns -> Tuple[bool, str, Optional[Dict[str, Any]]]
+            success, message, user_info = self.user_controller.authenticate_user(
+                login_id, password
+            )
 
-                    # Update last login
-                    user.update_last_login()
+            if success and user_info:
+                actual_user_id = user_info.get(
+                    "user_id", login_id
+                )  # Use actual user_id from DB
+                self.logger.info(f"User '{actual_user_id}' logged in successfully")
+                # UserController's authenticate_user now handles updating last_login and committing
+                self.login_successful.emit(actual_user_id)
+                # self.accept() # No need to call accept() here, login_successful signal triggers closure in main.py
+                return  # Exit immediately on success
 
-                    # Commit the session to save last login update
-                    session = get_db_session()
-                    try:
-                        session.commit()
-                    except Exception as e:
-                        self.logger.warning(f"Could not update last login: {e}")
-                        session.rollback()
-                    finally:
-                        session.close()
-
-                    # Emit success signal and return immediately
-                    self.login_successful.emit(user.user_id)
-                    return  # Exit immediately on success - don't clear password
-
-                else:
-                    self._show_error(f"User account '{login_id}' is inactive.")
-                    self.logger.warning(f"Login attempt for inactive user: {login_id}")
             else:
-                self._show_error("Invalid login ID or password.")
-                self.logger.warning(f"Failed login attempt for user: {login_id}")
+                # Display the message from UserController (e.g., "Invalid login ID or password", "User inactive")
+                self._show_error(
+                    message or "Login failed. Please check your credentials."
+                )
+                self.logger.warning(
+                    f"Failed login attempt for user input: {login_id}. Reason: {message}"
+                )
 
-        except Exception as e:
-            self.logger.error(f"Login error: {e}", exc_info=True)
-            self._show_error("An error occurred during login. Please try again.")
+        except Exception as e:  # Catch any unexpected errors from controller call
+            self.logger.error(
+                f"Login error during controller interaction: {e}", exc_info=True
+            )
+            self._show_error(
+                "An unexpected error occurred during login. Please try again."
+            )
 
         # Only clear password on failed login (we return early on success)
         try:
             self.password_input.clear()
             self.password_input.setFocus()
         except RuntimeError:
-            # Widget already deleted, ignore
-            self.logger.debug("Password input widget already deleted, skipping clear")
+            self.logger.debug(
+                "Password input widget might be deleted, skipping clear/focus."
+            )
 
-    def _authenticate_user(self, login_id: str, password: str) -> Optional[User]:
-        """
-        Authenticate user against database.
-
-        Args:
-            login_id: User login ID
-            password: Plain text password
-
-        Returns:
-            User object if authentication successful, None otherwise
-        """
-        session = get_db_session()
-        try:
-            # Find user by login ID
-            user = session.query(User).filter(User.user_id == login_id).first()
-
-            if user and self._verify_password(password, user.password_hash):
-                return user
-
-            return None
-
-        except Exception as e:
-            self.logger.error(f"Database error during authentication: {e}")
-            return None
-        finally:
-            session.close()
-
-    def _verify_password(self, plain_password: str, password_hash: str) -> bool:
-        """
-        Verify password against stored hash.
-
-        Args:
-            plain_password: Plain text password
-            password_hash: Stored password hash
-
-        Returns:
-            True if password matches, False otherwise
-        """
-        # Simple SHA-256 hashing for Phase 1
-        # In production, use bcrypt or similar
-        computed_hash = hashlib.sha256(plain_password.encode()).hexdigest()
-        return computed_hash == password_hash
+    # REMOVED: _authenticate_user(self, login_id: str, password: str) -> Optional[User]:
+    # REMOVED: _verify_password(self, plain_password: str, password_hash: str) -> bool:
 
     def _show_error(self, message: str):
         """Show error message to user"""
-        QMessageBox.critical(self, "Login Failed", message)
+        # Ensure widget exists before showing message box, in case dialog is closing.
+        if self.isVisible():
+            QMessageBox.critical(self, "Login Failed", message)
+        else:
+            self.logger.warning(
+                f"Login dialog not visible, error not shown to user: {message}"
+            )
 
     def reject(self):
         """Handle dialog rejection (Cancel button or Esc key)"""
@@ -317,14 +274,20 @@ class SmallLoginDialog(QDialog):
         self.dialog_closed.emit()
         super().reject()
 
-    def accept(self):
-        """Handle dialog acceptance"""
-        self.logger.debug("Login dialog accepted")
-        self.dialog_closed.emit()
-        super().accept()
+    # accept() is implicitly handled by login_successful signal flow in main.py;
+    # direct call to self.accept() after emitting login_successful is removed
+    # to let main.py manage the dialog closure after successful signal processing.
+    # If accept() is needed for other QDialogButtonBox scenarios, it could be:
+    # def accept(self):
+    #     # This might be called if _attempt_login directly calls self.accept()
+    #     # For now, _attempt_login calls return on success.
+    #     self.logger.debug("Login dialog accepted (e.g. if OK directly called accept)")
+    #     super().accept()
 
     def closeEvent(self, event):
-        """Handle dialog close event"""
-        self.logger.debug("Login dialog closed via close button")
-        self.dialog_closed.emit()
+        """Handle dialog close event (e.g., window 'X' button)"""
+        # Check if login was successful; if so, accept() might have already been called
+        # or login_successful emitted. If not, it's like a reject.
+        self.logger.debug("Login dialog closed via closeEvent (e.g., X button)")
+        self.dialog_closed.emit()  # Ensure dialog_closed is emitted
         super().closeEvent(event)

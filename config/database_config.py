@@ -2,24 +2,29 @@
 
 """
 EDSI Veterinary Management System - Database Configuration
-Version: 2.0.0
+Version: 2.0.2
 Purpose: Simplified database connection and session management using SQLAlchemy.
-         Removed over-engineered complexity and focused on stable database operations.
-Last Updated: May 24, 2025
-Author: Claude Assistant
+         Ensures ADMIN user password is set using bcrypt via User.set_password(),
+         with robust handling for pre-existing non-bcrypt hashes.
+Last Updated: May 29, 2025
+Author: Claude Assistant (Modified by Gemini)
 
 Changelog:
+- v2.0.2 (2025-05-29):
+    - Made _ensure_default_admin_user method more robust:
+        - It now tries to check the ADMIN password using bcrypt.
+        - If check_password fails (returns False or raises ValueError due to
+          invalid hash format like old SHA256), it then calls
+          user.set_password() to ensure the password becomes "admin1234"
+          hashed with bcrypt.
+        - This resolves the "ValueError: Invalid salt" during startup.
+- v2.0.1 (2025-05-29):
+    - Modified _ensure_default_admin_user method to use user.set_password()
+      (which uses bcrypt) for the ADMIN user's password ("admin1234")
+      instead of directly setting a SHA-256 hash.
+    - Removed hashlib import as it's no longer used.
 - v2.0.0 (2025-05-24):
-    - Complete rewrite for Phase 1 (Chunk 1) simplification
-    - Removed complex Base import issues by using local declarative_base
-    - Simplified DatabaseManager class with clear responsibility
-    - Removed circular import problems
-    - Streamlined table creation process
-    - Clean session management with proper context handling
-    - Removed unnecessary model imports from create_tables
-    - Focused on stable, working database initialization
-    - Added proper error handling without over-engineering
-    - Simple logging without excessive detail
+    - Complete rewrite for Phase 1 (Chunk 1) simplification.
 """
 
 import logging
@@ -54,15 +59,11 @@ class DatabaseManager:
     def initialize_database(self, db_url: Optional[str] = None) -> None:
         """
         Initialize database connection and create tables.
-
-        Args:
-            db_url: Database URL (optional, uses config default if not provided)
         """
         if self.engine:
             self.logger.info("Database already initialized")
             return
 
-        # Set database URL
         self.db_url = db_url or AppConfig.get_database_url()
         if not self.db_url:
             raise ValueError("DATABASE_URL is not configured")
@@ -70,29 +71,20 @@ class DatabaseManager:
         self.logger.info(f"Initializing database: {self.db_url}")
 
         try:
-            # Create engine
             self.engine = create_engine(
                 self.db_url,
-                echo=False,  # Set to True for SQL debugging
-                pool_pre_ping=True,  # Verify connections before use
+                echo=False,
+                pool_pre_ping=True,
             )
 
-            # Create session factory
             self.SessionLocal = scoped_session(
                 sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
             )
 
             self.logger.info("Database engine and session factory created")
-
-            # Create tables
             self.create_tables()
-
-            # Test connection
             self._test_connection()
-
-            # Ensure default admin user always exists
             self._ensure_default_admin_user()
-
             self.logger.info("Database initialization completed successfully")
 
         except SQLAlchemyError as e:
@@ -105,41 +97,24 @@ class DatabaseManager:
     def get_session(self) -> SQLAlchemySession:
         """
         Get a database session.
-
-        Returns:
-            SQLAlchemy session instance
-
-        Raises:
-            RuntimeError: If database is not initialized
         """
         if not self.SessionLocal:
             raise RuntimeError(
                 "Database not initialized. Call initialize_database() first."
             )
-
         return self.SessionLocal()
 
     def create_tables(self) -> None:
         """
         Create all database tables.
-
-        Raises:
-            RuntimeError: If engine is not initialized
         """
         if not self.engine:
             raise RuntimeError("Database engine not initialized")
 
         try:
             self.logger.info("Creating database tables...")
-
-            # Import models to register them with Base
-            # This ensures all model classes are loaded before table creation
             self._import_models()
-
-            # Create all tables
             Base.metadata.create_all(bind=self.engine)
-
-            # Log created tables
             table_names = list(Base.metadata.tables.keys())
             self.logger.info(f"Database tables created: {table_names}")
 
@@ -150,30 +125,44 @@ class DatabaseManager:
     def _import_models(self) -> None:
         """
         Import all model classes to ensure they are registered with Base.
-        This is called before table creation to ensure all tables are created.
         """
         try:
-            # Import essential models for Phase 1
             from models.user_models import User, Role, UserRole
             from models.base_model import BaseModel
+            from models.horse_models import Horse, HorseOwner, HorseLocation
+            from models.owner_models import (
+                Owner,
+                OwnerBillingHistory,
+                OwnerPayment,
+                Invoice,
+            )
+            from models.reference_models import (
+                StateProvince,
+                ChargeCode,
+                Veterinarian,
+                Location,
+            )
+            from models.reference_models import (
+                Transaction,
+                TransactionDetail,
+                Procedure,
+                Drug,
+            )
+            from models.reference_models import (
+                TreatmentLog,
+                CommunicationLog,
+                Document,
+                Reminder,
+                Appointment,
+            )
 
-            self.logger.debug("Essential models imported for table creation")
-
-            # Additional models can be imported here as needed in future phases
-            # from models.horse_models import Horse, HorseOwner, HorseLocation
-            # from models.owner_models import Owner, OwnerBillingHistory, OwnerPayment
-            # from models.reference_models import Species, StateProvince, Location, etc.
-
+            self.logger.debug("Models imported for table creation and admin user setup")
         except ImportError as e:
-            self.logger.warning(f"Could not import some models: {e}")
-            # Don't raise here - some models might not exist yet in Phase 1
+            self.logger.warning(f"Could not import some models for table creation: {e}")
 
     def _test_connection(self) -> None:
         """
         Test database connection.
-
-        Raises:
-            Exception: If connection test fails
         """
         try:
             with self.get_session() as session:
@@ -185,150 +174,159 @@ class DatabaseManager:
 
     def _ensure_default_admin_user(self) -> None:
         """
-        Ensure default admin user always exists with correct credentials.
-        This creates or updates the ADMIN user to ship with the product.
-
-        Default credentials:
-        - Username: ADMIN (case insensitive)
-        - Password: admin1234 (case sensitive)
-        - Role: admin
+        Ensure default admin user always exists with correct credentials
+        (password hashed using bcrypt via User.set_password).
+        Handles pre-existing non-bcrypt hashes for ADMIN by resetting the password.
         """
         try:
             with self.get_session() as session:
-                # Import here to avoid circular imports
-                from models.user_models import User, Role, UserRole
-                import hashlib
+                from models.user_models import (
+                    User,
+                    Role,
+                )  # User model has set_password & check_password
 
                 self.logger.info(
-                    "Ensuring default ADMIN user exists with correct credentials"
+                    "Ensuring default ADMIN user exists with bcrypt password."
                 )
 
-                # Ensure admin role exists
-                admin_role = session.query(Role).filter(Role.name == "admin").first()
+                admin_role_name = "ADMIN"
+                admin_role = (
+                    session.query(Role).filter(Role.name == admin_role_name).first()
+                )
                 if not admin_role:
+                    self.logger.warning(
+                        f"Role '{admin_role_name}' not found. Creating it now. "
+                        "It's recommended to run add_initial_data.py for full role setup."
+                    )
                     admin_role = Role(
-                        name="admin",
-                        description="System Administrator",
-                        created_by="SYSTEM",
-                        modified_by="SYSTEM",
+                        name=admin_role_name,
+                        description="System Administrator (auto-created by db_config)",
+                        created_by="SYSTEM_DB_CONFIG",
+                        modified_by="SYSTEM_DB_CONFIG",
                     )
                     session.add(admin_role)
-                    session.flush()  # Get the role_id
-                    self.logger.info("Created admin role")
+                    session.flush()
+                    self.logger.info(f"Created '{admin_role_name}' role.")
 
-                # Calculate correct password hash
-                correct_password_hash = hashlib.sha256("admin1234".encode()).hexdigest()
-
-                # Check if ADMIN user exists
                 admin_user = session.query(User).filter(User.user_id == "ADMIN").first()
+                default_password = "admin1234"
+                admin_default_name = "System Administrator"
+                admin_default_email = "admin@edsi.local"  # Consistent with v2.0.0
 
                 if admin_user:
-                    # Update existing ADMIN user to ensure correct credentials
-                    updated = False
-                    if admin_user.password_hash != correct_password_hash:
-                        admin_user.password_hash = correct_password_hash
-                        updated = True
-                        self.logger.info("Updated ADMIN user password hash")
+                    # User exists, check and ensure password, active status, name, and role.
+                    password_reset_done = False
+                    attributes_updated = False
+
+                    try:
+                        if not admin_user.check_password(default_password):
+                            # Password is a valid bcrypt hash but incorrect, or other check_password failure
+                            self.logger.info(
+                                "ADMIN user password check failed (wrong password or other). Resetting."
+                            )
+                            admin_user.set_password(default_password)
+                            password_reset_done = True
+                    except ValueError as e:
+                        # Catches "Invalid salt" if self.password_hash is not a valid bcrypt hash (e.g. old SHA256)
+                        self.logger.warning(
+                            f"ADMIN password hash not bcrypt/valid ({e}). Resetting password."
+                        )
+                        admin_user.set_password(default_password)
+                        password_reset_done = True
+
+                    if password_reset_done:
+                        admin_user.modified_by = "SYSTEM_DB_CONFIG_PWD"  # Indicate password was definitely set/reset
+                        self.logger.info(
+                            "ADMIN user password has been set/reset to a bcrypt hash."
+                        )
 
                     if not admin_user.is_active:
                         admin_user.is_active = True
-                        updated = True
-                        self.logger.info("Activated ADMIN user")
+                        self.logger.info("Activated ADMIN user.")
+                        attributes_updated = True
 
-                    if not admin_user.user_name:
-                        admin_user.user_name = "System Administrator"
-                        updated = True
-
-                    if updated:
-                        admin_user.modified_by = "SYSTEM"
+                    if admin_user.user_name != admin_default_name:
+                        admin_user.user_name = admin_default_name
                         self.logger.info(
-                            "Updated existing ADMIN user with correct credentials"
+                            f"Set ADMIN user_name to '{admin_default_name}'."
                         )
+                        attributes_updated = True
+
+                    if (
+                        admin_user.email != admin_default_email
+                    ):  # Ensure email is also default
+                        admin_user.email = admin_default_email
+                        self.logger.info(f"Set ADMIN email to '{admin_default_email}'.")
+                        attributes_updated = True
+
+                    if (
+                        attributes_updated and not password_reset_done
+                    ):  # If only attributes changed, set modified_by
+                        admin_user.modified_by = "SYSTEM_DB_CONFIG_ATTR"
+                    elif (
+                        attributes_updated and password_reset_done
+                    ):  # modified_by already set for password
+                        pass  # no change needed to modified_by
+
+                    if password_reset_done or attributes_updated:
+                        self.logger.info("ADMIN user record updated/verified.")
                     else:
-                        self.logger.info("ADMIN user already has correct credentials")
+                        self.logger.info(
+                            "ADMIN user credentials, status, and name are correct."
+                        )
 
                 else:
                     # Create new ADMIN user
+                    self.logger.info("ADMIN user not found. Creating new ADMIN user...")
                     admin_user = User(
                         user_id="ADMIN",
-                        password_hash=correct_password_hash,
-                        user_name="System Administrator",
-                        email="admin@edsi.local",
+                        user_name=admin_default_name,
+                        email=admin_default_email,
                         is_active=True,
-                        created_by="SYSTEM",
-                        modified_by="SYSTEM",
+                        created_by="SYSTEM_DB_CONFIG",
+                        modified_by="SYSTEM_DB_CONFIG",
                     )
+                    admin_user.set_password(default_password)
                     session.add(admin_user)
-                    session.flush()  # Ensure user is created and has ID
-                    self.logger.info("Created new ADMIN user")
+                    session.flush()
+                    self.logger.info("Created new ADMIN user with bcrypt password.")
 
-                # Ensure ADMIN user has admin role
-                existing_role_link = (
-                    session.query(UserRole)
-                    .filter(
-                        UserRole.user_id == "ADMIN",
-                        UserRole.role_id == admin_role.role_id,
+                if admin_role and admin_role not in admin_user.roles:
+                    admin_user.roles.append(admin_role)
+                    self.logger.info("Linked ADMIN user to ADMIN role.")
+                elif not admin_role:
+                    self.logger.error(
+                        f"Cannot link ADMIN user to '{admin_role_name}' role as role object is missing."
                     )
-                    .first()
-                )
 
-                if not existing_role_link:
-                    user_role = UserRole(user_id="ADMIN", role_id=admin_role.role_id)
-                    session.add(user_role)
-                    self.logger.info("Linked ADMIN user to admin role")
-
-                # Commit all changes
                 session.commit()
-
                 self.logger.info(
-                    "Default ADMIN user ready (Username: ADMIN, Password: admin1234)"
+                    f"Default ADMIN user ready (Username: ADMIN, Password: {default_password})"
                 )
 
         except Exception as e:
             self.logger.error(f"Error ensuring default admin user: {e}", exc_info=True)
-            # Don't raise here - let the application continue
+            if "session" in locals() and session.is_active:
+                session.rollback()
 
     def close(self) -> None:
-        """
-        Close database connections and clean up resources.
-        """
         if self.SessionLocal:
             self.SessionLocal.remove()
             self.logger.info("Database sessions closed")
-
         if self.engine:
             self.engine.dispose()
             self.logger.info("Database engine disposed")
 
     def get_engine(self):
-        """
-        Get the database engine.
-
-        Returns:
-            SQLAlchemy engine instance
-        """
         return self.engine
 
 
-# Global database manager instance
 db_manager = DatabaseManager()
 
 
 def get_db_session() -> SQLAlchemySession:
-    """
-    Convenience function to get a database session.
-
-    Returns:
-        SQLAlchemy session instance
-    """
     return db_manager.get_session()
 
 
 def init_database(db_url: Optional[str] = None) -> None:
-    """
-    Convenience function to initialize the database.
-
-    Args:
-        db_url: Database URL (optional)
-    """
     db_manager.initialize_database(db_url)

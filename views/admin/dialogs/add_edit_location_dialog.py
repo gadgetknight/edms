@@ -1,44 +1,64 @@
 # views/admin/dialogs/add_edit_location_dialog.py
 """
 EDSI Veterinary Management System - Add/Edit Location Dialog
-Version: 1.0.0
-Purpose: Dialog for creating and editing practice locations.
-Last Updated: May 19, 2025
+Version: 1.1.5
+Purpose: Dialog for creating and editing practice locations with detailed address fields,
+         phone, email, contact person, and auto-populating country code.
+Last Updated: June 2, 2025
 Author: Gemini
 
 Changelog:
+- v1.1.5 (2025-06-02):
+    - Added QLineEdit fields for Phone, Email, and Contact Person.
+    - Updated QGridLayout in _setup_ui to include new fields.
+    - Updated _populate_fields to load data for new fields.
+    - Updated get_data to collect data from new fields.
+    - Implemented _on_state_changed slot to auto-populate Country Code
+      based on State/Province selection.
+    - Modified _load_states_into_combobox to store country_code with state_code.
+- v1.1.4 (2025-05-29):
+    - Added `self.parent_view = parent_view` in __init__ to correctly store
+      the parent_view reference, resolving an AttributeError.
+- v1.1.3 (2025-05-29):
+    - Added `from config.app_config import AppConfig` to resolve NameError.
+- v1.1.2 (2025-05-29):
+    - Refactored _setup_ui to use QGridLayout for field layout.
+    - Updated _get_form_input_style to match HorseUnifiedManagement.
+- v1.1.1 (2025-05-29):
+    - Removed the 'description' input field.
+- v1.1.0 (2025-05-29):
+    - Added input fields for detailed address.
 - v1.0.0 (2025-05-19):
-    - Initial implementation for adding and editing locations.
-    - Fields: Location Name, Description, Is Active.
-    - Uses LocationController for backend operations.
-    - Styled for dark theme using imported constants.
+    - Initial implementation.
 """
-# Ensure NO leading spaces/tabs before this comment or the imports below
 
 import logging
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 from PySide6.QtWidgets import (
     QDialog,
     QVBoxLayout,
-    QFormLayout,
+    QGridLayout,
     QLineEdit,
-    QTextEdit,
     QCheckBox,
     QDialogButtonBox,
     QMessageBox,
     QLabel,
+    QComboBox,
 )
-from PySide6.QtGui import QPalette, QColor
+from PySide6.QtGui import QPalette, QColor, QFont
 from PySide6.QtCore import Qt
 
 from controllers.location_controller import LocationController
 from models import Location as LocationModel
+from models import StateProvince as StateProvinceModel
 
+from config.app_config import AppConfig
 from config.app_config import (
     DARK_WIDGET_BACKGROUND,
     DARK_TEXT_PRIMARY,
     DARK_INPUT_FIELD_BACKGROUND,
+    DARK_HEADER_FOOTER,
     DARK_ITEM_HOVER,
     DARK_BUTTON_BG,
     DARK_BUTTON_HOVER,
@@ -49,7 +69,7 @@ from config.app_config import (
     DARK_TEXT_SECONDARY,
     DARK_SUCCESS_ACTION,
     DARK_BORDER,
-    DARK_HEADER_FOOTER,
+    DEFAULT_FONT_FAMILY,
 )
 
 
@@ -63,37 +83,69 @@ class AddEditLocationDialog(QDialog):
     ):
         super().__init__(parent_view)
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.parent_view = parent_view
         self.controller = controller
         self.current_user_id = current_user_id
         self.location = location
         self.is_edit_mode = location is not None
 
+        self.location_name_input: Optional[QLineEdit] = None
+        self.contact_person_input: Optional[QLineEdit] = None  # ADDED
+        self.address_line1_input: Optional[QLineEdit] = None
+        self.address_line2_input: Optional[QLineEdit] = None
+        self.city_input: Optional[QLineEdit] = None
+        self.state_combo: Optional[QComboBox] = None
+        self.zip_code_input: Optional[QLineEdit] = None
+        self.country_code_input: Optional[QLineEdit] = None
+        self.phone_input: Optional[QLineEdit] = None  # ADDED
+        self.email_input: Optional[QLineEdit] = None  # ADDED
+        self.is_active_checkbox: Optional[QCheckBox] = None
+
         self.setWindowTitle(f"{'Edit' if self.is_edit_mode else 'Add'} Location")
-        self.setMinimumWidth(450)
+        self.setMinimumWidth(650)  # Increased width for more fields
 
         self._setup_palette()
         self._setup_ui()
+        self._load_states_into_combobox()
         if self.is_edit_mode and self.location:
             self._populate_fields()
 
-    def _get_dialog_specific_input_field_style(self) -> str:
-        """Generates style string for input fields within this dialog."""
+    def _get_form_input_style(self, base_bg=DARK_INPUT_FIELD_BACKGROUND) -> str:
         return f"""
-            QLineEdit, QTextEdit {{
-                background-color: {DARK_INPUT_FIELD_BACKGROUND};
+            QLineEdit, QComboBox {{
+                background-color: {base_bg};
+                color: {DARK_TEXT_PRIMARY};
+                border: 1px solid {DARK_BORDER}; 
+                border-radius: 4px;
+                padding: 6px 10px; 
+                font-size: 13px; 
+                min-height: 20px; 
+            }}
+            QLineEdit:focus, QComboBox:focus {{
+                border-color: {DARK_PRIMARY_ACTION};
+            }}
+            QLineEdit:disabled, QComboBox:disabled {{ 
+                background-color: {DARK_HEADER_FOOTER};
+                color: {DARK_TEXT_TERTIARY};
+                border-color: {DARK_HEADER_FOOTER};
+            }}
+            QComboBox::drop-down {{ 
+                border: none;
+                background-color: transparent;
+            }}
+            QComboBox::down-arrow {{ 
+                color: {DARK_TEXT_SECONDARY}; 
+            }}
+            QComboBox QAbstractItemView {{ 
+                background-color: {DARK_WIDGET_BACKGROUND};
                 color: {DARK_TEXT_PRIMARY};
                 border: 1px solid {DARK_BORDER};
-                border-radius: 4px;
-                padding: 6px;
-                min-height: 20px;
-            }}
-            QLineEdit:focus, QTextEdit:focus {{
-                border-color: {DARK_PRIMARY_ACTION};
+                selection-background-color: {DARK_HIGHLIGHT_BG};
+                selection-color: {DARK_HIGHLIGHT_TEXT};
             }}
         """
 
     def _get_dialog_generic_button_style(self) -> str:
-        """Generates generic button style string for this dialog."""
         return (
             f"QPushButton {{background-color: {DARK_BUTTON_BG}; color: {DARK_TEXT_PRIMARY}; "
             f"border: 1px solid {DARK_BORDER}; border-radius: 4px; padding: 8px 12px; "
@@ -123,39 +175,150 @@ class AddEditLocationDialog(QDialog):
         self.setPalette(palette)
         self.setAutoFillBackground(True)
 
+    def _create_label(self, text: str) -> QLabel:
+        label = QLabel(text)
+        label.setStyleSheet(
+            f"color: {DARK_TEXT_PRIMARY}; background-color: transparent; padding-top: 3px; font-size: 13px;"
+        )
+        font_size = (
+            AppConfig.DEFAULT_FONT_SIZE
+            if hasattr(AppConfig, "DEFAULT_FONT_SIZE")
+            else 10
+        )
+        label.setFont(QFont(DEFAULT_FONT_FAMILY, font_size))
+        return label
+
     def _setup_ui(self):
-        layout = QVBoxLayout(self)
-        form_layout = QFormLayout()
-        form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
-        form_layout.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)
-        form_layout.setContentsMargins(15, 15, 15, 15)
-        form_layout.setSpacing(10)
+        overall_layout = QVBoxLayout(self)
+        grid_layout = QGridLayout()
+        grid_layout.setContentsMargins(20, 20, 20, 15)
+        grid_layout.setSpacing(10)
+        grid_layout.setVerticalSpacing(15)
 
-        input_style = self._get_dialog_specific_input_field_style()
-        dialog_styles = (
-            f"QLabel {{ color: {DARK_TEXT_SECONDARY}; background-color: transparent; padding-top:3px; }}"
-            + f"QCheckBox::indicator {{ width: 13px; height: 13px; }}"
-        )
-        self.setStyleSheet(dialog_styles)
-
+        # --- Initialize Input Fields ---
         self.location_name_input = QLineEdit()
-        self.location_name_input.setStyleSheet(input_style)
         self.location_name_input.setPlaceholderText("e.g., Main Barn, Paddock A")
-        form_layout.addRow("Location Name*:", self.location_name_input)
 
-        self.description_input = QTextEdit()
-        self.description_input.setStyleSheet(input_style)
-        self.description_input.setPlaceholderText(
-            "Optional description or details about the location"
-        )
-        self.description_input.setFixedHeight(80)
-        form_layout.addRow("Description:", self.description_input)
+        self.contact_person_input = QLineEdit()  # ADDED
+        self.contact_person_input.setPlaceholderText("Name of contact person")
+
+        self.address_line1_input = QLineEdit()
+        self.address_line1_input.setPlaceholderText("Street Address")
+
+        self.address_line2_input = QLineEdit()
+        self.address_line2_input.setPlaceholderText("Apartment, Suite, etc. (Optional)")
+
+        self.city_input = QLineEdit()
+        self.city_input.setPlaceholderText("City/Town")
+
+        self.state_combo = QComboBox()
+        self.state_combo.setPlaceholderText("Select State/Province")
+        self.state_combo.currentIndexChanged.connect(
+            self._on_state_changed
+        )  # Connect signal
+
+        self.zip_code_input = QLineEdit()
+        self.zip_code_input.setPlaceholderText("Zip/Postal Code")
+
+        self.country_code_input = QLineEdit()
+        self.country_code_input.setPlaceholderText("e.g., USA, CAN")
+        self.country_code_input.setMaxLength(10)
+
+        self.phone_input = QLineEdit()  # ADDED
+        self.phone_input.setPlaceholderText("Primary phone number")
+
+        self.email_input = QLineEdit()  # ADDED
+        self.email_input.setPlaceholderText("Contact email address")
 
         self.is_active_checkbox = QCheckBox("Location is Active")
         self.is_active_checkbox.setChecked(True)
-        form_layout.addRow("", self.is_active_checkbox)
+        self.is_active_checkbox.setStyleSheet(
+            f"color: {DARK_TEXT_PRIMARY}; font-size: 13px;"
+        )
 
-        layout.addLayout(form_layout)
+        # --- Arranging fields in grid ---
+        # Row 0: Location Name (spans)
+        grid_layout.addWidget(
+            self._create_label("Location Name*:"), 0, 0, Qt.AlignmentFlag.AlignRight
+        )
+        grid_layout.addWidget(self.location_name_input, 0, 1, 1, 3)
+
+        # Row 1: Contact Person (spans)
+        grid_layout.addWidget(
+            self._create_label("Contact Person:"), 1, 0, Qt.AlignmentFlag.AlignRight
+        )
+        grid_layout.addWidget(self.contact_person_input, 1, 1, 1, 3)
+
+        # Row 2: Address Line 1 (spans)
+        grid_layout.addWidget(
+            self._create_label("Address Line 1:"), 2, 0, Qt.AlignmentFlag.AlignRight
+        )
+        grid_layout.addWidget(self.address_line1_input, 2, 1, 1, 3)
+
+        # Row 3: Address Line 2 (spans)
+        grid_layout.addWidget(
+            self._create_label("Address Line 2:"), 3, 0, Qt.AlignmentFlag.AlignRight
+        )
+        grid_layout.addWidget(self.address_line2_input, 3, 1, 1, 3)
+
+        # Row 4: City | State/Province
+        grid_layout.addWidget(
+            self._create_label("City:"), 4, 0, Qt.AlignmentFlag.AlignRight
+        )
+        grid_layout.addWidget(self.city_input, 4, 1)
+        grid_layout.addWidget(
+            self._create_label("State/Province:"), 4, 2, Qt.AlignmentFlag.AlignRight
+        )
+        grid_layout.addWidget(self.state_combo, 4, 3)
+
+        # Row 5: Zip/Postal Code | Country Code
+        grid_layout.addWidget(
+            self._create_label("Zip/Postal Code:"), 5, 0, Qt.AlignmentFlag.AlignRight
+        )
+        grid_layout.addWidget(self.zip_code_input, 5, 1)
+        grid_layout.addWidget(
+            self._create_label("Country Code:"), 5, 2, Qt.AlignmentFlag.AlignRight
+        )
+        grid_layout.addWidget(self.country_code_input, 5, 3)
+
+        # Row 6: Phone | Email
+        grid_layout.addWidget(
+            self._create_label("Phone:"), 6, 0, Qt.AlignmentFlag.AlignRight
+        )
+        grid_layout.addWidget(self.phone_input, 6, 1)
+        grid_layout.addWidget(
+            self._create_label("Email:"), 6, 2, Qt.AlignmentFlag.AlignRight
+        )
+        grid_layout.addWidget(self.email_input, 6, 3)
+
+        # Row 7: Is Active Checkbox
+        grid_layout.addWidget(
+            self.is_active_checkbox, 7, 1, 1, 1, Qt.AlignmentFlag.AlignLeft
+        )
+
+        grid_layout.setColumnStretch(1, 1)
+        grid_layout.setColumnStretch(3, 1)
+        grid_layout.setColumnMinimumWidth(0, 110)  # Adjusted min width for labels
+        grid_layout.setColumnMinimumWidth(2, 110)  # Adjusted min width for labels
+
+        form_style = self._get_form_input_style()
+        for field in [
+            self.location_name_input,
+            self.contact_person_input,
+            self.address_line1_input,
+            self.address_line2_input,
+            self.city_input,
+            self.state_combo,
+            self.zip_code_input,
+            self.country_code_input,
+            self.phone_input,
+            self.email_input,
+        ]:
+            if field:
+                field.setStyleSheet(form_style)  # type: ignore
+
+        overall_layout.addLayout(grid_layout)
+        overall_layout.addStretch(1)
 
         self.button_box = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
@@ -171,36 +334,131 @@ class AddEditLocationDialog(QDialog):
                 self.button_box.buttonRole(button)
                 == QDialogButtonBox.ButtonRole.AcceptRole
             ):
-                ok_bg_color = DARK_SUCCESS_ACTION
-                if len(ok_bg_color) == 4 and ok_bg_color.startswith("#"):
-                    ok_bg_color = (
-                        f"#{ok_bg_color[1]*2}{ok_bg_color[2]*2}{ok_bg_color[3]*2}"
-                    )
+                ok_button_specific_style = (
+                    f"background-color: {DARK_SUCCESS_ACTION}; color: white;"
+                )
                 button.setStyleSheet(
                     generic_button_style
-                    + f"QPushButton {{ background-color: {ok_bg_color}; color: white; }}"
+                    + f"QPushButton {{ {ok_button_specific_style} }}"
                 )
-        layout.addWidget(self.button_box)
+
+        overall_layout.addWidget(self.button_box)
+
+    def _load_states_into_combobox(self):
+        if not self.state_combo:
+            return
+        self.state_combo.addItem("", None)  # Placeholder for no selection
+        session = None
+        try:
+            from config.database_config import db_manager
+
+            session = db_manager.get_session()
+            states: List[StateProvinceModel] = (
+                session.query(StateProvinceModel)
+                .filter(StateProvinceModel.is_active == True)
+                .order_by(
+                    StateProvinceModel.country_code, StateProvinceModel.state_name
+                )
+                .all()
+            )
+            for state in states:
+                display_name = f"{state.state_name} ({state.state_code})"
+                # Store a dictionary or tuple with both state_code and country_code
+                self.state_combo.addItem(
+                    display_name,
+                    {
+                        "state_code": state.state_code,
+                        "country_code": state.country_code,
+                    },
+                )
+            self.logger.info(f"Loaded {len(states)} states into combobox.")
+        except Exception as e:
+            self.logger.error(f"Error loading states into combobox: {e}", exc_info=True)
+            QMessageBox.warning(
+                self, "Data Load Error", "Could not load states for selection."
+            )
+        finally:
+            if session:
+                session.close()
+
+    def _on_state_changed(self, index: int):
+        """Auto-populates the country code when a state/province is selected."""
+        if not self.state_combo or not self.country_code_input:
+            return
+
+        selected_data = self.state_combo.itemData(index)
+        if selected_data and isinstance(selected_data, dict):
+            country_code = selected_data.get("country_code", "")
+            self.country_code_input.setText(country_code)
+            self.logger.debug(
+                f"State selected: {selected_data.get('state_code')}, Country code auto-set to: {country_code}"
+            )
+        else:
+            self.country_code_input.clear()  # Clear if placeholder selected
+            self.logger.debug(
+                "State selection cleared or invalid data, country code cleared."
+            )
 
     def _populate_fields(self):
-        """Populates fields if in edit mode."""
         if self.location:
-            self.location_name_input.setText(self.location.location_name)
-            self.description_input.setPlainText(self.location.description or "")
+            self.location_name_input.setText(self.location.location_name or "")
+            self.contact_person_input.setText(
+                self.location.contact_person or ""
+            )  # ADDED
+            self.address_line1_input.setText(self.location.address_line1 or "")
+            self.address_line2_input.setText(self.location.address_line2 or "")
+            self.city_input.setText(self.location.city or "")
+
+            if self.location.state_code:
+                # FindData now expects the dictionary
+                for i in range(self.state_combo.count()):
+                    item_data = self.state_combo.itemData(i)
+                    if (
+                        item_data
+                        and isinstance(item_data, dict)
+                        and item_data.get("state_code") == self.location.state_code
+                    ):
+                        self.state_combo.setCurrentIndex(i)
+                        break
+                else:  # Loop finished without break
+                    self.logger.warning(
+                        f"State code '{self.location.state_code}' not found in combobox. Location: {self.location.location_name}"
+                    )
+            else:
+                self.state_combo.setCurrentIndex(0)  # Select empty item
+
+            self.zip_code_input.setText(self.location.zip_code or "")
+            self.country_code_input.setText(
+                self.location.country_code or ""
+            )  # Will be overridden by _on_state_changed if state is set
+            self.phone_input.setText(self.location.phone or "")  # ADDED
+            self.email_input.setText(self.location.email or "")  # ADDED
             self.is_active_checkbox.setChecked(self.location.is_active)
 
     def get_data(self) -> Dict[str, Any]:
-        """Collects data from the form fields."""
+        selected_state_code = None
+        # country_code will be taken from the input field, which might be auto-populated
+        if self.state_combo.currentIndex() > 0:
+            item_data = self.state_combo.currentData()
+            if item_data and isinstance(item_data, dict):
+                selected_state_code = item_data.get("state_code")
+
         return {
             "location_name": self.location_name_input.text().strip(),
-            "description": self.description_input.toPlainText().strip(),
+            "contact_person": self.contact_person_input.text().strip() or None,  # ADDED
+            "address_line1": self.address_line1_input.text().strip() or None,
+            "address_line2": self.address_line2_input.text().strip() or None,
+            "city": self.city_input.text().strip() or None,
+            "state_code": selected_state_code,
+            "zip_code": self.zip_code_input.text().strip() or None,
+            "country_code": self.country_code_input.text().strip().upper() or None,
+            "phone": self.phone_input.text().strip() or None,  # ADDED
+            "email": self.email_input.text().strip() or None,  # ADDED
             "is_active": self.is_active_checkbox.isChecked(),
         }
 
     def validate_and_accept(self):
-        """Validates form data and accepts dialog if valid."""
         data = self.get_data()
-
         is_valid, errors = self.controller.validate_location_data(
             data,
             is_new=(not self.is_edit_mode),
@@ -210,7 +468,6 @@ class AddEditLocationDialog(QDialog):
                 else None
             ),
         )
-
         if not is_valid:
             QMessageBox.warning(
                 self,
@@ -218,21 +475,24 @@ class AddEditLocationDialog(QDialog):
                 "Please correct the following errors:\n- " + "\n- ".join(errors),
             )
             return
-
         try:
             if self.is_edit_mode and self.location:
-                success, message = self.controller.update_location(
+                success, message, _ = self.controller.update_location(
                     self.location.location_id, data, self.current_user_id
                 )
             else:
                 success, message, _ = self.controller.create_location(
                     data, self.current_user_id
                 )
-
             if success:
-                if hasattr(self.parent(), "show_info"):
-                    self.parent().show_info("Success", message)
+                if hasattr(self.parent_view, "show_info") and callable(
+                    getattr(self.parent_view, "show_info")
+                ):
+                    self.parent_view.show_info("Success", message)
                 else:
+                    self.logger.warning(
+                        "parent_view does not have show_info method. Using local QMessageBox."
+                    )
                     QMessageBox.information(self, "Success", message)
                 super().accept()
             else:

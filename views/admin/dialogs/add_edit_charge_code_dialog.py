@@ -1,34 +1,41 @@
 # views/admin/dialogs/add_edit_charge_code_dialog.py
-
 """
 EDSI Veterinary Management System - Add/Edit Charge Code Dialog
-Version: 1.1.3
+Version: 1.1.5
 Purpose: Dialog for creating and editing charge codes.
-         Resolves circular import and adds missing Optional/Dict import.
-Last Updated: May 19, 2025
-Author: Claude Assistant
+         - Implements hierarchical category selection using cascading QComboBoxes.
+         - Styling and layout consistent with HorseUnifiedManagement forms.
+Last Updated: June 2, 2025
+Author: Claude Assistant (Modified by Gemini)
 
 Changelog:
-- v1.1.3 (2025-05-19):
-    - Added `from typing import Optional, Dict` to resolve NameError for 'Optional'.
-- v1.1.2 (2025-05-19):
-    - Resolved circular import with UserManagementScreen by removing the import
-      and defining necessary style helper methods locally within this dialog.
-- v1.1.1 (2025-05-19):
-    - Corrected AppConfig constant usage. Imported constants directly instead of
-      accessing them via the AppConfig class for palette and button styling.
-- v1.1.0 (2025-05-18):
-    - Initial version based on artifact and integrated into UserManagementScreen.
+- v1.1.5 (2025-06-02):
+    - Replaced single category QLineEdit with three QComboBoxes
+      (main_category_combo, sub_category_combo, detail_category_combo)
+      for hierarchical category selection.
+    - Implemented cascading logic for the category comboboxes.
+    - Added _load_main_categories, _on_main_category_changed,
+      _on_sub_category_changed methods.
+    - Updated _populate_fields to pre-select the category hierarchy when editing.
+    - Updated get_data to retrieve the category_id from the most specific
+      selected category dropdown.
+    - Adjusted QGridLayout to accommodate the new category dropdowns.
+- v1.1.4 (2025-06-02):
+    - Refactored _setup_ui to use QGridLayout for field layout.
+    - Added 'Taxable' QCheckBox field and its handling.
+    - Implemented _create_label helper and updated _get_form_input_style.
+- v1.1.3 (2025-05-19) (from bundle):
+    - Resolved NameError for AppConfig and typing.Optional/Dict.
 """
 
 import logging
 from decimal import Decimal, InvalidOperation
-from typing import Optional, Dict  # ADDED Optional and Dict here
+from typing import Optional, Dict, Any, List
 
 from PySide6.QtWidgets import (
     QDialog,
     QVBoxLayout,
-    QFormLayout,
+    QGridLayout,
     QLineEdit,
     QTextEdit,
     QDoubleSpinBox,
@@ -36,17 +43,21 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QMessageBox,
     QLabel,
+    QComboBox,
 )
-from PySide6.QtGui import QPalette, QColor
+from PySide6.QtGui import QPalette, QColor, QFont
 from PySide6.QtCore import Qt
 
 from controllers.charge_code_controller import ChargeCodeController
 from models import ChargeCode as ChargeCodeModel
+from models import ChargeCodeCategory  # For type hinting
 
+from config.app_config import AppConfig
 from config.app_config import (
     DARK_WIDGET_BACKGROUND,
     DARK_TEXT_PRIMARY,
     DARK_INPUT_FIELD_BACKGROUND,
+    DARK_HEADER_FOOTER,
     DARK_ITEM_HOVER,
     DARK_BUTTON_BG,
     DARK_BUTTON_HOVER,
@@ -57,7 +68,7 @@ from config.app_config import (
     DARK_TEXT_SECONDARY,
     DARK_SUCCESS_ACTION,
     DARK_BORDER,
-    DARK_HEADER_FOOTER,
+    DEFAULT_FONT_FAMILY,
 )
 
 
@@ -66,51 +77,69 @@ class AddEditChargeCodeDialog(QDialog):
         self,
         parent,
         controller: ChargeCodeController,
+        current_user_id: str,
         charge_code: Optional[ChargeCodeModel] = None,
-    ):  # Optional is now defined
+    ):
         super().__init__(parent)
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.parent_view = parent
         self.controller = controller
+        self.current_user_id = current_user_id
         self.charge_code = charge_code
         self.is_edit_mode = charge_code is not None
 
+        # Initialize Input Fields
+        self.code_input: Optional[QLineEdit] = None
+        self.alt_code_input: Optional[QLineEdit] = None
+        self.description_input: Optional[QTextEdit] = None
+
+        # Hierarchical Category Fields
+        self.main_category_combo: Optional[QComboBox] = None
+        self.sub_category_combo: Optional[QComboBox] = None
+        self.detail_category_combo: Optional[QComboBox] = None
+
+        self.standard_charge_input: Optional[QDoubleSpinBox] = None
+        self.taxable_checkbox: Optional[QCheckBox] = None
+        self.is_active_checkbox: Optional[QCheckBox] = None
+
         self.setWindowTitle(f"{'Edit' if self.is_edit_mode else 'Add'} Charge Code")
-        self.setMinimumWidth(450)
+        self.setMinimumWidth(650)  # Adjusted for potentially wider category section
 
         self._setup_palette()
         self._setup_ui()
-        self._populate_fields()
+        self._load_main_categories()  # Load top-level categories initially
 
-    def _get_dialog_specific_input_field_style(self):
-        """Generates style string for input fields within this dialog."""
+        if self.is_edit_mode and self.charge_code:
+            self._populate_fields()
+
+    def _get_form_input_style(self, base_bg=DARK_INPUT_FIELD_BACKGROUND) -> str:
         return f"""
             QLineEdit, QComboBox, QTextEdit, QDoubleSpinBox {{
-                background-color: {DARK_INPUT_FIELD_BACKGROUND};
-                color: {DARK_TEXT_PRIMARY};
-                border: 1px solid {DARK_BORDER};
-                border-radius: 4px;
-                padding: 6px;
-                min-height: 20px;
+                background-color: {base_bg}; color: {DARK_TEXT_PRIMARY};
+                border: 1px solid {DARK_BORDER}; border-radius: 4px;
+                padding: 6px 10px; font-size: 13px; min-height: 20px; 
             }}
             QLineEdit:focus, QComboBox:focus, QTextEdit:focus, QDoubleSpinBox:focus {{
                 border-color: {DARK_PRIMARY_ACTION};
             }}
-            QComboBox::drop-down {{
-                border: none; background-color: transparent;
-                subcontrol-position: right center; width: 15px;
+            QLineEdit:disabled, QComboBox:disabled, QTextEdit:disabled, QDoubleSpinBox:disabled {{ 
+                background-color: {DARK_HEADER_FOOTER}; color: {DARK_TEXT_TERTIARY};
+                border-color: {DARK_HEADER_FOOTER};
             }}
-            QComboBox::down-arrow {{ image: url(none); }}
-            QComboBox QAbstractItemView {{
-                background-color: {DARK_WIDGET_BACKGROUND};
-                color: {DARK_TEXT_PRIMARY};
+            QLineEdit[readOnly="true"] {{
+                background-color: {DARK_HEADER_FOOTER}; color: {DARK_TEXT_TERTIARY};
+            }}
+            QComboBox::drop-down {{ border: none; background-color: transparent; }}
+            QComboBox::down-arrow {{ color: {DARK_TEXT_SECONDARY}; }}
+            QComboBox QAbstractItemView {{ 
+                background-color: {DARK_WIDGET_BACKGROUND}; color: {DARK_TEXT_PRIMARY};
                 border: 1px solid {DARK_BORDER};
                 selection-background-color: {DARK_HIGHLIGHT_BG};
                 selection-color: {DARK_HIGHLIGHT_TEXT};
             }}
         """
 
-    def _get_dialog_generic_button_style(self):
-        """Generates generic button style string for this dialog."""
+    def _get_dialog_generic_button_style(self) -> str:
         return (
             f"QPushButton {{background-color: {DARK_BUTTON_BG}; color: {DARK_TEXT_PRIMARY}; "
             f"border: 1px solid {DARK_BORDER}; border-radius: 4px; padding: 8px 12px; "
@@ -120,6 +149,7 @@ class AddEditChargeCodeDialog(QDialog):
         )
 
     def _setup_palette(self):
+        # ... (palette setup remains unchanged) ...
         palette = QPalette()
         palette.setColor(QPalette.ColorRole.Window, QColor(DARK_WIDGET_BACKGROUND))
         palette.setColor(QPalette.ColorRole.WindowText, QColor(DARK_TEXT_PRIMARY))
@@ -140,63 +170,132 @@ class AddEditChargeCodeDialog(QDialog):
         self.setPalette(palette)
         self.setAutoFillBackground(True)
 
-    def _setup_ui(self):
-        layout = QVBoxLayout(self)
-        form_layout = QFormLayout()
-        form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
-        form_layout.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)
-        form_layout.setContentsMargins(15, 15, 15, 15)
-        form_layout.setSpacing(10)
-
-        input_style = self._get_dialog_specific_input_field_style()
-        dialog_styles = (
-            f"QLabel {{ color: {DARK_TEXT_SECONDARY}; background-color: transparent; padding-top:3px; }}"
-            + f"QCheckBox::indicator {{ width: 13px; height: 13px; }}"
+    def _create_label(self, text: str) -> QLabel:
+        label = QLabel(text)
+        label.setStyleSheet(
+            f"color: {DARK_TEXT_PRIMARY}; background-color: transparent; padding-top: 3px; font-size: 13px;"
         )
-        self.setStyleSheet(dialog_styles)
+        font_size = (
+            AppConfig.DEFAULT_FONT_SIZE
+            if hasattr(AppConfig, "DEFAULT_FONT_SIZE")
+            else 10
+        )
+        label.setFont(QFont(DEFAULT_FONT_FAMILY, font_size))
+        return label
+
+    def _setup_ui(self):
+        overall_layout = QVBoxLayout(self)
+        grid_layout = QGridLayout()
+        grid_layout.setContentsMargins(20, 20, 20, 15)
+        grid_layout.setSpacing(10)
+        grid_layout.setVerticalSpacing(15)
 
         self.code_input = QLineEdit()
-        self.code_input.setStyleSheet(input_style)
         self.code_input.setPlaceholderText("Unique code (e.g., EXAM01)")
-        form_layout.addRow("Code*:", self.code_input)
-
         self.alt_code_input = QLineEdit()
-        self.alt_code_input.setStyleSheet(input_style)
         self.alt_code_input.setPlaceholderText("Alternative code (optional)")
-        form_layout.addRow("Alt. Code:", self.alt_code_input)
+
+        self.main_category_combo = QComboBox()
+        self.main_category_combo.setPlaceholderText("Select Main Category")
+        self.sub_category_combo = QComboBox()
+        self.sub_category_combo.setPlaceholderText("Select Sub-Category")
+        self.detail_category_combo = QComboBox()
+        self.detail_category_combo.setPlaceholderText("Select Detail Category")
 
         self.description_input = QTextEdit()
-        self.description_input.setStyleSheet(input_style)
-        self.description_input.setPlaceholderText(
-            "Detailed description of the charge code"
-        )
-        self.description_input.setFixedHeight(80)
-        form_layout.addRow("Description*:", self.description_input)
-
-        self.category_input = QLineEdit()
-        self.category_input.setStyleSheet(input_style)
-        self.category_input.setPlaceholderText("e.g., Veterinary, Pharmacy, Boarding")
-        form_layout.addRow("Category:", self.category_input)
-
+        self.description_input.setPlaceholderText("Detailed description")
+        self.description_input.setFixedHeight(70)
         self.standard_charge_input = QDoubleSpinBox()
-        self.standard_charge_input.setStyleSheet(input_style)
         self.standard_charge_input.setDecimals(2)
-        self.standard_charge_input.setRange(0.00, 999999.99)
+        self.standard_charge_input.setRange(0.00, 99999.99)
         self.standard_charge_input.setPrefix("$ ")
-        form_layout.addRow("Standard Charge*:", self.standard_charge_input)
-
-        self.is_active_checkbox = QCheckBox("Charge Code is Active")
+        self.standard_charge_input.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.taxable_checkbox = QCheckBox("Taxable")
+        self.taxable_checkbox.setStyleSheet(
+            f"color: {DARK_TEXT_PRIMARY}; font-size: 13px;"
+        )
+        self.is_active_checkbox = QCheckBox("Active")
         self.is_active_checkbox.setChecked(True)
-        form_layout.addRow("", self.is_active_checkbox)
+        self.is_active_checkbox.setStyleSheet(
+            f"color: {DARK_TEXT_PRIMARY}; font-size: 13px;"
+        )
 
-        layout.addLayout(form_layout)
+        row = 0
+        grid_layout.addWidget(
+            self._create_label("Code*:"), row, 0, Qt.AlignmentFlag.AlignRight
+        )
+        grid_layout.addWidget(self.code_input, row, 1)
+        grid_layout.addWidget(
+            self._create_label("Alt. Code:"), row, 2, Qt.AlignmentFlag.AlignRight
+        )
+        grid_layout.addWidget(self.alt_code_input, row, 3)
+        row += 1
+        grid_layout.addWidget(
+            self._create_label("Main Category*:"), row, 0, Qt.AlignmentFlag.AlignRight
+        )
+        grid_layout.addWidget(self.main_category_combo, row, 1, 1, 3)  # Spans for now
+        row += 1
+        grid_layout.addWidget(
+            self._create_label("Sub-Category:"), row, 0, Qt.AlignmentFlag.AlignRight
+        )
+        grid_layout.addWidget(self.sub_category_combo, row, 1, 1, 3)
+        row += 1
+        grid_layout.addWidget(
+            self._create_label("Detail Category:"), row, 0, Qt.AlignmentFlag.AlignRight
+        )
+        grid_layout.addWidget(self.detail_category_combo, row, 1, 1, 3)
+        row += 1
+        grid_layout.addWidget(
+            self._create_label("Standard Charge*:"), row, 0, Qt.AlignmentFlag.AlignRight
+        )
+        grid_layout.addWidget(self.standard_charge_input, row, 1)
+        # Checkboxes can go next to each other or one under another
+        grid_layout.addWidget(
+            self.taxable_checkbox,
+            row,
+            2,
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
+        )
+        grid_layout.addWidget(
+            self.is_active_checkbox,
+            row,
+            3,
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+        )
+        row += 1
+        grid_layout.addWidget(
+            self._create_label("Description*:"),
+            row,
+            0,
+            Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight,
+        )
+        grid_layout.addWidget(self.description_input, row, 1, 1, 3)
 
+        grid_layout.setColumnStretch(1, 1)
+        grid_layout.setColumnStretch(3, 1)
+        grid_layout.setColumnMinimumWidth(0, 110)
+        grid_layout.setColumnMinimumWidth(2, 110)
+
+        form_style = self._get_form_input_style()
+        for field in [
+            self.code_input,
+            self.alt_code_input,
+            self.description_input,
+            self.main_category_combo,
+            self.sub_category_combo,
+            self.detail_category_combo,
+            self.standard_charge_input,
+        ]:
+            if field:
+                field.setStyleSheet(form_style)
+
+        overall_layout.addLayout(grid_layout)
+        overall_layout.addStretch(1)
         self.button_box = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
         self.button_box.accepted.connect(self.validate_and_accept)
         self.button_box.rejected.connect(self.reject)
-
         generic_button_style = self._get_dialog_generic_button_style()
         for button in self.button_box.buttons():
             button.setMinimumHeight(30)
@@ -205,33 +304,189 @@ class AddEditChargeCodeDialog(QDialog):
                 self.button_box.buttonRole(button)
                 == QDialogButtonBox.ButtonRole.AcceptRole
             ):
-                ok_bg_color = DARK_SUCCESS_ACTION
-                if len(ok_bg_color) == 4 and ok_bg_color.startswith("#"):
-                    ok_bg_color = (
-                        f"#{ok_bg_color[1]*2}{ok_bg_color[2]*2}{ok_bg_color[3]*2}"
-                    )
-                button.setStyleSheet(
+                ok_style = (
                     generic_button_style
-                    + f"QPushButton {{ background-color: {ok_bg_color}; color: white; }}"
+                    + f"QPushButton {{ background-color: {DARK_SUCCESS_ACTION}; color: white; }}"
                 )
-        layout.addWidget(self.button_box)
+                button.setStyleSheet(ok_style)
+        overall_layout.addWidget(self.button_box)
+
+        # Connect signals for cascading comboboxes
+        self.main_category_combo.currentIndexChanged.connect(
+            self._on_main_category_changed
+        )
+        self.sub_category_combo.currentIndexChanged.connect(
+            self._on_sub_category_changed
+        )
+
+    def _load_main_categories(self):
+        if not self.main_category_combo:
+            return
+        self.main_category_combo.clear()
+        self.main_category_combo.addItem("Select Main Category...", None)
+        try:
+            categories = self.controller.get_charge_code_categories(level=1)
+            for cat in categories:
+                self.main_category_combo.addItem(cat.name, cat.category_id)
+        except Exception as e:
+            self.logger.error(f"Error loading main categories: {e}", exc_info=True)
+
+    def _on_main_category_changed(self, index: int):
+        if (
+            not self.main_category_combo
+            or not self.sub_category_combo
+            or not self.detail_category_combo
+        ):
+            return
+
+        self.sub_category_combo.clear()
+        self.sub_category_combo.addItem("Select Sub-Category...", None)
+        self.detail_category_combo.clear()  # Also clear detail when main changes
+        self.detail_category_combo.addItem("Select Detail Category...", None)
+        self.detail_category_combo.setEnabled(False)
+
+        parent_id = self.main_category_combo.itemData(index)
+        if parent_id is not None:
+            try:
+                sub_categories = self.controller.get_charge_code_categories(
+                    parent_id=parent_id, level=2
+                )
+                if sub_categories:
+                    for cat in sub_categories:
+                        self.sub_category_combo.addItem(cat.name, cat.category_id)
+                    self.sub_category_combo.setEnabled(True)
+                else:
+                    self.sub_category_combo.setEnabled(False)  # No sub-categories
+                    self.detail_category_combo.setEnabled(False)  # No detail if no sub
+            except Exception as e:
+                self.logger.error(
+                    f"Error loading sub-categories for parent_id {parent_id}: {e}",
+                    exc_info=True,
+                )
+        else:  # "Select Main Category..." is chosen
+            self.sub_category_combo.setEnabled(False)
+            self.detail_category_combo.setEnabled(False)
+
+    def _on_sub_category_changed(self, index: int):
+        if not self.sub_category_combo or not self.detail_category_combo:
+            return
+
+        self.detail_category_combo.clear()
+        self.detail_category_combo.addItem("Select Detail Category...", None)
+
+        parent_id = self.sub_category_combo.itemData(index)
+        if parent_id is not None:
+            try:
+                detail_categories = self.controller.get_charge_code_categories(
+                    parent_id=parent_id, level=3
+                )
+                if detail_categories:
+                    for cat in detail_categories:
+                        self.detail_category_combo.addItem(cat.name, cat.category_id)
+                    self.detail_category_combo.setEnabled(True)
+                else:
+                    self.detail_category_combo.setEnabled(False)  # No detail categories
+            except Exception as e:
+                self.logger.error(
+                    f"Error loading detail categories for parent_id {parent_id}: {e}",
+                    exc_info=True,
+                )
+        else:  # "Select Sub-Category..." is chosen
+            self.detail_category_combo.setEnabled(False)
 
     def _populate_fields(self):
         if self.is_edit_mode and self.charge_code:
             self.code_input.setText(self.charge_code.code)
+            self.code_input.setReadOnly(True)
+            self.code_input.setStyleSheet(
+                self._get_form_input_style()
+                + f"QLineEdit {{ background-color: {DARK_HEADER_FOOTER}; color: {DARK_TEXT_TERTIARY}; }}"
+            )
+
             self.alt_code_input.setText(self.charge_code.alternate_code or "")
             self.description_input.setPlainText(self.charge_code.description)
-            self.category_input.setText(self.charge_code.category or "")
             self.standard_charge_input.setValue(
                 float(self.charge_code.standard_charge)
                 if self.charge_code.standard_charge is not None
                 else 0.0
             )
+            self.taxable_checkbox.setChecked(self.charge_code.taxable or False)
             self.is_active_checkbox.setChecked(self.charge_code.is_active)
+
+            # Populate hierarchical categories
+            if self.charge_code.category_id is not None:
+                path = self.controller.get_category_path(self.charge_code.category_id)
+                # path is ordered from root to leaf [main, sub, detail]
+                if path:
+                    # Block signals while setting combo boxes programmatically
+                    if self.main_category_combo:
+                        self.main_category_combo.blockSignals(True)
+                    if self.sub_category_combo:
+                        self.sub_category_combo.blockSignals(True)
+                    if self.detail_category_combo:
+                        self.detail_category_combo.blockSignals(True)
+
+                    if len(path) > 0 and self.main_category_combo:
+                        main_cat_id = path[0].category_id
+                        index = self.main_category_combo.findData(main_cat_id)
+                        if index >= 0:
+                            self.main_category_combo.setCurrentIndex(index)
+                        # Manually trigger sub-load if needed, as signals are blocked
+                        self._on_main_category_changed(index)
+
+                    if len(path) > 1 and self.sub_category_combo:
+                        sub_cat_id = path[1].category_id
+                        # Wait for sub_category_combo to be populated by _on_main_category_changed
+                        # Then find and set index. This requires a slight delay or different approach.
+                        # For simplicity now, we assume sub_category_combo is populated.
+                        QTimer.singleShot(
+                            0,
+                            lambda: self._select_combo_item(
+                                self.sub_category_combo, sub_cat_id, True
+                            ),
+                        )
+
+                    if len(path) > 2 and self.detail_category_combo:
+                        detail_cat_id = path[2].category_id
+                        QTimer.singleShot(
+                            0,
+                            lambda: self._select_combo_item(
+                                self.detail_category_combo, detail_cat_id, False
+                            ),
+                        )
+
+                    # Unblock signals
+                    if self.main_category_combo:
+                        self.main_category_combo.blockSignals(False)
+                    if self.sub_category_combo:
+                        self.sub_category_combo.blockSignals(False)
+                    if self.detail_category_combo:
+                        self.detail_category_combo.blockSignals(False)
+
         elif not self.is_edit_mode:
             self.is_active_checkbox.setChecked(True)
+            self.taxable_checkbox.setChecked(False)
+            if self.sub_category_combo:
+                self.sub_category_combo.setEnabled(False)
+            if self.detail_category_combo:
+                self.detail_category_combo.setEnabled(False)
 
-    def get_data(self) -> Optional[Dict]:  # Dict is now defined
+    def _select_combo_item(
+        self, combo: QComboBox, item_id_to_select: int, trigger_next_load: bool
+    ):
+        """Helper to select an item in a combo box and optionally trigger its changed signal."""
+        if not combo:
+            return
+        index = combo.findData(item_id_to_select)
+        if index >= 0:
+            combo.setCurrentIndex(index)
+            if (
+                trigger_next_load
+            ):  # Manually call the next handler if signals were blocked
+                if combo == self.sub_category_combo:
+                    self._on_sub_category_changed(index)
+
+    def get_data(self) -> Optional[Dict[str, Any]]:
         code = self.code_input.text().strip().upper()
         description = self.description_input.toPlainText().strip()
         standard_charge_value = self.standard_charge_input.value()
@@ -242,13 +497,33 @@ class AddEditChargeCodeDialog(QDialog):
         if not description:
             errors.append("Description is required.")
 
-        charge_decimal = None
+        charge_decimal: Optional[Decimal] = None
         try:
             charge_decimal = Decimal(str(standard_charge_value))
             if charge_decimal < Decimal("0.00"):
                 errors.append("Standard Charge cannot be negative.")
         except InvalidOperation:
-            errors.append("Standard Charge must be a valid number.")
+            errors.append("Standard Charge must be a valid number (e.g., 25.00).")
+
+        # Determine selected category_id from the deepest selected combobox
+        selected_category_id: Optional[int] = None
+        if (
+            self.detail_category_combo
+            and self.detail_category_combo.currentIndex() > 0
+            and self.detail_category_combo.isEnabled()
+        ):
+            selected_category_id = self.detail_category_combo.currentData()
+        elif (
+            self.sub_category_combo
+            and self.sub_category_combo.currentIndex() > 0
+            and self.sub_category_combo.isEnabled()
+        ):
+            selected_category_id = self.sub_category_combo.currentData()
+        elif self.main_category_combo and self.main_category_combo.currentIndex() > 0:
+            selected_category_id = self.main_category_combo.currentData()
+
+        if selected_category_id is None:  # Assuming category is mandatory
+            errors.append("A category selection (at least Main Category) is required.")
 
         if errors:
             QMessageBox.warning(self, "Input Error", "\n".join(errors))
@@ -258,8 +533,9 @@ class AddEditChargeCodeDialog(QDialog):
             "code": code,
             "alternate_code": self.alt_code_input.text().strip().upper() or None,
             "description": description,
-            "category": self.category_input.text().strip() or None,
+            "category_id": selected_category_id,  # Use category_id
             "standard_charge": charge_decimal,
+            "taxable": self.taxable_checkbox.isChecked(),
             "is_active": self.is_active_checkbox.isChecked(),
         }
 
@@ -268,16 +544,35 @@ class AddEditChargeCodeDialog(QDialog):
         if data is None:
             return
 
+        is_valid, errors = self.controller.validate_charge_code_data(
+            data, is_new=(not self.is_edit_mode)
+        )
+
+        if not is_valid:
+            QMessageBox.warning(
+                self,
+                "Input Error",
+                "Please correct the following errors:\n- " + "\n- ".join(errors),
+            )
+            return
+
         try:
             if self.is_edit_mode and self.charge_code:
                 success, message = self.controller.update_charge_code(
-                    self.charge_code.charge_code_id, data
+                    self.charge_code.charge_code_id, data, self.current_user_id
                 )
             else:
-                success, message, _ = self.controller.create_charge_code(data)
+                success, message, _ = self.controller.create_charge_code(
+                    data, self.current_user_id
+                )
 
             if success:
-                QMessageBox.information(self, "Success", message)
+                if hasattr(self.parent_view, "show_info") and callable(
+                    getattr(self.parent_view, "show_info")
+                ):
+                    self.parent_view.show_info("Success", message)
+                else:
+                    QMessageBox.information(self, "Success", message)
                 super().accept()
             else:
                 QMessageBox.critical(

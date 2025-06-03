@@ -1,21 +1,26 @@
 # models/reference_models.py
 """
 EDSI Veterinary Management System - Reference Data Models
-Version: 1.1.16
+Version: 1.1.19
 Purpose: Defines SQLAlchemy models for various reference data entities.
-         - Removed duplicate Invoice model definition (now solely in owner_models.py).
-Last Updated: May 23, 2025
+         - Added ChargeCodeCategory model for hierarchical categories.
+         - Modified ChargeCode model to use ForeignKey to ChargeCodeCategory.
+Last Updated: June 2, 2025
 Author: Claude Assistant (Modified by Gemini)
 
 Changelog:
-- v1.1.16 (2025-05-23):
-    - Removed the placeholder `Invoice` class definition. The authoritative `Invoice`
-      model is defined in `owner_models.py`. This resolves the "Table 'invoices' is
-      already defined" error.
-- v1.1.15 (2025-05-23):
-    - Removed the `Species` class definition as it's not needed for this application.
-- v1.1.14 (2025-05-23):
-    - Location model: Temporarily commented out the `horses_at_location` relationship.
+- v1.1.19 (2025-06-02):
+    - Added new `ChargeCodeCategory` model with `category_id`, `name`,
+      `parent_id` (self-referential for hierarchy), `level`, and `is_active` fields.
+      Inherits from `BaseModel`.
+    - Modified `ChargeCode` model:
+        - Removed the existing `category` (String) field.
+        - Added `category_id` (Integer, ForeignKey to `charge_code_categories.category_id`).
+        - Added `category` relationship to `ChargeCodeCategory`.
+- v1.1.18 (2025-06-02):
+    - Added `email = Column(String(100), nullable=True)` to the `Location` model.
+- v1.1.17 (2025-05-31):
+    - Added `alternate_code` to the `ChargeCode` model.
 """
 from sqlalchemy import (
     Column,
@@ -27,18 +32,18 @@ from sqlalchemy import (
     Date,
     Numeric,
     DateTime,
-    Table,
+    Table,  # Retain for potential future use, though not directly used by these models
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import (
+    relationship,
+    backref,
+)  # Added backref for self-referential relationship
 from sqlalchemy.sql import func
 
 from .base_model import Base, BaseModel
 
 
-# Species class was REMOVED in v1.1.15
-
-
-class StateProvince(BaseModel, Base):
+class StateProvince(BaseModel, Base):  # Unchanged
     __tablename__ = "state_provinces"
     state_province_id = Column(
         Integer, primary_key=True, index=True, autoincrement=True
@@ -54,21 +59,82 @@ class StateProvince(BaseModel, Base):
         )
 
 
+# ADDED: New ChargeCodeCategory model
+class ChargeCodeCategory(BaseModel, Base):
+    __tablename__ = "charge_code_categories"
+
+    category_id = Column(
+        Integer,
+        primary_key=True,
+        index=True,
+        autoincrement=True,
+        doc="Unique category identifier",
+    )
+    name = Column(
+        String(100),
+        nullable=False,
+        index=True,
+        doc="Name of the category level (e.g., 'Veterinary', 'Anthelmintics')",
+    )
+    parent_id = Column(
+        Integer,
+        ForeignKey("charge_code_categories.category_id"),
+        nullable=True,
+        index=True,
+        doc="ID of the parent category, if any",
+    )
+    level = Column(
+        Integer,
+        nullable=False,
+        index=True,
+        doc="Hierarchy level (e.g., 1 for main, 2 for sub, 3 for detail)",
+    )
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+
+    # Self-referential relationship for parent-child hierarchy
+    parent = relationship(
+        "ChargeCodeCategory",
+        remote_side=[category_id],
+        backref=backref("children", lazy="dynamic"),
+    )
+
+    # Relationship to ChargeCodes (one category can have many charge codes if linking this way)
+    # If a ChargeCode links to its most specific category, this relationship might be less direct here,
+    # or could be defined on ChargeCode as many-to-one.
+    # For now, let's define the link from ChargeCode to ChargeCodeCategory.
+
+    def __repr__(self):
+        return f"<ChargeCodeCategory(id={self.category_id}, name='{self.name}', level={self.level}, parent_id={self.parent_id})>"
+
+
 class ChargeCode(BaseModel, Base):
     __tablename__ = "charge_codes"
     charge_code_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     code = Column(String(20), nullable=False, unique=True, index=True)
+    alternate_code = Column(String(50), nullable=True, index=True)
     description = Column(String(255), nullable=False)
-    category = Column(String(50), index=True)
+
+    # REMOVED: category = Column(String(50), index=True)
+    # ADDED: ForeignKey to the new ChargeCodeCategory table
+    category_id = Column(
+        Integer,
+        ForeignKey("charge_code_categories.category_id"),
+        nullable=True,
+        index=True,
+    )
+
     standard_charge = Column(Numeric(10, 2), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     taxable = Column(Boolean, default=False)
+
+    # ADDED: Relationship to ChargeCodeCategory
+    category = relationship("ChargeCodeCategory")
 
     def __repr__(self):
         return f"<ChargeCode(code='{self.code}', description='{self.description}')>"
 
 
-class Veterinarian(BaseModel, Base):
+class Veterinarian(BaseModel, Base):  # Unchanged
     __tablename__ = "veterinarians"
     vet_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     first_name = Column(String(50), nullable=False)
@@ -83,9 +149,8 @@ class Veterinarian(BaseModel, Base):
         return f"<Veterinarian(vet_id={self.vet_id}, name='{self.first_name} {self.last_name}')>"
 
 
-class Location(BaseModel, Base):
+class Location(BaseModel, Base):  # Unchanged from v1.1.18
     __tablename__ = "locations"
-
     location_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     location_name = Column(String(100), nullable=False, unique=True, index=True)
     address_line1 = Column(String(100), nullable=True)
@@ -98,14 +163,9 @@ class Location(BaseModel, Base):
     country_code = Column(String(10), default="USA", nullable=True)
     phone = Column(String(20), nullable=True)
     contact_person = Column(String(100), nullable=True)
+    email = Column(String(100), nullable=True, index=True)
     is_active = Column(Boolean, default=True, nullable=False)
-
     state = relationship("StateProvince")
-
-    # horses_at_location = relationship(
-    # "Horse", secondary="horse_locations", back_populates="locations"
-    # ) # Still commented out from previous diagnostic step
-
     current_horses = relationship("HorseLocation", back_populates="location")
 
     def __repr__(self):
@@ -114,62 +174,54 @@ class Location(BaseModel, Base):
         )
 
 
+# ... (Other models: Transaction, TransactionDetail, Procedure, Drug, etc. remain unchanged) ...
 class Transaction(BaseModel, Base):
     __tablename__ = "transactions"
     transaction_id = Column(Integer, primary_key=True)
-    description = Column(String(100))  # Basic placeholder
+    description = Column(String(100))
 
 
 class TransactionDetail(BaseModel, Base):
     __tablename__ = "transaction_details"
     detail_id = Column(Integer, primary_key=True)
     transaction_id = Column(Integer, ForeignKey("transactions.transaction_id"))
-    notes = Column(String(100))  # Basic placeholder
-
-
-# REMOVED Invoice class definition from here. It is defined in owner_models.py
-# class Invoice(BaseModel, Base):
-#     __tablename__ = "invoices"
-#     invoice_id = Column(Integer, primary_key=True)
-#     owner_id = Column(Integer, ForeignKey("owners.owner_id"))
-#     invoice_date = Column(Date, default=func.current_date)
-#     total_amount = Column(Numeric(10,2))
+    notes = Column(String(100))
 
 
 class Procedure(BaseModel, Base):
     __tablename__ = "procedures"
     procedure_id = Column(Integer, primary_key=True)
-    name = Column(String(100))  # Basic placeholder
+    name = Column(String(100))
 
 
 class Drug(BaseModel, Base):
     __tablename__ = "drugs"
     drug_id = Column(Integer, primary_key=True)
-    name = Column(String(100))  # Basic placeholder
+    name = Column(String(100))
 
 
 class TreatmentLog(BaseModel, Base):
     __tablename__ = "treatment_logs"
     log_id = Column(Integer, primary_key=True)
-    details = Column(String(255))  # Basic placeholder
+    details = Column(String(255))
 
 
 class CommunicationLog(BaseModel, Base):
     __tablename__ = "communication_logs"
     log_id = Column(Integer, primary_key=True)
-    summary = Column(String(255))  # Basic placeholder
+    summary = Column(String(255))
 
 
 class Document(BaseModel, Base):
     __tablename__ = "documents"
     document_id = Column(Integer, primary_key=True)
-    file_path = Column(String(255))  # Basic placeholder
+    file_path = Column(String(255))
 
 
 class Reminder(BaseModel, Base):
     __tablename__ = "reminders"
     reminder_id = Column(Integer, primary_key=True)
-    due_date = Column(Date)  # Basic placeholder
+    due_date = Column(Date)
 
 
 class Appointment(BaseModel, Base):
@@ -188,6 +240,3 @@ class Appointment(BaseModel, Base):
 
     def __repr__(self):
         return f"<Appointment(id={self.appointment_id}, datetime='{self.appointment_datetime}', reason='{self.reason}')>"
-
-
-# SystemConfig model is defined in user_models.py (as per user's v1.1.1)
