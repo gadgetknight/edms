@@ -1,14 +1,22 @@
 # scripts/add_initial_data.py
 """
 EDSI Veterinary Management System - Add Initial Data Script
-Version: 1.2.12
+Version: 1.2.13
 Purpose: Populates the database with essential initial data.
          - Corrected commit order to ensure states/provinces are saved
            before locations and owners that reference them.
-Last Updated: June 2, 2025
+         - Updated ChargeCodeCategory structure to a 2-level hierarchy
+           based on user-provided list, dropping "VETERINARY" as top level.
+         - Updated sample charge codes to use new 2-level category paths.
+Last Updated: June 3, 2025
 Author: Gemini
 
 Changelog:
+- v1.2.13 (2025-06-03):
+    - Replaced `categories_structure` in `add_charge_code_categories` with the
+      new 2-level hierarchy based on user's scanned document.
+    - Updated `target_category_path` in `add_sample_charge_codes` to align
+      with the new 2-level category structure (e.g., ["ANTHELMINTICS", "ADMINISTERED"]).
 - v1.2.12 (2025-06-02):
     - Modified `add_initial_data_main` to commit the session immediately
       after `add_state_provinces` if changes were made. This resolves
@@ -45,7 +53,7 @@ try:
         StateProvince,
         ChargeCodeCategory,
         ChargeCode,
-        Veterinarian,
+        Veterinarian,  # Keep for completeness, though not added in this script
         Location,
         Owner,
     )
@@ -66,7 +74,7 @@ logging.basicConfig(
 logger = logging.getLogger(os.path.basename(__file__))
 
 
-def add_roles(session) -> bool:  # Unchanged from v1.2.11
+def add_roles(session) -> bool:
     roles_to_add = [
         {"name": "ADMIN", "description": "Administrator with full system access."},
         {"name": "MANAGER", "description": "Manager with operational oversight."},
@@ -105,7 +113,7 @@ def add_roles(session) -> bool:  # Unchanged from v1.2.11
     return False
 
 
-def add_admin_user(session) -> bool:  # Unchanged from v1.2.11
+def add_admin_user(session) -> bool:
     admin_login_id = "ADMIN"
     admin_exists = session.query(User).filter_by(user_id=admin_login_id).first()
     changes_made = False
@@ -146,61 +154,95 @@ def add_admin_user(session) -> bool:  # Unchanged from v1.2.11
     return changes_made
 
 
-def _get_or_create_category(
-    session,
-    name: str,
-    level: int,
-    parent_id: Optional[int] = None,
-    created_by: str = "system_init",
-) -> ChargeCodeCategory:  # Unchanged from v1.2.11
-    category = (
-        session.query(ChargeCodeCategory)
-        .filter_by(name=name, level=level, parent_id=parent_id)
-        .first()
-    )
-    if not category:
-        category = ChargeCodeCategory(
-            name=name,
-            level=level,
-            parent_id=parent_id,
-            is_active=True,
-            created_by=created_by,
-            modified_by=created_by,
-        )
-        session.add(category)
-        session.flush()
-        logger.info(
-            f"Created category: '{name}' (Level {level}, Parent ID: {parent_id}) with ID {category.category_id}"
-        )
-    else:
-        logger.debug(
-            f"Category '{name}' (Level {level}, Parent ID: {parent_id}) already exists with ID {category.category_id}."
-        )
-    return category
-
-
-def add_charge_code_categories(session) -> bool:  # Unchanged from v1.2.11
+def add_charge_code_categories(session) -> bool:
     logger.info("Preparing charge code categories...")
+    # MODIFIED: New 2-level structure based on user's image
     categories_structure = [
         {
-            "name": "VETERINARY",
+            "name": "ANTHELMINTICS",
             "level": 1,
-            "parent_name": None,
             "children": [
-                {
-                    "name": "ANTHELMINTICS",
-                    "level": 2,
-                    "children": [
-                        {"name": "ADMINISTERED", "level": 3, "children": []},
-                        {"name": "DISPENSED", "level": 3, "children": []},
-                    ],
-                },
-                {"name": "EXAMINATIONS", "level": 2, "children": []},
-                {"name": "IMMUNIZATIONS", "level": 2, "children": []},
-                {"name": "LABORATORY", "level": 2, "children": []},
+                {"name": "ADMINISTERED", "level": 2, "children": []},
+                {"name": "DISPENSED", "level": 2, "children": []},
             ],
         },
-        {"name": "CALL FEES", "level": 1, "parent_name": None, "children": []},
+        {"name": "CALL FEES", "level": 1, "children": []},
+        {
+            "name": "DIAGNOSTIC PROCEDURES",
+            "level": 1,
+            "children": [
+                {"name": "NERVE BLOCKS", "level": 2, "children": []},
+                {"name": "JOINT BLOCKS", "level": 2, "children": []},
+                {"name": "RADIOLOGY - FRONT LEG", "level": 2, "children": []},
+                {"name": "RADIOLOGY - HIND LEG", "level": 2, "children": []},
+                {"name": "RADIOLOGY - OTHER", "level": 2, "children": []},
+                {"name": "ULTRASOUND EXAM OF EXTREMITIES", "level": 2, "children": []},
+                {
+                    "name": "OTHER",
+                    "level": 2,
+                    "children": [],
+                },  # OTHER under Diagnostic Procedures
+            ],
+        },
+        {
+            "name": "EXAMINATIONS",
+            "level": 1,
+            "children": [
+                {"name": "SICK HORSE EXAMS", "level": 2, "children": []},
+                {"name": "OTHER EXAMS", "level": 2, "children": []},
+            ],
+        },
+        {
+            "name": "IMMUNIZATIONS",
+            "level": 1,
+            "children": [
+                {"name": "HORSE", "level": 2, "children": []},
+            ],
+        },
+        {
+            "name": "LABORATORY PROCEDURES",
+            "level": 1,
+            "children": [
+                {"name": "BLOOD WORK", "level": 2, "children": []},
+                {
+                    "name": "OTHER",
+                    "level": 2,
+                    "children": [],
+                },  # OTHER under Laboratory Procedures
+            ],
+        },
+        {
+            "name": "MEDICATION ADMINISTERED",
+            "level": 1,
+            "children": [
+                {"name": "ANABOLIC STEROIDS", "level": 2, "children": []},
+                {"name": "ANTIBIOTICS", "level": 2, "children": []},
+                {"name": "DIURETICS", "level": 2, "children": []},
+                {"name": "FLUIDS ADMINISTERED", "level": 2, "children": []},
+                {"name": "GASTROINTESTINAL TREATMENTS", "level": 2, "children": []},
+                {"name": "INTRA-ARTICULAR INJECTIONS", "level": 2, "children": []},
+                {"name": "OTHER HORMONES", "level": 2, "children": []},
+                {"name": "NON-ARTICULAR INJECTIONS", "level": 2, "children": []},
+                {"name": "NSAID'S ANALGESICS", "level": 2, "children": []},
+                {"name": "TRANQUILIZERS & ANESTHETICS", "level": 2, "children": []},
+                {"name": "VITAMINS", "level": 2, "children": []},
+                {"name": "OTHER", "level": 2, "children": []},  # OTHER under Med Admin
+            ],
+        },
+        {
+            "name": "MEDICATIONS DISPENSED",
+            "level": 1,
+            "children": [
+                {"name": "OTHER HORMONES", "level": 2, "children": []},
+                {"name": "ANTIBIOTICS - PENICILLINS", "level": 2, "children": []},
+                {"name": "ANTIBIOTICS - OTHER", "level": 2, "children": []},
+                {"name": "BANDAGES & MATERIALS", "level": 2, "children": []},
+                {"name": "DERMATITIS/TOPICAL ANTISEPTICS", "level": 2, "children": []},
+                {"name": "DIURETICS", "level": 2, "children": []},
+                {"name": "FLUIDS", "level": 2, "children": []},
+                {"name": "G.I. MEDICATIONS", "level": 2, "children": []},
+            ],
+        },
     ]
     changes_made = False
 
@@ -228,7 +270,7 @@ def add_charge_code_categories(session) -> bool:  # Unchanged from v1.2.11
                     modified_by="system_init",
                 )
                 session.add(new_cat)
-                session.flush()
+                session.flush()  # Flush to get the new_cat.category_id for children
                 logger.info(
                     f"Prepared category: {new_cat.name} (Level {new_cat.level}, Parent ID: {new_cat.parent_id}) with ID {new_cat.category_id}"
                 )
@@ -250,9 +292,7 @@ def add_charge_code_categories(session) -> bool:  # Unchanged from v1.2.11
     return changes_made
 
 
-def _get_category_id_by_path(
-    session, path_list: List[str]
-) -> Optional[int]:  # Unchanged from v1.2.11
+def _get_category_id_by_path(session, path_list: List[str]) -> Optional[int]:
     if not path_list:
         return None
     parent_id = None
@@ -275,14 +315,18 @@ def _get_category_id_by_path(
     return current_category_id
 
 
-def add_sample_charge_codes(session) -> bool:  # Unchanged from v1.2.11
+def add_sample_charge_codes(session) -> bool:
     logger.info("Preparing sample charge codes with hierarchical categories...")
+    # MODIFIED: Sample charge codes updated for new 2-level category structure
     charge_codes_data = [
         {
             "code": "9991",
             "alternate_code": "IVO",
             "description": "Ivermectin and Praziquantel",
-            "target_category_path": ["VETERINARY", "ANTHELMINTICS", "ADMINISTERED"],
+            "target_category_path": [
+                "ANTHELMINTICS",
+                "ADMINISTERED",
+            ],  # Was ["VETERINARY", "ANTHELMINTICS", "ADMINISTERED"]
             "standard_charge": Decimal("25.00"),
             "is_active": True,
             "taxable": False,
@@ -291,7 +335,9 @@ def add_sample_charge_codes(session) -> bool:  # Unchanged from v1.2.11
             "code": "EXAM001",
             "alternate_code": "EX01",
             "description": "Routine Examination",
-            "target_category_path": ["VETERINARY", "EXAMINATIONS"],
+            "target_category_path": [
+                "EXAMINATIONS"
+            ],  # Was ["VETERINARY", "EXAMINATIONS"]
             "standard_charge": Decimal("75.00"),
             "is_active": True,
             "taxable": True,
@@ -347,7 +393,7 @@ def add_sample_charge_codes(session) -> bool:  # Unchanged from v1.2.11
     return changes_made
 
 
-def add_state_provinces(session) -> bool:  # Unchanged from v1.2.11 (includes full list)
+def add_state_provinces(session) -> bool:
     full_states_list = [
         {
             "state_code": "AL",
@@ -730,7 +776,7 @@ def add_state_provinces(session) -> bool:  # Unchanged from v1.2.11 (includes fu
     return len(new_entries) > 0
 
 
-def add_initial_locations(session) -> bool:  # Unchanged from v1.2.11
+def add_initial_locations(session) -> bool:
     locations_to_add = [
         {
             "location_name": "Main Stable",
@@ -765,26 +811,6 @@ def add_initial_locations(session) -> bool:  # Unchanged from v1.2.11
             "created_by": "system_init",
             "modified_by": "system_init",
         },
-        {
-            "location_name": "Rusty Stable Farm",
-            "address_line1": "101 Old Mill Road",
-            "city": "Farmington",
-            "state_code": "CT",
-            "zip_code": "06032",
-            "is_active": True,
-            "created_by": "system_init",
-            "modified_by": "system_init",
-        },
-        {
-            "location_name": "Quail Pond Farm",
-            "address_line1": "77 Quail Run",
-            "city": "Ocala",
-            "state_code": "FL",
-            "zip_code": "34470",
-            "is_active": True,
-            "created_by": "system_init",
-            "modified_by": "system_init",
-        },
     ]
     existing_locations = {
         loc_tuple[0] for loc_tuple in session.query(Location.location_name).all()
@@ -812,7 +838,7 @@ def add_initial_locations(session) -> bool:  # Unchanged from v1.2.11
     return len(new_locations_instances) > 0
 
 
-def add_sample_owners(session) -> bool:  # Unchanged from v1.2.11
+def add_sample_owners(session) -> bool:
     owners_to_add = [
         {
             "farm_name": "Willow Creek Stables",
@@ -843,21 +869,6 @@ def add_sample_owners(session) -> bool:  # Unchanged from v1.2.11
             "created_by": "system_init",
             "modified_by": "system_init",
         },
-        {
-            "farm_name": "Blue Ribbon Equine",
-            "first_name": "Michael",
-            "last_name": "Chen",
-            "address_line1": "77 Jockey Circle",
-            "city": "Saratoga Springs",
-            "state_code": "NY",
-            "zip_code": "12866",
-            "phone": "555-0303",
-            "email": "mchen@blueribbon.com",
-            "is_active": True,
-            "account_number": "BR001",
-            "created_by": "system_init",
-            "modified_by": "system_init",
-        },
     ]
     existing_account_numbers = {
         owner_tuple[0]
@@ -881,7 +892,9 @@ def add_sample_owners(session) -> bool:  # Unchanged from v1.2.11
             logger.info(
                 f"Prepared owner: {owner_data.get('farm_name', owner_data.get('last_name'))}"
             )
-        elif owner_data.get("account_number") is None:
+        elif (
+            owner_data.get("account_number") is None
+        ):  # Allow adding owners without account numbers if desired
             new_owners_instances.append(Owner(**owner_data))
             logger.info(
                 f"Prepared owner (no account number): {owner_data.get('farm_name', owner_data.get('last_name'))}"
@@ -914,30 +927,30 @@ def add_initial_data_main():
     session = db_manager.get_session()
     try:
         logger.info("Starting to add initial reference data...")
-        any_changes_committed_in_block = False  # Renamed for clarity
+        any_changes_committed_in_block = False
 
         if add_roles(session):
             any_changes_committed_in_block = True
         if add_admin_user(session):
-            any_changes_committed_in_block = (
-                True  # db_manager also ensures admin, this is for consistency
-            )
+            any_changes_committed_in_block = True
         if any_changes_committed_in_block:
             session.commit()
             any_changes_committed_in_block = False
+            logger.info("Committed roles and admin user.")
 
         if add_charge_code_categories(session):
             any_changes_committed_in_block = True
         if any_changes_committed_in_block:
             session.commit()
             any_changes_committed_in_block = False
+            logger.info("Committed charge code categories.")
 
         if add_state_provinces(session):
             any_changes_committed_in_block = True
-        # MODIFIED: Commit states before locations/owners
-        if any_changes_committed_in_block:
+        if any_changes_committed_in_block:  # Commit states before locations/owners
             session.commit()
             any_changes_committed_in_block = False
+            logger.info("Committed states/provinces.")
 
         if add_initial_locations(session):
             any_changes_committed_in_block = True
@@ -948,6 +961,8 @@ def add_initial_data_main():
 
         if any_changes_committed_in_block:
             session.commit()
+            logger.info("Committed locations, owners, and sample charge codes.")
+
         logger.info("Initial data setup process completed and committed successfully.")
 
     except SQLAlchemyError as e_sql:
@@ -966,15 +981,12 @@ def add_initial_data_main():
         session.rollback()
         print(f"ERROR: An unexpected error occurred during data population: {e_gen}")
     finally:
-        if session and session.is_active:  # Check if session is active before closing
+        if session and session.is_active:
             session.close()
         logger.info("Database session closed.")
 
 
 if __name__ == "__main__":
-    # This script assumes db_manager might be None if run standalone without main app context
-    # However, our db_manager is a global instance in database_config.
-    # The check for db_manager is more of a safeguard.
     if not db_manager:
         print(
             "CRITICAL: Database manager (db_manager) not initialized prior to main call in script."

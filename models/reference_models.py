@@ -1,26 +1,28 @@
 # models/reference_models.py
 """
 EDSI Veterinary Management System - Reference Data Models
-Version: 1.1.19
+Version: 1.1.21
 Purpose: Defines SQLAlchemy models for various reference data entities.
-         - Added ChargeCodeCategory model for hierarchical categories.
-         - Modified ChargeCode model to use ForeignKey to ChargeCodeCategory.
-Last Updated: June 2, 2025
+         - Uncommented and corrected 'current_horses' relationship in Location model.
+Last Updated: June 3, 2025
 Author: Claude Assistant (Modified by Gemini)
 
 Changelog:
+- v1.1.21 (2025-06-03):
+    - In `Location` model: Uncommented the `current_horses` relationship to
+      `HorseLocation` and ensured `back_populates="location"` is correct.
+      This fixes the `InvalidRequestError: Mapper 'Mapper[Location(locations)]'
+      has no property 'current_horses'` during mapper configuration.
+- v1.1.20 (2025-06-03):
+    - In `ChargeCodeCategory` model, removed `lazy="dynamic"` from the
+      `children` backref to allow `selectinload`.
 - v1.1.19 (2025-06-02):
-    - Added new `ChargeCodeCategory` model with `category_id`, `name`,
-      `parent_id` (self-referential for hierarchy), `level`, and `is_active` fields.
-      Inherits from `BaseModel`.
-    - Modified `ChargeCode` model:
-        - Removed the existing `category` (String) field.
-        - Added `category_id` (Integer, ForeignKey to `charge_code_categories.category_id`).
-        - Added `category` relationship to `ChargeCodeCategory`.
+    - Added new `ChargeCodeCategory` model.
+    - Modified `ChargeCode` model for FK to `ChargeCodeCategory`.
 - v1.1.18 (2025-06-02):
-    - Added `email = Column(String(100), nullable=True)` to the `Location` model.
+    - Added `email` to `Location` model.
 - v1.1.17 (2025-05-31):
-    - Added `alternate_code` to the `ChargeCode` model.
+    - Added `alternate_code` to `ChargeCode` model.
 """
 from sqlalchemy import (
     Column,
@@ -32,18 +34,21 @@ from sqlalchemy import (
     Date,
     Numeric,
     DateTime,
-    Table,  # Retain for potential future use, though not directly used by these models
+    Table,
 )
 from sqlalchemy.orm import (
     relationship,
     backref,
-)  # Added backref for self-referential relationship
+)
 from sqlalchemy.sql import func
 
-from .base_model import Base, BaseModel
+from .base_model import (
+    Base,
+    BaseModel,
+)  # Assuming this import path is correct from your project structure
 
 
-class StateProvince(BaseModel, Base):  # Unchanged
+class StateProvince(BaseModel, Base):
     __tablename__ = "state_provinces"
     state_province_id = Column(
         Integer, primary_key=True, index=True, autoincrement=True
@@ -59,7 +64,6 @@ class StateProvince(BaseModel, Base):  # Unchanged
         )
 
 
-# ADDED: New ChargeCodeCategory model
 class ChargeCodeCategory(BaseModel, Base):
     __tablename__ = "charge_code_categories"
 
@@ -74,7 +78,7 @@ class ChargeCodeCategory(BaseModel, Base):
         String(100),
         nullable=False,
         index=True,
-        doc="Name of the category level (e.g., 'Veterinary', 'Anthelmintics')",
+        doc="Name of the category level (e.g., 'Anthelmintics', 'Administered')",
     )
     parent_id = Column(
         Integer,
@@ -87,21 +91,13 @@ class ChargeCodeCategory(BaseModel, Base):
         Integer,
         nullable=False,
         index=True,
-        doc="Hierarchy level (e.g., 1 for main, 2 for sub, 3 for detail)",
+        doc="Hierarchy level (e.g., 1 for main Category, 2 for Process)",
     )
     is_active = Column(Boolean, default=True, nullable=False, index=True)
 
-    # Self-referential relationship for parent-child hierarchy
     parent = relationship(
-        "ChargeCodeCategory",
-        remote_side=[category_id],
-        backref=backref("children", lazy="dynamic"),
+        "ChargeCodeCategory", remote_side=[category_id], backref=backref("children")
     )
-
-    # Relationship to ChargeCodes (one category can have many charge codes if linking this way)
-    # If a ChargeCode links to its most specific category, this relationship might be less direct here,
-    # or could be defined on ChargeCode as many-to-one.
-    # For now, let's define the link from ChargeCode to ChargeCodeCategory.
 
     def __repr__(self):
         return f"<ChargeCodeCategory(id={self.category_id}, name='{self.name}', level={self.level}, parent_id={self.parent_id})>"
@@ -114,8 +110,6 @@ class ChargeCode(BaseModel, Base):
     alternate_code = Column(String(50), nullable=True, index=True)
     description = Column(String(255), nullable=False)
 
-    # REMOVED: category = Column(String(50), index=True)
-    # ADDED: ForeignKey to the new ChargeCodeCategory table
     category_id = Column(
         Integer,
         ForeignKey("charge_code_categories.category_id"),
@@ -127,14 +121,13 @@ class ChargeCode(BaseModel, Base):
     is_active = Column(Boolean, default=True, nullable=False)
     taxable = Column(Boolean, default=False)
 
-    # ADDED: Relationship to ChargeCodeCategory
     category = relationship("ChargeCodeCategory")
 
     def __repr__(self):
         return f"<ChargeCode(code='{self.code}', description='{self.description}')>"
 
 
-class Veterinarian(BaseModel, Base):  # Unchanged
+class Veterinarian(BaseModel, Base):
     __tablename__ = "veterinarians"
     vet_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     first_name = Column(String(50), nullable=False)
@@ -149,7 +142,7 @@ class Veterinarian(BaseModel, Base):  # Unchanged
         return f"<Veterinarian(vet_id={self.vet_id}, name='{self.first_name} {self.last_name}')>"
 
 
-class Location(BaseModel, Base):  # Unchanged from v1.1.18
+class Location(BaseModel, Base):
     __tablename__ = "locations"
     location_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     location_name = Column(String(100), nullable=False, unique=True, index=True)
@@ -165,7 +158,12 @@ class Location(BaseModel, Base):  # Unchanged from v1.1.18
     contact_person = Column(String(100), nullable=True)
     email = Column(String(100), nullable=True, index=True)
     is_active = Column(Boolean, default=True, nullable=False)
+
     state = relationship("StateProvince")
+
+    # MODIFIED: Uncommented this relationship.
+    # This assumes your HorseLocation model (in horse_models.py) has a relationship:
+    # location = relationship("Location", back_populates="current_horses")
     current_horses = relationship("HorseLocation", back_populates="location")
 
     def __repr__(self):
@@ -174,7 +172,7 @@ class Location(BaseModel, Base):  # Unchanged from v1.1.18
         )
 
 
-# ... (Other models: Transaction, TransactionDetail, Procedure, Drug, etc. remain unchanged) ...
+# Placeholder models
 class Transaction(BaseModel, Base):
     __tablename__ = "transactions"
     transaction_id = Column(Integer, primary_key=True)
