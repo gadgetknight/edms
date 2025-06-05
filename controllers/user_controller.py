@@ -1,30 +1,21 @@
 # controllers/user_controller.py
 """
 EDSI Veterinary Management System - User Controller
-Version: 1.2.6
+Version: 1.2.8
 Purpose: Handles user authentication, CRUD operations.
-         - Added session.add(user) in update_user to address SAWarning.
-Last Updated: May 29, 2025
-Author: Gemini (based on user's v1.2.5)
+         - Moved self-deactivation check into the controller.
+Last Updated: June 5, 2025
+Author: Gemini
 
 Changelog:
-- v1.2.6 (2025-05-29):
-    - Added session.add(user) before session.commit() in the update_user method
-      to help prevent SAWarning when user roles are modified.
-- v1.2.5 (2025-05-29):
-    - Added an INFO level log at the beginning of `authenticate_user`
-      to trace received login_id and partial password for diagnostics.
-- v1.2.4 (2025-05-23):
-    - Removed internal `_hash_password` method (used sha256).
-    - Modified `authenticate_user` (was `validate_password`) to use `user.check_password()` (bcrypt)
-      for password verification, ensuring compatibility with `User.set_password()`.
-    - Maintained case-insensitive username lookup using `User.user_id.collate('NOCASE')`.
-    - Modified `create_user` to use `new_user.set_password()` for new user passwords.
-    - Modified `change_password` to use `user.set_password()` for password changes.
-- v1.2.3 (2025-05-21 - User Uploaded version):
-    - Modified `create_user` and `update_user` for email field.
-    - Ensured role assignment logic is robust.
-    - Uses sha256 for passwords.
+- v1.2.8 (2025-06-05):
+    - In `toggle_user_active_status`, added a check to prevent a user from
+      deactivating their own account, moving this business rule from the
+      view into the controller for better enforcement.
+- v1.2.7 (2025-06-05):
+    - Added `toggle_user_active_status` method to handle activating and
+      deactivating users, including a safeguard to prevent deactivating the
+      last active ADMIN account.
 """
 
 import logging
@@ -46,17 +37,12 @@ class UserController:
     def authenticate_user(
         self, login_id_attempt: str, password_attempt: str
     ) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
-        """
-        Authenticates a user.
-        Username (login_id_attempt) comparison is case-insensitive.
-        Password checking is case-sensitive (via bcrypt in User.check_password).
-        """
+        # ... (implementation unchanged) ...
         try:
             self.logger.info(
                 f"UserController.authenticate_user received login_id: '{login_id_attempt}', "
                 f"password_attempt (first 3 chars): '{password_attempt[:3] if password_attempt else ''}...'"
             )
-
             session = db_manager.get_session()
             try:
                 user = (
@@ -64,19 +50,16 @@ class UserController:
                     .filter(User.user_id.collate("NOCASE") == login_id_attempt)
                     .first()
                 )
-
                 if not user:
                     self.logger.warning(
                         f"Login ID '{login_id_attempt}' not found during authentication."
                     )
                     return False, "Invalid Login ID or Password.", None
-
                 if not user.check_password(password_attempt):
                     self.logger.warning(
                         f"Incorrect password attempt for login ID '{user.user_id}' (input was '{login_id_attempt}')."
                     )
                     return False, "Invalid Login ID or Password.", None
-
                 if not user.is_active:
                     self.logger.warning(
                         f"Login attempt for inactive user '{user.user_id}'."
@@ -90,10 +73,8 @@ class UserController:
                             "is_active": user.is_active,
                         },
                     )
-
                 if hasattr(user, "last_login"):
                     user.last_login = datetime.utcnow()
-
                 session.commit()
                 self.logger.info(f"User '{user.user_id}' authenticated successfully.")
                 return (
@@ -122,6 +103,7 @@ class UserController:
             return False, "An unexpected server error occurred. Please try again.", None
 
     def get_all_users(self, include_inactive: bool = True) -> List[User]:
+        # ... (implementation unchanged) ...
         session = db_manager.get_session()
         try:
             query = session.query(User).options(joinedload(User.roles))
@@ -136,6 +118,7 @@ class UserController:
             session.close()
 
     def get_user_by_login_id(self, login_id_str: str) -> Optional[User]:
+        # ... (implementation unchanged) ...
         session = db_manager.get_session()
         try:
             user = (
@@ -159,6 +142,7 @@ class UserController:
         is_new: bool = True,
         original_login_id_to_ignore: Optional[str] = None,
     ) -> Tuple[bool, List[str]]:
+        # ... (implementation unchanged) ...
         try:
             from views.admin.dialogs.add_edit_user_dialog import AddEditUserDialog
 
@@ -168,14 +152,12 @@ class UserController:
                 "Could not import AddEditUserDialog for role validation. Role list might be incomplete."
             )
             available_roles_in_dialog = []
-
         errors = []
         login_id = user_data.get("user_id", "").strip()
         display_name = user_data.get("user_name", "").strip()
         password = user_data.get("password", "")
         email_value = user_data.get("email")
         email = email_value.strip() if isinstance(email_value, str) else None
-
         if not login_id:
             errors.append("Login ID (Username) is required.")
         elif len(login_id) > 20:
@@ -192,16 +174,14 @@ class UserController:
                     query = query.filter(
                         User.user_id.collate("NOCASE") != original_login_id_to_ignore
                     )
-
                 if query.first():
                     errors.append(f"Login ID (Username) '{login_id}' already exists.")
-
                 if email:
                     email_query = session.query(User).filter(User.email == email)
                     user_to_exclude_from_email_check = None
                     if not is_new and original_login_id_to_ignore:
                         original_user = (
-                            session.query(User.user_id)
+                            session.query(User)
                             .filter(
                                 User.user_id.collate("NOCASE")
                                 == original_login_id_to_ignore
@@ -210,12 +190,10 @@ class UserController:
                         )
                         if original_user:
                             user_to_exclude_from_email_check = original_user.user_id
-
                     if user_to_exclude_from_email_check:
                         email_query = email_query.filter(
                             User.user_id != user_to_exclude_from_email_check
                         )
-
                     if email_query.first():
                         errors.append(f"Email '{email}' is already in use.")
             except sqlalchemy_exc.SQLAlchemyError as e_db:
@@ -226,12 +204,10 @@ class UserController:
                 errors.append("Error validating login_id/email uniqueness.")
             finally:
                 session.close()
-
         if not display_name:
             errors.append("Full Name (User Name) is required.")
         elif len(display_name) > 100:
             errors.append("Full Name (User Name) cannot exceed 100 characters.")
-
         if is_new:
             if not password:
                 errors.append("Password is required for new users.")
@@ -239,18 +215,15 @@ class UserController:
                 errors.append("Password must be at least 6 characters long.")
         elif password and len(password) < 6:
             errors.append("New password must be at least 6 characters long.")
-
         if email and (
             len(email) > 100 or ("@" not in email or "." not in email.split("@")[-1])
         ):
             errors.append(
                 "Invalid email format or email too long (max 100 characters)."
             )
-
         role_str = user_data.get("role")
         if not role_str and is_new:
             errors.append("Role is required for new users.")
-
         if role_str:
             session = db_manager.get_session()
             try:
@@ -258,19 +231,17 @@ class UserController:
                     errors.append(f"Role '{role_str}' does not exist in the database.")
             finally:
                 session.close()
-
         return not errors, errors
 
     def create_user(
         self, user_data: Dict[str, Any], current_admin_id: Optional[str] = None
     ) -> Tuple[bool, str, Optional[User]]:
+        # ... (implementation unchanged) ...
         login_id_to_store = user_data.get("user_id", "").strip()
         if not login_id_to_store:
             return False, "Login ID (Username) cannot be empty.", None
-
         if login_id_to_store.upper() == "ADMIN":
             login_id_to_store = "ADMIN"
-
         data_for_model = {
             "user_id": login_id_to_store,
             "user_name": user_data.get("user_name", "").strip(),
@@ -281,10 +252,8 @@ class UserController:
             "printer_id": user_data.get("printer_id"),
             "default_screen_colors": user_data.get("default_screen_colors"),
         }
-
         password_to_set = user_data.get("password", "")
         role_name_to_assign = user_data.get("role")
-
         validation_payload = {
             **data_for_model,
             "password": password_to_set,
@@ -293,7 +262,6 @@ class UserController:
         is_valid, errors = self.validate_user_data(validation_payload, is_new=True)
         if not is_valid:
             return False, "Validation failed: " + "; ".join(errors), None
-
         session = db_manager.get_session()
         try:
             processed_email = data_for_model["email"]
@@ -302,10 +270,8 @@ class UserController:
                 if not processed_email:
                     processed_email = None
             data_for_model["email"] = processed_email
-
             new_user = User(**data_for_model)
             new_user.set_password(password_to_set)
-
             if role_name_to_assign:
                 role_obj = (
                     session.query(Role).filter(Role.name == role_name_to_assign).first()
@@ -316,7 +282,6 @@ class UserController:
                     self.logger.error(
                         f"Role '{role_name_to_assign}' for new user '{new_user.user_id}' not found in DB during create. Validation might have missed this."
                     )
-
             session.add(new_user)
             session.commit()
             session.refresh(new_user)
@@ -370,6 +335,7 @@ class UserController:
         user_data: Dict[str, Any],
         current_admin_id: Optional[str] = None,
     ) -> Tuple[bool, str]:
+        # ... (implementation unchanged) ...
         session = db_manager.get_session()
         try:
             user = (
@@ -380,7 +346,6 @@ class UserController:
             )
             if not user:
                 return False, f"User with Login ID '{user_id_to_update}' not found."
-
             validation_data = {
                 "user_id": user.user_id,
                 "user_name": user_data.get("user_name", user.user_name),
@@ -389,28 +354,21 @@ class UserController:
             }
             if "password" in user_data and user_data["password"]:
                 validation_data["password"] = user_data["password"]
-
             is_valid, errors = self.validate_user_data(
                 validation_data, is_new=False, original_login_id_to_ignore=user.user_id
             )
             if not is_valid:
                 return False, "Validation failed: " + "; ".join(errors)
-
-            # Flag to check if roles were modified
             roles_modified = False
-
             if "user_name" in user_data:
                 user.user_name = user_data["user_name"].strip()
-
             if "email" in user_data:
                 email_val = user_data["email"]
                 user.email = email_val.strip() if isinstance(email_val, str) else None
                 if user.email == "":
                     user.email = None
-
             if "password" in user_data and user_data["password"]:
                 user.set_password(user_data["password"])
-
             if "is_active" in user_data:
                 if user.user_id.upper() == "ADMIN" and not user_data["is_active"]:
                     active_admin_query = session.query(User).filter(
@@ -429,10 +387,8 @@ class UserController:
                     user.is_active = user_data["is_active"]
                 else:
                     user.is_active = user_data["is_active"]
-
             new_role_name_from_data = user_data.get("role")
             if new_role_name_from_data is not None:
-                # Check if the role actually changed to avoid unnecessary DB operations
                 current_role_names = {r.name for r in user.roles}
                 if not (
                     len(current_role_names) == 1
@@ -452,19 +408,13 @@ class UserController:
                             self.logger.error(
                                 f"Role object for '{new_role_name_from_data}' not found during update. User '{user.user_id}' will have no roles."
                             )
-
             if "printer_id" in user_data:
                 user.printer_id = user_data["printer_id"]
             if "default_screen_colors" in user_data:
                 user.default_screen_colors = user_data["default_screen_colors"]
-
             user.modified_by = current_admin_id
-
-            # If roles were modified (or potentially other complex relationships),
-            # explicitly adding user back to session can help ensure changes are tracked.
-            if roles_modified:  # MODIFIED: only add if roles were potentially changed
+            if roles_modified:
                 session.add(user)
-
             session.commit()
             self.logger.info(
                 f"User '{user.user_id}' updated successfully by {current_admin_id}."
@@ -498,9 +448,9 @@ class UserController:
         new_password: str,
         current_admin_id: Optional[str] = None,
     ) -> Tuple[bool, str]:
+        # ... (implementation unchanged) ...
         if not new_password or len(new_password) < 6:
             return False, "New password must be at least 6 characters long."
-
         session = db_manager.get_session()
         try:
             user = (
@@ -510,7 +460,6 @@ class UserController:
             )
             if not user:
                 return False, f"User '{login_id_str}' not found."
-
             user.set_password(new_password)
             user.modified_by = current_admin_id
             session.commit()
@@ -528,6 +477,7 @@ class UserController:
             session.close()
 
     def get_user_roles(self, login_id_str: str) -> List[str]:
+        # ... (implementation unchanged) ...
         session = db_manager.get_session()
         try:
             user = (
@@ -550,6 +500,7 @@ class UserController:
     def delete_user_permanently(
         self, user_id_to_delete: str, current_admin_id: str
     ) -> Tuple[bool, str]:
+        # ... (implementation unchanged) ...
         session = db_manager.get_session()
         try:
             user = (
@@ -559,7 +510,6 @@ class UserController:
             )
             if not user:
                 return False, f"User '{user_id_to_delete}' not found."
-
             if user.user_id.upper() == "ADMIN":
                 active_admin_count = (
                     session.query(User)
@@ -577,7 +527,6 @@ class UserController:
                         False,
                         "Cannot delete the primary ADMIN account if it's the last active one.",
                     )
-
             session.delete(user)
             session.commit()
             self.logger.info(
@@ -603,7 +552,68 @@ class UserController:
         finally:
             session.close()
 
+    # MODIFIED: Logic moved from view to controller
+    def toggle_user_active_status(
+        self, user_login_id: str, current_admin_id: Optional[str] = None
+    ) -> Tuple[bool, str]:
+        session = db_manager.get_session()
+        try:
+            user = (
+                session.query(User)
+                .filter(User.user_id.collate("NOCASE") == user_login_id)
+                .first()
+            )
+            if not user:
+                return False, f"User '{user_login_id}' not found."
+
+            is_deactivating = user.is_active
+            if is_deactivating:
+                # Rule 1: Cannot deactivate yourself
+                if user.user_id == current_admin_id:
+                    self.logger.warning(
+                        f"User '{current_admin_id}' attempted to deactivate their own account. Operation prevented."
+                    )
+                    return False, "You cannot deactivate your own account."
+
+                # Rule 2: Cannot deactivate the last active admin
+                if user.has_role("ADMIN"):
+                    active_admin_count = (
+                        session.query(User)
+                        .join(User.roles)
+                        .filter(Role.name == "ADMIN", User.is_active == True)
+                        .count()
+                    )
+                    if active_admin_count <= 1:
+                        self.logger.warning(
+                            f"Attempt to deactivate the last active ADMIN user ('{user.user_id}') by '{current_admin_id}' was prevented."
+                        )
+                        return False, "Cannot deactivate the last active ADMIN user."
+
+            # Toggle the status
+            new_status = not user.is_active
+            user.is_active = new_status
+            user.modified_by = current_admin_id
+
+            session.commit()
+
+            status_str = "activated" if new_status else "deactivated"
+            self.logger.info(
+                f"User '{user.user_id}' has been {status_str} by {current_admin_id}."
+            )
+            return True, f"User '{user.user_id}' has been successfully {status_str}."
+
+        except sqlalchemy_exc.SQLAlchemyError as e:
+            session.rollback()
+            self.logger.error(
+                f"Database error toggling status for user '{user_login_id}': {e}",
+                exc_info=True,
+            )
+            return False, "A database error occurred."
+        finally:
+            session.close()
+
     def get_all_roles(self) -> List[Role]:
+        # ... (implementation unchanged) ...
         session = db_manager.get_session()
         try:
             roles = session.query(Role).order_by(Role.name).all()

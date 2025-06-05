@@ -1,35 +1,24 @@
 # views/admin/dialogs/add_edit_location_dialog.py
 """
 EDSI Veterinary Management System - Add/Edit Location Dialog
-Version: 1.1.5
+Version: 1.1.6
 Purpose: Dialog for creating and editing practice locations with detailed address fields,
          phone, email, contact person, and auto-populating country code.
-Last Updated: June 2, 2025
+Last Updated: June 5, 2025
 Author: Gemini
 
 Changelog:
+- v1.1.6 (2025-06-05):
+    - In `validate_and_accept`, corrected the tuple unpacking for the `update_location`
+      call to expect two return values (success, message) instead of three,
+      resolving a ValueError.
 - v1.1.5 (2025-06-02):
     - Added QLineEdit fields for Phone, Email, and Contact Person.
     - Updated QGridLayout in _setup_ui to include new fields.
     - Updated _populate_fields to load data for new fields.
     - Updated get_data to collect data from new fields.
-    - Implemented _on_state_changed slot to auto-populate Country Code
-      based on State/Province selection.
+    - Implemented _on_state_changed slot to auto-populate Country Code.
     - Modified _load_states_into_combobox to store country_code with state_code.
-- v1.1.4 (2025-05-29):
-    - Added `self.parent_view = parent_view` in __init__ to correctly store
-      the parent_view reference, resolving an AttributeError.
-- v1.1.3 (2025-05-29):
-    - Added `from config.app_config import AppConfig` to resolve NameError.
-- v1.1.2 (2025-05-29):
-    - Refactored _setup_ui to use QGridLayout for field layout.
-    - Updated _get_form_input_style to match HorseUnifiedManagement.
-- v1.1.1 (2025-05-29):
-    - Removed the 'description' input field.
-- v1.1.0 (2025-05-29):
-    - Added input fields for detailed address.
-- v1.0.0 (2025-05-19):
-    - Initial implementation.
 """
 
 import logging
@@ -90,19 +79,19 @@ class AddEditLocationDialog(QDialog):
         self.is_edit_mode = location is not None
 
         self.location_name_input: Optional[QLineEdit] = None
-        self.contact_person_input: Optional[QLineEdit] = None  # ADDED
+        self.contact_person_input: Optional[QLineEdit] = None
         self.address_line1_input: Optional[QLineEdit] = None
         self.address_line2_input: Optional[QLineEdit] = None
         self.city_input: Optional[QLineEdit] = None
         self.state_combo: Optional[QComboBox] = None
         self.zip_code_input: Optional[QLineEdit] = None
         self.country_code_input: Optional[QLineEdit] = None
-        self.phone_input: Optional[QLineEdit] = None  # ADDED
-        self.email_input: Optional[QLineEdit] = None  # ADDED
+        self.phone_input: Optional[QLineEdit] = None
+        self.email_input: Optional[QLineEdit] = None
         self.is_active_checkbox: Optional[QCheckBox] = None
 
         self.setWindowTitle(f"{'Edit' if self.is_edit_mode else 'Add'} Location")
-        self.setMinimumWidth(650)  # Increased width for more fields
+        self.setMinimumWidth(650)
 
         self._setup_palette()
         self._setup_ui()
@@ -195,11 +184,10 @@ class AddEditLocationDialog(QDialog):
         grid_layout.setSpacing(10)
         grid_layout.setVerticalSpacing(15)
 
-        # --- Initialize Input Fields ---
         self.location_name_input = QLineEdit()
         self.location_name_input.setPlaceholderText("e.g., Main Barn, Paddock A")
 
-        self.contact_person_input = QLineEdit()  # ADDED
+        self.contact_person_input = QLineEdit()
         self.contact_person_input.setPlaceholderText("Name of contact person")
 
         self.address_line1_input = QLineEdit()
@@ -213,9 +201,7 @@ class AddEditLocationDialog(QDialog):
 
         self.state_combo = QComboBox()
         self.state_combo.setPlaceholderText("Select State/Province")
-        self.state_combo.currentIndexChanged.connect(
-            self._on_state_changed
-        )  # Connect signal
+        self.state_combo.currentIndexChanged.connect(self._on_state_changed)
 
         self.zip_code_input = QLineEdit()
         self.zip_code_input.setPlaceholderText("Zip/Postal Code")
@@ -224,10 +210,10 @@ class AddEditLocationDialog(QDialog):
         self.country_code_input.setPlaceholderText("e.g., USA, CAN")
         self.country_code_input.setMaxLength(10)
 
-        self.phone_input = QLineEdit()  # ADDED
+        self.phone_input = QLineEdit()
         self.phone_input.setPlaceholderText("Primary phone number")
 
-        self.email_input = QLineEdit()  # ADDED
+        self.email_input = QLineEdit()
         self.email_input.setPlaceholderText("Contact email address")
 
         self.is_active_checkbox = QCheckBox("Location is Active")
@@ -236,32 +222,22 @@ class AddEditLocationDialog(QDialog):
             f"color: {DARK_TEXT_PRIMARY}; font-size: 13px;"
         )
 
-        # --- Arranging fields in grid ---
-        # Row 0: Location Name (spans)
         grid_layout.addWidget(
             self._create_label("Location Name*:"), 0, 0, Qt.AlignmentFlag.AlignRight
         )
         grid_layout.addWidget(self.location_name_input, 0, 1, 1, 3)
-
-        # Row 1: Contact Person (spans)
         grid_layout.addWidget(
             self._create_label("Contact Person:"), 1, 0, Qt.AlignmentFlag.AlignRight
         )
         grid_layout.addWidget(self.contact_person_input, 1, 1, 1, 3)
-
-        # Row 2: Address Line 1 (spans)
         grid_layout.addWidget(
             self._create_label("Address Line 1:"), 2, 0, Qt.AlignmentFlag.AlignRight
         )
         grid_layout.addWidget(self.address_line1_input, 2, 1, 1, 3)
-
-        # Row 3: Address Line 2 (spans)
         grid_layout.addWidget(
             self._create_label("Address Line 2:"), 3, 0, Qt.AlignmentFlag.AlignRight
         )
         grid_layout.addWidget(self.address_line2_input, 3, 1, 1, 3)
-
-        # Row 4: City | State/Province
         grid_layout.addWidget(
             self._create_label("City:"), 4, 0, Qt.AlignmentFlag.AlignRight
         )
@@ -270,8 +246,6 @@ class AddEditLocationDialog(QDialog):
             self._create_label("State/Province:"), 4, 2, Qt.AlignmentFlag.AlignRight
         )
         grid_layout.addWidget(self.state_combo, 4, 3)
-
-        # Row 5: Zip/Postal Code | Country Code
         grid_layout.addWidget(
             self._create_label("Zip/Postal Code:"), 5, 0, Qt.AlignmentFlag.AlignRight
         )
@@ -280,8 +254,6 @@ class AddEditLocationDialog(QDialog):
             self._create_label("Country Code:"), 5, 2, Qt.AlignmentFlag.AlignRight
         )
         grid_layout.addWidget(self.country_code_input, 5, 3)
-
-        # Row 6: Phone | Email
         grid_layout.addWidget(
             self._create_label("Phone:"), 6, 0, Qt.AlignmentFlag.AlignRight
         )
@@ -290,16 +262,14 @@ class AddEditLocationDialog(QDialog):
             self._create_label("Email:"), 6, 2, Qt.AlignmentFlag.AlignRight
         )
         grid_layout.addWidget(self.email_input, 6, 3)
-
-        # Row 7: Is Active Checkbox
         grid_layout.addWidget(
             self.is_active_checkbox, 7, 1, 1, 1, Qt.AlignmentFlag.AlignLeft
         )
 
         grid_layout.setColumnStretch(1, 1)
         grid_layout.setColumnStretch(3, 1)
-        grid_layout.setColumnMinimumWidth(0, 110)  # Adjusted min width for labels
-        grid_layout.setColumnMinimumWidth(2, 110)  # Adjusted min width for labels
+        grid_layout.setColumnMinimumWidth(0, 110)
+        grid_layout.setColumnMinimumWidth(2, 110)
 
         form_style = self._get_form_input_style()
         for field in [
@@ -315,7 +285,7 @@ class AddEditLocationDialog(QDialog):
             self.email_input,
         ]:
             if field:
-                field.setStyleSheet(form_style)  # type: ignore
+                field.setStyleSheet(form_style)
 
         overall_layout.addLayout(grid_layout)
         overall_layout.addStretch(1)
@@ -347,7 +317,7 @@ class AddEditLocationDialog(QDialog):
     def _load_states_into_combobox(self):
         if not self.state_combo:
             return
-        self.state_combo.addItem("", None)  # Placeholder for no selection
+        self.state_combo.addItem("", None)
         session = None
         try:
             from config.database_config import db_manager
@@ -363,7 +333,6 @@ class AddEditLocationDialog(QDialog):
             )
             for state in states:
                 display_name = f"{state.state_name} ({state.state_code})"
-                # Store a dictionary or tuple with both state_code and country_code
                 self.state_combo.addItem(
                     display_name,
                     {
@@ -382,35 +351,23 @@ class AddEditLocationDialog(QDialog):
                 session.close()
 
     def _on_state_changed(self, index: int):
-        """Auto-populates the country code when a state/province is selected."""
         if not self.state_combo or not self.country_code_input:
             return
-
         selected_data = self.state_combo.itemData(index)
         if selected_data and isinstance(selected_data, dict):
             country_code = selected_data.get("country_code", "")
             self.country_code_input.setText(country_code)
-            self.logger.debug(
-                f"State selected: {selected_data.get('state_code')}, Country code auto-set to: {country_code}"
-            )
         else:
-            self.country_code_input.clear()  # Clear if placeholder selected
-            self.logger.debug(
-                "State selection cleared or invalid data, country code cleared."
-            )
+            self.country_code_input.clear()
 
     def _populate_fields(self):
         if self.location:
             self.location_name_input.setText(self.location.location_name or "")
-            self.contact_person_input.setText(
-                self.location.contact_person or ""
-            )  # ADDED
+            self.contact_person_input.setText(self.location.contact_person or "")
             self.address_line1_input.setText(self.location.address_line1 or "")
             self.address_line2_input.setText(self.location.address_line2 or "")
             self.city_input.setText(self.location.city or "")
-
             if self.location.state_code:
-                # FindData now expects the dictionary
                 for i in range(self.state_combo.count()):
                     item_data = self.state_combo.itemData(i)
                     if (
@@ -420,40 +377,36 @@ class AddEditLocationDialog(QDialog):
                     ):
                         self.state_combo.setCurrentIndex(i)
                         break
-                else:  # Loop finished without break
+                else:
                     self.logger.warning(
                         f"State code '{self.location.state_code}' not found in combobox. Location: {self.location.location_name}"
                     )
             else:
-                self.state_combo.setCurrentIndex(0)  # Select empty item
-
+                self.state_combo.setCurrentIndex(0)
             self.zip_code_input.setText(self.location.zip_code or "")
-            self.country_code_input.setText(
-                self.location.country_code or ""
-            )  # Will be overridden by _on_state_changed if state is set
-            self.phone_input.setText(self.location.phone or "")  # ADDED
-            self.email_input.setText(self.location.email or "")  # ADDED
+            self.country_code_input.setText(self.location.country_code or "")
+            self.phone_input.setText(self.location.phone or "")
+            self.email_input.setText(self.location.email or "")
             self.is_active_checkbox.setChecked(self.location.is_active)
 
     def get_data(self) -> Dict[str, Any]:
         selected_state_code = None
-        # country_code will be taken from the input field, which might be auto-populated
         if self.state_combo.currentIndex() > 0:
             item_data = self.state_combo.currentData()
             if item_data and isinstance(item_data, dict):
                 selected_state_code = item_data.get("state_code")
 
         return {
-            "location_name": self.location_name_input.text().strip(),
-            "contact_person": self.contact_person_input.text().strip() or None,  # ADDED
-            "address_line1": self.address_line1_input.text().strip() or None,
-            "address_line2": self.address_line2_input.text().strip() or None,
-            "city": self.city_input.text().strip() or None,
+            "location_name": self.location_name_input.text(),
+            "contact_person": self.contact_person_input.text(),
+            "address_line1": self.address_line1_input.text(),
+            "address_line2": self.address_line2_input.text(),
+            "city": self.city_input.text(),
             "state_code": selected_state_code,
-            "zip_code": self.zip_code_input.text().strip() or None,
-            "country_code": self.country_code_input.text().strip().upper() or None,
-            "phone": self.phone_input.text().strip() or None,  # ADDED
-            "email": self.email_input.text().strip() or None,  # ADDED
+            "zip_code": self.zip_code_input.text(),
+            "country_code": self.country_code_input.text(),
+            "phone": self.phone_input.text(),
+            "email": self.email_input.text(),
             "is_active": self.is_active_checkbox.isChecked(),
         }
 
@@ -475,15 +428,19 @@ class AddEditLocationDialog(QDialog):
                 "Please correct the following errors:\n- " + "\n- ".join(errors),
             )
             return
+
         try:
             if self.is_edit_mode and self.location:
-                success, message, _ = self.controller.update_location(
+                # MODIFIED: Correctly unpack the two return values from update_location
+                success, message = self.controller.update_location(
                     self.location.location_id, data, self.current_user_id
                 )
             else:
+                # create_location returns three values
                 success, message, _ = self.controller.create_location(
                     data, self.current_user_id
                 )
+
             if success:
                 if hasattr(self.parent_view, "show_info") and callable(
                     getattr(self.parent_view, "show_info")

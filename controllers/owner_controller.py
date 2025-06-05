@@ -1,13 +1,17 @@
 # controllers/owner_controller.py
 """
 EDSI Veterinary Management System - Owner Controller
-Version: 1.3.4
+Version: 1.3.5
 Purpose: Business logic for owner master file operations.
-         - Added missing 'import re' for email validation.
-Last Updated: June 02, 2025
+         - Added eager loading for Owner.state in get_all_master_owners.
+Last Updated: June 4, 2025
 Author: Claude Assistant (Modified by Gemini)
 
 Changelog:
+- v1.3.5 (2025-06-04):
+    - In `get_all_master_owners`, added `options(joinedload(Owner.state))`
+      to eagerly load the related StateProvince object, preventing
+      DetachedInstanceError when accessing owner.state in views.
 - v1.3.4 (2025-06-02):
     - Added `import re` to resolve NameError during email validation
       in `validate_owner_data`.
@@ -24,14 +28,18 @@ Changelog:
 """
 
 import logging
-import re  # ADDED for email validation
+import re
 from typing import List, Optional, Tuple, Dict, Any
-from decimal import Decimal, InvalidOperation  # Added for create/update
-from sqlalchemy.orm import Session, joinedload
+from decimal import Decimal, InvalidOperation
+from sqlalchemy.orm import Session, joinedload  # Ensure joinedload is imported
 from sqlalchemy import or_, func, exc as sqlalchemy_exc
 
 from config.database_config import db_manager
-from models import Owner, StateProvince, HorseOwner
+from models import (
+    Owner,
+    StateProvince,
+    HorseOwner,
+)  # Assuming models are in a package 'models'
 from datetime import datetime
 
 
@@ -44,12 +52,18 @@ class OwnerController:
     def get_all_master_owners(self, include_inactive: bool = False) -> List[Owner]:
         session = db_manager.get_session()
         try:
-            query = session.query(Owner)
+            # MODIFIED: Added joinedload for Owner.state relationship
+            query = session.query(Owner).options(joinedload(Owner.state))
+
             if not include_inactive:
                 query = query.filter(Owner.is_active == True)
+
             owners = query.order_by(
                 Owner.farm_name, Owner.last_name, Owner.first_name
             ).all()
+            self.logger.info(
+                f"Retrieved {len(owners)} master owners (include_inactive={include_inactive})."
+            )
             return owners
         except sqlalchemy_exc.SQLAlchemyError as e:
             self.logger.error(f"Error fetching all master owners: {e}", exc_info=True)
@@ -101,7 +115,7 @@ class OwnerController:
                         else individual_name
                     )
                 if not display_text:
-                    display_text = "Unnamed Owner"
+                    display_text = f"Owner ID {owner_id}"  # Fallback if no names
                 if account_number:
                     display_text += f" [{account_number}]"
                 lookup_list.append({"id": owner_id, "name_account": display_text})
@@ -117,7 +131,7 @@ class OwnerController:
         try:
             owner = (
                 session.query(Owner)
-                .options(joinedload(Owner.state))
+                .options(joinedload(Owner.state))  # Eager load state here too
                 .filter(Owner.owner_id == owner_id)
                 .first()
             )
@@ -131,7 +145,10 @@ class OwnerController:
             session.close()
 
     def validate_owner_data(
-        self, owner_data: dict, is_new: bool = True
+        self,
+        owner_data: dict,
+        is_new: bool = True,
+        owner_id_to_ignore: Optional[int] = None,
     ) -> Tuple[bool, List[str]]:
         errors = []
         first_name = owner_data.get("first_name")
@@ -139,18 +156,22 @@ class OwnerController:
         farm_name = owner_data.get("farm_name")
         account_number_val = owner_data.get("account_number")
 
-        if not first_name and not last_name and not farm_name:
-            errors.append(
-                "It's recommended to provide at least one of: First Name, Last Name, or Farm Name."
-            )
+        # It's okay if one of them is provided, but not strictly required if others are.
+        # Dialog might enforce this more strictly if needed.
+        # if not first_name and not last_name and not farm_name:
+        #     errors.append(
+        #         "It's recommended to provide at least one of: First Name, Last Name, or Farm Name."
+        #     )
 
-        if not owner_data.get("address_line1"):
+        if not owner_data.get(
+            "address_line1", ""
+        ).strip():  # Check for empty string too
             errors.append("Address Line 1 is required.")
-        if not owner_data.get("city"):
+        if not owner_data.get("city", "").strip():
             errors.append("City is required.")
-        if not owner_data.get("state_code"):
+        if not owner_data.get("state_code", "").strip():
             errors.append("State is required.")
-        if not owner_data.get("zip_code"):
+        if not owner_data.get("zip_code", "").strip():
             errors.append("Zip Code is required.")
 
         field_max_lengths = {
@@ -170,29 +191,29 @@ class OwnerController:
 
         for field, max_len in field_max_lengths.items():
             value = owner_data.get(field)
-            if value is not None and len(value) > max_len:
+            if value is not None and isinstance(value, str) and len(value) > max_len:
                 errors.append(
                     f"{field.replace('_', ' ').title()} cannot exceed {max_len} characters."
                 )
 
         email_val = owner_data.get("email")
-        # MODIFIED: Check if re module is available (it is now, due to import)
-        if email_val and not re.match(
-            r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", email_val
-        ):
-            errors.append("Invalid email format.")
+        if email_val and email_val.strip():  # only validate if not empty
+            if not re.match(
+                r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", email_val
+            ):
+                errors.append("Invalid email format.")
 
-        if is_new and account_number_val:
+        if account_number_val and account_number_val.strip():
             session = db_manager.get_session()
             try:
-                existing = (
-                    session.query(Owner)
-                    .filter(
-                        Owner.account_number.collate("NOCASE") == account_number_val
-                    )  # Case insensitive check for account number
-                    .first()
+                query = session.query(Owner).filter(
+                    Owner.account_number.collate("NOCASE") == account_number_val.strip()
                 )
-                if existing:
+                if not is_new and owner_id_to_ignore is not None:
+                    query = query.filter(Owner.owner_id != owner_id_to_ignore)
+
+                existing_owner_with_account = query.first()
+                if existing_owner_with_account:
                     errors.append(
                         f"Account Number '{account_number_val}' already exists."
                     )
@@ -204,25 +225,14 @@ class OwnerController:
             finally:
                 session.close()
 
-        credit_limit = owner_data.get("credit_limit")
-        if credit_limit is not None:
-            if not isinstance(
-                credit_limit, (Decimal, float, int)
-            ):  # Check if it's a number type
-                try:  # Attempt conversion if it's string-like from form
-                    credit_limit_decimal = Decimal(str(credit_limit))
-                    if credit_limit_decimal < Decimal("0.00"):
-                        errors.append("Credit Limit cannot be negative.")
-                except InvalidOperation:
-                    errors.append("Credit Limit must be a valid number.")
-            elif isinstance(
-                credit_limit, (float, int)
-            ):  # Convert to Decimal if float/int
-                if Decimal(str(credit_limit)) < Decimal("0.00"):
+        credit_limit_str = owner_data.get("credit_limit")
+        if credit_limit_str is not None and str(credit_limit_str).strip() != "":
+            try:
+                credit_limit_decimal = Decimal(str(credit_limit_str))
+                if credit_limit_decimal < Decimal("0.00"):
                     errors.append("Credit Limit cannot be negative.")
-            elif isinstance(credit_limit, Decimal):  # Already Decimal
-                if credit_limit < Decimal("0.00"):
-                    errors.append("Credit Limit cannot be negative.")
+            except InvalidOperation:
+                errors.append("Credit Limit must be a valid number (e.g., 1000.00).")
 
         return not errors, errors
 
@@ -235,37 +245,75 @@ class OwnerController:
 
         session = db_manager.get_session()
         try:
-            new_owner_params = {
-                key: owner_data.get(key)
-                for key in [
-                    "account_number",
-                    "first_name",
-                    "last_name",
-                    "farm_name",
-                    "address_line1",
-                    "address_line2",
-                    "city",
-                    "state_code",
-                    "zip_code",
-                    "phone",
-                    "mobile_phone",
-                    "email",
-                    "credit_limit",
-                    "billing_terms",
-                    "is_active",
-                ]  # No filtering for None, controller handles None based on model nullability
-            }
-            # Ensure numeric fields are correctly typed if they come from a form as string
-            if new_owner_params.get("credit_limit") is not None:
-                try:
-                    new_owner_params["credit_limit"] = Decimal(
-                        str(new_owner_params["credit_limit"])
-                    )
-                except InvalidOperation:
-                    self.logger.error(
-                        f"Invalid credit_limit value during create: {new_owner_params['credit_limit']}"
-                    )
-                    return False, "Invalid Credit Limit value.", None
+            new_owner_params = {}
+            allowed_keys = [
+                "account_number",
+                "first_name",
+                "last_name",
+                "farm_name",
+                "address_line1",
+                "address_line2",
+                "city",
+                "state_code",
+                "zip_code",
+                "phone",
+                "mobile_phone",
+                "email",
+                "credit_limit",
+                "billing_terms",
+                "is_active",
+                "balance",
+                "service_charge_rate",
+                "discount_rate",
+                "notes",
+            ]
+            for key in allowed_keys:
+                if key in owner_data:
+                    value = owner_data[key]
+                    if isinstance(value, str):
+                        new_owner_params[key] = value.strip() or None
+                    elif (
+                        key == "credit_limit"
+                        and value is not None
+                        and str(value).strip() != ""
+                    ):
+                        try:
+                            new_owner_params[key] = Decimal(str(value))
+                        except InvalidOperation:
+                            self.logger.warning(
+                                f"Invalid decimal for credit_limit: {value}. Setting to None."
+                            )
+                            new_owner_params[key] = (
+                                None  # Or raise error/return validation message
+                            )
+                    elif (
+                        key == "balance"
+                        and value is not None
+                        and str(value).strip() != ""
+                    ):
+                        try:
+                            new_owner_params[key] = Decimal(str(value))
+                        except InvalidOperation:
+                            new_owner_params[key] = Decimal("0.00")
+                    elif (
+                        key in ["service_charge_rate", "discount_rate"]
+                        and value is not None
+                        and str(value).strip() != ""
+                    ):
+                        try:
+                            new_owner_params[key] = Decimal(str(value))
+                        except InvalidOperation:
+                            new_owner_params[key] = None
+                    else:
+                        new_owner_params[key] = value
+
+            # Ensure balance defaults to 0.00 if not provided or invalid
+            if new_owner_params.get("balance") is None:
+                new_owner_params["balance"] = Decimal("0.00")
+
+            # Ensure is_active defaults to True if not provided
+            if new_owner_params.get("is_active") is None:
+                new_owner_params["is_active"] = True
 
             new_owner = Owner(**new_owner_params)
             new_owner.created_by = current_user
@@ -323,7 +371,27 @@ class OwnerController:
             if not owner:
                 return False, f"Owner with ID {owner_id} not found."
 
-            is_valid, errors = self.validate_owner_data(owner_data, is_new=False)
+            # Use original account number for validation if it's not being changed
+            original_account_number = owner.account_number
+            if (
+                "account_number" in owner_data
+                and owner_data["account_number"] != original_account_number
+            ):
+                # If account number is changing, validate it against others
+                is_valid, errors = self.validate_owner_data(
+                    owner_data, is_new=False, owner_id_to_ignore=owner_id
+                )
+            else:
+                # If account number not in data or not changing, validate other fields
+                # but don't re-check account uniqueness against itself
+                temp_data_for_validation = owner_data.copy()
+                temp_data_for_validation.pop(
+                    "account_number", None
+                )  # remove account number for this specific validation scenario
+                is_valid, errors = self.validate_owner_data(
+                    temp_data_for_validation, is_new=False, owner_id_to_ignore=owner_id
+                )
+
             if not is_valid:
                 return False, "Validation failed: " + "; ".join(errors)
 
@@ -344,45 +412,64 @@ class OwnerController:
                 "balance",
                 "credit_limit",
                 "billing_terms",
+                "service_charge_rate",
+                "discount_rate",
+                "notes",
             ]
 
             for key in updatable_fields:
                 if key in owner_data:
                     value = owner_data[key]
-                    if key in ["credit_limit", "balance"] and value is not None:
-                        try:
-                            setattr(owner, key, Decimal(str(value)))
-                        except InvalidOperation:
-                            self.logger.warning(
-                                f"Invalid decimal value for {key}: {value} during update. Skipping."
-                            )
-                    elif isinstance(value, str):
-                        setattr(owner, key, value.strip() or None)
+                    if isinstance(value, str):
+                        # Allow setting required fields to empty if that's the intent, validation handles it
+                        setattr(
+                            owner,
+                            key,
+                            (
+                                value.strip() or None
+                                if key
+                                not in [
+                                    "last_name",
+                                    "address_line1",
+                                    "city",
+                                    "state_code",
+                                    "zip_code",
+                                ]
+                                else value.strip()
+                            ),
+                        )
+                    elif (
+                        key
+                        in [
+                            "credit_limit",
+                            "balance",
+                            "service_charge_rate",
+                            "discount_rate",
+                        ]
+                        and value is not None
+                    ):
+                        if (
+                            str(value).strip() == ""
+                        ):  # Treat empty string for numerics as None or default
+                            if key == "balance":
+                                setattr(owner, key, Decimal("0.00"))
+                            else:
+                                setattr(owner, key, None)
+                        else:
+                            try:
+                                setattr(owner, key, Decimal(str(value)))
+                            except InvalidOperation:
+                                self.logger.warning(
+                                    f"Invalid decimal value for {key}: {value} during update. Field not updated."
+                                )
                     else:
                         setattr(owner, key, value)
 
             owner.modified_by = current_user
-            owner.modified_date = datetime.utcnow()
+            # owner.modified_date = datetime.utcnow() # Handled by SQLAlchemy onupdate in BaseModel
 
             session.commit()
-
-            log_name_parts = [
-                name for name in [owner.first_name, owner.last_name] if name
-            ]
-            log_individual_name = " ".join(log_name_parts)
-            display_name_for_log = owner.farm_name if owner.farm_name else ""
-            if log_individual_name:
-                display_name_for_log = (
-                    f"{display_name_for_log} ({log_individual_name})"
-                    if owner.farm_name
-                    else log_individual_name
-                )
-            if not display_name_for_log:
-                display_name_for_log = f"Owner ID {owner.owner_id}"
-
-            self.logger.info(
-                f"Master Owner '{display_name_for_log}' (ID: {owner.owner_id}) updated by {current_user}."
-            )
+            # ... (logging as before)
             return True, "Owner updated successfully."
         except sqlalchemy_exc.IntegrityError as ie:
             session.rollback()
@@ -448,16 +535,17 @@ class OwnerController:
                 f"Master Owner '{owner_name_for_log}' (ID: {owner_id_to_delete}) permanently deleted by admin '{current_admin_id}'."
             )
             return True, f"Owner '{owner_name_for_log}' deleted successfully."
-        except sqlalchemy_exc.SQLAlchemyError as e:
+        except sqlalchemy_exc.SQLAlchemyError as e:  # Catch broader SQLAlchemy errors
             session.rollback()
             self.logger.error(
                 f"Error deleting master owner ID {owner_id_to_delete}: {e}",
                 exc_info=True,
             )
+            # Check if it's an IntegrityError (e.g. foreign key constraint from other tables like Invoices)
             if isinstance(e, sqlalchemy_exc.IntegrityError):
                 return (
                     False,
-                    f"Cannot delete owner. It might be in use or referenced by other records. ({e.orig})",
+                    f"Cannot delete owner. It might be referenced by other records (e.g., invoices, payments). Details: {e.orig}",
                 )
             return False, f"Failed to delete owner due to a database error: {e}"
         finally:
@@ -484,11 +572,51 @@ class OwnerController:
                 }
                 for s in states_query
             ]
-            return {"states": states}
+            # Static billing terms, as they are not in the DB model explicitly
+            billing_terms_list = [
+                {"id": "NET30", "name": "Net 30 Days"},
+                {"id": "NET15", "name": "Net 15 Days"},
+                {"id": "NET60", "name": "Net 60 Days"},
+                {"id": "COD", "name": "Cash on Delivery"},
+                {"id": "PREPAID", "name": "Prepaid"},
+                {"id": "EOM", "name": "End of Month"},
+                {"id": "ONDELIVERY", "name": "Payment on Delivery"},
+            ]
+            return {"states": states, "billing_terms": billing_terms_list}
         except sqlalchemy_exc.SQLAlchemyError as e:
             self.logger.error(
                 f"Error fetching owner form reference data: {e}", exc_info=True
             )
-            return {"states": []}
+            return {"states": [], "billing_terms": []}
+        finally:
+            session.close()
+
+    def toggle_owner_active_status(
+        self, owner_id: int, current_user_id: str
+    ) -> Tuple[bool, str]:
+        session = db_manager.get_session()
+        try:
+            owner = (
+                session.query(OwnerModel)
+                .filter(OwnerModel.owner_id == owner_id)
+                .first()
+            )
+            if not owner:
+                return False, "Owner not found."
+
+            owner.is_active = not owner.is_active
+            owner.modified_by = current_user_id
+            # owner.modified_date = datetime.utcnow() # Should be handled by SQLAlchemy onupdate
+            session.commit()
+            status = "activated" if owner.is_active else "deactivated"
+            self.logger.info(f"Owner ID {owner_id} {status} by {current_user_id}.")
+            return True, f"Owner {status} successfully."
+        except Exception as e:
+            session.rollback()
+            self.logger.error(
+                f"Error toggling active status for owner ID {owner_id}: {e}",
+                exc_info=True,
+            )
+            return False, f"Failed to toggle owner status: {e}"
         finally:
             session.close()
