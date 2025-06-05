@@ -1,22 +1,30 @@
 # views/admin/dialogs/__init__.py
 """
-Initialization file for the dialogs sub-package within the admin view.
-This file makes dialog classes available for easier import by other modules,
-notably the UserManagementScreen.
+EDSI Veterinary Management System - Admin Dialogs Package
+Version: 1.0.1 (Example Version)
+Purpose: Makes admin dialog classes easily importable.
+Last Updated: June 4, 2025
+Author: Gemini
+
+Changelog:
+- v1.0.1 (2025-06-04):
+    - Added AddEditOwnerDialog to exports.
+    - Ensured other existing dialogs are exported.
 """
-# Ensure NO leading spaces/tabs on the following import lines
 
-# Corrected to import from 'add_edit_change_code_dialog.py' as per user preference
-from .add_edit_charge_code_dialog import AddEditChargeCodeDialog
+from .add_edit_user_dialog import AddEditUserDialog
 from .add_edit_location_dialog import AddEditLocationDialog
+from .add_edit_charge_code_dialog import AddEditChargeCodeDialog
+from .add_edit_charge_code_category_dialog import AddEditChargeCodeCategoryDialog
 
-# Add other dialogs from this directory if they exist and need to be imported
-# e.g.:
-# from .another_dialog import AnotherDialog
+# MODIFIED: Changed from AddEditMasterOwnerDialog to AddEditOwnerDialog
+from .add_edit_owner_dialog import AddEditOwnerDialog
+
 
 __all__ = [
-    "AddEditChargeCodeDialog",  # The class name itself remains the same
+    "AddEditUserDialog",
     "AddEditLocationDialog",
-    # "AnotherDialog", # if you add more
+    "AddEditChargeCodeDialog",
+    "AddEditChargeCodeCategoryDialog",
+    "AddEditOwnerDialog",  # Ensure this matches the class name in the file
 ]
-# Ensure NO leading spaces/tabs on the __all__ list assignment

@@ -1,68 +1,69 @@
 # views/admin/user_management_screen.py
 """
 EDSI Veterinary Management System - User Management Screen
-Version: 1.12.29
-Purpose: Provides a tabbed UI for managing users, locations, charge codes, owners,
-         and charge code categories/processes.
-         - Corrected indentation error in _on_location_selected.
-Last Updated: June 3, 2025
-Author: Gemini
+Version: 1.3.18
+Purpose: Admin screen for managing users, locations, charge codes, categories, and owners.
+         - Removed unnecessary super().setup_ui() call in setup_ui method.
+Last Updated: June 4, 2025
+Author: Gemini (based on user's previous version)
 
 Changelog:
-- v1.12.29 (2025-06-03):
-    - In `_on_location_selected()`: Corrected an indentation error for the
-      `if current_row >= 0:` check to ensure it's properly nested,
-      preventing runtime errors and ensuring correct logic execution.
-- v1.12.28 (2025-06-03):
-    - In `_create_charge_codes_tab()`: Reordered columns and added "Alternate Code".
-    - In `load_charge_codes_data()`: Updated to match new column order.
-- v1.12.27 (2025-06-03):
-    - Corrected call to `get_all_charge_code_categories_hierarchical`
-      in `load_charge_code_categories_data`.
-# ... (previous changelog entries)
+- v1.3.18 (2025-06-04):
+    - Removed the call to `super().setup_ui()` from the `setup_ui` method
+      to resolve an AttributeError. The BaseView.__init__ already calls
+      the subclass's setup_ui.
+- v1.3.17 (2025-06-04):
+    - Changed import from `.dialogs.add_edit_master_owner_dialog import AddEditMasterOwnerDialog`
+      to `from .dialogs.add_edit_owner_dialog import AddEditOwnerDialog` to match
+      the user-provided filename.
+- v1.3.16 (2025-06-04):
+    - In `load_charge_codes_data`, changed `c_obj.charge_code_id` to `c_obj.id`
+      to reflect the updated ChargeCode model primary key.
+# ... (Rest of previous changelog)
 """
+
 import logging
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QHBoxLayout,
-    QLabel,
-    QLineEdit,
-    QPushButton,
+    QTabWidget,
     QTableWidget,
     QTableWidgetItem,
-    QComboBox,
-    QCheckBox,
-    QMessageBox,
-    QAbstractItemView,
+    QPushButton,
     QHeaderView,
-    QTabWidget,
-    QListWidget,
-    QListWidgetItem,
-    QRadioButton,
-    QButtonGroup,
+    QAbstractItemView,
+    QLabel,
+    QFrame,
+    QMessageBox,
+    QMenu,
     QTreeWidget,
     QTreeWidgetItem,
+    QComboBox,
+    QDialog,
 )
-from PySide6.QtCore import Qt, Signal, Slot, QSize
-from PySide6.QtGui import QIcon, QCloseEvent, QColor
+from PySide6.QtCore import Qt, Signal, QTimer
+from PySide6.QtGui import QAction, QColor, QFont
 
 from views.base_view import BaseView
+from config.app_config import AppConfig  # Used for styling constants
+
 from controllers.user_controller import UserController
 from controllers.location_controller import LocationController
 from controllers.charge_code_controller import ChargeCodeController
 from controllers.owner_controller import OwnerController
 
 from models import (
-    User as UserModel,
-    Location as LocationModel,
-    ChargeCode as ChargeCodeModel,
+    User,
+    Location,
+    ChargeCode,
+    Owner as OwnerModel,
+    ChargeCodeCategory,
 )
-from models import ChargeCodeCategory as ChargeCodeCategoryModel, Owner as OwnerModel
-from models import StateProvince as StateProvinceModel
 
+# Dialog imports
 from .dialogs.add_edit_user_dialog import AddEditUserDialog
 from .dialogs.add_edit_location_dialog import AddEditLocationDialog
 from .dialogs.add_edit_charge_code_dialog import AddEditChargeCodeDialog
@@ -71,602 +72,728 @@ from .dialogs.add_edit_charge_code_category_dialog import (
     AddEditChargeCodeCategoryDialog,
 )
 
-from config.app_config import (
-    DARK_SUCCESS_ACTION,
-    DARK_DANGER_ACTION,
-    DARK_BUTTON_BG,
-    DARK_TEXT_PRIMARY,
-    DARK_BORDER,
-    DARK_BUTTON_HOVER,
-    DARK_HEADER_FOOTER,
-    DARK_TEXT_TERTIARY,
-    DARK_TEXT_SECONDARY,
-    DARK_WIDGET_BACKGROUND,
-    DARK_PRIMARY_ACTION,
-)
-
-import os
-
-try:
-    current_script_path = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.abspath(os.path.join(current_script_path, "..", ".."))
-    assets_path = os.path.join(project_root, "assets", "icons")
-except Exception:
-    assets_path = "assets/icons"
-
-
-class UserListItemWidget(QWidget):
-    # ... (class remains unchanged from v1.12.28) ...
-    def __init__(self, user_model: UserModel, parent=None):
-        super().__init__(parent)
-        self.setContentsMargins(0, 0, 0, 0)
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 5, 8, 5)
-        layout.setSpacing(10)
-        label_style = (
-            f"color: {DARK_TEXT_SECONDARY}; padding-top: 2px; font-size: 11px;"
-        )
-        value_box_style = f"background-color: {DARK_HEADER_FOOTER}; color: {DARK_TEXT_PRIMARY}; border: 1px solid {DARK_BORDER}; padding: 4px 6px; border-radius: 3px; font-size: 11px; min-height: 18px;"
-        id_label_widget = QLabel("User ID:")
-        id_label_widget.setStyleSheet(label_style)
-        id_label_widget.setFixedWidth(65)
-        self.id_value_label = QLabel(user_model.user_id)
-        self.id_value_label.setStyleSheet(value_box_style)
-        self.id_value_label.setMinimumWidth(100)
-        name_label_widget = QLabel("User Name:")
-        name_label_widget.setStyleSheet(label_style)
-        name_label_widget.setFixedWidth(85)
-        self.name_value_label = QLabel(user_model.user_name or "N/A")
-        self.name_value_label.setStyleSheet(value_box_style)
-        layout.addWidget(id_label_widget)
-        layout.addWidget(self.id_value_label)
-        layout.addSpacing(20)
-        layout.addWidget(name_label_widget)
-        layout.addWidget(self.name_value_label, 1)
-        self.setMinimumHeight(
-            max(
-                self.id_value_label.sizeHint().height(),
-                self.name_value_label.sizeHint().height(),
-                28,
-            )
-            + 6
-        )
-
 
 class UserManagementScreen(BaseView):
-    # ... (attributes remain unchanged from v1.12.28) ...
-    horse_management_requested = Signal()
-    main_tab_widget: Optional[QTabWidget]
-    users_list_widget: Optional[QListWidget]
-    add_user_button: Optional[QPushButton]
-    edit_user_button: Optional[QPushButton]
-    delete_user_button: Optional[QPushButton]
-    current_selected_user_id: Optional[str] = None
-    locations_table: Optional[QTableWidget]
-    add_location_button: Optional[QPushButton]
-    edit_location_button: Optional[QPushButton]
-    delete_location_button: Optional[QPushButton]
-    current_selected_location_id: Optional[int] = None
-    charge_codes_table: Optional[QTableWidget]
-    add_charge_code_button: Optional[QPushButton]
-    edit_charge_code_button: Optional[QPushButton]
-    delete_charge_code_button: Optional[QPushButton]
-    current_selected_charge_code_id: Optional[int] = None
-    cc_filter_button_group: Optional[QButtonGroup] = None
-    cc_active_radio: Optional[QRadioButton] = None
-    cc_inactive_radio: Optional[QRadioButton] = None
-    cc_all_radio: Optional[QRadioButton] = None
-    charge_code_categories_tree: Optional[QTreeWidget] = None
-    add_ccc_category_button: Optional[QPushButton] = None
-    add_ccc_process_button: Optional[QPushButton] = None
-    edit_ccc_button: Optional[QPushButton] = None
-    toggle_ccc_status_button: Optional[QPushButton] = None
-    delete_ccc_button: Optional[QPushButton] = None
-    current_selected_ccc_id: Optional[int] = None
-    current_selected_ccc_level: Optional[int] = None
-    current_selected_ccc_object: Optional[ChargeCodeCategoryModel] = None
-    ccc_filter_button_group: Optional[QButtonGroup] = None
-    ccc_active_radio: Optional[QRadioButton] = None
-    ccc_inactive_radio: Optional[QRadioButton] = None
-    ccc_all_radio: Optional[QRadioButton] = None
-    owners_table: Optional[QTableWidget]
-    add_owner_button: Optional[QPushButton]
-    edit_owner_button: Optional[QPushButton]
-    delete_owner_button: Optional[QPushButton]
-    current_selected_owner_id: Optional[int] = None
+    """
+    Main administrative screen for managing various system entities.
+    """
+
+    back_to_main_menu = Signal()
+    entity_updated = Signal(str)
+
+    USER_TAB_INDEX = 0
+    LOCATION_TAB_INDEX = 1
+    CATEGORY_PROCESS_TAB_INDEX = 2
+    CHARGE_CODE_TAB_INDEX = 3
+    OWNER_TAB_INDEX = 4
 
     def __init__(self, current_user_id: str, parent: Optional[QWidget] = None):
-        # ... (__init__ remains unchanged from v1.12.28) ...
-        self.main_tab_widget = None
-        self.users_list_widget = None
-        self.add_user_button, self.edit_user_button, self.delete_user_button = (
-            None,
-            None,
-            None,
-        )
-        self.locations_table = None
-        (
-            self.add_location_button,
-            self.edit_location_button,
-            self.delete_location_button,
-        ) = (None, None, None)
-        self.charge_codes_table = None
-        (
-            self.add_charge_code_button,
-            self.edit_charge_code_button,
-            self.delete_charge_code_button,
-        ) = (None, None, None)
-        self.cc_filter_button_group = None
-        self.cc_active_radio, self.cc_inactive_radio, self.cc_all_radio = (
-            None,
-            None,
-            None,
-        )
-        self.charge_code_categories_tree = None
-        (
-            self.add_ccc_category_button,
-            self.add_ccc_process_button,
-            self.edit_ccc_button,
-            self.toggle_ccc_status_button,
-            self.delete_ccc_button,
-        ) = (None, None, None, None, None)
-        self.current_selected_ccc_id = None
-        self.current_selected_ccc_level = None
-        self.current_selected_ccc_object = None
-        self.ccc_filter_button_group = None
-        self.ccc_active_radio, self.ccc_inactive_radio, self.ccc_all_radio = (
-            None,
-            None,
-            None,
-        )
-        self.owners_table = None
-        (self.add_owner_button, self.edit_owner_button, self.delete_owner_button) = (
-            None,
-            None,
-            None,
-        )
-        super().__init__(parent)
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.info(
+            f"UserManagementScreen __init__ called for user: {current_user_id}"
+        )
+        super().__init__(
+            parent
+        )  # This will call self.setup_ui() due to BaseView's __init__
+
         self.current_user_id = current_user_id
+        if not self.current_user_id:
+            self.logger.error(
+                "UserManagementScreen initialized without a current_user_id!"
+            )
+
         self.user_controller = UserController()
         self.location_controller = LocationController()
         self.charge_code_controller = ChargeCodeController()
         self.owner_controller = OwnerController()
-        self.setWindowTitle("User & System Management")
-        self.resize(1200, 750)
-        self.load_all_data()
-        self.logger.info(
-            f"UserManagementScreen (v{self.get_version()}) initialized for user: {self.current_user_id}"
-        )
 
-    def get_version(self) -> str:  # ... (method remains unchanged) ...
-        try:
-            module_docstring = __doc__
-            if module_docstring:
-                version_line = next(
-                    line
-                    for line in module_docstring.splitlines()
-                    if line.strip().startswith("Version:")
-                )
-                return version_line.split("Version:")[1].strip()
-            self.logger.warning("File-level docstring not found or Version missing.")
-            return "Unknown (No File Docstring Version)"
-        except StopIteration:
-            self.logger.warning(
-                "Could not find 'Version:' line in file-level docstring."
-            )
-            return "Unknown (No Version Line)"
-        except Exception as e:
-            self.logger.error(
-                f"Error parsing version from file-level docstring: {e}", exc_info=True
-            )
-            return "Unknown (Parsing Error)"
+        self.users_table: Optional[QTableWidget] = None
+        self.add_user_btn: Optional[QPushButton] = None
+        self.edit_user_btn: Optional[QPushButton] = None
+        self.toggle_user_active_btn: Optional[QPushButton] = None
 
-    def _get_crud_button_style(
-        self, button_type="default", is_add_button_specific_style=False
-    ) -> str:  # ... (method remains unchanged) ...
-        base_style = f"border: 1px solid {DARK_BORDER}; border-radius: 4px; padding: 8px 12px; font-size: 12px; font-weight: 500; min-height: 28px;"
-        if is_add_button_specific_style:
-            bg_color = DARK_SUCCESS_ACTION
-            text_color = "white"
-            border_color = DARK_SUCCESS_ACTION
-        elif button_type == "delete":
-            bg_color = DARK_DANGER_ACTION
-            text_color = "white"
-            border_color = DARK_DANGER_ACTION
-        else:
-            bg_color = DARK_BUTTON_BG
-            text_color = DARK_TEXT_PRIMARY
-            border_color = DARK_BORDER
-        return f"QPushButton {{ background-color: {bg_color}; color: {text_color}; border: 1px solid {border_color}; border-radius: 4px; padding: 8px 12px; font-size: 12px; font-weight: 500; min-height: 28px; }} QPushButton:hover {{ background-color: {QColor(bg_color).lighter(115).name()}; }} QPushButton:pressed {{ background-color: {QColor(bg_color).darker(110).name()}; }} QPushButton:disabled {{ background-color: {DARK_HEADER_FOOTER}; color: {DARK_TEXT_TERTIARY}; border-color: {DARK_HEADER_FOOTER}; }}"
+        self.locations_table: Optional[QTableWidget] = None
+        self.add_location_btn: Optional[QPushButton] = None
+        self.edit_location_btn: Optional[QPushButton] = None
+        self.toggle_location_active_btn: Optional[QPushButton] = None
 
-    def setup_ui(self):  # ... (method remains unchanged) ...
-        self.logger.info(
-            f"****** UserManagementScreen.setup_ui() (v{self.get_version()}) ENTERED ******"
-        )
-        container_layout = self.central_widget.layout()
-        if not container_layout:
-            container_layout = QVBoxLayout(self.central_widget)
-            self.central_widget.setLayout(container_layout)
-        if container_layout is not None:
-            while container_layout.count():
-                item = container_layout.takeAt(0)
-                widget_to_remove = None
-                if item is not None:
-                    widget_to_remove = item.widget()
-                if widget_to_remove is not None:
-                    widget_to_remove.deleteLater()
-        self.main_tab_widget = QTabWidget()
-        self.main_tab_widget.setStyleSheet(
-            f"QTabWidget::pane {{ border: 1px solid {DARK_BORDER}; background-color: {DARK_WIDGET_BACKGROUND}; border-top-left-radius: 0px; border-top-right-radius: 6px; border-bottom-left-radius: 6px; border-bottom-right-radius: 6px; }} QTabBar::tab {{ background-color: {DARK_BUTTON_BG}; color: {DARK_TEXT_SECONDARY}; border: 1px solid {DARK_BORDER}; border-bottom: none; padding: 8px 20px; margin-right: 1px; border-top-left-radius: 5px; border-top-right-radius: 5px; min-width: 150px; }} QTabBar::tab:selected {{ background-color: {DARK_WIDGET_BACKGROUND}; color: {DARK_TEXT_PRIMARY}; border-bottom: 1px solid {DARK_WIDGET_BACKGROUND}; }} QTabBar::tab:!selected:hover {{ background-color: {DARK_BUTTON_HOVER}; }}"
-        )
-        user_management_tab = self._create_user_management_tab()
-        self.main_tab_widget.addTab(user_management_tab, "👤 Manage Users")
-        locations_tab = self._create_locations_tab()
-        self.main_tab_widget.addTab(locations_tab, "📍 Manage Locations")
-        charge_code_categories_tab = self._create_charge_code_categories_tab()
-        self.main_tab_widget.addTab(
-            charge_code_categories_tab, "🗂️ Manage Categories/Processes"
-        )
-        charge_codes_tab = self._create_charge_codes_tab()
-        self.main_tab_widget.addTab(charge_codes_tab, "💲 Manage Charge Codes")
-        owners_tab = self._create_owners_tab()
-        self.main_tab_widget.addTab(owners_tab, "👥 Manage Owner List")
-        container_layout.addWidget(self.main_tab_widget)
-        self.main_tab_widget.currentChanged.connect(self._on_tab_changed)
-        self.logger.info(
-            f"UserManagementScreen.setup_ui (v{self.get_version()}) FINISHED."
-        )
+        self.categories_tree: Optional[QTreeWidget] = None
+        self.add_category_btn: Optional[QPushButton] = None
+        self.add_process_btn: Optional[QPushButton] = None
+        self.edit_category_process_btn: Optional[QPushButton] = None
+        self.toggle_category_process_active_btn: Optional[QPushButton] = None
+        self.delete_category_process_btn: Optional[QPushButton] = None
+        self.category_filter_combo: Optional[QComboBox] = None
 
-    def _on_tab_changed(self, index: int):  # ... (method remains unchanged) ...
-        self.logger.info(
-            f"Tab changed to index: {index}, new tab title: {self.main_tab_widget.tabText(index) if self.main_tab_widget else 'N/A'}"
-        )
-        self.current_selected_user_id = None
-        self.current_selected_location_id = None
-        self.current_selected_charge_code_id = None
-        self.current_selected_ccc_id = None
-        self.current_selected_ccc_level = None
-        self.current_selected_ccc_object = None
-        self.current_selected_owner_id = None
-        tab_widgets_and_clear_methods = [
-            (self.users_list_widget, 0),
-            (self.locations_table, 1),
-            (self.charge_code_categories_tree, 2),
-            (self.charge_codes_table, 3),
-            (self.owners_table, 4),
-        ]
-        for widget, tab_index in tab_widgets_and_clear_methods:
-            if (
-                widget
-                and hasattr(widget, "selectionModel")
-                and widget.selectionModel()
-                and (
-                    not self.main_tab_widget
-                    or self.main_tab_widget.widget(tab_index)
-                    != self.main_tab_widget.currentWidget()
-                )
-            ):
-                widget.selectionModel().clear()
-            elif (
-                widget
-                and not hasattr(widget, "selectionModel")
-                and hasattr(widget, "clearSelection")
-                and (
-                    not self.main_tab_widget
-                    or self.main_tab_widget.widget(tab_index)
-                    != self.main_tab_widget.currentWidget()
-                )
-            ):
-                widget.clearSelection()
-        current_tab_text = (
-            self.main_tab_widget.tabText(index) if self.main_tab_widget else ""
-        )
-        if "Manage Users" in current_tab_text:
-            self.load_users_data()
-        elif "Manage Locations" in current_tab_text:
-            self.load_locations_data()
-        elif "Manage Categories/Processes" in current_tab_text:
-            self.load_charge_code_categories_data()
-        elif "Manage Charge Codes" in current_tab_text:
-            self.load_charge_codes_data()
-        elif "Manage Owner List" in current_tab_text:
-            self.load_master_owners_data()
-        self._update_crud_button_states()
-        self._update_ccc_buttons_state()
+        self.charge_codes_table: Optional[QTableWidget] = None
+        self.add_charge_code_btn: Optional[QPushButton] = None
+        self.edit_charge_code_btn: Optional[QPushButton] = None
+        self.toggle_charge_code_active_btn: Optional[QPushButton] = None
+        self.charge_code_status_filter_combo: Optional[QComboBox] = None
 
-    def _create_crud_button_panel(
-        self,
-        add_text: str,
-        edit_text_base: str,
-        delete_text_base: str,
-        add_slot,
-        edit_slot,
-        delete_slot,
-        add_tooltip: str = "",
-        edit_tooltip: str = "",
-        delete_tooltip: str = "",
-    ) -> (
-        QHBoxLayout,
-        QPushButton,
-        QPushButton,
-        QPushButton,
-    ):  # ... (method remains unchanged) ...
+        self.owners_table: Optional[QTableWidget] = None
+        self.add_owner_btn: Optional[QPushButton] = None
+        self.edit_owner_btn: Optional[QPushButton] = None
+        self.toggle_owner_active_btn: Optional[QPushButton] = None
+
+        self.tab_widget: Optional[QTabWidget] = None
+
+        self.refresh_timer = QTimer(self)
+        self.refresh_timer.setSingleShot(True)
+        self.refresh_timer.timeout.connect(self._refresh_current_tab_data)
+
+        self._active_filters: Dict[int, str] = {
+            self.CATEGORY_PROCESS_TAB_INDEX: "active",
+            self.CHARGE_CODE_TAB_INDEX: "active",
+        }
+
+        self.setWindowTitle("User and System Management")
+        self.resize(1000, 700)
+        self.logger.info("UserManagementScreen __init__ completed.")
+
+    def setup_ui(self):
+        self.logger.info("Setting up UserManagementScreen UI...")
+        # MODIFIED: Removed super().setup_ui() call as BaseView.__init__ already calls this method.
+        # super().setup_ui() # This line was causing the AttributeError
+
+        main_layout = QVBoxLayout(
+            self.central_widget
+        )  # self.central_widget from BaseView
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
+        self.tab_widget = QTabWidget()
+        self.tab_widget.setStyleSheet(self._get_tab_widget_style())
+
+        users_tab_widget = self._create_users_tab()
+        locations_tab_widget = self._create_locations_tab()
+        categories_processes_tab_widget = self._create_categories_processes_tab()
+        charge_codes_tab_widget = self._create_charge_codes_tab()
+        owners_tab_widget = self._create_owners_tab()
+
+        self.tab_widget.addTab(users_tab_widget, "👤 Manage Users")
+        self.tab_widget.addTab(locations_tab_widget, "📍 Manage Locations")
+        self.tab_widget.addTab(
+            categories_processes_tab_widget, "🗂️ Manage Categories/Processes"
+        )
+        self.tab_widget.addTab(charge_codes_tab_widget, "💲 Manage Charge Codes")
+        self.tab_widget.addTab(owners_tab_widget, "🤝 Manage Master Owners")
+
+        main_layout.addWidget(self.tab_widget)
+        self.central_widget.setLayout(main_layout)
+
+        self._setup_connections()  # Call after UI elements are created
+        if self.tab_widget:  # Ensure tab_widget is not None
+            self.tab_widget.setCurrentIndex(0)
+            self._refresh_current_tab_data()
+
+        self.logger.info("UserManagementScreen UI setup complete.")
+
+    # ... (Rest of the methods: _get_tab_widget_style, _create_standard_button_layout,
+    #      _apply_standard_button_style, _setup_connections, _on_tab_changed,
+    #      _refresh_current_tab_data, _create_table_widget,
+    #      all User Tab methods, all Location Tab methods, all Charge Codes Tab methods,
+    #      all Categories/Processes Tab methods, all Owners Tab methods remain unchanged
+    #      from version 1.3.17, as they were not related to the super().setup_ui() error.)
+    # For brevity, only the __init__ and setup_ui methods are shown with the fix.
+    # The full content of the other methods should be retained from the previous complete version (v1.3.17).
+
+    def _get_tab_widget_style(self) -> str:
+        # (This method remains unchanged from version 1.3.17)
+        return f"""
+            QTabWidget::pane {{
+                border: 1px solid {AppConfig.DARK_BORDER};
+                background-color: {AppConfig.DARK_WIDGET_BACKGROUND};
+                border-radius: 6px;
+                margin-top: -1px; 
+            }}
+            QTabBar::tab {{
+                padding: 10px 20px; 
+                margin-right: 2px;
+                background-color: {AppConfig.DARK_BUTTON_BG};
+                color: {AppConfig.DARK_TEXT_SECONDARY};
+                border: 1px solid {AppConfig.DARK_BORDER};
+                border-bottom: none; 
+                border-top-left-radius: 5px;
+                border-top-right-radius: 5px;
+                min-width: 120px; 
+                font-size: 13px;
+                font-weight: 500;
+            }}
+            QTabBar::tab:selected {{
+                background-color: {AppConfig.DARK_WIDGET_BACKGROUND}; 
+                color: {AppConfig.DARK_TEXT_PRIMARY};
+                border-color: {AppConfig.DARK_BORDER};
+                border-bottom-color: {AppConfig.DARK_WIDGET_BACKGROUND}; 
+            }}
+            QTabBar::tab:!selected:hover {{
+                background-color: {AppConfig.DARK_BUTTON_HOVER};
+                color: {AppConfig.DARK_TEXT_PRIMARY};
+            }}
+            QTabWidget::tab-bar {{
+                alignment: left;
+                border: none; 
+                background-color: transparent; 
+                margin-bottom: 0px; 
+            }}
+        """
+
+    def _create_standard_button_layout(self) -> QHBoxLayout:
+        # (This method remains unchanged from version 1.3.17)
         button_layout = QHBoxLayout()
         button_layout.setSpacing(10)
-        add_button = QPushButton(add_text)
-        is_user_add_btn = "User" in add_text
-        add_button.setStyleSheet(
-            self._get_crud_button_style(is_add_button_specific_style=is_user_add_btn)
-        )
-        add_button.clicked.connect(add_slot)
-        if add_tooltip:
-            add_button.setToolTip(add_tooltip)
-        edit_button = QPushButton(f"Edit Selected {edit_text_base}")
-        edit_button.setStyleSheet(self._get_crud_button_style("default"))
-        edit_button.clicked.connect(edit_slot)
-        edit_button.setEnabled(False)
-        if edit_tooltip:
-            edit_button.setToolTip(edit_tooltip)
-        delete_button = QPushButton(f"Delete Selected {delete_text_base}")
-        delete_button.setStyleSheet(self._get_crud_button_style("delete"))
-        delete_button.clicked.connect(delete_slot)
-        delete_button.setEnabled(False)
-        if delete_tooltip:
-            delete_button.setToolTip(delete_tooltip)
-        button_layout.addWidget(add_button)
-        button_layout.addWidget(edit_button)
-        button_layout.addWidget(delete_button)
         button_layout.addStretch()
-        return button_layout, add_button, edit_button, delete_button
+        return button_layout
 
-    def _create_user_management_tab(
-        self,
-    ) -> QWidget:  # ... (method remains unchanged) ...
-        tab_widget = QWidget()
-        main_layout = QVBoxLayout(tab_widget)
-        main_layout.setContentsMargins(10, 10, 10, 10)
-        main_layout.setSpacing(10)
-        (
-            crud_buttons_layout,
-            self.add_user_button,
-            self.edit_user_button,
-            self.delete_user_button,
-        ) = self._create_crud_button_panel(
-            "➕ Add New User",
-            "User",
-            "User",
-            self._add_new_user,
-            self._edit_selected_user,
-            self._delete_selected_user,
-        )
-        main_layout.addLayout(crud_buttons_layout)
-        current_users_label = QLabel("Current Users:")
-        current_users_label.setStyleSheet(
-            f"color: {DARK_TEXT_SECONDARY}; font-weight: bold; padding-top: 10px;"
-        )
-        main_layout.addWidget(current_users_label)
-        self.users_list_widget = QListWidget()
-        self.users_list_widget.setStyleSheet(
-            f"QListWidget {{ border: 1px solid {DARK_BORDER}; border-radius: 4px; background-color: {DARK_WIDGET_BACKGROUND}; }} QListWidget::item {{ border-bottom: 1px solid {DARK_HEADER_FOOTER}; padding: 0px; }} QListWidget::item:selected {{ background-color: {QColor(DARK_PRIMARY_ACTION).lighter(130).name()}; }} QListWidget::item:selected:!active {{ background-color: {QColor(DARK_PRIMARY_ACTION).lighter(130).name()}; color: {DARK_TEXT_PRIMARY}; }} QListWidget::item:selected:active {{ background-color: {QColor(DARK_PRIMARY_ACTION).lighter(130).name()}; color: {DARK_TEXT_PRIMARY}; }}"
-        )
-        self.users_list_widget.setSelectionMode(
-            QAbstractItemView.SelectionMode.SingleSelection
-        )
-        self.users_list_widget.currentItemChanged.connect(self._on_user_selected)
-        main_layout.addWidget(self.users_list_widget)
-        return tab_widget
-
-    def _create_locations_tab(self) -> QWidget:  # ... (method remains unchanged) ...
-        tab_widget = QWidget()
-        main_layout = QVBoxLayout(tab_widget)
-        main_layout.setContentsMargins(10, 10, 10, 10)
-        main_layout.setSpacing(10)
-        (
-            buttons_layout,
-            self.add_location_button,
-            self.edit_location_button,
-            self.delete_location_button,
-        ) = self._create_crud_button_panel(
-            "➕ Add New Location",
-            "Location",
-            "Location",
-            self._add_new_location,
-            self._edit_selected_location,
-            self._delete_selected_location,
-        )
-        self.add_location_button.setStyleSheet(
-            self._get_crud_button_style(is_add_button_specific_style=True)
-        )
-        main_layout.addLayout(buttons_layout)
-        current_items_label = QLabel("Managed Locations:")
-        current_items_label.setStyleSheet(
-            f"color: {DARK_TEXT_SECONDARY}; font-weight: bold; padding-top: 10px;"
-        )
-        main_layout.addWidget(current_items_label)
-        self.locations_table = QTableWidget()
-        self.locations_table.setColumnCount(7)
-        self.locations_table.setHorizontalHeaderLabels(
-            ["Location Name", "Address", "City", "State", "Zip", "Country", "Active"]
-        )
-        self.locations_table.setSelectionBehavior(
-            QAbstractItemView.SelectionBehavior.SelectRows
-        )
-        self.locations_table.setEditTriggers(
-            QAbstractItemView.EditTrigger.NoEditTriggers
-        )
-        header = self.locations_table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(6, QHeaderView.ResizeMode.ResizeToContents)
-        selected_bg_color = QColor(DARK_PRIMARY_ACTION).lighter(130).name()
-        self.locations_table.setStyleSheet(
-            f"QTableWidget::item:selected {{ background-color: {selected_bg_color}; color: {DARK_TEXT_PRIMARY}; }}"
-        )
-        self.locations_table.itemSelectionChanged.connect(self._on_location_selected)
-        main_layout.addWidget(self.locations_table)
-        return tab_widget
-
-    def _create_charge_code_categories_tab(
-        self,
-    ) -> QWidget:  # ... (method remains unchanged) ...
-        tab_widget = QWidget()
-        main_layout = QVBoxLayout(tab_widget)
-        main_layout.setContentsMargins(10, 10, 10, 10)
-        main_layout.setSpacing(10)
-        ccc_buttons_layout = QHBoxLayout()
-        ccc_buttons_layout.setSpacing(10)
-        self.add_ccc_category_button = QPushButton("➕ Add Category (L1)")
-        self.add_ccc_category_button.setStyleSheet(
-            self._get_crud_button_style(is_add_button_specific_style=True)
-        )
-        self.add_ccc_category_button.setToolTip("Add a new top-level category.")
-        self.add_ccc_category_button.clicked.connect(self._add_new_main_category)
-        ccc_buttons_layout.addWidget(self.add_ccc_category_button)
-        self.add_ccc_process_button = QPushButton("➕ Add Process (L2)")
-        self.add_ccc_process_button.setStyleSheet(
-            self._get_crud_button_style(is_add_button_specific_style=True)
-        )
-        self.add_ccc_process_button.setToolTip(
-            "Add a new process under the selected Level 1 Category."
-        )
-        self.add_ccc_process_button.clicked.connect(self._add_new_process_to_selected)
-        self.add_ccc_process_button.setEnabled(False)
-        ccc_buttons_layout.addWidget(self.add_ccc_process_button)
-        self.edit_ccc_button = QPushButton("Edit Selected")
-        self.edit_ccc_button.setStyleSheet(self._get_crud_button_style())
-        self.edit_ccc_button.setToolTip(
-            "Edit the name or status of the selected Category/Process."
-        )
-        self.edit_ccc_button.clicked.connect(self._edit_selected_ccc)
-        self.edit_ccc_button.setEnabled(False)
-        ccc_buttons_layout.addWidget(self.edit_ccc_button)
-        self.toggle_ccc_status_button = QPushButton("Toggle Active Status")
-        self.toggle_ccc_status_button.setStyleSheet(
-            self._get_crud_button_style("default")
-        )
-        self.toggle_ccc_status_button.setToolTip(
-            "Toggle the active/inactive status of the selected Category/Process."
-        )
-        self.toggle_ccc_status_button.clicked.connect(self._toggle_selected_ccc_status)
-        self.toggle_ccc_status_button.setEnabled(False)
-        ccc_buttons_layout.addWidget(self.toggle_ccc_status_button)
-        self.delete_ccc_button = QPushButton("Delete Selected")
-        self.delete_ccc_button.setStyleSheet(self._get_crud_button_style("delete"))
-        self.delete_ccc_button.setToolTip(
-            "Delete the selected Category/Process (if not in use)."
-        )
-        self.delete_ccc_button.clicked.connect(self._delete_selected_ccc)
-        self.delete_ccc_button.setEnabled(False)
-        ccc_buttons_layout.addWidget(self.delete_ccc_button)
-        ccc_buttons_layout.addStretch()
-        main_layout.addLayout(ccc_buttons_layout)
-        ccc_filter_layout = QHBoxLayout()
-        ccc_filter_label = QLabel("Show:")
-        ccc_filter_label.setStyleSheet(
-            f"color: {DARK_TEXT_SECONDARY}; margin-right: 5px;"
-        )
-        self.ccc_active_radio = QRadioButton("Active")
-        self.ccc_inactive_radio = QRadioButton("Inactive")
-        self.ccc_all_radio = QRadioButton("All")
-        self.ccc_filter_button_group = QButtonGroup(self)
-        self.ccc_filter_button_group.addButton(self.ccc_active_radio)
-        self.ccc_filter_button_group.addButton(self.ccc_inactive_radio)
-        self.ccc_filter_button_group.addButton(self.ccc_all_radio)
-        self.ccc_active_radio.setChecked(True)
-        radio_style = f"QRadioButton {{ color: {DARK_TEXT_SECONDARY}; }}"
-        for radio in [
-            self.ccc_active_radio,
-            self.ccc_inactive_radio,
-            self.ccc_all_radio,
-        ]:
-            if radio:
-                radio.setStyleSheet(radio_style)
-                radio.toggled.connect(self._on_ccc_filter_changed)
-                ccc_filter_layout.addWidget(radio)
-        ccc_filter_layout.addStretch()
-        main_layout.addLayout(ccc_filter_layout)
-        tree_label = QLabel("Manage Categories & Processes:")
-        tree_label.setStyleSheet(
-            f"color: {DARK_TEXT_SECONDARY}; font-weight: bold; padding-top: 5px;"
-        )
-        main_layout.addWidget(tree_label)
-        self.charge_code_categories_tree = QTreeWidget()
-        self.charge_code_categories_tree.setColumnCount(3)
-        self.charge_code_categories_tree.setHeaderLabels(["Name", "Level", "Status"])
-        self.charge_code_categories_tree.setSelectionMode(
-            QAbstractItemView.SelectionMode.SingleSelection
-        )
-        self.charge_code_categories_tree.setStyleSheet(
-            f"QTreeWidget {{ border: 1px solid {DARK_BORDER}; border-radius: 4px; background-color: {DARK_WIDGET_BACKGROUND}; }} QTreeWidget::item:selected {{ background-color: {QColor(DARK_PRIMARY_ACTION).lighter(130).name()}; color: {DARK_TEXT_PRIMARY}; }} QHeaderView::section {{ background-color: {DARK_HEADER_FOOTER}; color: {DARK_TEXT_SECONDARY}; padding: 4px; border: 1px solid {DARK_BORDER}; font-weight: bold; }}"
-        )
-        self.charge_code_categories_tree.itemSelectionChanged.connect(
-            self._on_ccc_tree_item_selected
-        )
-        main_layout.addWidget(self.charge_code_categories_tree)
-        self._update_ccc_buttons_state()
-        return tab_widget
-
-    def _create_charge_codes_tab(
-        self,
-    ) -> QWidget:  # ... (method remains unchanged from v1.12.28) ...
-        tab_widget = QWidget()
-        main_layout = QVBoxLayout(tab_widget)
-        main_layout.setContentsMargins(10, 10, 10, 10)
-        main_layout.setSpacing(10)
-        (
-            buttons_layout,
-            self.add_charge_code_button,
-            self.edit_charge_code_button,
-            self.delete_charge_code_button,
-        ) = self._create_crud_button_panel(
-            "➕ Add New Charge Code",
-            "Charge Code",
-            "Charge Code",
-            self._add_new_charge_code,
-            self._edit_selected_charge_code,
-            self._delete_selected_charge_code,
-        )
-        self.add_charge_code_button.setStyleSheet(
-            self._get_crud_button_style(is_add_button_specific_style=True)
-        )
-        if self.delete_charge_code_button:
-            self.delete_charge_code_button.setText("Toggle Active Status")
-            self.delete_charge_code_button.setToolTip(
-                "Toggle the active/inactive status of the selected charge code"
+    def _apply_standard_button_style(
+        self, button: QPushButton, button_type: str = "standard"
+    ):
+        # (This method remains unchanged from version 1.3.17)
+        base_style = f"""
+            QPushButton {{
+                background-color: {AppConfig.DARK_BUTTON_BG};
+                color: {AppConfig.DARK_TEXT_PRIMARY};
+                border: 1px solid {AppConfig.DARK_BORDER};
+                border-radius: 4px;
+                padding: 8px 15px;
+                font-size: 12px;
+                font-weight: 500;
+                min-height: 28px;
+            }}
+            QPushButton:hover {{
+                background-color: {AppConfig.DARK_BUTTON_HOVER};
+            }}
+            QPushButton:disabled {{
+                background-color: {AppConfig.DARK_HEADER_FOOTER};
+                color: {AppConfig.DARK_TEXT_TERTIARY};
+            }}
+        """
+        if button_type == "add":
+            button.setStyleSheet(
+                base_style.replace(
+                    AppConfig.DARK_BUTTON_BG, AppConfig.DARK_SUCCESS_ACTION
+                )
+                + "color: white;"
             )
-        main_layout.addLayout(buttons_layout)
-        filter_layout = QHBoxLayout()
-        filter_label = QLabel("Show:")
-        filter_label.setStyleSheet(f"color: {DARK_TEXT_SECONDARY}; margin-right: 5px;")
-        self.cc_active_radio = QRadioButton("Active")
-        self.cc_inactive_radio = QRadioButton("Inactive")
-        self.cc_all_radio = QRadioButton("All")
-        self.cc_filter_button_group = QButtonGroup(self)
-        self.cc_filter_button_group.addButton(self.cc_active_radio)
-        self.cc_filter_button_group.addButton(self.cc_inactive_radio)
-        self.cc_filter_button_group.addButton(self.cc_all_radio)
-        self.cc_active_radio.setChecked(True)
-        radio_style = f"QRadioButton {{ color: {DARK_TEXT_SECONDARY}; }}"
-        for radio in [self.cc_active_radio, self.cc_inactive_radio, self.cc_all_radio]:
-            if radio:
-                radio.setStyleSheet(radio_style)
-                radio.toggled.connect(self._on_charge_code_filter_changed)
-                filter_layout.addWidget(radio)
-        filter_layout.addStretch()
-        main_layout.addLayout(filter_layout)
-        current_items_label = QLabel("Managed Charge Codes:")
-        current_items_label.setStyleSheet(
-            f"color: {DARK_TEXT_SECONDARY}; font-weight: bold; padding-top: 5px;"
+        elif button_type == "edit":
+            button.setStyleSheet(
+                base_style.replace(
+                    AppConfig.DARK_BUTTON_BG, AppConfig.DARK_PRIMARY_ACTION
+                )
+                + "color: white;"
+            )
+        elif button_type == "delete" or button_type == "toggle_inactive":
+            button.setStyleSheet(
+                base_style.replace(
+                    AppConfig.DARK_BUTTON_BG, AppConfig.DARK_DANGER_ACTION
+                )
+                + "color: white;"
+            )
+        else:
+            button.setStyleSheet(base_style)
+
+    def _setup_connections(self):
+        # (This method remains unchanged from version 1.3.17)
+        self.logger.debug("Setting up connections for UserManagementScreen.")
+        if self.tab_widget:
+            self.tab_widget.currentChanged.connect(self._on_tab_changed)
+
+        if self.add_user_btn:
+            self.add_user_btn.clicked.connect(self._add_user)
+        if self.edit_user_btn:
+            self.edit_user_btn.clicked.connect(self._edit_selected_user)
+        if self.toggle_user_active_btn:
+            self.toggle_user_active_btn.clicked.connect(
+                self._toggle_selected_user_active_status
+            )
+        if self.users_table:
+            self.users_table.itemSelectionChanged.connect(
+                self._update_user_action_buttons_state
+            )
+
+        if self.add_location_btn:
+            self.add_location_btn.clicked.connect(self._add_location)
+        if self.edit_location_btn:
+            self.edit_location_btn.clicked.connect(self._edit_selected_location)
+        if self.toggle_location_active_btn:
+            self.toggle_location_active_btn.clicked.connect(
+                self._toggle_selected_location_active_status
+            )
+        if self.locations_table:
+            self.locations_table.itemSelectionChanged.connect(
+                self._update_location_action_buttons_state
+            )
+
+        if self.add_category_btn:
+            self.add_category_btn.clicked.connect(self._add_category_or_process)
+        if self.add_process_btn:
+            self.add_process_btn.clicked.connect(
+                lambda: self._add_category_or_process(is_process=True)
+            )
+        if self.edit_category_process_btn:
+            self.edit_category_process_btn.clicked.connect(
+                self._edit_selected_category_process
+            )
+        if self.toggle_category_process_active_btn:
+            self.toggle_category_process_active_btn.clicked.connect(
+                self._toggle_selected_category_process_active_status
+            )
+        if self.delete_category_process_btn:
+            self.delete_category_process_btn.clicked.connect(
+                self._delete_selected_category_process
+            )
+        if self.categories_tree:
+            self.categories_tree.itemSelectionChanged.connect(
+                self._update_category_action_buttons_state
+            )
+        if self.category_filter_combo:
+            self.category_filter_combo.currentIndexChanged.connect(
+                self._on_category_filter_changed
+            )
+
+        if self.add_charge_code_btn:
+            self.add_charge_code_btn.clicked.connect(self._add_charge_code)
+        if self.edit_charge_code_btn:
+            self.edit_charge_code_btn.clicked.connect(self._edit_selected_charge_code)
+        if self.toggle_charge_code_active_btn:
+            self.toggle_charge_code_active_btn.clicked.connect(
+                self._toggle_selected_charge_code_active_status
+            )
+        if self.charge_codes_table:
+            self.charge_codes_table.itemSelectionChanged.connect(
+                self._update_charge_code_action_buttons_state
+            )
+        if self.charge_code_status_filter_combo:
+            self.charge_code_status_filter_combo.currentIndexChanged.connect(
+                self._on_charge_code_filter_changed
+            )
+
+        if self.add_owner_btn:
+            self.add_owner_btn.clicked.connect(self._add_owner)
+        if self.edit_owner_btn:
+            self.edit_owner_btn.clicked.connect(self._edit_selected_owner)
+        if self.toggle_owner_active_btn:
+            self.toggle_owner_active_btn.clicked.connect(
+                self._toggle_selected_owner_active_status
+            )
+        if self.owners_table:
+            self.owners_table.itemSelectionChanged.connect(
+                self._update_owner_action_buttons_state
+            )
+
+        self.logger.debug("Connections setup complete.")
+
+    def _on_tab_changed(self, index: int):
+        # (This method remains unchanged from version 1.3.17)
+        self.logger.info(
+            f"Tab changed to index: {index}, new tab title: {self.tab_widget.tabText(index) if self.tab_widget else 'N/A'}"
         )
-        main_layout.addWidget(current_items_label)
-        self.charge_codes_table = QTableWidget()
-        self.charge_codes_table.setColumnCount(6)
-        self.charge_codes_table.setHorizontalHeaderLabels(
+        self._refresh_current_tab_data()
+
+    def _refresh_current_tab_data(self, force_reload: bool = False):
+        # (This method remains unchanged from version 1.3.17)
+        if not self.tab_widget:
+            self.logger.warning("Tab widget not available for refresh.")
+            return
+        current_index = self.tab_widget.currentIndex()
+        self.logger.debug(f"Refreshing data for tab index: {current_index}")
+        if current_index == self.USER_TAB_INDEX:
+            self.load_users_data()
+        elif current_index == self.LOCATION_TAB_INDEX:
+            self.load_locations_data()
+        elif current_index == self.CATEGORY_PROCESS_TAB_INDEX:
+            self.load_categories_processes_data()
+        elif current_index == self.CHARGE_CODE_TAB_INDEX:
+            self.load_charge_codes_data()
+        elif current_index == self.OWNER_TAB_INDEX:
+            self.load_owners_data()
+        else:
+            self.logger.warning(
+                f"No data loading action defined for tab index {current_index}"
+            )
+
+    def _create_table_widget(self, headers: List[str]) -> QTableWidget:
+        # (This method remains unchanged from version 1.3.17)
+        table = QTableWidget()
+        table.setColumnCount(len(headers))
+        table.setHorizontalHeaderLabels(headers)
+        table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        table.verticalHeader().setVisible(False)
+        table.setShowGrid(True)
+        table.setStyleSheet(
+            f"""
+            QTableWidget {{
+                gridline-color: {AppConfig.DARK_BORDER};
+                background-color: {AppConfig.DARK_INPUT_FIELD_BACKGROUND};
+                color: {AppConfig.DARK_TEXT_PRIMARY};
+                border: 1px solid {AppConfig.DARK_BORDER};
+                border-radius: 4px;
+            }}
+            QHeaderView::section {{
+                background-color: {AppConfig.DARK_HEADER_FOOTER};
+                color: {AppConfig.DARK_TEXT_SECONDARY};
+                padding: 5px;
+                border: none; 
+                border-bottom: 1px solid {AppConfig.DARK_BORDER};
+                font-weight: 500; 
+            }}
+            QTableWidget::item {{ padding: 5px; }}
+            QTableWidget::item:selected {{
+                background-color: {AppConfig.DARK_HIGHLIGHT_BG};
+                color: {AppConfig.DARK_HIGHLIGHT_TEXT};
+            }}
+        """
+        )
+        table.horizontalHeader().setStretchLastSection(True)
+        for i in range(len(headers) - 1):
+            table.horizontalHeader().setSectionResizeMode(
+                i, QHeaderView.ResizeMode.ResizeToContents
+            )
+        return table
+
+    # --- Users Tab Methods (unchanged from v1.3.17) ---
+    def _create_users_tab(self) -> QWidget:
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setContentsMargins(15, 15, 15, 15)
+        layout.setSpacing(10)
+        button_layout = self._create_standard_button_layout()
+        self.add_user_btn = QPushButton("➕ Add New User")
+        self._apply_standard_button_style(self.add_user_btn, "add")
+        self.edit_user_btn = QPushButton("✏️ Edit Selected User")
+        self._apply_standard_button_style(self.edit_user_btn, "edit")
+        self.toggle_user_active_btn = QPushButton("🔄 Toggle Active Status")
+        self._apply_standard_button_style(self.toggle_user_active_btn)
+        button_layout.addWidget(self.add_user_btn)
+        button_layout.addWidget(self.edit_user_btn)
+        button_layout.addWidget(self.toggle_user_active_btn)
+        button_layout.addStretch(1)
+        layout.addLayout(button_layout)
+        self.users_table = self._create_table_widget(
+            ["Login ID", "Full Name", "Email", "Roles", "Active", "Last Login"]
+        )
+        layout.addWidget(self.users_table)
+        self._update_user_action_buttons_state()
+        return tab
+
+    def load_users_data(self):
+        self.logger.info("Loading users data for tab...")
+        if not self.users_table:
+            self.logger.error("Users table not initialized.")
+            return
+        try:
+            users = self.user_controller.get_all_users_with_roles()
+            self.users_table.setRowCount(0)
+            for user_obj in users:
+                row_position = self.users_table.rowCount()
+                self.users_table.insertRow(row_position)
+                self.users_table.setItem(
+                    row_position, 0, QTableWidgetItem(user_obj.user_id)
+                )
+                self.users_table.setItem(
+                    row_position, 1, QTableWidgetItem(user_obj.user_name or "")
+                )
+                self.users_table.setItem(
+                    row_position, 2, QTableWidgetItem(user_obj.email or "")
+                )
+                roles_str = ", ".join([role.name for role in user_obj.roles])
+                self.users_table.setItem(row_position, 3, QTableWidgetItem(roles_str))
+                active_str = "Yes" if user_obj.is_active else "No"
+                self.users_table.setItem(row_position, 4, QTableWidgetItem(active_str))
+                last_login_str = (
+                    user_obj.last_login.strftime("%Y-%m-%d %H:%M")
+                    if user_obj.last_login
+                    else "Never"
+                )
+                self.users_table.setItem(
+                    row_position, 5, QTableWidgetItem(last_login_str)
+                )
+                self.users_table.item(row_position, 0).setData(
+                    Qt.ItemDataRole.UserRole, user_obj.user_id
+                )
+            self.logger.info(f"Loaded {len(users)} users.")
+        except Exception as e:
+            self.logger.error(f"Error loading users: {e}", exc_info=True)
+            self.show_error("Load Error", f"Could not load users: {e}")
+        self._update_user_action_buttons_state()
+
+    def _add_user(self):
+        dialog = AddEditUserDialog(
+            parent=self,
+            controller=self.user_controller,
+            current_user_id=self.current_user_id,
+        )
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self.load_users_data()
+            self.entity_updated.emit("user")
+
+    def _edit_selected_user(self):
+        if not self.users_table or not self.users_table.currentItem():
+            self.show_info("Edit User", "Please select a user to edit.")
+            return
+        selected_row = self.users_table.currentRow()
+        user_id_item = self.users_table.item(selected_row, 0)
+        if not user_id_item:
+            self.show_error("Error", "Could not retrieve user ID for selected row.")
+            return
+        user_id = user_id_item.data(Qt.ItemDataRole.UserRole) or user_id_item.text()
+        user_to_edit = self.user_controller.get_user_by_id(user_id)
+        if user_to_edit:
+            dialog = AddEditUserDialog(
+                parent=self,
+                controller=self.user_controller,
+                user=user_to_edit,
+                current_user_id=self.current_user_id,
+            )
+            if dialog.exec() == QDialog.DialogCode.Accepted:
+                self.load_users_data()
+                self.entity_updated.emit("user")
+        else:
+            self.show_error("Error", f"User with ID '{user_id}' not found.")
+            self.load_users_data()
+
+    def _toggle_selected_user_active_status(self):
+        if not self.users_table or not self.users_table.currentItem():
+            self.show_info("Toggle Active Status", "Please select a user.")
+            return
+        selected_row = self.users_table.currentRow()
+        user_id_item = self.users_table.item(selected_row, 0)
+        user_id = user_id_item.data(Qt.ItemDataRole.UserRole) or user_id_item.text()
+        user_obj = self.user_controller.get_user_by_id(user_id)
+        if not user_obj:
+            self.show_error("Error", f"User {user_id} not found.")
+            return
+        action = "deactivate" if user_obj.is_active else "activate"
+        name_display = user_obj.user_name or user_obj.user_id
+        if self.show_question(
+            f"Confirm {action.capitalize()}",
+            f"Are you sure you want to {action} user '{name_display}'?",
+        ):
+            if user_obj.user_id == self.current_user_id and action == "deactivate":
+                self.show_warning(
+                    "Action Denied", "You cannot deactivate your own account."
+                )
+                return
+            success, message = self.user_controller.toggle_user_active_status(
+                user_id, self.current_user_id
+            )
+            if success:
+                self.show_info("Success", message)
+                self.load_users_data()
+                self.entity_updated.emit("user")
+            else:
+                self.show_error("Error", message)
+
+    def _update_user_action_buttons_state(self):
+        has_selection = (
+            self.users_table is not None and self.users_table.currentItem() is not None
+        )
+        if self.edit_user_btn:
+            self.edit_user_btn.setEnabled(has_selection)
+        if self.toggle_user_active_btn:
+            self.toggle_user_active_btn.setEnabled(has_selection)
+        if has_selection and self.toggle_user_active_btn and self.users_table:
+            selected_row = self.users_table.currentRow()
+            user_id_item = self.users_table.item(selected_row, 0)
+            user_id = user_id_item.data(Qt.ItemDataRole.UserRole) or user_id_item.text()
+            user_obj = self.user_controller.get_user_by_id(user_id)
+            if user_obj:
+                action_text = "Deactivate" if user_obj.is_active else "Activate"
+                self.toggle_user_active_btn.setText(f"🔄 {action_text} Selected")
+                self._apply_standard_button_style(
+                    self.toggle_user_active_btn,
+                    "toggle_inactive" if user_obj.is_active else "standard",
+                )
+
+    # --- Locations Tab Methods (unchanged from v1.3.17) ---
+    def _create_locations_tab(self) -> QWidget:
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setContentsMargins(15, 15, 15, 15)
+        layout.setSpacing(10)
+        button_layout = self._create_standard_button_layout()
+        self.add_location_btn = QPushButton("➕ Add New Location")
+        self._apply_standard_button_style(self.add_location_btn, "add")
+        self.edit_location_btn = QPushButton("✏️ Edit Selected Location")
+        self._apply_standard_button_style(self.edit_location_btn, "edit")
+        self.toggle_location_active_btn = QPushButton("🔄 Toggle Active Status")
+        self._apply_standard_button_style(self.toggle_location_active_btn)
+        button_layout.addWidget(self.add_location_btn)
+        button_layout.addWidget(self.edit_location_btn)
+        button_layout.addWidget(self.toggle_location_active_btn)
+        button_layout.addStretch(1)
+        layout.addLayout(button_layout)
+        self.locations_table = self._create_table_widget(
+            ["Name", "Address", "City", "State", "Zip", "Contact", "Active"]
+        )
+        layout.addWidget(self.locations_table)
+        self._update_location_action_buttons_state()
+        return tab
+
+    def load_locations_data(self):
+        self.logger.info("Loading locations data for tab...")
+        if not self.locations_table:
+            self.logger.error("Locations table not initialized.")
+            return
+        try:
+            locations = self.location_controller.get_all_locations_detailed()
+            self.locations_table.setRowCount(0)
+            for loc_obj in locations:
+                row_position = self.locations_table.rowCount()
+                self.locations_table.insertRow(row_position)
+                self.locations_table.setItem(
+                    row_position, 0, QTableWidgetItem(loc_obj.location_name)
+                )
+                address_parts = [loc_obj.address_line1, loc_obj.address_line2]
+                self.locations_table.setItem(
+                    row_position,
+                    1,
+                    QTableWidgetItem(" ".join(filter(None, address_parts))),
+                )
+                self.locations_table.setItem(
+                    row_position, 2, QTableWidgetItem(loc_obj.city or "")
+                )
+                self.locations_table.setItem(
+                    row_position, 3, QTableWidgetItem(loc_obj.state_code or "")
+                )
+                self.locations_table.setItem(
+                    row_position, 4, QTableWidgetItem(loc_obj.zip_code or "")
+                )
+                self.locations_table.setItem(
+                    row_position, 5, QTableWidgetItem(loc_obj.contact_person or "")
+                )
+                self.locations_table.setItem(
+                    row_position,
+                    6,
+                    QTableWidgetItem("Yes" if loc_obj.is_active else "No"),
+                )
+                self.locations_table.item(row_position, 0).setData(
+                    Qt.ItemDataRole.UserRole, loc_obj.location_id
+                )
+            self.logger.info(
+                f"Loaded {len(locations)} locations with detailed address."
+            )
+        except Exception as e:
+            self.logger.error(f"Error loading locations: {e}", exc_info=True)
+            self.show_error("Load Error", f"Could not load locations: {e}")
+        self._update_location_action_buttons_state()
+
+    def _add_location(self):
+        dialog = AddEditLocationDialog(
+            parent=self,
+            controller=self.location_controller,
+            current_user_id=self.current_user_id,
+        )
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self.load_locations_data()
+            self.entity_updated.emit("location")
+
+    def _edit_selected_location(self):
+        if not self.locations_table or not self.locations_table.currentItem():
+            self.show_info("Edit Location", "Please select a location to edit.")
+            return
+        selected_row = self.locations_table.currentRow()
+        location_id_item = self.locations_table.item(selected_row, 0)
+        location_id = (
+            location_id_item.data(Qt.ItemDataRole.UserRole) or location_id_item.text()
+        )
+        location_to_edit = self.location_controller.get_location_by_id(location_id)
+        if location_to_edit:
+            dialog = AddEditLocationDialog(
+                parent=self,
+                controller=self.location_controller,
+                location=location_to_edit,
+                current_user_id=self.current_user_id,
+            )
+            if dialog.exec() == QDialog.DialogCode.Accepted:
+                self.load_locations_data()
+                self.entity_updated.emit("location")
+        else:
+            self.show_error("Error", f"Location with ID '{location_id}' not found.")
+            self.load_locations_data()
+
+    def _toggle_selected_location_active_status(self):
+        if not self.locations_table or not self.locations_table.currentItem():
+            self.show_info("Toggle Active Status", "Please select a location.")
+            return
+        selected_row = self.locations_table.currentRow()
+        location_id_item = self.locations_table.item(selected_row, 0)
+        location_id = (
+            location_id_item.data(Qt.ItemDataRole.UserRole) or location_id_item.text()
+        )
+        loc_obj = self.location_controller.get_location_by_id(location_id)
+        if not loc_obj:
+            self.show_error("Error", f"Location {location_id} not found.")
+            return
+        action = "deactivate" if loc_obj.is_active else "activate"
+        if self.show_question(
+            f"Confirm {action.capitalize()}",
+            f"Are you sure you want to {action} location '{loc_obj.location_name}'?",
+        ):
+            success, message = self.location_controller.toggle_location_status(
+                location_id, self.current_user_id
+            )
+            if success:
+                self.show_info("Success", message)
+                self.load_locations_data()
+                self.entity_updated.emit("location")
+            else:
+                self.show_error("Error", message)
+
+    def _update_location_action_buttons_state(self):
+        has_selection = (
+            self.locations_table is not None
+            and self.locations_table.currentItem() is not None
+        )
+        if self.edit_location_btn:
+            self.edit_location_btn.setEnabled(has_selection)
+        if self.toggle_location_active_btn:
+            self.toggle_location_active_btn.setEnabled(has_selection)
+        if has_selection and self.toggle_location_active_btn and self.locations_table:
+            selected_row = self.locations_table.currentRow()
+            location_id_item = self.locations_table.item(selected_row, 0)
+            loc_id = (
+                location_id_item.data(Qt.ItemDataRole.UserRole)
+                or location_id_item.text()
+            )
+            loc_obj = self.location_controller.get_location_by_id(loc_id)
+            if loc_obj:
+                action_text = "Deactivate" if loc_obj.is_active else "Activate"
+                self.toggle_location_active_btn.setText(f"🔄 {action_text} Selected")
+                self._apply_standard_button_style(
+                    self.toggle_location_active_btn,
+                    "toggle_inactive" if loc_obj.is_active else "standard",
+                )
+
+    # --- Charge Codes Tab Methods (unchanged from v1.3.17) ---
+    def _create_charge_codes_tab(self) -> QWidget:
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setContentsMargins(15, 15, 15, 15)
+        layout.setSpacing(10)
+        top_bar_layout = QHBoxLayout()
+        self.add_charge_code_btn = QPushButton("➕ Add New Charge Code")
+        self._apply_standard_button_style(self.add_charge_code_btn, "add")
+        self.edit_charge_code_btn = QPushButton("✏️ Edit Selected")
+        self._apply_standard_button_style(self.edit_charge_code_btn, "edit")
+        self.toggle_charge_code_active_btn = QPushButton("🔄 Toggle Active Status")
+        self._apply_standard_button_style(self.toggle_charge_code_active_btn)
+        top_bar_layout.addWidget(self.add_charge_code_btn)
+        top_bar_layout.addWidget(self.edit_charge_code_btn)
+        top_bar_layout.addWidget(self.toggle_charge_code_active_btn)
+        top_bar_layout.addStretch(1)
+        top_bar_layout.addWidget(QLabel("Filter Status:"))
+        self.charge_code_status_filter_combo = QComboBox()
+        self.charge_code_status_filter_combo.addItems(["Active", "Inactive", "All"])
+        self.charge_code_status_filter_combo.setCurrentText(
+            self._active_filters.get(self.CHARGE_CODE_TAB_INDEX, "active")
+        )
+        self.charge_code_status_filter_combo.setStyleSheet(self.get_form_input_style())
+        top_bar_layout.addWidget(self.charge_code_status_filter_combo)
+        layout.addLayout(top_bar_layout)
+        self.charge_codes_table = self._create_table_widget(
             [
                 "Code",
                 "Alternate Code",
@@ -676,1017 +803,613 @@ class UserManagementScreen(BaseView):
                 "Active",
             ]
         )
-        self.charge_codes_table.setSelectionBehavior(
-            QAbstractItemView.SelectionBehavior.SelectRows
-        )
-        self.charge_codes_table.setEditTriggers(
-            QAbstractItemView.EditTrigger.NoEditTriggers
-        )
-        header = self.charge_codes_table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Interactive)
-        header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)
-        selected_bg_color = QColor(DARK_PRIMARY_ACTION).lighter(130).name()
-        text_color = DARK_TEXT_PRIMARY
-        self.charge_codes_table.setStyleSheet(
-            f"QTableWidget::item:selected {{ background-color: {selected_bg_color}; color: {text_color}; }}"
-        )
-        self.charge_codes_table.itemSelectionChanged.connect(
-            self._on_charge_code_selected
-        )
-        main_layout.addWidget(self.charge_codes_table)
-        return tab_widget
-
-    @Slot()
-    def _on_charge_code_filter_changed(self):  # ... (method remains unchanged) ...
-        sender = self.sender()
-        if sender and isinstance(sender, QRadioButton) and sender.isChecked():
-            self.load_charge_codes_data()
-
-    @Slot()
-    def _on_ccc_filter_changed(self):  # ... (method remains unchanged) ...
-        sender = self.sender()
-        if sender and isinstance(sender, QRadioButton) and sender.isChecked():
-            self.load_charge_code_categories_data()
-
-    def _create_owners_tab(self) -> QWidget:  # ... (method remains unchanged) ...
-        tab_widget = QWidget()
-        main_layout = QVBoxLayout(tab_widget)
-        main_layout.setContentsMargins(10, 10, 10, 10)
-        main_layout.setSpacing(10)
-        (
-            buttons_layout,
-            self.add_owner_button,
-            self.edit_owner_button,
-            self.delete_owner_button,
-        ) = self._create_crud_button_panel(
-            "➕ Add New Owner",
-            "Owner",
-            "Owner",
-            self._add_new_owner,
-            self._edit_selected_owner,
-            self._delete_selected_owner,
-        )
-        self.add_owner_button.setStyleSheet(
-            self._get_crud_button_style(is_add_button_specific_style=True)
-        )
-        main_layout.addLayout(buttons_layout)
-        if self.add_owner_button:
-            self.add_owner_button.setEnabled(True)
-        if self.edit_owner_button:
-            self.edit_owner_button.setEnabled(True)
-        current_items_label = QLabel("Master Owner List:")
-        current_items_label.setStyleSheet(
-            f"color: {DARK_TEXT_SECONDARY}; font-weight: bold; padding-top: 10px;"
-        )
-        main_layout.addWidget(current_items_label)
-        self.owners_table = QTableWidget()
-        self.owners_table.setColumnCount(4)
-        self.owners_table.setHorizontalHeaderLabels(
-            ["Account #", "Owner Name", "Primary Phone", "Active"]
-        )
-        self.owners_table.setSelectionBehavior(
-            QAbstractItemView.SelectionBehavior.SelectRows
-        )
-        self.owners_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        header = self.owners_table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
-        selected_bg_color = QColor(DARK_PRIMARY_ACTION).lighter(130).name()
-        self.owners_table.setStyleSheet(
-            f"QTableWidget::item:selected {{ background-color: {selected_bg_color}; color: {DARK_TEXT_PRIMARY}; }}"
-        )
-        self.owners_table.itemSelectionChanged.connect(self._on_master_owner_selected)
-        main_layout.addWidget(self.owners_table)
-        return tab_widget
-
-    def _update_crud_button_states(self):  # ... (method remains unchanged) ...
-        current_tab_index = (
-            self.main_tab_widget.currentIndex() if self.main_tab_widget else -1
-        )
-        current_tab_text = (
-            self.main_tab_widget.tabText(current_tab_index)
-            if self.main_tab_widget
-            else ""
-        )
-        user_selected = self.current_selected_user_id is not None
-        location_selected = self.current_selected_location_id is not None
-        charge_code_selected = self.current_selected_charge_code_id is not None
-        owner_selected = self.current_selected_owner_id is not None
-        is_users_tab = "Manage Users" in current_tab_text
-        is_locations_tab = "Manage Locations" in current_tab_text
-        is_charge_codes_tab = "Manage Charge Codes" in current_tab_text
-        is_owners_tab = "Manage Owner List" in current_tab_text
-        is_ccc_tab = "Manage Categories/Processes" in current_tab_text
-        if self.add_user_button:
-            self.add_user_button.setEnabled(is_users_tab)
-        if self.edit_user_button:
-            self.edit_user_button.setEnabled(is_users_tab and user_selected)
-        if self.delete_user_button:
-            self.delete_user_button.setEnabled(is_users_tab and user_selected)
-        if self.add_location_button:
-            self.add_location_button.setEnabled(is_locations_tab)
-        if self.edit_location_button:
-            self.edit_location_button.setEnabled(is_locations_tab and location_selected)
-        if self.delete_location_button:
-            self.delete_location_button.setEnabled(
-                is_locations_tab and location_selected
+        if self.charge_codes_table:
+            self.charge_codes_table.horizontalHeader().setSectionResizeMode(
+                3, QHeaderView.ResizeMode.Stretch
             )
-        if self.add_charge_code_button:
-            self.add_charge_code_button.setEnabled(is_charge_codes_tab)
-        if self.edit_charge_code_button:
-            self.edit_charge_code_button.setEnabled(
-                is_charge_codes_tab and charge_code_selected
-            )
-        if self.delete_charge_code_button:
-            self.delete_charge_code_button.setEnabled(
-                is_charge_codes_tab and charge_code_selected
-            )
-        if self.add_owner_button:
-            self.add_owner_button.setEnabled(is_owners_tab)
-        if self.edit_owner_button:
-            self.edit_owner_button.setEnabled(is_owners_tab and owner_selected)
-        if self.delete_owner_button:
-            self.delete_owner_button.setEnabled(is_owners_tab and owner_selected)
-        self._update_ccc_buttons_state(is_active_tab=is_ccc_tab)
+            for i in [0, 1, 2, 4, 5]:
+                self.charge_codes_table.horizontalHeader().setSectionResizeMode(
+                    i, QHeaderView.ResizeMode.ResizeToContents
+                )
+        layout.addWidget(self.charge_codes_table)
+        self._update_charge_code_action_buttons_state()
+        return tab
 
-    def load_all_data(self):  # ... (method remains unchanged) ...
-        self.logger.info(
-            "UserManagementScreen: Loading initial data for the first tab."
-        )
-        if self.main_tab_widget and self.main_tab_widget.count() > 0:
-            self._on_tab_changed(self.main_tab_widget.currentIndex())
-        else:
-            self.logger.warning(
-                "load_all_data: main_tab_widget not ready or has no tabs."
-            )
-        self.update_status("User Management Ready.")
-
-    def load_users_data(self):  # ... (method remains unchanged) ...
-        self.logger.info("Loading users data for User Management tab (custom list)...")
-        if not self.users_list_widget:
-            self.logger.warning("User list widget not ready.")
-            return
-        try:
-            users = self.user_controller.get_all_users(include_inactive=True)
-            self.users_list_widget.clear()
-            for user_model_instance in users:
-                list_item = QListWidgetItem(self.users_list_widget)
-                item_widget = UserListItemWidget(
-                    user_model_instance, self.users_list_widget
-                )
-                list_item.setSizeHint(item_widget.sizeHint())
-                list_item.setData(Qt.ItemDataRole.UserRole, user_model_instance.user_id)
-                self.users_list_widget.addItem(list_item)
-                self.users_list_widget.setItemWidget(list_item, item_widget)
-            self.logger.info(f"Loaded {len(users)} users into custom list.")
-        except Exception as e:
-            self.logger.error(
-                f"Error loading user data into custom list: {e}", exc_info=True
-            )
-            self.show_error("Load Error", f"Could not load users: {e}")
-        self.current_selected_user_id = None
-        self._update_crud_button_states()
-
-    def load_locations_data(self):  # ... (method remains unchanged) ...
-        self.logger.info("Loading locations data for tab...")
-        if not self.locations_table:
-            self.logger.warning("Locations table not ready.")
-            return
-        try:
-            locations = self.location_controller.get_all_locations(status_filter="all")
-            self.locations_table.setRowCount(0)
-            self.locations_table.setSortingEnabled(False)
-            for r, loc_obj in enumerate(locations):
-                self.locations_table.insertRow(r)
-                self.locations_table.setItem(
-                    r, 0, QTableWidgetItem(loc_obj.location_name or "N/A")
-                )
-                self.locations_table.item(r, 0).setData(
-                    Qt.ItemDataRole.UserRole, loc_obj.location_id
-                )
-                self.locations_table.setItem(
-                    r, 1, QTableWidgetItem(loc_obj.address_line1 or "")
-                )
-                self.locations_table.setItem(r, 2, QTableWidgetItem(loc_obj.city or ""))
-                state_name = (
-                    loc_obj.state.state_name
-                    if loc_obj.state
-                    else (loc_obj.state_code or "")
-                )
-                self.locations_table.setItem(r, 3, QTableWidgetItem(state_name))
-                self.locations_table.setItem(
-                    r, 4, QTableWidgetItem(loc_obj.zip_code or "")
-                )
-                self.locations_table.setItem(
-                    r, 5, QTableWidgetItem(loc_obj.country_code or "")
-                )
-                self.locations_table.setItem(
-                    r, 6, QTableWidgetItem("Yes" if loc_obj.is_active else "No")
-                )
-            self.locations_table.setSortingEnabled(True)
-            self.locations_table.resizeColumnsToContents()
-            self.locations_table.setColumnWidth(0, 200)
-            self.locations_table.setColumnWidth(2, 150)
-            self.logger.info(
-                f"Loaded {len(locations)} locations with detailed address."
-            )
-        except Exception as e:
-            self.logger.error(f"Error loading locations: {e}", exc_info=True)
-            self.show_error("Load Error", f"Could not load locations: {e}")
-        self.current_selected_location_id = None
-        self._update_crud_button_states()
-
-    def load_charge_codes_data(self):  # MODIFIED for new column order
+    def load_charge_codes_data(self):
         self.logger.info("Loading charge codes data for tab...")
-        if not self.charge_codes_table:
-            self.logger.warning("Charge codes table not ready.")
+        if not self.charge_codes_table or not self.charge_code_status_filter_combo:
+            self.logger.error("Charge codes table or filter combo not initialized.")
             return
-        status_filter = "all"
-        if self.cc_active_radio and self.cc_active_radio.isChecked():
-            status_filter = "active"
-        elif self.cc_inactive_radio and self.cc_inactive_radio.isChecked():
-            status_filter = "inactive"
-        self.logger.info(f"Charge code status filter: {status_filter}")
         try:
-            ccs = self.charge_code_controller.get_all_charge_codes(
-                status_filter=status_filter
+            status_filter = self.charge_code_status_filter_combo.currentText().lower()
+            self.logger.info(f"Charge code status filter: {status_filter}")
+            self._active_filters[self.CHARGE_CODE_TAB_INDEX] = status_filter
+            charge_codes = (
+                self.charge_code_controller.get_all_charge_codes_with_category_path(
+                    status_filter=status_filter
+                )
             )
             self.charge_codes_table.setRowCount(0)
-            self.charge_codes_table.setSortingEnabled(False)
-            for r, c_obj in enumerate(ccs):
-                self.charge_codes_table.insertRow(r)
-                # New column order: Code (0), Alternate Code (1), Category (2), Description (3), Std. Price (4), Active (5)
-                self.charge_codes_table.setItem(r, 0, QTableWidgetItem(c_obj.code))
-                self.charge_codes_table.item(r, 0).setData(
-                    Qt.ItemDataRole.UserRole, c_obj.charge_code_id
+            for c_obj in charge_codes:
+                row_position = self.charge_codes_table.rowCount()
+                self.charge_codes_table.insertRow(row_position)
+                self.charge_codes_table.setItem(
+                    row_position, 0, QTableWidgetItem(c_obj.code)
                 )
                 self.charge_codes_table.setItem(
-                    r, 1, QTableWidgetItem(c_obj.alternate_code or "")
+                    row_position, 1, QTableWidgetItem(c_obj.alternate_code or "")
                 )
-
-                category_display_text = "N/A"
-                if c_obj.category_id is not None:
-                    if self.charge_code_controller:
-                        path_objects = self.charge_code_controller.get_category_path(
-                            c_obj.category_id
-                        )
-                        if path_objects:
-                            category_display_text = " > ".join(
-                                cat.name
-                                for cat in path_objects
-                                if cat and hasattr(cat, "name")
-                            )
-                        else:
-                            if c_obj.category and hasattr(c_obj.category, "name"):
-                                category_display_text = c_obj.category.name
-                                self.logger.warning(
-                                    f"Could not get category path for Charge Code '{c_obj.code}' (ID {c_obj.category_id}), using direct name: {category_display_text}"
-                                )
-                            else:
-                                category_display_text = (
-                                    f"Error: Cat. ID {c_obj.category_id} unresolvable"
-                                )
-                    else:
-                        category_display_text = "Error: Controller missing"
-                elif c_obj.category and hasattr(c_obj.category, "name"):
-                    category_display_text = c_obj.category.name
-                    self.logger.warning(
-                        f"Charge Code '{c_obj.code}' has no category_id but category object '{c_obj.category.name}' exists."
-                    )
+                category_display = getattr(c_obj, "category_path_display", "N/A")
                 self.charge_codes_table.setItem(
-                    r, 2, QTableWidgetItem(category_display_text)
-                )
-
-                self.charge_codes_table.setItem(
-                    r, 3, QTableWidgetItem(c_obj.description or "")
+                    row_position, 2, QTableWidgetItem(category_display)
                 )
                 self.charge_codes_table.setItem(
-                    r,
-                    4,
-                    QTableWidgetItem(
-                        f"{c_obj.standard_charge:.2f}"
-                        if c_obj.standard_charge is not None
-                        else "0.00"
-                    ),
+                    row_position, 3, QTableWidgetItem(c_obj.description)
                 )
+                price_str = (
+                    f"${c_obj.standard_charge:.2f}"
+                    if c_obj.standard_charge is not None
+                    else "$0.00"
+                )
+                price_item = QTableWidgetItem(price_str)
+                price_item.setTextAlignment(
+                    Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+                )
+                self.charge_codes_table.setItem(row_position, 4, price_item)
                 self.charge_codes_table.setItem(
-                    r, 5, QTableWidgetItem("Yes" if c_obj.is_active else "No")
+                    row_position,
+                    5,
+                    QTableWidgetItem("Yes" if c_obj.is_active else "No"),
                 )
-
-            self.charge_codes_table.setSortingEnabled(True)
-            self.charge_codes_table.resizeColumnsToContents()
-            self.charge_codes_table.setColumnWidth(0, 75)  # Code
-            # Column 1 (Alternate Code) is ResizeToContents
-            # Column 2 (Category) is Stretch
-            self.charge_codes_table.setColumnWidth(3, 250)  # Description
-            # Column 4 (Std. Price) and 5 (Active) are ResizeToContents
-
-            self.logger.info(f"Loaded {len(ccs)} charge codes.")
-        except Exception as e:
-            self.logger.error(f"Error loading charge codes: {e}", exc_info=True)
-            self.show_error("Load Error", f"Could not load charge codes: {e}")
-        self.current_selected_charge_code_id = None
-        self._update_crud_button_states()
-
-    def load_master_owners_data(self):  # ... (method remains unchanged) ...
-        self.logger.info("Loading master owners data for tab...")
-        if not self.owners_table:
-            self.logger.warning("Owners table not ready.")
-            return
-        try:
-            owners = (
-                self.owner_controller.get_all_master_owners(include_inactive=True)
-                if hasattr(self.owner_controller, "get_all_master_owners")
-                else []
-            )
-            if not hasattr(self.owner_controller, "get_all_master_owners"):
-                self.logger.error("OwnerController missing 'get_all_master_owners'.")
-                self.show_error(
-                    "Load Error", "Cannot load owners: Controller method missing."
+                self.charge_codes_table.item(row_position, 0).setData(
+                    Qt.ItemDataRole.UserRole, c_obj.id
                 )
-                return
-            self.owners_table.setRowCount(0)
-            self.owners_table.setSortingEnabled(False)
-            for r, o_obj in enumerate(owners):
-                self.owners_table.insertRow(r)
-                self.owners_table.setItem(
-                    r, 0, QTableWidgetItem(o_obj.account_number or "")
-                )
-                name_disp = (
-                    o_obj.farm_name
-                    or f"{o_obj.first_name or ''} {o_obj.last_name or ''}".strip()
-                    or f"ID: {o_obj.owner_id}"
-                )
-                self.owners_table.setItem(r, 1, QTableWidgetItem(name_disp))
-                self.owners_table.setItem(r, 2, QTableWidgetItem(o_obj.phone or ""))
-                self.owners_table.setItem(
-                    r, 3, QTableWidgetItem("Yes" if o_obj.is_active else "No")
-                )
-                self.owners_table.item(r, 0).setData(
-                    Qt.ItemDataRole.UserRole, o_obj.owner_id
-                )
-            self.owners_table.setSortingEnabled(True)
-            self.owners_table.resizeColumnsToContents()
-            self.owners_table.setColumnWidth(0, 120)
-            self.owners_table.setColumnWidth(2, 150)
-            self.logger.info(f"Loaded {len(owners)} master owners.")
-        except Exception as e:
-            self.logger.error(f"Error loading master owners: {e}", exc_info=True)
-            self.show_error("Load Error", f"Could not load master owners: {e}")
-        self.current_selected_owner_id = None
-        self._update_crud_button_states()
-
-    # --- Slot Methods (existing ones remain unchanged, new ones for CCC below) ---
-    @Slot()
-    def _on_user_selected(self):  # ... (method remains unchanged) ...
-        self.current_selected_user_id = None
-        if self.users_list_widget and self.users_list_widget.currentItem():
-            self.current_selected_user_id = self.users_list_widget.currentItem().data(
-                Qt.ItemDataRole.UserRole
-            )
-        self.logger.info(f"User selected from list: {self.current_selected_user_id}")
-        self._update_crud_button_states()
-
-    @Slot()
-    def _add_new_user(self):  # ... (method remains unchanged) ...
-        dialog = AddEditUserDialog(
-            parent_view=self,
-            user_controller=self.user_controller,
-            current_user_id=self.current_user_id,
-        )
-        if dialog.exec():
-            self.load_users_data()
-            self.update_status("User added successfully.")
-
-    @Slot()
-    def _edit_selected_user(self):  # ... (method remains unchanged) ...
-        if not self.current_selected_user_id:
-            self.show_warning("Edit User", "Select user.")
-            return
-        user_to_edit = self.user_controller.get_user_by_login_id(
-            self.current_selected_user_id
-        )
-        if not user_to_edit:
-            self.show_error("Error", "User not found.")
-            self.load_users_data()
-            return
-        dialog = AddEditUserDialog(
-            parent_view=self,
-            user_controller=self.user_controller,
-            current_user_object=user_to_edit,
-            current_user_id=self.current_user_id,
-        )
-        if dialog.exec():
-            self.load_users_data()
-            self.update_status(f"User '{user_to_edit.user_id}' updated.")
-            self._try_reselect_item(
-                self.users_list_widget, self.current_selected_user_id
-            )
-
-    @Slot()
-    def _delete_selected_user(self):  # ... (method remains unchanged) ...
-        self._generic_delete_action(
-            self.current_selected_user_id,
-            "User",
-            self.user_controller.delete_user_permanently,
-            self.load_users_data,
-            "current_selected_user_id",
-            self.users_list_widget,
-        )
-
-    @Slot()
-    def _on_location_selected(self):  # Fixed in v1.12.22
-        self.current_selected_location_id = None
-        item = None
-        current_row = -1
-        if self.locations_table and self.locations_table.selectedItems():
-            current_row = self.locations_table.currentRow()
-            if current_row >= 0:  # Correctly indented
-                item = self.locations_table.item(current_row, 0)
-        if item:
-            self.current_selected_location_id = item.data(Qt.ItemDataRole.UserRole)
-        self.logger.info(
-            f"Location selected (row: {current_row}): {self.current_selected_location_id}"
-        )
-        self._update_crud_button_states()
-
-    @Slot()
-    def _add_new_location(self):  # ... (method remains unchanged) ...
-        dialog = AddEditLocationDialog(
-            parent_view=self,
-            controller=self.location_controller,
-            current_user_id=self.current_user_id,
-        )
-        if dialog.exec():
-            self.load_locations_data()
-            self.update_status("Location added.")
-
-    @Slot()
-    def _edit_selected_location(self):  # ... (method remains unchanged) ...
-        if not self.current_selected_location_id:
-            self.show_warning("Edit Location", "Select location.")
-            return
-        loc_to_edit = self.location_controller.get_location_by_id(
-            self.current_selected_location_id
-        )
-        if not loc_to_edit:
-            self.show_error("Error", "Location not found.")
-            self.load_locations_data()
-            return
-        dialog = AddEditLocationDialog(
-            parent_view=self,
-            controller=self.location_controller,
-            location=loc_to_edit,
-            current_user_id=self.current_user_id,
-        )
-        if dialog.exec():
-            self.load_locations_data()
-            self.update_status(f"Location '{loc_to_edit.location_name}' updated.")
-            self._try_reselect_item(
-                self.locations_table, self.current_selected_location_id
-            )
-
-    @Slot()
-    def _delete_selected_location(self):  # ... (method remains unchanged) ...
-        self._generic_delete_action(
-            self.current_selected_location_id,
-            "Location",
-            self.location_controller.delete_location,
-            self.load_locations_data,
-            "current_selected_location_id",
-            self.locations_table,
-        )
-
-    @Slot()
-    def _on_charge_code_selected(self):  # ... (method remains unchanged) ...
-        self.current_selected_charge_code_id = None
-        item = None
-        if self.charge_codes_table and self.charge_codes_table.selectedItems():
-            current_row = self.charge_codes_table.currentRow()
-            if current_row >= 0 and (
-                item := self.charge_codes_table.item(current_row, 0)
-            ):
-                self.current_selected_charge_code_id = item.data(
-                    Qt.ItemDataRole.UserRole
-                )
-        self.logger.info(
-            f"Charge Code selected: {self.current_selected_charge_code_id}"
-        )
-        self._update_crud_button_states()
-
-    @Slot()
-    def _add_new_charge_code(self):  # ... (method remains unchanged) ...
-        dialog = AddEditChargeCodeDialog(
-            parent=self,
-            controller=self.charge_code_controller,
-            current_user_id=self.current_user_id,
-        )
-        if dialog.exec():
-            self.load_charge_codes_data()
-            self.update_status("Charge code added.")
-
-    @Slot()
-    def _edit_selected_charge_code(self):  # ... (method remains unchanged) ...
-        if not self.current_selected_charge_code_id:
-            self.show_warning("Edit Charge Code", "Select charge code.")
-            return
-        cc_to_edit = self.charge_code_controller.get_charge_code_by_id(
-            self.current_selected_charge_code_id
-        )
-        if not cc_to_edit:
-            self.show_error("Error", "Charge code not found.")
-            self.load_charge_codes_data()
-            return
-        dialog = AddEditChargeCodeDialog(
-            parent=self,
-            controller=self.charge_code_controller,
-            charge_code=cc_to_edit,
-            current_user_id=self.current_user_id,
-        )
-        if dialog.exec():
-            self.load_charge_codes_data()
-            self.update_status(f"Charge code '{cc_to_edit.code}' updated.")
-            self._try_reselect_item(
-                self.charge_codes_table, self.current_selected_charge_code_id
-            )
-
-    @Slot()
-    def _delete_selected_charge_code(self):  # ... (method remains unchanged) ...
-        self._generic_delete_action(
-            self.current_selected_charge_code_id,
-            "Charge Code",
-            self.charge_code_controller.toggle_charge_code_status,
-            self.load_charge_codes_data,
-            "current_selected_charge_code_id",
-            self.charge_codes_table,
-        )
-
-    @Slot()
-    def _on_master_owner_selected(self):  # ... (method remains unchanged) ...
-        self.current_selected_owner_id = None
-        item = None
-        current_row = -1
-        if self.owners_table and self.owners_table.selectedItems():
-            current_row = self.owners_table.currentRow()
-            if current_row >= 0:
-                item = self.owners_table.item(current_row, 0)
-        if item:
-            self.current_selected_owner_id = item.data(Qt.ItemDataRole.UserRole)
-        self.logger.info(
-            f"Master Owner selected (row: {current_row}): {self.current_selected_owner_id}"
-        )
-        self._update_crud_button_states()
-
-    @Slot()
-    def _add_new_owner(self):  # ... (method remains unchanged) ...
-        dialog = AddEditOwnerDialog(
-            parent_view=self,
-            owner_controller=self.owner_controller,
-            current_user_id=self.current_user_id,
-        )
-        if dialog.exec():
-            self.load_master_owners_data()
-            self.update_status("Owner added successfully.")
-
-    @Slot()
-    def _edit_selected_owner(self):  # ... (method remains unchanged) ...
-        if not self.current_selected_owner_id:
-            self.show_warning("Edit Owner", "Please select an owner to edit.")
-            return
-        owner_to_edit = self.owner_controller.get_owner_by_id(
-            self.current_selected_owner_id
-        )
-        if not owner_to_edit:
-            self.show_error(
-                "Error", "Selected owner not found. It may have been deleted."
-            )
-            self.load_master_owners_data()
-            return
-        dialog = AddEditOwnerDialog(
-            parent_view=self,
-            owner_controller=self.owner_controller,
-            current_user_id=self.current_user_id,
-            owner_object=owner_to_edit,
-        )
-        if dialog.exec():
-            self.load_master_owners_data()
-            owner_name_display = (
-                owner_to_edit.farm_name
-                or f"{owner_to_edit.first_name or ''} {owner_to_edit.last_name or ''}".strip()
-                or f"ID {owner_to_edit.owner_id}"
-            )
-            self.update_status(f"Owner '{owner_name_display}' updated successfully.")
-            self._try_reselect_item(self.owners_table, self.current_selected_owner_id)
-
-    @Slot()
-    def _delete_selected_owner(self):  # ... (method remains unchanged) ...
-        self._generic_delete_action(
-            self.current_selected_owner_id,
-            "Master Owner",
-            self.owner_controller.delete_master_owner,
-            self.load_master_owners_data,
-            "current_selected_owner_id",
-            self.owners_table,
-        )
-
-    # --- Charge Code Category/Process Management Methods ---
-    def load_charge_code_categories_data(
-        self,
-    ):  # ... (method remains unchanged from v1.12.26) ...
-        self.logger.info("Loading charge code categories/processes data...")
-        if not self.charge_code_categories_tree or not self.charge_code_controller:
-            self.logger.warning("Charge code categories tree or controller not ready.")
-            return
-        self.charge_code_categories_tree.clear()
-        active_filter = "all"
-        if self.ccc_active_radio and self.ccc_active_radio.isChecked():
-            active_filter = "active"
-        elif self.ccc_inactive_radio and self.ccc_inactive_radio.isChecked():
-            active_filter = "inactive"
-        self.logger.info(f"CCC active_filter: {active_filter}")
-        try:
-            all_l1_categories = (
-                self.charge_code_controller.get_all_charge_code_categories_hierarchical()
-            )
-            displayed_l1_count = 0
-            for l1_cat in all_l1_categories:
-                l1_is_active = l1_cat.is_active
-                children_of_l1_to_display = []
-                has_any_child_matching_filter = False
-                if hasattr(l1_cat, "children") and l1_cat.children:
-                    for l2_proc in l1_cat.children:
-                        l2_is_active = l2_proc.is_active
-                        child_matches_filter = False
-                        if active_filter == "all":
-                            child_matches_filter = True
-                        elif active_filter == "active" and l2_is_active:
-                            child_matches_filter = True
-                        elif active_filter == "inactive" and not l2_is_active:
-                            child_matches_filter = True
-                        if child_matches_filter:
-                            children_of_l1_to_display.append(l2_proc)
-                            has_any_child_matching_filter = True
-                show_this_l1_item = False
-                if active_filter == "all":
-                    show_this_l1_item = True
-                elif active_filter == "active":
-                    show_this_l1_item = l1_is_active
-                elif active_filter == "inactive":
-                    show_this_l1_item = (not l1_is_active) or (
-                        l1_is_active and has_any_child_matching_filter
-                    )
-                if show_this_l1_item:
-                    displayed_l1_count += 1
-                    l1_item_tree_node = QTreeWidgetItem(
-                        self.charge_code_categories_tree
-                    )
-                    l1_item_tree_node.setText(0, l1_cat.name)
-                    l1_item_tree_node.setText(1, str(l1_cat.level))
-                    l1_item_tree_node.setText(
-                        2, "Active" if l1_cat.is_active else "Inactive"
-                    )
-                    l1_item_tree_node.setData(
-                        0,
-                        Qt.ItemDataRole.UserRole,
-                        {"id": l1_cat.category_id, "level": 1, "obj": l1_cat},
-                    )
-                    for l2_proc_to_display in sorted(
-                        children_of_l1_to_display, key=lambda x: x.name
-                    ):
-                        l2_item_tree_node_child = QTreeWidgetItem(l1_item_tree_node)
-                        l2_item_tree_node_child.setText(0, l2_proc_to_display.name)
-                        l2_item_tree_node_child.setText(
-                            1, str(l2_proc_to_display.level)
-                        )
-                        l2_item_tree_node_child.setText(
-                            2, "Active" if l2_proc_to_display.is_active else "Inactive"
-                        )
-                        l2_item_tree_node_child.setData(
-                            0,
-                            Qt.ItemDataRole.UserRole,
-                            {
-                                "id": l2_proc_to_display.category_id,
-                                "level": 2,
-                                "obj": l2_proc_to_display,
-                            },
-                        )
-                    l1_item_tree_node.setExpanded(True)
-            self.charge_code_categories_tree.resizeColumnToContents(0)
-            self.charge_code_categories_tree.resizeColumnToContents(1)
-            self.charge_code_categories_tree.resizeColumnToContents(2)
             self.logger.info(
-                f"Displayed {displayed_l1_count} top-level categories in tree based on filter '{active_filter}'."
+                f"Loaded {len(charge_codes)} charge codes based on filter '{status_filter}'."
             )
+        except AttributeError as ae:
+            self.logger.error(f"Error loading charge codes: {ae}", exc_info=True)
+            self.show_error("Load Error", f"Could not load charge codes: {ae}")
         except Exception as e:
-            self.logger.error(
-                f"Error loading charge code categories into tree: {e}", exc_info=True
-            )
-            self.show_error("Load Error", f"Could not load categories/processes: {e}")
-        self.current_selected_ccc_id = None
-        self.current_selected_ccc_level = None
-        self.current_selected_ccc_object = None
-        self._update_ccc_buttons_state()
+            self.logger.error(f"General error loading charge codes: {e}", exc_info=True)
+            self.show_error("Load Error", f"An unexpected error occurred: {e}")
+        self._update_charge_code_action_buttons_state()
 
-    @Slot()
-    def _on_ccc_tree_item_selected(self):  # ... (method remains unchanged) ...
-        self.current_selected_ccc_id = None
-        self.current_selected_ccc_level = None
-        self.current_selected_ccc_object = None
-        selected_items = (
-            self.charge_code_categories_tree.selectedItems()
-            if self.charge_code_categories_tree
-            else []
+    def _on_charge_code_filter_changed(self, index: int):
+        self.load_charge_codes_data()
+
+    def _add_charge_code(self):
+        dialog = AddEditChargeCodeDialog(
+            parent=self,
+            controller=self.charge_code_controller,
+            current_user_id=self.current_user_id,
         )
-        if selected_items:
-            item_data = selected_items[0].data(0, Qt.ItemDataRole.UserRole)
-            if isinstance(item_data, dict):
-                self.current_selected_ccc_id = item_data.get("id")
-                self.current_selected_ccc_level = item_data.get("level")
-                self.current_selected_ccc_object = item_data.get("obj")
-                self.logger.info(
-                    f"CCC selected: ID={self.current_selected_ccc_id}, Level={self.current_selected_ccc_level}, Name='{selected_items[0].text(0)}'"
-                )
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self.load_charge_codes_data()
+            self.entity_updated.emit("charge_code")
+
+    def _edit_selected_charge_code(self):
+        if not self.charge_codes_table or not self.charge_codes_table.currentItem():
+            self.show_info("Edit Charge Code", "Please select a charge code to edit.")
+            return
+        selected_row = self.charge_codes_table.currentRow()
+        charge_code_id = self.charge_codes_table.item(selected_row, 0).data(
+            Qt.ItemDataRole.UserRole
+        )
+        charge_code_to_edit = self.charge_code_controller.get_charge_code_by_id(
+            charge_code_id
+        )
+        if charge_code_to_edit:
+            dialog = AddEditChargeCodeDialog(
+                parent=self,
+                controller=self.charge_code_controller,
+                charge_code=charge_code_to_edit,
+                current_user_id=self.current_user_id,
+            )
+            if dialog.exec() == QDialog.DialogCode.Accepted:
+                self.load_charge_codes_data()
+                self.entity_updated.emit("charge_code")
         else:
-            self.logger.info("CCC selection cleared.")
-        self._update_ccc_buttons_state()
+            self.show_error(
+                "Error", f"Charge code with ID '{charge_code_id}' not found."
+            )
+            self.load_charge_codes_data()
 
-    def _update_ccc_buttons_state(
-        self, is_active_tab: bool = True
-    ):  # ... (method remains unchanged) ...
-        if not self.charge_code_categories_tree:
+    def _toggle_selected_charge_code_active_status(self):
+        if not self.charge_codes_table or not self.charge_codes_table.currentItem():
+            self.show_info("Toggle Active Status", "Please select a charge code.")
             return
-        item_selected = self.current_selected_ccc_id is not None
-        is_level1_selected = item_selected and self.current_selected_ccc_level == 1
-        ccc_tab_is_current = False
-        if self.main_tab_widget and self.main_tab_widget.currentWidget():
-            current_widget_title = self.main_tab_widget.tabText(
-                self.main_tab_widget.currentIndex()
-            )
-            if "Manage Categories/Processes" in current_widget_title:
-                ccc_tab_is_current = True
-        effective_enable = is_active_tab and ccc_tab_is_current
-        if self.add_ccc_category_button:
-            self.add_ccc_category_button.setEnabled(effective_enable)
-        if self.add_ccc_process_button:
-            self.add_ccc_process_button.setEnabled(
-                effective_enable and is_level1_selected
-            )
-        if self.edit_ccc_button:
-            self.edit_ccc_button.setEnabled(effective_enable and item_selected)
-        if self.toggle_ccc_status_button:
-            self.toggle_ccc_status_button.setEnabled(effective_enable and item_selected)
-        if self.delete_ccc_button:
-            self.delete_ccc_button.setEnabled(effective_enable and item_selected)
-        if not effective_enable:
-            if self.add_ccc_category_button:
-                self.add_ccc_category_button.setEnabled(False)
-            if self.add_ccc_process_button:
-                self.add_ccc_process_button.setEnabled(False)
-            if self.edit_ccc_button:
-                self.edit_ccc_button.setEnabled(False)
-            if self.toggle_ccc_status_button:
-                self.toggle_ccc_status_button.setEnabled(False)
-            if self.delete_ccc_button:
-                self.delete_ccc_button.setEnabled(False)
-
-    @Slot()
-    def _add_new_main_category(self):  # ... (method remains unchanged) ...
-        dialog = AddEditChargeCodeCategoryDialog(
-            parent=self,
-            controller=self.charge_code_controller,
-            current_user_id=self.current_user_id,
+        selected_row = self.charge_codes_table.currentRow()
+        charge_code_id = self.charge_codes_table.item(selected_row, 0).data(
+            Qt.ItemDataRole.UserRole
         )
-        if dialog.exec():
-            self.load_charge_code_categories_data()
-            self.update_status("New Category (Level 1) added.")
-
-    @Slot()
-    def _add_new_process_to_selected(self):  # ... (method remains unchanged) ...
-        if not self.current_selected_ccc_object or self.current_selected_ccc_level != 1:
-            self.show_warning(
-                "Add Process", "Select a Level 1 Category to add a Process under."
-            )
+        cc_obj = self.charge_code_controller.get_charge_code_by_id(charge_code_id)
+        if not cc_obj:
+            self.show_error("Error", f"Charge code {charge_code_id} not found.")
             return
-        parent_category_name = self.current_selected_ccc_object.name
-        dialog = AddEditChargeCodeCategoryDialog(
-            parent=self,
-            controller=self.charge_code_controller,
-            current_user_id=self.current_user_id,
-            parent_category=self.current_selected_ccc_object,
-        )
-        if dialog.exec():
-            self.load_charge_code_categories_data()
-            self.update_status(f"New Process added under '{parent_category_name}'.")
-
-    @Slot()
-    def _edit_selected_ccc(self):  # ... (method remains unchanged) ...
-        if not self.current_selected_ccc_object:
-            self.show_warning("Edit", "Select a Category or Process to edit.")
-            return
-        dialog = AddEditChargeCodeCategoryDialog(
-            parent=self,
-            controller=self.charge_code_controller,
-            current_user_id=self.current_user_id,
-            category_to_edit=self.current_selected_ccc_object,
-        )
-        if dialog.exec():
-            self.load_charge_code_categories_data()
-            item_type = (
-                "Process" if self.current_selected_ccc_level == 2 else "Category"
-            )
-            self.update_status(f"{item_type} updated.")
-
-    @Slot()
-    def _toggle_selected_ccc_status(
-        self,
-    ):  # ... (method remains unchanged from v1.12.26) ...
-        if not self.current_selected_ccc_object:
-            self.show_warning("Toggle Status", "Please select a Category or Process.")
-            return
-        ccc = self.current_selected_ccc_object
-        new_status = not ccc.is_active
-        action_verb = "activate" if new_status else "deactivate"
-        item_type = "Process" if ccc.level == 2 else "Category"
+        action = "deactivate" if cc_obj.is_active else "activate"
         if self.show_question(
-            "Confirm Status Change",
-            f"Are you sure you want to {action_verb} the {item_type} '{ccc.name}'?",
+            f"Confirm {action.capitalize()}",
+            f"Are you sure you want to {action} charge code '{cc_obj.code} - {cc_obj.description}'?",
         ):
             success, message = (
-                self.charge_code_controller.toggle_charge_code_category_status(
-                    ccc.category_id, self.current_user_id
+                self.charge_code_controller.toggle_charge_code_active_status(
+                    charge_code_id, self.current_user_id
                 )
             )
             if success:
-                self.load_charge_code_categories_data()
-                self.update_status(message)
+                self.show_info("Success", message)
+                self.load_charge_codes_data()
+                self.entity_updated.emit("charge_code")
             else:
                 self.show_error("Error", message)
 
-    @Slot()
-    def _delete_selected_ccc(self):  # ... (method remains unchanged) ...
-        if not self.current_selected_ccc_object:
-            self.show_warning("Delete", "Select a Category or Process to delete.")
-            return
-        ccc = self.current_selected_ccc_object
-        item_type = "Process" if ccc.level == 2 else "Category"
-        if self.show_question(
-            "Confirm Delete",
-            f"Are you sure you want to delete the {item_type} '{ccc.name}'? This cannot be undone.",
+    def _update_charge_code_action_buttons_state(self):
+        has_selection = (
+            self.charge_codes_table is not None
+            and self.charge_codes_table.currentItem() is not None
+        )
+        if self.edit_charge_code_btn:
+            self.edit_charge_code_btn.setEnabled(has_selection)
+        if self.toggle_charge_code_active_btn:
+            self.toggle_charge_code_active_btn.setEnabled(has_selection)
+        if (
+            has_selection
+            and self.toggle_charge_code_active_btn
+            and self.charge_codes_table
         ):
-            success, message = self.charge_code_controller.delete_charge_code_category(
-                ccc.category_id, self.current_user_id
+            selected_row = self.charge_codes_table.currentRow()
+            charge_code_id = self.charge_codes_table.item(selected_row, 0).data(
+                Qt.ItemDataRole.UserRole
+            )
+            cc_obj = self.charge_code_controller.get_charge_code_by_id(charge_code_id)
+            if cc_obj:
+                action_text = "Deactivate" if cc_obj.is_active else "Activate"
+                self.toggle_charge_code_active_btn.setText(f"🔄 {action_text} Selected")
+                self._apply_standard_button_style(
+                    self.toggle_charge_code_active_btn,
+                    "toggle_inactive" if cc_obj.is_active else "standard",
+                )
+
+    # --- Categories/Processes Tab Methods (unchanged from v1.3.17) ---
+    def _create_categories_processes_tab(self) -> QWidget:
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setContentsMargins(15, 15, 15, 15)
+        layout.setSpacing(10)
+        top_bar_layout = QHBoxLayout()
+        self.add_category_btn = QPushButton("➕ Add Category (L1)")
+        self._apply_standard_button_style(self.add_category_btn, "add")
+        self.add_process_btn = QPushButton("➕ Add Process (L2)")
+        self._apply_standard_button_style(self.add_process_btn, "add")
+        self.edit_category_process_btn = QPushButton("✏️ Edit Selected")
+        self._apply_standard_button_style(self.edit_category_process_btn, "edit")
+        self.toggle_category_process_active_btn = QPushButton("🔄 Toggle Active Status")
+        self._apply_standard_button_style(self.toggle_category_process_active_btn)
+        self.delete_category_process_btn = QPushButton("🗑️ Delete Selected")
+        self._apply_standard_button_style(self.delete_category_process_btn, "delete")
+        top_bar_layout.addWidget(self.add_category_btn)
+        top_bar_layout.addWidget(self.add_process_btn)
+        top_bar_layout.addWidget(self.edit_category_process_btn)
+        top_bar_layout.addWidget(self.toggle_category_process_active_btn)
+        top_bar_layout.addWidget(self.delete_category_process_btn)
+        top_bar_layout.addStretch(1)
+        top_bar_layout.addWidget(QLabel("Filter Status:"))
+        self.category_filter_combo = QComboBox()
+        self.category_filter_combo.addItems(["Active", "Inactive", "All"])
+        self.category_filter_combo.setCurrentText(
+            self._active_filters.get(self.CATEGORY_PROCESS_TAB_INDEX, "active")
+        )
+        self.category_filter_combo.setStyleSheet(self.get_form_input_style())
+        top_bar_layout.addWidget(self.category_filter_combo)
+        layout.addLayout(top_bar_layout)
+        self.categories_tree = QTreeWidget()
+        self.categories_tree.setHeaderLabels(
+            ["Category/Process Name", "Level", "Status", "ID"]
+        )
+        self.categories_tree.setSelectionMode(
+            QAbstractItemView.SelectionMode.SingleSelection
+        )
+        self.categories_tree.setStyleSheet(
+            f"""
+            QTreeWidget {{ background-color: {AppConfig.DARK_INPUT_FIELD_BACKGROUND}; color: {AppConfig.DARK_TEXT_PRIMARY}; border: 1px solid {AppConfig.DARK_BORDER}; border-radius: 4px; }}
+            QHeaderView::section {{ background-color: {AppConfig.DARK_HEADER_FOOTER}; color: {AppConfig.DARK_TEXT_SECONDARY}; padding: 5px; border: none; border-bottom: 1px solid {AppConfig.DARK_BORDER}; font-weight: 500; }}
+            QTreeWidget::item:selected {{ background-color: {AppConfig.DARK_HIGHLIGHT_BG}; color: {AppConfig.DARK_HIGHLIGHT_TEXT}; }}
+            QTreeWidget::item {{ padding: 3px; }}
+        """
+        )
+        header = self.categories_tree.header()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        for i in range(1, 4):
+            header.setSectionResizeMode(i, QHeaderView.ResizeMode.ResizeToContents)
+        layout.addWidget(self.categories_tree)
+        self._update_category_action_buttons_state()
+        return tab
+
+    def load_categories_processes_data(self):
+        self.logger.info("Loading charge code categories/processes data...")
+        if not self.categories_tree or not self.category_filter_combo:
+            self.logger.error("Categories tree or filter combo not initialized.")
+            return
+        self.categories_tree.clear()
+        status_filter = self.category_filter_combo.currentText().lower()
+        self.logger.info(f"CCC active_filter: {status_filter}")
+        self._active_filters[self.CATEGORY_PROCESS_TAB_INDEX] = status_filter
+        try:
+            level1_categories = self.charge_code_controller.get_charge_code_categories(
+                level=1, status_filter=status_filter
+            )
+            for cat_l1 in level1_categories:
+                l1_item = QTreeWidgetItem(self.categories_tree)
+                l1_item.setText(0, cat_l1.name)
+                l1_item.setText(1, str(cat_l1.level))
+                l1_item.setText(2, "Active" if cat_l1.is_active else "Inactive")
+                l1_item.setText(3, str(cat_l1.category_id))
+                l1_item.setData(
+                    0,
+                    Qt.ItemDataRole.UserRole,
+                    {"id": cat_l1.category_id, "level": 1, "obj": cat_l1},
+                )
+                level2_processes = (
+                    self.charge_code_controller.get_charge_code_categories(
+                        parent_id=cat_l1.category_id,
+                        level=2,
+                        status_filter=status_filter,
+                    )
+                )
+                for cat_l2 in level2_processes:
+                    l2_item = QTreeWidgetItem(l1_item)
+                    l2_item.setText(0, cat_l2.name)
+                    l2_item.setText(1, str(cat_l2.level))
+                    l2_item.setText(2, "Active" if cat_l2.is_active else "Inactive")
+                    l2_item.setText(3, str(cat_l2.category_id))
+                    l2_item.setData(
+                        0,
+                        Qt.ItemDataRole.UserRole,
+                        {"id": cat_l2.category_id, "level": 2, "obj": cat_l2},
+                    )
+            self.categories_tree.expandAll()
+            self.logger.info(
+                f"Displayed {len(level1_categories)} top-level categories in tree based on filter '{status_filter}'."
+            )
+        except Exception as e:
+            self.logger.error(f"Error loading categories/processes: {e}", exc_info=True)
+            self.show_error("Load Error", f"Could not load categories: {e}")
+        self._update_category_action_buttons_state()
+
+    def _on_category_filter_changed(self, index: int):
+        self.load_categories_processes_data()
+
+    def _add_category_or_process(self, is_process: bool = False):
+        parent_category_id: Optional[int] = None
+        parent_category_name: Optional[str] = None
+        selected_item = (
+            self.categories_tree.currentItem() if self.categories_tree else None
+        )
+        if is_process:
+            if not selected_item:
+                self.show_warning(
+                    "Add Process",
+                    "Please select a Level 1 Category to add a Process under.",
+                )
+                return
+            item_data = selected_item.data(0, Qt.ItemDataRole.UserRole)
+            if item_data.get("level") != 1:
+                self.show_warning(
+                    "Add Process",
+                    "Processes (Level 2) can only be added under a Level 1 Category.",
+                )
+                return
+            parent_category_id = item_data.get("id")
+            parent_category_name = selected_item.text(0)
+        dialog_title = "Add New Process" if is_process else "Add New Category"
+        level_to_add = 2 if is_process else 1
+        dialog = AddEditChargeCodeCategoryDialog(
+            parent=self,
+            controller=self.charge_code_controller,
+            current_user_id=self.current_user_id,
+            level=level_to_add,
+            parent_id=parent_category_id,
+            parent_name=parent_category_name,
+            category_to_edit=None,
+        )
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self.load_categories_processes_data()
+            self.entity_updated.emit("charge_code_category")
+
+    def _edit_selected_category_process(self):
+        if not self.categories_tree or not self.categories_tree.currentItem():
+            self.show_info("Edit Item", "Please select a category or process to edit.")
+            return
+        selected_item = self.categories_tree.currentItem()
+        item_data = selected_item.data(0, Qt.ItemDataRole.UserRole)
+        category_id = item_data.get("id")
+        category_to_edit = self.charge_code_controller.get_category_by_id(category_id)
+        if not category_to_edit:
+            self.show_error(
+                "Error",
+                f"Could not find category/process with ID {category_id} to edit.",
+            )
+            self.load_categories_processes_data()
+            return
+        parent_name_for_dialog: Optional[str] = None
+        if category_to_edit.parent:
+            parent_name_for_dialog = category_to_edit.parent.name
+        dialog = AddEditChargeCodeCategoryDialog(
+            parent=self,
+            controller=self.charge_code_controller,
+            current_user_id=self.current_user_id,
+            level=category_to_edit.level,
+            parent_id=category_to_edit.parent_id,
+            parent_name=parent_name_for_dialog,
+            category_to_edit=category_to_edit,
+        )
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self.load_categories_processes_data()
+            self.entity_updated.emit("charge_code_category")
+
+    def _toggle_selected_category_process_active_status(self):
+        if not self.categories_tree or not self.categories_tree.currentItem():
+            self.show_info("Toggle Status", "Please select an item.")
+            return
+        selected_item = self.categories_tree.currentItem()
+        item_data = selected_item.data(0, Qt.ItemDataRole.UserRole)
+        item_id = item_data.get("id")
+        item_obj: Optional[ChargeCodeCategory] = item_data.get("obj")
+        if not item_obj:
+            item_obj = self.charge_code_controller.get_category_by_id(item_id)
+        if not item_obj:
+            self.show_error("Error", f"Item with ID {item_id} not found.")
+            return
+        action = "deactivate" if item_obj.is_active else "activate"
+        item_name_display = item_obj.name
+        if self.show_question(
+            f"Confirm {action.capitalize()}",
+            f"Are you sure you want to {action} '{item_name_display}'?",
+        ):
+            success, message = (
+                self.charge_code_controller.toggle_category_active_status(
+                    item_id, self.current_user_id
+                )
             )
             if success:
-                self.load_charge_code_categories_data()
-                self.update_status(message)
+                self.show_info("Success", message)
+                self.load_categories_processes_data()
+                self.entity_updated.emit("charge_code_category")
+            else:
+                self.show_error("Error", message)
+
+    def _delete_selected_category_process(self):
+        if not self.categories_tree or not self.categories_tree.currentItem():
+            self.show_info("Delete Item", "Please select an item to delete.")
+            return
+        selected_item = self.categories_tree.currentItem()
+        item_data = selected_item.data(0, Qt.ItemDataRole.UserRole)
+        item_id = item_data.get("id")
+        item_name = selected_item.text(0)
+        if self.show_question(
+            "Confirm Delete",
+            f"Are you sure you want to permanently delete '{item_name}'? This action cannot be undone.",
+        ):
+            success, message = self.charge_code_controller.delete_category_or_process(
+                item_id, self.current_user_id
+            )
+            if success:
+                self.show_info("Success", message)
+                self.load_categories_processes_data()
+                self.entity_updated.emit("charge_code_category_deleted")
             else:
                 self.show_error("Delete Failed", message)
 
-    def _try_reselect_item(
-        self, list_or_table_widget, item_id_to_select
-    ):  # ... (method remains unchanged) ...
-        if not list_or_table_widget or item_id_to_select is None:
-            self._update_crud_button_states()
+    def _update_category_action_buttons_state(self):
+        if not self.categories_tree:
             return
-        found = False
-        if isinstance(list_or_table_widget, QListWidget):
-            for i in range(list_or_table_widget.count()):
-                list_item = list_or_table_widget.item(i)
-                if (
-                    list_item
-                    and list_item.data(Qt.ItemDataRole.UserRole) == item_id_to_select
-                ):
-                    list_or_table_widget.setCurrentItem(list_item)
-                    found = True
-                    (
-                        self._on_user_selected()
-                        if list_or_table_widget == self.users_list_widget
-                        else None
-                    )
-                    break
-        elif isinstance(list_or_table_widget, QTableWidget):
-            for row in range(list_or_table_widget.rowCount()):
-                item_widget_in_table = list_or_table_widget.item(row, 0)
-                if (
-                    item_widget_in_table
-                    and item_widget_in_table.data(Qt.ItemDataRole.UserRole)
-                    == item_id_to_select
-                ):
-                    list_or_table_widget.setCurrentCell(row, 0)
-                    found = True
-                    if list_or_table_widget == self.locations_table:
-                        self._on_location_selected()
-                    elif list_or_table_widget == self.charge_codes_table:
-                        self._on_charge_code_selected()
-                    elif list_or_table_widget == self.owners_table:
-                        self._on_master_owner_selected()
-                    break
-        if not found:
-            if hasattr(list_or_table_widget, "clearSelection"):
-                list_or_table_widget.clearSelection()
-            if list_or_table_widget == self.users_list_widget:
-                self.current_selected_user_id = None
-            elif list_or_table_widget == self.locations_table:
-                self.current_selected_location_id = None
-            elif list_or_table_widget == self.charge_codes_table:
-                self.current_selected_charge_code_id = None
-            elif list_or_table_widget == self.owners_table:
-                self.current_selected_owner_id = None
-        self._update_crud_button_states()
+        has_selection = self.categories_tree.currentItem() is not None
+        is_l1_selected = False
+        if has_selection:
+            item_data = self.categories_tree.currentItem().data(
+                0, Qt.ItemDataRole.UserRole
+            )
+            if item_data and item_data.get("level") == 1:
+                is_l1_selected = True
+        if self.add_category_btn:
+            self.add_category_btn.setEnabled(True)
+        if self.add_process_btn:
+            self.add_process_btn.setEnabled(is_l1_selected)
+        if self.edit_category_process_btn:
+            self.edit_category_process_btn.setEnabled(has_selection)
+        if self.toggle_category_process_active_btn:
+            self.toggle_category_process_active_btn.setEnabled(has_selection)
+        if self.delete_category_process_btn:
+            self.delete_category_process_btn.setEnabled(has_selection)
+        if (
+            has_selection
+            and self.toggle_category_process_active_btn
+            and self.categories_tree
+        ):
+            item_data = self.categories_tree.currentItem().data(
+                0, Qt.ItemDataRole.UserRole
+            )
+            item_obj: Optional[ChargeCodeCategory] = (
+                item_data.get("obj") if item_data else None
+            )
+            if item_obj:
+                action_text = "Deactivate" if item_obj.is_active else "Activate"
+                self.toggle_category_process_active_btn.setText(
+                    f"🔄 {action_text} Selected"
+                )
+                self._apply_standard_button_style(
+                    self.toggle_category_process_active_btn,
+                    "toggle_inactive" if item_obj.is_active else "standard",
+                )
 
-    def _generic_delete_action(
-        self,
-        item_id,
-        item_name_singular: str,
-        controller_delete_method,
-        load_data_method,
-        current_selection_attr: str,
-        list_or_table_widget,
-    ):  # ... (method remains unchanged) ...
-        if not item_id:
-            self.show_warning(
-                f"Action required",
-                f"Please select a {item_name_singular.lower()} to action.",
+    # --- Owners Tab Methods (unchanged from v1.3.17, uses corrected AddEditOwnerDialog) ---
+    def _create_owners_tab(self) -> QWidget:
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setContentsMargins(15, 15, 15, 15)
+        layout.setSpacing(10)
+        button_layout = self._create_standard_button_layout()
+        self.add_owner_btn = QPushButton("➕ Add New Owner")
+        self._apply_standard_button_style(self.add_owner_btn, "add")
+        self.edit_owner_btn = QPushButton("✏️ Edit Selected Owner")
+        self._apply_standard_button_style(self.edit_owner_btn, "edit")
+        self.toggle_owner_active_btn = QPushButton("🔄 Toggle Active Status")
+        self._apply_standard_button_style(self.toggle_owner_active_btn)
+        button_layout.addWidget(self.add_owner_btn)
+        button_layout.addWidget(self.edit_owner_btn)
+        button_layout.addWidget(self.toggle_owner_active_btn)
+        button_layout.addStretch(1)
+        layout.addLayout(button_layout)
+        self.owners_table = self._create_table_widget(
+            [
+                "Account #",
+                "Farm Name",
+                "Last Name",
+                "First Name",
+                "City",
+                "State",
+                "Phone",
+                "Active",
+            ]
+        )
+        if self.owners_table:
+            self.owners_table.horizontalHeader().setSectionResizeMode(
+                1, QHeaderView.ResizeMode.Stretch
             )
+            self.owners_table.horizontalHeader().setSectionResizeMode(
+                2, QHeaderView.ResizeMode.Stretch
+            )
+        layout.addWidget(self.owners_table)
+        self._update_owner_action_buttons_state()
+        return tab
+
+    def load_owners_data(self):
+        self.logger.info("Loading owners data for tab...")
+        if not self.owners_table:
+            self.logger.error("Owners table not initialized.")
             return
-        item_repr = f"{item_name_singular} ID {item_id}"
-        if (
-            isinstance(list_or_table_widget, QListWidget)
-            and list_or_table_widget.currentItem()
-        ):
-            current_row_widget = list_or_table_widget.itemWidget(
-                list_or_table_widget.currentItem()
+        try:
+            owners = self.owner_controller.get_all_owners()
+            self.owners_table.setRowCount(0)
+            for owner_obj in owners:
+                row_pos = self.owners_table.rowCount()
+                self.owners_table.insertRow(row_pos)
+                self.owners_table.setItem(
+                    row_pos, 0, QTableWidgetItem(owner_obj.account_number or "")
+                )
+                self.owners_table.setItem(
+                    row_pos, 1, QTableWidgetItem(owner_obj.farm_name or "")
+                )
+                self.owners_table.setItem(
+                    row_pos, 2, QTableWidgetItem(owner_obj.last_name or "")
+                )
+                self.owners_table.setItem(
+                    row_pos, 3, QTableWidgetItem(owner_obj.first_name or "")
+                )
+                self.owners_table.setItem(
+                    row_pos, 4, QTableWidgetItem(owner_obj.city or "")
+                )
+                self.owners_table.setItem(
+                    row_pos, 5, QTableWidgetItem(owner_obj.state_code or "")
+                )
+                self.owners_table.setItem(
+                    row_pos, 6, QTableWidgetItem(owner_obj.phone or "")
+                )
+                self.owners_table.setItem(
+                    row_pos, 7, QTableWidgetItem("Yes" if owner_obj.is_active else "No")
+                )
+                self.owners_table.item(row_pos, 0).setData(
+                    Qt.ItemDataRole.UserRole, owner_obj.owner_id
+                )
+            self.logger.info(f"Loaded {len(owners)} owners.")
+        except Exception as e:
+            self.logger.error(f"Error loading owners: {e}", exc_info=True)
+            self.show_error("Load Error", f"Could not load owners: {e}")
+        self._update_owner_action_buttons_state()
+
+    def _add_owner(self):
+        dialog = AddEditOwnerDialog(
+            parent=self,
+            owner_controller=self.owner_controller,
+            current_user_id=self.current_user_id,
+        )
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self.load_owners_data()
+            self.entity_updated.emit("owner")
+
+    def _edit_selected_owner(self):
+        if not self.owners_table or not self.owners_table.currentItem():
+            self.show_info("Edit Owner", "Please select an owner.")
+            return
+        selected_row = self.owners_table.currentRow()
+        owner_id = self.owners_table.item(selected_row, 0).data(
+            Qt.ItemDataRole.UserRole
+        )
+        owner_to_edit = self.owner_controller.get_owner_by_id(owner_id)
+        if owner_to_edit:
+            dialog = AddEditOwnerDialog(
+                parent=self,
+                owner_controller=self.owner_controller,
+                owner_object=owner_to_edit,
+                current_user_id=self.current_user_id,
             )
-            item_repr = (
-                f"User '{current_row_widget.name_value_label.text()}' (ID: {current_row_widget.id_value_label.text()})"
-                if isinstance(current_row_widget, UserListItemWidget)
-                else item_repr
-            )
-        elif (
-            isinstance(list_or_table_widget, QTableWidget)
-            and list_or_table_widget.selectedItems()
-        ):
-            current_row = list_or_table_widget.currentRow()
-            name_col_idx = 0
-            if item_name_singular == "Master Owner":
-                name_col_idx = 1
-            elif item_name_singular == "Location":
-                name_col_idx = 0
-            id_item = list_or_table_widget.item(current_row, 0)
-            id_val = (
-                str(id_item.data(Qt.ItemDataRole.UserRole)) if id_item else str(item_id)
-            )
-            name_val_item = list_or_table_widget.item(
-                current_row, name_col_idx if item_name_singular != "Charge Code" else 0
-            )
-            name_val = name_val_item.text() if name_val_item else ""
-            if (
-                item_name_singular == "Charge Code"
-                and not name_val
-                and list_or_table_widget.columnCount() > 1
-            ):
-                desc_item = list_or_table_widget.item(current_row, 1)
-                name_val = desc_item.text() if desc_item else ""
-            item_repr = (
-                f"{item_name_singular} '{name_val}' (ID: {id_val})"
-                if name_val
-                else f"{item_name_singular} (ID: {id_val})"
-            )
-        confirm_dialog_title = f"Confirm Action"
-        confirm_action_text = f"permanently delete {item_repr}"
-        if (
-            item_name_singular == "Charge Code"
-            and controller_delete_method
-            == self.charge_code_controller.toggle_charge_code_status
-        ):
-            confirm_action_text = f"toggle the active/inactive status for {item_repr}"
+            if dialog.exec() == QDialog.DialogCode.Accepted:
+                self.load_owners_data()
+                self.entity_updated.emit("owner")
+        else:
+            self.show_error("Error", f"Owner ID '{owner_id}' not found.")
+            self.load_owners_data()
+
+    def _toggle_selected_owner_active_status(self):
+        if not self.owners_table or not self.owners_table.currentItem():
+            self.show_info("Toggle Status", "Please select an owner.")
+            return
+        selected_row = self.owners_table.currentRow()
+        owner_id = self.owners_table.item(selected_row, 0).data(
+            Qt.ItemDataRole.UserRole
+        )
+        owner_obj = self.owner_controller.get_owner_by_id(owner_id)
+        if not owner_obj:
+            self.show_error("Error", f"Owner ID {owner_id} not found.")
+            return
+        action = "deactivate" if owner_obj.is_active else "activate"
+        name_display = (
+            owner_obj.farm_name
+            or f"{owner_obj.first_name or ''} {owner_obj.last_name or ''}".strip()
+        )
         if self.show_question(
-            confirm_dialog_title, f"Are you sure you want to {confirm_action_text}?"
+            f"Confirm {action.capitalize()}",
+            f"Are you sure you want to {action} owner '{name_display}'?",
         ):
-            try:
-                success, message = controller_delete_method(
-                    item_id, self.current_user_id
-                )
-                if success:
-                    self.update_status(message)
-                    load_data_method()
-                    setattr(self, current_selection_attr, None)
-                else:
-                    self.show_error(f"{item_name_singular} Action Failed", message)
-            except Exception as e:
-                self.logger.error(
-                    f"Error actioning {item_name_singular.lower()} ID {item_id}: {e}",
-                    exc_info=True,
-                )
-                self.show_error("Operation Error", f"An unexpected error occurred: {e}")
-        self._update_crud_button_states()
+            success, message = self.owner_controller.toggle_owner_active_status(
+                owner_id, self.current_user_id
+            )
+            if success:
+                self.show_info("Success", message)
+                self.load_owners_data()
+                self.entity_updated.emit("owner")
+            else:
+                self.show_error("Error", message)
 
-    def closeEvent(self, event: QCloseEvent):  # ... (method remains unchanged) ...
-        self.logger.info("User Management screen closing.")
-        super().closeEvent(event)
+    def _update_owner_action_buttons_state(self):
+        has_selection = (
+            self.owners_table is not None
+            and self.owners_table.currentItem() is not None
+        )
+        if self.edit_owner_btn:
+            self.edit_owner_btn.setEnabled(has_selection)
+        if self.toggle_owner_active_btn:
+            self.toggle_owner_active_btn.setEnabled(has_selection)
+        if has_selection and self.toggle_owner_active_btn and self.owners_table:
+            owner_id = self.owners_table.item(self.owners_table.currentRow(), 0).data(
+                Qt.ItemDataRole.UserRole
+            )
+            owner_obj = self.owner_controller.get_owner_by_id(owner_id)
+            if owner_obj:
+                action_text = "Deactivate" if owner_obj.is_active else "Activate"
+                self.toggle_owner_active_btn.setText(f"🔄 {action_text} Selected")
+                self._apply_standard_button_style(
+                    self.toggle_owner_active_btn,
+                    "toggle_inactive" if owner_obj.is_active else "standard",
+                )
