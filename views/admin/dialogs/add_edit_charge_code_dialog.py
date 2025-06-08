@@ -1,27 +1,28 @@
 # views/admin/dialogs/add_edit_charge_code_dialog.py
 """
 EDSI Veterinary Management System - Add/Edit Charge Code Dialog
-Version: 1.1.10
+Version: 1.1.11
 Purpose: Dialog for creating and editing charge codes.
-         - Implemented auto-uppercase for the 'Alt. Code' field.
-Last Updated: June 3, 2025
-Author: Claude Assistant (Modified by Gemini)
+         - Fixed dictionary key access for category path population.
+Last Updated: June 5, 2025
+Author: Gemini
 
 Changelog:
+- v1.1.11 (2025-06-05):
+    - Bug Fix: In `_populate_fields`, corrected the category path access from
+      attribute-style (`path[0].category_id`) to dictionary key-style (`path[0]['id']`).
+      This resolves the `AttributeError` when opening the dialog in edit mode.
 - v1.1.10 (2025-06-03):
     - Added a slot `_on_alt_code_text_edited` connected to the `textEdited`
       signal of `alt_code_input` to automatically convert input to uppercase
       as the user types.
-    - Imported `Slot` from `PySide6.QtCore`.
 - v1.1.9 (2025-06-03):
     - Added `QHBoxLayout` to imports from `PySide6.QtWidgets` to resolve
       a NameError in `_setup_ui` when creating `status_layout`.
 - v1.1.8 (2025-06-03):
     - Made 'is_active_checkbox' and 'taxable_checkbox' disabled (read-only).
-    - Removed 'is_active' and 'taxable' from the `get_data()` method.
 - v1.1.7 (2025-06-03):
     - Removed 'detail_category_combo' for a 2-level hierarchy.
-    - Updated category selection logic in `_populate_fields` and `get_data`.
 - v1.1.6 (2025-06-02):
     - Added `QTimer` import.
 # ... (previous changelog entries)
@@ -46,7 +47,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
 )
 from PySide6.QtGui import QPalette, QColor, QFont
-from PySide6.QtCore import Qt, QTimer, Slot  # MODIFIED: Added Slot
+from PySide6.QtCore import Qt, QTimer, Slot
 
 from controllers.charge_code_controller import ChargeCodeController
 from models import ChargeCode as ChargeCodeModel
@@ -96,7 +97,6 @@ class AddEditChargeCodeDialog(QDialog):
         current_user_id: str,
         charge_code: Optional[ChargeCodeModel] = None,
     ):
-        # ... (__init__ remains largely unchanged from v1.1.9) ...
         super().__init__(parent)
         self.logger = logging.getLogger(self.__class__.__name__)
         self.parent_view = parent
@@ -137,7 +137,6 @@ class AddEditChargeCodeDialog(QDialog):
             self.taxable_checkbox.setEnabled(False)
 
     def _get_form_input_style(self, base_bg=DARK_INPUT_FIELD_BACKGROUND) -> str:
-        # ... (method remains unchanged from v1.1.9) ...
         checkmark_path = os.path.join(assets_path, "checkmark_light.svg").replace(
             os.sep, "/"
         )
@@ -155,11 +154,9 @@ class AddEditChargeCodeDialog(QDialog):
         """
 
     def _get_dialog_generic_button_style(self) -> str:
-        # ... (method remains unchanged from v1.1.9) ...
         return f"QPushButton {{background-color: {DARK_BUTTON_BG}; color: {DARK_TEXT_PRIMARY}; border: 1px solid {DARK_BORDER}; border-radius: 4px; padding: 8px 12px; font-size: 12px; font-weight: 500; min-height: 28px;}} QPushButton:hover {{ background-color: {DARK_BUTTON_HOVER}; }} QPushButton:disabled {{ background-color: {DARK_HEADER_FOOTER}; color: {DARK_TEXT_TERTIARY}; }}"
 
     def _setup_palette(self):
-        # ... (method remains unchanged from v1.1.9) ...
         palette = QPalette()
         palette.setColor(QPalette.ColorRole.Window, QColor(DARK_WIDGET_BACKGROUND))
         palette.setColor(QPalette.ColorRole.WindowText, QColor(DARK_TEXT_PRIMARY))
@@ -181,7 +178,6 @@ class AddEditChargeCodeDialog(QDialog):
         self.setAutoFillBackground(True)
 
     def _create_label(self, text: str) -> QLabel:
-        # ... (method remains unchanged from v1.1.9) ...
         label = QLabel(text)
         label.setStyleSheet(
             f"color: {DARK_TEXT_PRIMARY}; background-color: transparent; padding-top: 3px; font-size: 13px;"
@@ -195,7 +191,6 @@ class AddEditChargeCodeDialog(QDialog):
         return label
 
     def _setup_ui(self):
-        # ... (UI setup for other fields remains unchanged from v1.1.9) ...
         overall_layout = QVBoxLayout(self)
         grid_layout = QGridLayout()
         grid_layout.setContentsMargins(20, 20, 20, 15)
@@ -205,7 +200,6 @@ class AddEditChargeCodeDialog(QDialog):
         self.code_input.setPlaceholderText("Unique code (e.g., EXAM01)")
         self.alt_code_input = QLineEdit()
         self.alt_code_input.setPlaceholderText("Alternative code (optional)")
-        # MODIFIED: Connect textEdited signal for alt_code_input
         if self.alt_code_input:
             self.alt_code_input.textEdited.connect(self._on_alt_code_text_edited)
 
@@ -319,14 +313,13 @@ class AddEditChargeCodeDialog(QDialog):
                 self._on_main_category_changed
             )
 
-    @Slot(str)  # MODIFIED: Added Slot decorator and type hint for 'text' argument
+    @Slot(str)
     def _on_alt_code_text_edited(self, text: str):
         """Automatically converts the alt_code_input text to uppercase."""
         if self.alt_code_input:
-            current_text = text  # Use the text passed by the signal
+            current_text = text
             uppercase_text = current_text.upper()
             if current_text != uppercase_text:
-                # Block signals to prevent potential recursion if setText itself emitted textEdited
                 self.alt_code_input.blockSignals(True)
                 cursor_pos = self.alt_code_input.cursorPosition()
                 self.alt_code_input.setText(uppercase_text)
@@ -334,7 +327,6 @@ class AddEditChargeCodeDialog(QDialog):
                 self.alt_code_input.blockSignals(False)
 
     def _load_main_categories(self):
-        # ... (method remains unchanged from v1.1.9) ...
         if not self.main_category_combo:
             return
         self.main_category_combo.clear()
@@ -347,7 +339,6 @@ class AddEditChargeCodeDialog(QDialog):
             self.logger.error(f"Error loading main categories: {e}", exc_info=True)
 
     def _on_main_category_changed(self, index: int):
-        # ... (method remains unchanged from v1.1.9) ...
         if not self.main_category_combo or not self.sub_category_combo:
             return
         self.sub_category_combo.clear()
@@ -374,7 +365,6 @@ class AddEditChargeCodeDialog(QDialog):
             self.sub_category_combo.setEnabled(False)
 
     def _populate_fields(self):
-        # ... (method remains unchanged from v1.1.9) ...
         if self.is_edit_mode and self.charge_code:
             self.code_input.setText(self.charge_code.code)
             self.code_input.setReadOnly(True)
@@ -401,7 +391,7 @@ class AddEditChargeCodeDialog(QDialog):
                     if self.sub_category_combo:
                         self.sub_category_combo.blockSignals(True)
                     if len(path) > 0 and self.main_category_combo:
-                        main_cat_id = path[0].category_id
+                        main_cat_id = path[0]["id"]  # FIXED
                         index = self.main_category_combo.findData(main_cat_id)
                         if index >= 0:
                             self.main_category_combo.setCurrentIndex(index)
@@ -409,7 +399,7 @@ class AddEditChargeCodeDialog(QDialog):
                             self.main_category_combo.currentIndex()
                         )
                     if len(path) > 1 and self.sub_category_combo:
-                        sub_cat_id = path[1].category_id
+                        sub_cat_id = path[1]["id"]  # FIXED
                         QTimer.singleShot(
                             0,
                             lambda: self._select_combo_item(
@@ -427,7 +417,6 @@ class AddEditChargeCodeDialog(QDialog):
     def _select_combo_item(
         self, combo: QComboBox, item_id_to_select: int, trigger_next_load: bool
     ):
-        # ... (method remains unchanged from v1.1.9) ...
         if not combo:
             return
         index = combo.findData(item_id_to_select)
@@ -435,7 +424,6 @@ class AddEditChargeCodeDialog(QDialog):
             combo.setCurrentIndex(index)
 
     def get_data(self) -> Optional[Dict[str, Any]]:
-        # ... (method remains unchanged from v1.1.9 - no 'is_active' or 'taxable') ...
         code = self.code_input.text().strip().upper()
         description = self.description_input.toPlainText().strip()
         standard_charge_value = self.standard_charge_input.value()
@@ -476,7 +464,6 @@ class AddEditChargeCodeDialog(QDialog):
         }
 
     def validate_and_accept(self):
-        # ... (method remains unchanged from v1.1.9) ...
         data = self.get_data()
         if data is None:
             return
@@ -503,7 +490,7 @@ class AddEditChargeCodeDialog(QDialog):
         try:
             if self.is_edit_mode and self.charge_code:
                 success, message = self.controller.update_charge_code(
-                    self.charge_code.charge_code_id, data, self.current_user_id
+                    self.charge_code.id, data, self.current_user_id
                 )
             else:
                 success, message, _ = self.controller.create_charge_code(

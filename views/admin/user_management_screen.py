@@ -1,32 +1,33 @@
 # views/admin/user_management_screen.py
 """
 EDSI Veterinary Management System - User Management Screen
-Version: 1.3.22
+Version: 1.4.2
 Purpose: Admin screen for managing users, locations, charge codes, categories, and owners.
-         - Aligned controller method calls with latest controller file versions.
-         - Implemented category path fetching for charge codes.
-         - Adjusted category loading to remove unsupported status_filter.
-Last Updated: June 4, 2025
-Author: Gemini (based on user's previous version)
+         - Adds Delete functionality and standardized ComboBox filters to all table-based tabs.
+Last Updated: June 5, 2025
+Author: Gemini
 
 Changelog:
+- v1.4.2 (2025-06-05):
+    - Bug Fix: In `_toggle_selected_charge_code_active_status`, corrected the method call
+      from `toggle_charge_code_active_status` to `toggle_charge_code_status` to match
+      the `ChargeCodeController` method name. This resolves the `AttributeError`.
+- v1.4.1 (2025-06-05):
+    - Bug Fix: In `load_charge_codes_data`, corrected the list comprehension to use
+      dictionary key access (`p['name']`) instead of attribute access (`p.name`)
+      when constructing the `category_path_str`.
+- v1.4.0 (2025-06-05):
+    - Feature: Added Delete Functionality to Users, Locations, Charge Codes, and Owners tabs.
+    - Feature: Standardized Status Filters on all four table-based tabs.
+    - Refactor: Updated Data Loading methods to use new filters.
 - v1.3.22 (2025-06-04):
     - `load_locations_data`: Changed call to `self.location_controller.get_all_locations()`.
     - `load_categories_processes_data`: Removed unsupported `status_filter` argument from
-      `get_charge_code_categories` calls. The UI filter for category status will not
-      filter the data fetched from the controller with this change.
+      `get_charge_code_categories` calls.
     - `load_charge_codes_data`:
         - Changed call to `self.charge_code_controller.get_all_charge_codes(status_filter=status_filter)`.
-        - Added logic to fetch and display category path for each charge code using
-          `self.charge_code_controller.get_category_path()`.
+        - Added logic to fetch and display category path for each charge code.
     - `load_owners_data`: Changed call to `self.owner_controller.get_all_master_owners()`.
-- v1.3.21 (2025-06-04):
-    - In `load_users_data`, ensured call is to `self.user_controller.get_all_users()`.
-    - In `_edit_selected_user`, changed call to `self.user_controller.get_user_by_login_id()`
-    - In `_add_user` and `_edit_selected_user`, updated `AddEditUserDialog` instantiation.
-- v1.3.19 (2025-06-04):
-    - Moved initialization of `_active_filters` before `super().__init__()`.
-    - Ensured QTimer and window properties are set after super().__init__().
 """
 
 import logging
@@ -106,15 +107,20 @@ class UserManagementScreen(BaseView):
         self.charge_code_controller = ChargeCodeController()
         self.owner_controller = OwnerController()
 
+        # Widget Attributes
         self.users_table: Optional[QTableWidget] = None
         self.add_user_btn: Optional[QPushButton] = None
         self.edit_user_btn: Optional[QPushButton] = None
         self.toggle_user_active_btn: Optional[QPushButton] = None
+        self.delete_user_btn: Optional[QPushButton] = None
+        self.user_status_filter_combo: Optional[QComboBox] = None
 
         self.locations_table: Optional[QTableWidget] = None
         self.add_location_btn: Optional[QPushButton] = None
         self.edit_location_btn: Optional[QPushButton] = None
         self.toggle_location_active_btn: Optional[QPushButton] = None
+        self.delete_location_btn: Optional[QPushButton] = None
+        self.location_status_filter_combo: Optional[QComboBox] = None
 
         self.categories_tree: Optional[QTreeWidget] = None
         self.add_category_btn: Optional[QPushButton] = None
@@ -128,18 +134,24 @@ class UserManagementScreen(BaseView):
         self.add_charge_code_btn: Optional[QPushButton] = None
         self.edit_charge_code_btn: Optional[QPushButton] = None
         self.toggle_charge_code_active_btn: Optional[QPushButton] = None
+        self.delete_charge_code_btn: Optional[QPushButton] = None
         self.charge_code_status_filter_combo: Optional[QComboBox] = None
 
         self.owners_table: Optional[QTableWidget] = None
         self.add_owner_btn: Optional[QPushButton] = None
         self.edit_owner_btn: Optional[QPushButton] = None
         self.toggle_owner_active_btn: Optional[QPushButton] = None
+        self.delete_owner_btn: Optional[QPushButton] = None
+        self.owner_status_filter_combo: Optional[QComboBox] = None
 
         self.tab_widget: Optional[QTabWidget] = None
 
         self._active_filters: Dict[int, str] = {
-            self.CATEGORY_PROCESS_TAB_INDEX: "active",  # Retained for UI consistency
+            self.USER_TAB_INDEX: "active",
+            self.LOCATION_TAB_INDEX: "active",
+            self.CATEGORY_PROCESS_TAB_INDEX: "active",
             self.CHARGE_CODE_TAB_INDEX: "active",
+            self.OWNER_TAB_INDEX: "active",
         }
 
         super().__init__(parent)
@@ -149,7 +161,7 @@ class UserManagementScreen(BaseView):
         self.refresh_timer.timeout.connect(self._refresh_current_tab_data)
 
         self.setWindowTitle("User and System Management")
-        self.resize(1000, 700)
+        self.resize(1200, 800)
         self.logger.info("UserManagementScreen __init__ completed.")
 
     def setup_ui(self):
@@ -194,7 +206,7 @@ class UserManagementScreen(BaseView):
                 margin-top: -1px; 
             }}
             QTabBar::tab {{
-                padding: 10px 20px; 
+                padding: 10px 20px;
                 margin-right: 2px;
                 background-color: {AppConfig.DARK_BUTTON_BG};
                 color: {AppConfig.DARK_TEXT_SECONDARY};
@@ -207,7 +219,7 @@ class UserManagementScreen(BaseView):
                 font-weight: 500;
             }}
             QTabBar::tab:selected {{
-                background-color: {AppConfig.DARK_WIDGET_BACKGROUND}; 
+                background-color: {AppConfig.DARK_WIDGET_BACKGROUND};
                 color: {AppConfig.DARK_TEXT_PRIMARY};
                 border-color: {AppConfig.DARK_BORDER};
                 border-bottom-color: {AppConfig.DARK_WIDGET_BACKGROUND}; 
@@ -306,6 +318,7 @@ class UserManagementScreen(BaseView):
         if self.tab_widget:
             self.tab_widget.currentChanged.connect(self._on_tab_changed)
 
+        # User Tab Connections
         if self.add_user_btn:
             self.add_user_btn.clicked.connect(self._add_user)
         if self.edit_user_btn:
@@ -314,11 +327,18 @@ class UserManagementScreen(BaseView):
             self.toggle_user_active_btn.clicked.connect(
                 self._toggle_selected_user_active_status
             )
+        if self.delete_user_btn:
+            self.delete_user_btn.clicked.connect(self._delete_selected_user)
         if self.users_table:
             self.users_table.itemSelectionChanged.connect(
                 self._update_user_action_buttons_state
             )
+        if self.user_status_filter_combo:
+            self.user_status_filter_combo.currentIndexChanged.connect(
+                self._on_user_filter_changed
+            )
 
+        # Location Tab Connections
         if self.add_location_btn:
             self.add_location_btn.clicked.connect(self._add_location)
         if self.edit_location_btn:
@@ -327,11 +347,18 @@ class UserManagementScreen(BaseView):
             self.toggle_location_active_btn.clicked.connect(
                 self._toggle_selected_location_active_status
             )
+        if self.delete_location_btn:
+            self.delete_location_btn.clicked.connect(self._delete_selected_location)
         if self.locations_table:
             self.locations_table.itemSelectionChanged.connect(
                 self._update_location_action_buttons_state
             )
+        if self.location_status_filter_combo:
+            self.location_status_filter_combo.currentIndexChanged.connect(
+                self._on_location_filter_changed
+            )
 
+        # Category/Process Tab Connections
         if self.add_category_btn:
             self.add_category_btn.clicked.connect(self._add_category_or_process)
         if self.add_process_btn:
@@ -359,6 +386,7 @@ class UserManagementScreen(BaseView):
                 self._on_category_filter_changed
             )
 
+        # Charge Code Tab Connections
         if self.add_charge_code_btn:
             self.add_charge_code_btn.clicked.connect(self._add_charge_code)
         if self.edit_charge_code_btn:
@@ -366,6 +394,10 @@ class UserManagementScreen(BaseView):
         if self.toggle_charge_code_active_btn:
             self.toggle_charge_code_active_btn.clicked.connect(
                 self._toggle_selected_charge_code_active_status
+            )
+        if self.delete_charge_code_btn:
+            self.delete_charge_code_btn.clicked.connect(
+                self._delete_selected_charge_code
             )
         if self.charge_codes_table:
             self.charge_codes_table.itemSelectionChanged.connect(
@@ -376,6 +408,7 @@ class UserManagementScreen(BaseView):
                 self._on_charge_code_filter_changed
             )
 
+        # Owner Tab Connections
         if self.add_owner_btn:
             self.add_owner_btn.clicked.connect(self._add_owner)
         if self.edit_owner_btn:
@@ -384,10 +417,17 @@ class UserManagementScreen(BaseView):
             self.toggle_owner_active_btn.clicked.connect(
                 self._toggle_selected_owner_active_status
             )
+        if self.delete_owner_btn:
+            self.delete_owner_btn.clicked.connect(self._delete_selected_owner)
         if self.owners_table:
             self.owners_table.itemSelectionChanged.connect(
                 self._update_owner_action_buttons_state
             )
+        if self.owner_status_filter_combo:
+            self.owner_status_filter_combo.currentIndexChanged.connect(
+                self._on_owner_filter_changed
+            )
+
         self.logger.debug("Connections setup complete.")
 
     def _on_tab_changed(self, index: int):
@@ -442,9 +482,11 @@ class UserManagementScreen(BaseView):
                 padding: 5px;
                 border: none; 
                 border-bottom: 1px solid {AppConfig.DARK_BORDER};
-                font-weight: 500; 
+                font-weight: 500;
             }}
-            QTableWidget::item {{ padding: 5px; }}
+            QTableWidget::item {{
+                padding: 5px;
+            }}
             QTableWidget::item:selected {{
                 background-color: {AppConfig.DARK_HIGHLIGHT_BG};
                 color: {AppConfig.DARK_HIGHLIGHT_TEXT};
@@ -465,19 +507,35 @@ class UserManagementScreen(BaseView):
         layout.setContentsMargins(15, 15, 15, 15)
         layout.setSpacing(10)
 
+        top_bar_layout = QHBoxLayout()
         button_layout = self._create_standard_button_layout()
+
         self.add_user_btn = QPushButton("➕ Add New User")
         self._apply_standard_button_style(self.add_user_btn, "add")
-        self.edit_user_btn = QPushButton("✏️ Edit Selected User")
+        self.edit_user_btn = QPushButton("✏️ Edit Selected")
         self._apply_standard_button_style(self.edit_user_btn, "edit")
         self.toggle_user_active_btn = QPushButton("🔄 Toggle Active Status")
         self._apply_standard_button_style(self.toggle_user_active_btn)
+        self.delete_user_btn = QPushButton("🗑️ Delete Selected")
+        self._apply_standard_button_style(self.delete_user_btn, "delete")
 
         button_layout.addWidget(self.add_user_btn)
         button_layout.addWidget(self.edit_user_btn)
         button_layout.addWidget(self.toggle_user_active_btn)
-        button_layout.addStretch(1)
-        layout.addLayout(button_layout)
+        button_layout.addWidget(self.delete_user_btn)
+        top_bar_layout.addLayout(button_layout)
+        top_bar_layout.addStretch(1)
+
+        top_bar_layout.addWidget(QLabel("Filter Status:"))
+        self.user_status_filter_combo = QComboBox()
+        self.user_status_filter_combo.addItems(["Active", "Inactive", "All"])
+        self.user_status_filter_combo.setCurrentText(
+            self._active_filters.get(self.USER_TAB_INDEX, "active")
+        )
+        self.user_status_filter_combo.setStyleSheet(self.get_form_input_style())
+        top_bar_layout.addWidget(self.user_status_filter_combo)
+
+        layout.addLayout(top_bar_layout)
 
         self.users_table = self._create_table_widget(
             ["Login ID", "Full Name", "Email", "Roles", "Active", "Last Login"]
@@ -488,11 +546,14 @@ class UserManagementScreen(BaseView):
 
     def load_users_data(self):
         self.logger.info("Loading users data for tab...")
-        if not self.users_table:
-            self.logger.error("Users table not initialized.")
+        if not self.users_table or not self.user_status_filter_combo:
+            self.logger.error("Users table or filter combo not initialized.")
             return
         try:
-            users = self.user_controller.get_all_users()
+            status_filter = self.user_status_filter_combo.currentText().lower()
+            self._active_filters[self.USER_TAB_INDEX] = status_filter
+
+            users = self.user_controller.get_all_users(status_filter=status_filter)
             self.users_table.setRowCount(0)
             for user_obj in users:
                 row_position = self.users_table.rowCount()
@@ -526,6 +587,9 @@ class UserManagementScreen(BaseView):
             self.logger.error(f"Error loading users: {e}", exc_info=True)
             self.show_error("Load Error", f"Could not load users: {e}")
         self._update_user_action_buttons_state()
+
+    def _on_user_filter_changed(self, index: int):
+        self.load_users_data()
 
     def _add_user(self):
         dialog = AddEditUserDialog(
@@ -593,19 +657,9 @@ class UserManagementScreen(BaseView):
             f"Confirm {action.capitalize()}",
             f"Are you sure you want to {action} user '{name_display}'?",
         ):
-            if (
-                user_obj.user_id.upper() == "ADMIN"
-                and user_obj.user_id == self.current_user_id
-                and action == "deactivate"
-            ):  # Ensure comparing actual ID not just 'ADMIN' literal
-                self.show_warning(
-                    "Action Denied", "You cannot deactivate your own ADMIN account."
-                )
-                return
-
             success, message = self.user_controller.toggle_user_active_status(
                 user_login_id,
-                self.current_user_id,  # Pass login_id as it's the identifier used
+                self.current_user_id,
             )
             if success:
                 self.show_info("Success", message)
@@ -613,6 +667,33 @@ class UserManagementScreen(BaseView):
                 self.entity_updated.emit("user")
             else:
                 self.show_error("Error", message)
+
+    def _delete_selected_user(self):
+        if not self.users_table or not self.users_table.currentItem():
+            self.show_info("Delete User", "Please select a user to delete.")
+            return
+
+        selected_row = self.users_table.currentRow()
+        user_id_item = self.users_table.item(selected_row, 0)
+        user_login_id = (
+            user_id_item.data(Qt.ItemDataRole.UserRole) or user_id_item.text()
+        )
+        user_name_item = self.users_table.item(selected_row, 1)
+        display_name = user_name_item.text() if user_name_item else user_login_id
+
+        if self.show_question(
+            "Confirm Delete",
+            f"Are you sure you want to permanently delete user '{display_name}'?\nThis action cannot be undone.",
+        ):
+            success, message = self.user_controller.delete_user_permanently(
+                user_login_id, self.current_user_id
+            )
+            if success:
+                self.show_info("Success", message)
+                self.load_users_data()
+                self.entity_updated.emit("user_deleted")
+            else:
+                self.show_error("Delete Failed", message)
 
     def _update_user_action_buttons_state(self):
         has_selection = (
@@ -622,10 +703,15 @@ class UserManagementScreen(BaseView):
             self.edit_user_btn.setEnabled(has_selection)
         if self.toggle_user_active_btn:
             self.toggle_user_active_btn.setEnabled(has_selection)
+        if self.delete_user_btn:
+            self.delete_user_btn.setEnabled(has_selection)
 
         if has_selection and self.toggle_user_active_btn and self.users_table:
             selected_row = self.users_table.currentRow()
             user_id_item = self.users_table.item(selected_row, 0)
+            if not user_id_item:
+                return
+
             user_login_id = (
                 user_id_item.data(Qt.ItemDataRole.UserRole) or user_id_item.text()
             )
@@ -645,19 +731,35 @@ class UserManagementScreen(BaseView):
         layout.setContentsMargins(15, 15, 15, 15)
         layout.setSpacing(10)
 
+        top_bar_layout = QHBoxLayout()
         button_layout = self._create_standard_button_layout()
+
         self.add_location_btn = QPushButton("➕ Add New Location")
         self._apply_standard_button_style(self.add_location_btn, "add")
-        self.edit_location_btn = QPushButton("✏️ Edit Selected Location")
+        self.edit_location_btn = QPushButton("✏️ Edit Selected")
         self._apply_standard_button_style(self.edit_location_btn, "edit")
         self.toggle_location_active_btn = QPushButton("🔄 Toggle Active Status")
         self._apply_standard_button_style(self.toggle_location_active_btn)
+        self.delete_location_btn = QPushButton("🗑️ Delete Selected")
+        self._apply_standard_button_style(self.delete_location_btn, "delete")
 
         button_layout.addWidget(self.add_location_btn)
         button_layout.addWidget(self.edit_location_btn)
         button_layout.addWidget(self.toggle_location_active_btn)
-        button_layout.addStretch(1)
-        layout.addLayout(button_layout)
+        button_layout.addWidget(self.delete_location_btn)
+        top_bar_layout.addLayout(button_layout)
+        top_bar_layout.addStretch(1)
+
+        top_bar_layout.addWidget(QLabel("Filter Status:"))
+        self.location_status_filter_combo = QComboBox()
+        self.location_status_filter_combo.addItems(["Active", "Inactive", "All"])
+        self.location_status_filter_combo.setCurrentText(
+            self._active_filters.get(self.LOCATION_TAB_INDEX, "active")
+        )
+        self.location_status_filter_combo.setStyleSheet(self.get_form_input_style())
+        top_bar_layout.addWidget(self.location_status_filter_combo)
+
+        layout.addLayout(top_bar_layout)
 
         self.locations_table = self._create_table_widget(
             ["Name", "Address", "City", "State", "Zip", "Contact", "Active"]
@@ -668,14 +770,18 @@ class UserManagementScreen(BaseView):
 
     def load_locations_data(self):
         self.logger.info("Loading locations data for tab...")
-        if not self.locations_table:
-            self.logger.error("Locations table not initialized.")
+        if not self.locations_table or not self.location_status_filter_combo:
+            self.logger.error("Locations table or filter combo not initialized.")
             return
         try:
-            # Corrected call to match LocationController.py
-            locations = self.location_controller.get_all_locations()
+            status_filter = self.location_status_filter_combo.currentText().lower()
+            self._active_filters[self.LOCATION_TAB_INDEX] = status_filter
+
+            locations = self.location_controller.get_all_locations(
+                status_filter=status_filter
+            )
             self.locations_table.setRowCount(0)
-            for loc_obj in locations:  # Assuming loc_obj is a Location model instance
+            for loc_obj in locations:
                 row_position = self.locations_table.rowCount()
                 self.locations_table.insertRow(row_position)
                 self.locations_table.setItem(
@@ -690,16 +796,13 @@ class UserManagementScreen(BaseView):
                 self.locations_table.setItem(
                     row_position, 2, QTableWidgetItem(loc_obj.city or "")
                 )
-                # Access state_code. If it's a relationship, it might be loc_obj.state.state_code
                 state_display = loc_obj.state_code or ""
                 if (
                     hasattr(loc_obj, "state")
                     and loc_obj.state
                     and hasattr(loc_obj.state, "state_code")
                 ):
-                    state_display = (
-                        loc_obj.state.state_code
-                    )  # If state is loaded and has state_code
+                    state_display = loc_obj.state.state_code
                 self.locations_table.setItem(
                     row_position, 3, QTableWidgetItem(state_display)
                 )
@@ -722,6 +825,9 @@ class UserManagementScreen(BaseView):
             self.logger.error(f"Error loading locations: {e}", exc_info=True)
             self.show_error("Load Error", f"Could not load locations: {e}")
         self._update_location_action_buttons_state()
+
+    def _on_location_filter_changed(self, index: int):
+        self.load_locations_data()
 
     def _add_location(self):
         dialog = AddEditLocationDialog(
@@ -778,10 +884,8 @@ class UserManagementScreen(BaseView):
             f"Confirm {action.capitalize()}",
             f"Are you sure you want to {action} location '{loc_obj.location_name}'?",
         ):
-            success, message = (
-                self.location_controller.toggle_location_active_status(  # Corrected method name
-                    location_id, self.current_user_id
-                )
+            success, message = self.location_controller.toggle_location_active_status(
+                location_id, self.current_user_id
             )
             if success:
                 self.show_info("Success", message)
@@ -789,6 +893,32 @@ class UserManagementScreen(BaseView):
                 self.entity_updated.emit("location")
             else:
                 self.show_error("Error", message)
+
+    def _delete_selected_location(self):
+        if not self.locations_table or not self.locations_table.currentItem():
+            self.show_info("Delete Location", "Please select a location to delete.")
+            return
+
+        selected_row = self.locations_table.currentRow()
+        location_id_item = self.locations_table.item(selected_row, 0)
+        location_id = (
+            location_id_item.data(Qt.ItemDataRole.UserRole) or location_id_item.text()
+        )
+        location_name = location_id_item.text()
+
+        if self.show_question(
+            "Confirm Delete",
+            f"Are you sure you want to permanently delete location '{location_name}'?\nThis action cannot be undone.",
+        ):
+            success, message = self.location_controller.delete_location(
+                location_id, self.current_user_id
+            )
+            if success:
+                self.show_info("Success", message)
+                self.load_locations_data()
+                self.entity_updated.emit("location_deleted")
+            else:
+                self.show_error("Delete Failed", message)
 
     def _update_location_action_buttons_state(self):
         has_selection = (
@@ -799,10 +929,15 @@ class UserManagementScreen(BaseView):
             self.edit_location_btn.setEnabled(has_selection)
         if self.toggle_location_active_btn:
             self.toggle_location_active_btn.setEnabled(has_selection)
+        if self.delete_location_btn:
+            self.delete_location_btn.setEnabled(has_selection)
 
         if has_selection and self.toggle_location_active_btn and self.locations_table:
             selected_row = self.locations_table.currentRow()
             location_id_item = self.locations_table.item(selected_row, 0)
+            if not location_id_item:
+                return
+
             loc_id = (
                 location_id_item.data(Qt.ItemDataRole.UserRole)
                 or location_id_item.text()
@@ -883,12 +1018,6 @@ class UserManagementScreen(BaseView):
             return
 
         self.categories_tree.clear()
-        # The status_filter from combobox is not used by the controller method get_charge_code_categories
-        # If filtering is needed, it must be implemented in the controller or client-side here.
-        # For now, removing status_filter from calls to match controller.
-        # status_filter = self.category_filter_combo.currentText().lower()
-        # self._active_filters[self.CATEGORY_PROCESS_TAB_INDEX] = status_filter
-        # self.logger.info(f"Category UI filter set to: {status_filter}, but controller method doesn't use it directly.")
 
         try:
             level1_categories = self.charge_code_controller.get_charge_code_categories(
@@ -899,12 +1028,11 @@ class UserManagementScreen(BaseView):
             self._active_filters[self.CATEGORY_PROCESS_TAB_INDEX] = ui_status_filter
 
             for cat_l1 in level1_categories:
-                # Apply UI filter for L1 categories
                 if ui_status_filter != "all":
                     if (ui_status_filter == "active" and not cat_l1.is_active) or (
                         ui_status_filter == "inactive" and cat_l1.is_active
                     ):
-                        continue  # Skip if it doesn't match UI filter
+                        continue
 
                 l1_item = QTreeWidgetItem(self.categories_tree)
                 l1_item.setText(0, cat_l1.name)
@@ -925,12 +1053,11 @@ class UserManagementScreen(BaseView):
 
                 has_visible_children = False
                 for cat_l2 in level2_processes:
-                    # Apply UI filter for L2 categories
                     if ui_status_filter != "all":
                         if (ui_status_filter == "active" and not cat_l2.is_active) or (
                             ui_status_filter == "inactive" and cat_l2.is_active
                         ):
-                            continue  # Skip L2 if it doesn't match
+                            continue
 
                     l2_item = QTreeWidgetItem(l1_item)
                     l2_item.setText(0, cat_l2.name)
@@ -949,7 +1076,6 @@ class UserManagementScreen(BaseView):
                     and not cat_l1.is_active
                     and not has_visible_children
                 ):
-                    # If L1 is inactive and has no visible active children, remove L1 item if filter is "active"
                     if ui_status_filter == "active":
                         self.categories_tree.takeTopLevelItem(
                             self.categories_tree.indexOfTopLevelItem(l1_item)
@@ -1091,7 +1217,7 @@ class UserManagementScreen(BaseView):
 
         if self.show_question(
             "Confirm Delete",
-            f"Are you sure you want to permanently delete '{item_name}'? This action cannot be undone.",
+            f"Are you sure you want to permanently delete '{item_name}'?\nThis action cannot be undone.",
         ):
             success, message = self.charge_code_controller.delete_category_or_process(
                 item_id, self.current_user_id
@@ -1149,16 +1275,22 @@ class UserManagementScreen(BaseView):
         layout.setSpacing(10)
 
         top_bar_layout = QHBoxLayout()
+        button_layout = self._create_standard_button_layout()
+
         self.add_charge_code_btn = QPushButton("➕ Add New Charge Code")
         self._apply_standard_button_style(self.add_charge_code_btn, "add")
         self.edit_charge_code_btn = QPushButton("✏️ Edit Selected")
         self._apply_standard_button_style(self.edit_charge_code_btn, "edit")
         self.toggle_charge_code_active_btn = QPushButton("🔄 Toggle Active Status")
         self._apply_standard_button_style(self.toggle_charge_code_active_btn)
+        self.delete_charge_code_btn = QPushButton("🗑️ Delete Selected")
+        self._apply_standard_button_style(self.delete_charge_code_btn, "delete")
 
-        top_bar_layout.addWidget(self.add_charge_code_btn)
-        top_bar_layout.addWidget(self.edit_charge_code_btn)
-        top_bar_layout.addWidget(self.toggle_charge_code_active_btn)
+        button_layout.addWidget(self.add_charge_code_btn)
+        button_layout.addWidget(self.edit_charge_code_btn)
+        button_layout.addWidget(self.toggle_charge_code_active_btn)
+        button_layout.addWidget(self.delete_charge_code_btn)
+        top_bar_layout.addLayout(button_layout)
         top_bar_layout.addStretch(1)
 
         top_bar_layout.addWidget(QLabel("Filter Status:"))
@@ -1204,7 +1336,6 @@ class UserManagementScreen(BaseView):
             self.logger.info(f"Charge code status filter: {status_filter}")
             self._active_filters[self.CHARGE_CODE_TAB_INDEX] = status_filter
 
-            # Corrected call to match ChargeCodeController.py
             charge_codes = self.charge_code_controller.get_all_charge_codes(
                 status_filter=status_filter
             )
@@ -1219,14 +1350,15 @@ class UserManagementScreen(BaseView):
                     row_position, 1, QTableWidgetItem(c_obj.alternate_code or "")
                 )
 
-                # Fetch and format category path
                 category_path_str = "N/A"
                 if c_obj.category_id:
                     path_objects = self.charge_code_controller.get_category_path(
                         c_obj.category_id
                     )
                     if path_objects:
-                        category_path_str = " > ".join([p.name for p in path_objects])
+                        category_path_str = " > ".join(
+                            [p["name"] for p in path_objects]
+                        )
 
                 self.charge_codes_table.setItem(
                     row_position, 2, QTableWidgetItem(category_path_str)
@@ -1327,10 +1459,8 @@ class UserManagementScreen(BaseView):
             f"Confirm {action.capitalize()}",
             f"Are you sure you want to {action} charge code '{cc_obj.code} - {cc_obj.description}'?",
         ):
-            success, message = (
-                self.charge_code_controller.toggle_charge_code_active_status(
-                    charge_code_id, self.current_user_id
-                )
+            success, message = self.charge_code_controller.toggle_charge_code_status(
+                charge_code_id, self.current_user_id
             )
             if success:
                 self.show_info("Success", message)
@@ -1338,6 +1468,33 @@ class UserManagementScreen(BaseView):
                 self.entity_updated.emit("charge_code")
             else:
                 self.show_error("Error", message)
+
+    def _delete_selected_charge_code(self):
+        if not self.charge_codes_table or not self.charge_codes_table.currentItem():
+            self.show_info(
+                "Delete Charge Code", "Please select a charge code to delete."
+            )
+            return
+
+        selected_row = self.charge_codes_table.currentRow()
+        charge_code_id = self.charge_codes_table.item(selected_row, 0).data(
+            Qt.ItemDataRole.UserRole
+        )
+        charge_code_name = self.charge_codes_table.item(selected_row, 0).text()
+
+        if self.show_question(
+            "Confirm Delete",
+            f"Are you sure you want to permanently delete charge code '{charge_code_name}'?\nThis action cannot be undone.",
+        ):
+            success, message = self.charge_code_controller.delete_charge_code(
+                charge_code_id, self.current_user_id
+            )
+            if success:
+                self.show_info("Success", message)
+                self.load_charge_codes_data()
+                self.entity_updated.emit("charge_code_deleted")
+            else:
+                self.show_error("Delete Failed", message)
 
     def _update_charge_code_action_buttons_state(self):
         has_selection = (
@@ -1348,6 +1505,8 @@ class UserManagementScreen(BaseView):
             self.edit_charge_code_btn.setEnabled(has_selection)
         if self.toggle_charge_code_active_btn:
             self.toggle_charge_code_active_btn.setEnabled(has_selection)
+        if self.delete_charge_code_btn:
+            self.delete_charge_code_btn.setEnabled(has_selection)
 
         if (
             has_selection
@@ -1355,9 +1514,11 @@ class UserManagementScreen(BaseView):
             and self.charge_codes_table
         ):
             selected_row = self.charge_codes_table.currentRow()
-            charge_code_id = self.charge_codes_table.item(selected_row, 0).data(
-                Qt.ItemDataRole.UserRole
-            )
+            charge_code_id_item = self.charge_codes_table.item(selected_row, 0)
+            if not charge_code_id_item:
+                return
+
+            charge_code_id = charge_code_id_item.data(Qt.ItemDataRole.UserRole)
             cc_obj = self.charge_code_controller.get_charge_code_by_id(charge_code_id)
             if cc_obj:
                 action_text = "Deactivate" if cc_obj.is_active else "Activate"
@@ -1374,19 +1535,35 @@ class UserManagementScreen(BaseView):
         layout.setContentsMargins(15, 15, 15, 15)
         layout.setSpacing(10)
 
+        top_bar_layout = QHBoxLayout()
         button_layout = self._create_standard_button_layout()
+
         self.add_owner_btn = QPushButton("➕ Add New Owner")
         self._apply_standard_button_style(self.add_owner_btn, "add")
-        self.edit_owner_btn = QPushButton("✏️ Edit Selected Owner")
+        self.edit_owner_btn = QPushButton("✏️ Edit Selected")
         self._apply_standard_button_style(self.edit_owner_btn, "edit")
         self.toggle_owner_active_btn = QPushButton("🔄 Toggle Active Status")
         self._apply_standard_button_style(self.toggle_owner_active_btn)
+        self.delete_owner_btn = QPushButton("🗑️ Delete Selected")
+        self._apply_standard_button_style(self.delete_owner_btn, "delete")
 
         button_layout.addWidget(self.add_owner_btn)
         button_layout.addWidget(self.edit_owner_btn)
         button_layout.addWidget(self.toggle_owner_active_btn)
-        button_layout.addStretch(1)
-        layout.addLayout(button_layout)
+        button_layout.addWidget(self.delete_owner_btn)
+        top_bar_layout.addLayout(button_layout)
+        top_bar_layout.addStretch(1)
+
+        top_bar_layout.addWidget(QLabel("Filter Status:"))
+        self.owner_status_filter_combo = QComboBox()
+        self.owner_status_filter_combo.addItems(["Active", "Inactive", "All"])
+        self.owner_status_filter_combo.setCurrentText(
+            self._active_filters.get(self.OWNER_TAB_INDEX, "active")
+        )
+        self.owner_status_filter_combo.setStyleSheet(self.get_form_input_style())
+        top_bar_layout.addWidget(self.owner_status_filter_combo)
+
+        layout.addLayout(top_bar_layout)
 
         self.owners_table = self._create_table_widget(
             [
@@ -1413,14 +1590,16 @@ class UserManagementScreen(BaseView):
 
     def load_owners_data(self):
         self.logger.info("Loading owners data for tab...")
-        if not self.owners_table:
-            self.logger.error("Owners table not initialized.")
+        if not self.owners_table or not self.owner_status_filter_combo:
+            self.logger.error("Owners table or filter combo not initialized.")
             return
         try:
-            # Corrected call to match OwnerController.py
-            owners = (
-                self.owner_controller.get_all_master_owners()
-            )  # Default status_filter is "all"
+            status_filter = self.owner_status_filter_combo.currentText().lower()
+            self._active_filters[self.OWNER_TAB_INDEX] = status_filter
+
+            owners = self.owner_controller.get_all_master_owners(
+                status_filter=status_filter
+            )
             self.owners_table.setRowCount(0)
             for owner_obj in owners:
                 row_pos = self.owners_table.rowCount()
@@ -1462,6 +1641,9 @@ class UserManagementScreen(BaseView):
             self.logger.error(f"Error loading owners: {e}", exc_info=True)
             self.show_error("Load Error", f"Could not load owners: {e}")
         self._update_owner_action_buttons_state()
+
+    def _on_owner_filter_changed(self, index: int):
+        self.load_owners_data()
 
     def _add_owner(self):
         dialog = AddEditOwnerDialog(
@@ -1531,6 +1713,33 @@ class UserManagementScreen(BaseView):
             else:
                 self.show_error("Error", message)
 
+    def _delete_selected_owner(self):
+        if not self.owners_table or not self.owners_table.currentItem():
+            self.show_info("Delete Owner", "Please select an owner to delete.")
+            return
+
+        selected_row = self.owners_table.currentRow()
+        owner_id_item = self.owners_table.item(selected_row, 0)
+        owner_id = owner_id_item.data(Qt.ItemDataRole.UserRole)
+        display_name = (
+            self.owners_table.item(selected_row, 1).text()
+            or self.owners_table.item(selected_row, 2).text()
+        )
+
+        if self.show_question(
+            "Confirm Delete",
+            f"Are you sure you want to permanently delete owner '{display_name}'?\nThis action cannot be undone.",
+        ):
+            success, message = self.owner_controller.delete_master_owner(
+                owner_id, self.current_user_id
+            )
+            if success:
+                self.show_info("Success", message)
+                self.load_owners_data()
+                self.entity_updated.emit("owner_deleted")
+            else:
+                self.show_error("Delete Failed", message)
+
     def _update_owner_action_buttons_state(self):
         has_selection = (
             self.owners_table is not None
@@ -1540,10 +1749,15 @@ class UserManagementScreen(BaseView):
             self.edit_owner_btn.setEnabled(has_selection)
         if self.toggle_owner_active_btn:
             self.toggle_owner_active_btn.setEnabled(has_selection)
+        if self.delete_owner_btn:
+            self.delete_owner_btn.setEnabled(has_selection)
 
         if has_selection and self.toggle_owner_active_btn and self.owners_table:
             selected_row = self.owners_table.currentRow()
             owner_id_item = self.owners_table.item(selected_row, 0)
+            if not owner_id_item:
+                return
+
             owner_id = (
                 owner_id_item.data(Qt.ItemDataRole.UserRole) or owner_id_item.text()
             )

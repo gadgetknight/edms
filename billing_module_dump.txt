@@ -1,0 +1,4783 @@
+=============== FILE: models\financial_models.py ===============
+
+# models/financial_models.py
+"""
+EDSI Veterinary Management System - Financial Models
+Version: 1.0.1
+Purpose: Defines SQLAlchemy models for financial transactions and invoices.
+         Corrected ForeignKey in Transaction.charge_code_id to point to charge_codes.id.
+Last Updated: June 4, 2025
+Author: Gemini
+
+Changelog:
+- v1.0.1 (2025-06-04):
+    - Corrected the ForeignKey for `Transaction.charge_code_id` to reference
+      `charge_codes.id` instead of the non-existent `charge_codes.charge_code_id`.
+- v1.0.0 (2025-06-04):
+    - Initial creation.
+    - Added Transaction model to record individual billable charges.
+    - Added Invoice model to group transactions for billing owners.
+    - Defined relationships between Transaction, Invoice, Horse, Owner, ChargeCode, User.
+"""
+
+import datetime
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Date,
+    ForeignKey,
+    Numeric,
+    Boolean,
+    Text,
+    Enum,  # Not currently used, but kept for potential future use
+)
+from sqlalchemy.orm import relationship, backref
+from sqlalchemy.sql import func  # For server-side date defaults
+
+from .base_model import BaseModel
+
+
+class Transaction(BaseModel):
+    """
+    Represents an individual billable event (charge, payment, adjustment).
+    Each charge line item from the 'mini-spreadsheet' will be a Transaction.
+    """
+
+    __tablename__ = "transactions"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True,
+        autoincrement=True,
+        doc="Unique transaction identifier",
+    )
+
+    horse_id = Column(
+        Integer,
+        ForeignKey("horses.horse_id"),
+        nullable=False,
+        index=True,
+        doc="Horse associated with this transaction",
+    )
+    owner_id = Column(
+        Integer,
+        ForeignKey("owners.owner_id"),
+        nullable=False,
+        index=True,
+        doc="Owner responsible for this transaction",
+    )
+
+    # CORRECTED ForeignKey to point to "charge_codes.id"
+    charge_code_id = Column(
+        Integer,
+        ForeignKey("charge_codes.id"),
+        nullable=True,
+        index=True,
+        doc="Charge code for this transaction (if applicable)",
+    )
+
+    transaction_type = Column(
+        String(50),
+        nullable=False,
+        default="Charge",
+        index=True,
+        doc="Type of transaction (e.g., Charge, Payment, Adjustment)",
+    )
+
+    service_date = Column(
+        Date,
+        nullable=False,
+        default=datetime.date.today,
+        doc="Date the service was rendered or item sold",
+    )
+    billing_date = Column(
+        Date,
+        nullable=True,
+        default=datetime.date.today,
+        doc="Date for inclusion in a billing cycle/invoice",
+    )
+
+    description = Column(
+        String(500),
+        nullable=False,
+        doc="Description of the transaction (can be pre-filled from ChargeCode, but editable)",
+    )
+    quantity = Column(
+        Numeric(10, 3),
+        nullable=False,
+        default=1.000,
+        doc="Quantity of items or services",
+    )
+    unit_price = Column(
+        Numeric(10, 2),
+        nullable=False,
+        doc="Price per unit (can be pre-filled from ChargeCode, but editable)",
+    )
+    total_amount = Column(
+        Numeric(10, 2),
+        nullable=False,
+        doc="Calculated total amount (quantity * unit_price)",
+    )
+
+    administered_by_id = Column(
+        String(20),
+        ForeignKey("users.user_id"),
+        nullable=True,
+        doc="User ID of the person who administered/recorded the service",
+    )
+
+    notes = Column(
+        Text, nullable=True, doc="Additional internal notes for this transaction"
+    )
+    print_on_statement = Column(
+        Boolean,
+        default=True,
+        nullable=False,
+        doc="Flag to indicate if notes/details should print on the owner's statement",
+    )
+
+    invoice_id = Column(
+        Integer,
+        ForeignKey("invoices.id"),
+        nullable=True,
+        index=True,
+        doc="Invoice this transaction is part of (if billed)",
+    )
+
+    # Relationships
+    horse = relationship("Horse")
+    owner = relationship("Owner")
+    charge_code = relationship("ChargeCode")
+    administered_by_user = relationship("User")
+
+    invoice = relationship("Invoice", back_populates="transactions")
+
+    def __repr__(self):
+        return f"<Transaction(id={self.id}, type='{self.transaction_type}', horse_id={self.horse_id}, amount={self.total_amount})>"
+
+    @staticmethod
+    def calculate_total_amount(quantity: Numeric, unit_price: Numeric) -> Numeric:
+        if quantity is None or unit_price is None:
+            return Numeric("0.00")
+        return quantity * unit_price
+
+
+class Invoice(BaseModel):
+    """
+    Represents an invoice generated for an owner, grouping multiple transactions.
+    """
+
+    __tablename__ = "invoices"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True,
+        autoincrement=True,
+        doc="Unique invoice identifier",
+    )
+    invoice_number = Column(
+        String(50),
+        unique=True,
+        nullable=True,
+        index=True,
+        doc="User-friendly invoice number (can be auto-generated)",
+    )
+
+    owner_id = Column(
+        Integer,
+        ForeignKey("owners.owner_id"),
+        nullable=False,
+        index=True,
+        doc="Owner this invoice is for",
+    )
+
+    invoice_date = Column(
+        Date,
+        nullable=False,
+        default=func.current_date(),
+        doc="Date the invoice was generated",
+    )
+    due_date = Column(Date, nullable=True, doc="Date the invoice payment is due")
+
+    subtotal_amount = Column(
+        Numeric(10, 2),
+        nullable=False,
+        default=0.00,
+        doc="Sum of all transaction totals before tax/discounts",
+    )
+    tax_amount = Column(
+        Numeric(10, 2),
+        nullable=False,
+        default=0.00,
+        doc="Total tax amount for the invoice",
+    )
+    discount_amount = Column(
+        Numeric(10, 2),
+        nullable=False,
+        default=0.00,
+        doc="Total discount amount for the invoice",
+    )
+    total_amount = Column(
+        Numeric(10, 2),
+        nullable=False,
+        default=0.00,
+        doc="Final amount due for the invoice (subtotal + tax - discount)",
+    )
+    amount_paid = Column(
+        Numeric(10, 2),
+        nullable=False,
+        default=0.00,
+        doc="Total amount paid towards this invoice",
+    )
+
+    status = Column(
+        String(50),
+        nullable=False,
+        default="Draft",
+        index=True,
+        doc="Status of the invoice (e.g., Draft, Sent, Paid, Partially Paid, Void)",
+    )
+
+    notes_to_owner = Column(
+        Text,
+        nullable=True,
+        doc="Notes that will appear on the printed invoice for the owner",
+    )
+    internal_notes = Column(
+        Text, nullable=True, doc="Internal notes about this invoice"
+    )
+
+    # Relationships
+    owner = relationship("Owner", backref=backref("invoices", lazy="dynamic"))
+    transactions = relationship(
+        "Transaction",
+        back_populates="invoice",
+        cascade="all, delete-orphan",
+        doc="Transactions included in this invoice",
+    )
+
+    def __repr__(self):
+        return f"<Invoice(id={self.id}, number='{self.invoice_number}', owner_id={self.owner_id}, total={self.total_amount}, status='{self.status}')>"
+
+    @property
+    def balance_due(self) -> Numeric:
+        return (self.total_amount or Numeric("0.00")) - (
+            self.amount_paid or Numeric("0.00")
+        )
+
+
+=============== FILE: controllers\financial_controller.py ===============
+
+# controllers/financial_controller.py
+"""
+EDSI Veterinary Management System - Financial Controller
+Version: 1.0.0
+Purpose: Handles business logic related to financial transactions, invoicing, and payments.
+Last Updated: June 4, 2025
+Author: Gemini
+
+Changelog:
+- v1.0.0 (2025-06-04):
+    - Initial creation.
+    - Added initial structure and placeholder methods for managing charges.
+    - Includes methods for fetching lookup data (ChargeCodes, Owners, Users).
+    - Added `add_charge_batch_to_horse` for handling multiple charge entries.
+"""
+
+import logging
+from typing import List, Optional, Dict, Any, Tuple
+from decimal import Decimal, InvalidOperation
+from datetime import date
+
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import joinedload, selectinload
+
+from config.database_config import db_manager
+from models import (
+    Transaction,
+    Invoice,
+    Horse,
+    Owner,
+    ChargeCode,
+    User,
+    ChargeCodeCategory,  # For deriving category paths if needed
+)
+
+# BaseModel might be needed if we directly interact with its methods, but usually not in controllers.
+
+
+class FinancialController:
+    def __init__(self):
+        self.logger = logging.getLogger(self.__class__.__name__)
+
+    def validate_charge_data(
+        self, charge_item: Dict[str, Any], line_number: int
+    ) -> List[str]:
+        """
+        Validates a single charge item from a batch.
+        Args:
+            charge_item: A dictionary containing details for one charge.
+                         Expected keys: 'charge_code_id', 'description',
+                                        'quantity', 'unit_price', 'service_date'.
+            line_number: The line number of this item in the batch for error reporting.
+        Returns:
+            A list of error messages. Empty if valid.
+        """
+        errors = []
+        if not charge_item.get("charge_code_id"):
+            errors.append(f"Line {line_number}: Charge Code is required.")
+
+        description = charge_item.get("description", "").strip()
+        if not description:
+            errors.append(f"Line {line_number}: Description is required.")
+        elif len(description) > 500:
+            errors.append(
+                f"Line {line_number}: Description cannot exceed 500 characters."
+            )
+
+        quantity_str = str(charge_item.get("quantity", "0"))
+        try:
+            quantity = Decimal(quantity_str)
+            if quantity <= Decimal("0"):
+                errors.append(
+                    f"Line {line_number}: Quantity must be greater than zero."
+                )
+        except InvalidOperation:
+            errors.append(
+                f"Line {line_number}: Quantity '{quantity_str}' is not a valid number."
+            )
+
+        unit_price_str = str(charge_item.get("unit_price", "0"))
+        try:
+            unit_price = Decimal(unit_price_str)
+            if unit_price < Decimal("0"):  # Allow zero price, but not negative
+                errors.append(f"Line {line_number}: Unit Price cannot be negative.")
+        except InvalidOperation:
+            errors.append(
+                f"Line {line_number}: Unit Price '{unit_price_str}' is not a valid number."
+            )
+
+        service_date = charge_item.get("service_date")
+        if not isinstance(service_date, date):
+            errors.append(f"Line {line_number}: Service Date is invalid or missing.")
+        elif service_date > date.today():
+            errors.append(f"Line {line_number}: Service Date cannot be in the future.")
+
+        return errors
+
+    def add_charge_batch_to_horse(
+        self,
+        horse_id: int,
+        owner_id: int,
+        charge_items: List[Dict[str, Any]],  # List of dicts, each for one charge line
+        batch_service_date: date,  # Common service date for the batch
+        batch_billing_date: Optional[date],  # Common billing date for the batch
+        administered_by_user_id: str,
+        batch_notes: Optional[str] = None,  # Overall notes for this batch entry, if any
+        batch_print_on_statement: bool = True,
+    ) -> Tuple[bool, str, Optional[List[Transaction]]]:
+        """
+        Adds a batch of charges for a specific horse and owner.
+        Each item in charge_items will become a Transaction record.
+        Args:
+            horse_id: ID of the horse.
+            owner_id: ID of the owner to be billed.
+            charge_items: A list of dictionaries, where each dictionary represents a charge.
+                          Expected keys per item: 'charge_code_id', 'description',
+                                                  'quantity', 'unit_price',
+                                                  'item_notes' (optional),
+                                                  'item_print_on_statement' (optional, defaults to batch_print_on_statement).
+            batch_service_date: The primary service date for all items in this batch.
+            batch_billing_date: The billing date for all items in this batch. Can be None.
+            administered_by_user_id: User ID of the person entering these charges.
+            batch_notes: Optional notes that might apply to the whole entry session (not stored directly, for context).
+            batch_print_on_statement: Default for print_on_statement for items if not specified per item.
+        Returns:
+            A tuple: (success_flag, message, list_of_created_transactions_or_None)
+        """
+        session = db_manager.get_session()
+        created_transactions: List[Transaction] = []
+
+        # Validate common data
+        if not horse_id:
+            return False, "Horse ID is required.", None
+        if not owner_id:
+            return False, "Owner ID is required.", None
+        if not administered_by_user_id:
+            return False, "Administered by User ID is required.", None
+        if not isinstance(batch_service_date, date):
+            return False, "Valid Batch Service Date is required.", None
+        if batch_billing_date and not isinstance(batch_billing_date, date):
+            return False, "Batch Billing Date, if provided, must be a valid date.", None
+
+        if not charge_items:
+            return False, "No charge items provided.", None
+
+        # Validate each charge item
+        all_errors = []
+        for i, item_data in enumerate(charge_items):
+            item_data["service_date"] = (
+                batch_service_date  # Ensure each item gets the batch service date for validation
+            )
+            errors = self.validate_charge_data(item_data, line_number=i + 1)
+            all_errors.extend(errors)
+
+        if all_errors:
+            return (
+                False,
+                "Validation errors in charge items:\n- " + "\n- ".join(all_errors),
+                None,
+            )
+
+        try:
+            for item_data in charge_items:
+                quantity = Decimal(str(item_data["quantity"]))
+                unit_price = Decimal(str(item_data["unit_price"]))
+                total_amount = Transaction.calculate_total_amount(quantity, unit_price)
+
+                new_transaction = Transaction(
+                    horse_id=horse_id,
+                    owner_id=owner_id,
+                    charge_code_id=item_data["charge_code_id"],
+                    transaction_type="Charge",  # Default for this method
+                    service_date=batch_service_date,
+                    billing_date=batch_billing_date
+                    or batch_service_date,  # Default to service_date if not provided
+                    description=item_data["description"].strip(),
+                    quantity=quantity,
+                    unit_price=unit_price,
+                    total_amount=total_amount,
+                    administered_by_id=administered_by_user_id,
+                    notes=item_data.get(
+                        "item_notes"
+                    ),  # Specific notes for this line item
+                    print_on_statement=item_data.get(
+                        "item_print_on_statement", batch_print_on_statement
+                    ),
+                    created_by=administered_by_user_id,  # From BaseModel
+                    modified_by=administered_by_user_id,  # From BaseModel
+                )
+                session.add(new_transaction)
+                created_transactions.append(new_transaction)
+
+            session.commit()
+            for t in created_transactions:  # Refresh to get IDs
+                session.refresh(t)
+
+            self.logger.info(
+                f"{len(created_transactions)} charges added successfully for horse ID {horse_id}, owner ID {owner_id}."
+            )
+            return (
+                True,
+                f"{len(created_transactions)} charges added successfully.",
+                created_transactions,
+            )
+
+        except SQLAlchemyError as e:
+            self.logger.error(
+                f"SQLAlchemyError adding charge batch: {e}", exc_info=True
+            )
+            session.rollback()
+            return False, f"Database error occurred: {e}", None
+        except Exception as e:
+            self.logger.error(
+                f"Unexpected error adding charge batch: {e}", exc_info=True
+            )
+            session.rollback()
+            return False, f"An unexpected error occurred: {e}", None
+        finally:
+            session.close()
+
+    def get_transactions_for_horse(
+        self, horse_id: int, invoiced: Optional[bool] = None
+    ) -> List[Transaction]:
+        """
+        Retrieves transactions for a given horse.
+        Args:
+            horse_id: The ID of the horse.
+            invoiced: If True, only invoiced. If False, only unbilled. If None, all.
+        Returns:
+            A list of Transaction objects.
+        """
+        session = db_manager.get_session()
+        try:
+            query = session.query(Transaction).filter(Transaction.horse_id == horse_id)
+            if invoiced is True:
+                query = query.filter(Transaction.invoice_id != None)
+            elif invoiced is False:
+                query = query.filter(Transaction.invoice_id == None)
+
+            # Eager load related data for display
+            query = query.options(
+                joinedload(Transaction.charge_code)
+                .joinedload(ChargeCode.category)
+                .joinedload(
+                    ChargeCodeCategory.parent
+                ),  # Load charge code and its category path
+                joinedload(Transaction.owner),
+                joinedload(Transaction.administered_by_user),
+            )
+
+            transactions = query.order_by(
+                Transaction.service_date.desc(), Transaction.created_date.desc()
+            ).all()
+            self.logger.info(
+                f"Retrieved {len(transactions)} transactions for horse ID {horse_id}."
+            )
+            return transactions
+        except SQLAlchemyError as e:
+            self.logger.error(
+                f"Error retrieving transactions for horse ID {horse_id}: {e}",
+                exc_info=True,
+            )
+            return []
+        finally:
+            session.close()
+
+    def get_charge_codes_for_lookup(self, active_only: bool = True) -> List[ChargeCode]:
+        """Retrieves charge codes for dropdowns/lookups."""
+        session = db_manager.get_session()
+        try:
+            query = session.query(ChargeCode).options(
+                joinedload(ChargeCode.category).joinedload(
+                    ChargeCodeCategory.parent
+                )  # Eager load category path
+            )
+            if active_only:
+                query = query.filter(ChargeCode.is_active == True)
+
+            charge_codes = query.order_by(ChargeCode.code).all()
+            self.logger.info(f"Retrieved {len(charge_codes)} charge codes for lookup.")
+            return charge_codes
+        except SQLAlchemyError as e:
+            self.logger.error(f"Error retrieving charge codes: {e}", exc_info=True)
+            return []
+        finally:
+            session.close()
+
+    def get_active_owners_for_lookup(self) -> List[Owner]:
+        """Retrieves active owners for dropdowns/lookups."""
+        session = db_manager.get_session()
+        try:
+            owners = (
+                session.query(Owner)
+                .filter(Owner.is_active == True)
+                .order_by(Owner.farm_name, Owner.last_name, Owner.first_name)
+                .all()
+            )
+            self.logger.info(f"Retrieved {len(owners)} active owners for lookup.")
+            return owners
+        except SQLAlchemyError as e:
+            self.logger.error(f"Error retrieving active owners: {e}", exc_info=True)
+            return []
+        finally:
+            session.close()
+
+    def get_active_users_for_lookup(self) -> List[User]:
+        """Retrieves active users (staff/vets) for 'administered by' dropdowns."""
+        session = db_manager.get_session()
+        try:
+            users = (
+                session.query(User)
+                .filter(User.is_active == True)
+                .order_by(User.user_name)
+                .all()
+            )
+            self.logger.info(f"Retrieved {len(users)} active users for lookup.")
+            return users
+        except SQLAlchemyError as e:
+            self.logger.error(f"Error retrieving active users: {e}", exc_info=True)
+            return []
+        finally:
+            session.close()
+
+    # --- Placeholder methods for future Invoicing and Payment logic ---
+    def create_invoice_for_owner(
+        self, owner_id: int, transaction_ids: List[int]
+    ) -> Tuple[bool, str, Optional[Invoice]]:
+        """Placeholder for creating an invoice from selected transactions."""
+        self.logger.warning("create_invoice_for_owner: Not yet implemented.")
+        return False, "Invoicing not yet implemented.", None
+
+    def record_payment(
+        self,
+        owner_id: int,
+        amount: Decimal,
+        payment_date: date,
+        method: str,
+        notes: Optional[str],
+    ) -> Tuple[bool, str, Optional[Transaction]]:
+        """Placeholder for recording a payment."""
+        self.logger.warning("record_payment: Not yet implemented.")
+        return False, "Payment recording not yet implemented.", None
+
+    def apply_payment_to_invoice(
+        self, payment_id: int, invoice_id: int
+    ) -> Tuple[bool, str]:
+        """Placeholder for applying a payment to an invoice."""
+        self.logger.warning("apply_payment_to_invoice: Not yet implemented.")
+        return False, "Applying payments not yet implemented."
+
+
+=============== FILE: views\horse\tabs\billing_tab.py ===============
+
+# views/horse/tabs/billing_tab.py
+"""
+EDSI Veterinary Management System - Horse Billing Tab
+Version: 1.0.0
+Purpose: UI for displaying and managing billing charges for a specific horse.
+Last Updated: June 4, 2025
+Author: Gemini
+"""
+
+import logging
+from typing import Optional, List, TYPE_CHECKING
+
+from PySide6.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QAbstractItemView,
+    QHeaderView,
+    QLabel,
+)
+from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtGui import QColor
+
+from config.app_config import AppConfig  # For styling constants
+from models import Horse, Transaction  # For type hinting
+from controllers.financial_controller import FinancialController
+from views.horse.dialogs.add_charge_dialog import (
+    AddChargeDialog,
+)  # Assuming it's in this path
+
+if TYPE_CHECKING:
+    from views.horse.horse_unified_management import HorseUnifiedManagement
+
+
+class BillingTab(QWidget):
+    charges_updated = Signal()  # To notify parent view if charges change
+
+    # Column indices for the charges table
+    COL_DATE_SERVICE = 0
+    COL_DATE_BILLING = 1
+    COL_CHARGE_CODE = 2
+    COL_DESCRIPTION = 3
+    COL_QTY = 4
+    COL_UNIT_PRICE = 5
+    COL_TOTAL_AMOUNT = 6
+    COL_ADMIN_BY = 7
+    COL_NOTES = 8
+    COL_INVOICE_ID = 9
+
+    CHARGES_TABLE_COLUMN_COUNT = 10
+
+    def __init__(
+        self,
+        parent_view: "HorseUnifiedManagement",
+        financial_controller: FinancialController,
+    ):
+        super().__init__(parent_view)
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.parent_view = parent_view
+        self.financial_controller = financial_controller
+        self.current_horse: Optional[Horse] = None
+        self.current_user_id: str = (
+            parent_view.current_user
+            if hasattr(parent_view, "current_user")
+            else "SYSTEM"
+        )
+
+        self.charges_table: Optional[QTableWidget] = None
+        self.add_charge_btn: Optional[QPushButton] = None
+        self.no_charges_label: Optional[QLabel] = None
+
+        self._setup_ui()
+        self._setup_connections()
+        self.update_buttons_state()
+
+    def _get_generic_button_style(self, primary: bool = False) -> str:
+        base_style = (
+            f"QPushButton {{background-color: {AppConfig.DARK_BUTTON_BG}; color: {AppConfig.DARK_TEXT_PRIMARY}; "
+            f"border: 1px solid {AppConfig.DARK_BORDER}; border-radius: 4px; padding: 8px 15px; "
+            f"font-size: 13px; font-weight: 500; min-height: 30px;}} "
+            f"QPushButton:hover {{ background-color: {AppConfig.DARK_BUTTON_HOVER}; }} "
+            f"QPushButton:disabled {{ background-color: {AppConfig.DARK_HEADER_FOOTER}; color: {AppConfig.DARK_TEXT_TERTIARY}; }}"
+        )
+        if primary:
+            base_style = base_style.replace(
+                AppConfig.DARK_BUTTON_BG, AppConfig.DARK_PRIMARY_ACTION
+            )
+            # Add other primary-specific styles if needed, e.g., text color white
+        return base_style
+
+    def _setup_ui(self):
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(15, 15, 15, 15)
+        main_layout.setSpacing(10)
+
+        # --- Action Buttons ---
+        action_layout = QHBoxLayout()
+        self.add_charge_btn = QPushButton("➕ Add New Charges")
+        self.add_charge_btn.setStyleSheet(self._get_generic_button_style(primary=True))
+        action_layout.addWidget(self.add_charge_btn)
+        action_layout.addStretch()
+        main_layout.addLayout(action_layout)
+
+        # --- Charges Table ---
+        self.charges_table = QTableWidget()
+        self.charges_table.setColumnCount(self.CHARGES_TABLE_COLUMN_COUNT)
+        self.charges_table.setHorizontalHeaderLabels(
+            [
+                "Service Date",
+                "Billing Date",
+                "Code",
+                "Description",
+                "Qty",
+                "Unit Price",
+                "Total",
+                "Admin",
+                "Notes",
+                "Invoice #",
+            ]
+        )
+        self.charges_table.setSelectionBehavior(
+            QAbstractItemView.SelectionBehavior.SelectRows
+        )
+        self.charges_table.setSelectionMode(
+            QAbstractItemView.SelectionMode.SingleSelection
+        )
+        self.charges_table.setEditTriggers(
+            QAbstractItemView.EditTrigger.NoEditTriggers
+        )  # Read-only display
+        self.charges_table.verticalHeader().setVisible(False)
+        self.charges_table.setShowGrid(True)  # Show grid lines
+        self.charges_table.setStyleSheet(
+            f"""
+            QTableWidget {{
+                gridline-color: {AppConfig.DARK_BORDER};
+                background-color: {AppConfig.DARK_INPUT_FIELD_BACKGROUND};
+                color: {AppConfig.DARK_TEXT_PRIMARY};
+                border: 1px solid {AppConfig.DARK_BORDER};
+                border-radius: 4px;
+            }}
+            QHeaderView::section {{
+                background-color: {AppConfig.DARK_HEADER_FOOTER};
+                color: {AppConfig.DARK_TEXT_SECONDARY};
+                padding: 5px;
+                border: none;
+                border-bottom: 1px solid {AppConfig.DARK_BORDER};
+                font-weight: 500;
+            }}
+            QTableWidget::item {{
+                padding: 5px;
+            }}
+            QTableWidget::item:selected {{
+                background-color: {AppConfig.DARK_HIGHLIGHT_BG};
+                color: {AppConfig.DARK_HIGHLIGHT_TEXT};
+            }}
+        """
+        )
+
+        header = self.charges_table.horizontalHeader()
+        header.setSectionResizeMode(
+            self.COL_DESCRIPTION, QHeaderView.ResizeMode.Stretch
+        )
+        header.setSectionResizeMode(self.COL_NOTES, QHeaderView.ResizeMode.Stretch)
+        for col in [
+            self.COL_DATE_SERVICE,
+            self.COL_DATE_BILLING,
+            self.COL_CHARGE_CODE,
+            self.COL_QTY,
+            self.COL_UNIT_PRICE,
+            self.COL_TOTAL_AMOUNT,
+            self.COL_ADMIN_BY,
+            self.COL_INVOICE_ID,
+        ]:
+            header.setSectionResizeMode(col, QHeaderView.ResizeMode.ResizeToContents)
+
+        main_layout.addWidget(self.charges_table, 1)  # Stretch factor 1
+
+        # --- No Charges Label (shown when table is empty) ---
+        self.no_charges_label = QLabel("No charges recorded for this horse.")
+        self.no_charges_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.no_charges_label.setStyleSheet(
+            f"color: {AppConfig.DARK_TEXT_SECONDARY}; font-size: 14px; padding: 20px;"
+        )
+        self.no_charges_label.setVisible(False)  # Initially hidden
+        main_layout.addWidget(self.no_charges_label)
+
+    def _setup_connections(self):
+        if self.add_charge_btn:
+            self.add_charge_btn.clicked.connect(self._launch_add_charge_dialog)
+
+    def load_charges_for_horse(self, horse: Optional[Horse]):
+        self.current_horse = horse
+        if not self.charges_table:
+            return
+
+        self.charges_table.setRowCount(0)  # Clear existing rows
+
+        if self.current_horse and self.current_horse.horse_id is not None:
+            self.logger.debug(
+                f"BillingTab: Loading charges for horse ID {self.current_horse.horse_id}"
+            )
+            transactions = self.financial_controller.get_transactions_for_horse(
+                self.current_horse.horse_id
+            )
+
+            if transactions:
+                self.charges_table.setVisible(True)
+                self.no_charges_label.setVisible(False)
+                self.charges_table.setRowCount(len(transactions))
+                for row_idx, trans in enumerate(transactions):
+                    self._populate_table_row(row_idx, trans)
+            else:
+                self.charges_table.setVisible(False)
+                self.no_charges_label.setVisible(True)
+        else:
+            self.logger.debug("BillingTab: No current horse selected.")
+            self.charges_table.setVisible(False)
+            self.no_charges_label.setVisible(True)
+
+        self.update_buttons_state()
+
+    def _populate_table_row(self, row_idx: int, transaction: Transaction):
+        if not self.charges_table:
+            return
+
+        # Helper to create table items
+        def create_item(
+            text: Optional[Any],
+            alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+        ) -> QTableWidgetItem:
+            item = QTableWidgetItem(str(text) if text is not None else "")
+            item.setTextAlignment(alignment)
+            # item.setForeground(QColor(AppConfig.DARK_TEXT_PRIMARY)) # Potentially redundant due to table style
+            return item
+
+        self.charges_table.setItem(
+            row_idx, self.COL_DATE_SERVICE, create_item(transaction.service_date)
+        )
+        self.charges_table.setItem(
+            row_idx, self.COL_DATE_BILLING, create_item(transaction.billing_date)
+        )
+
+        charge_code_str = (
+            transaction.charge_code.code if transaction.charge_code else "N/A"
+        )
+        self.charges_table.setItem(
+            row_idx, self.COL_CHARGE_CODE, create_item(charge_code_str)
+        )
+
+        self.charges_table.setItem(
+            row_idx, self.COL_DESCRIPTION, create_item(transaction.description)
+        )
+
+        self.charges_table.setItem(
+            row_idx,
+            self.COL_QTY,
+            create_item(
+                f"{transaction.quantity:.3f}",
+                Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
+            ),
+        )
+        self.charges_table.setItem(
+            row_idx,
+            self.COL_UNIT_PRICE,
+            create_item(
+                f"${transaction.unit_price:.2f}",
+                Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
+            ),
+        )
+        self.charges_table.setItem(
+            row_idx,
+            self.COL_TOTAL_AMOUNT,
+            create_item(
+                f"${transaction.total_amount:.2f}",
+                Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
+            ),
+        )
+
+        admin_by_str = (
+            transaction.administered_by_user.user_id
+            if transaction.administered_by_user
+            else "N/A"
+        )
+        self.charges_table.setItem(
+            row_idx, self.COL_ADMIN_BY, create_item(admin_by_str)
+        )
+
+        self.charges_table.setItem(
+            row_idx, self.COL_NOTES, create_item(transaction.notes)
+        )
+        self.charges_table.setItem(
+            row_idx,
+            self.COL_INVOICE_ID,
+            create_item(transaction.invoice_id or "Unbilled"),
+        )
+
+    def update_buttons_state(self):
+        can_add_charge = self.current_horse is not None
+        if self.add_charge_btn:
+            self.add_charge_btn.setEnabled(can_add_charge)
+
+    @Slot()
+    def _launch_add_charge_dialog(self):
+        if not self.current_horse:
+            self.parent_view.show_warning("Add Charges", "Please select a horse first.")
+            return
+
+        self.logger.info(
+            f"Launching AddChargeDialog for horse: {self.current_horse.horse_name}"
+        )
+
+        # Ensure financial_controller is available
+        if not self.financial_controller:
+            self.logger.error(
+                "FinancialController not available to launch AddChargeDialog."
+            )
+            self.parent_view.show_error(
+                "System Error", "Financial controller is missing."
+            )
+            return
+
+        dialog = AddChargeDialog(
+            parent_view=self.parent_view,  # The main window or HorseUnifiedManagement
+            horse=self.current_horse,
+            current_user_id=self.current_user_id,
+            financial_controller=self.financial_controller,
+        )
+        dialog.charges_saved.connect(self._handle_charges_saved)
+
+        dialog.exec()  # Use exec() for modal dialog
+
+    @Slot()
+    def _handle_charges_saved(self):
+        self.logger.info(
+            "Charges saved signal received from AddChargeDialog. Refreshing charges list."
+        )
+        self.load_charges_for_horse(self.current_horse)
+        self.charges_updated.emit()  # Notify parent if needed
+
+    def set_current_horse(self, horse: Optional[Horse]):
+        """Called by the parent view when the selected horse changes."""
+        self.load_charges_for_horse(horse)
+
+
+=============== FILE: views\horse\dialogs\add_charge_dialog.py ===============
+
+# views/horse/dialogs/add_charge_dialog.py
+"""
+EDSI Veterinary Management System - Add Charge Dialog
+Version: 1.0.2
+Purpose: Dialog for adding multiple charges (batch entry) for a horse.
+         - Fixed NameError for 'Tuple' type hint by importing from 'typing'.
+         - Corrected checkmark icon path construction using AppConfig.PROJECT_ROOT.
+Last Updated: June 4, 2025
+Author: Gemini
+"""
+
+import logging
+from typing import Optional, Dict, List, Any, Tuple
+from datetime import date
+import os  # MODIFIED: Added os import for path joining
+
+from PySide6.QtWidgets import (
+    QDialog,
+    QVBoxLayout,
+    QGridLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QDateEdit,
+    QComboBox,
+    QCheckBox,
+    QTableWidget,
+    QTableWidgetItem,
+    QAbstractItemView,
+    QPushButton,
+    QDialogButtonBox,
+    QDoubleSpinBox,
+    QSizePolicy,
+    QHeaderView,
+    QWidget,
+    QScrollArea,
+    QFrame,
+)
+from PySide6.QtCore import Qt, QDate, Signal, Slot
+from PySide6.QtGui import QPalette, QColor, QFont
+
+from config.app_config import AppConfig
+from models import Horse, Owner, User as UserModel, ChargeCode as ChargeCodeModel
+from controllers.financial_controller import FinancialController
+
+
+class AddChargeDialog(QDialog):
+    charges_saved = Signal()
+
+    COL_CHARGE_CODE = 0
+    COL_DESCRIPTION = 1
+    COL_QTY = 2
+    COL_UNIT_PRICE = 3
+    COL_TOTAL = 4
+    COL_ITEM_NOTES = 5
+    COL_PRINT_NOTES = 6
+    COL_REMOVE_ROW = 7
+
+    TABLE_COLUMN_COUNT = 8
+
+    def __init__(
+        self,
+        parent_view: QWidget,
+        horse: Horse,
+        current_user_id: str,
+        financial_controller: FinancialController,
+    ):
+        super().__init__(parent_view)
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.parent_view = parent_view
+        self.current_horse = horse
+        self.current_user_id = current_user_id
+        self.financial_controller = financial_controller
+
+        self.setWindowTitle(
+            f"Add Charges for: {self.current_horse.horse_name if self.current_horse else 'N/A'}"
+        )
+        self.setMinimumSize(900, 700)
+
+        self.owner_combo: Optional[QComboBox] = None
+        self.service_date_edit: Optional[QDateEdit] = None
+        self.billing_date_edit: Optional[QDateEdit] = None
+        self.administered_by_combo: Optional[QComboBox] = None
+        self.print_all_notes_checkbox: Optional[QCheckBox] = None
+
+        self.charges_table: Optional[QTableWidget] = None
+        self.add_row_btn: Optional[QPushButton] = None
+
+        self.batch_subtotal_label: Optional[QLabel] = None
+        self.button_box: Optional[QDialogButtonBox] = None
+
+        self._owners_list: List[Owner] = []
+        self._users_list: List[UserModel] = []
+        self._charge_codes_list: List[ChargeCodeModel] = []
+
+        self._setup_palette()
+        self._setup_ui()
+        self._setup_connections()
+
+        self._load_initial_data()
+        self._add_charge_row()
+
+    def _setup_palette(self):
+        palette = QPalette()
+        palette.setColor(
+            QPalette.ColorRole.Window, QColor(AppConfig.DARK_WIDGET_BACKGROUND)
+        )
+        palette.setColor(
+            QPalette.ColorRole.WindowText, QColor(AppConfig.DARK_TEXT_PRIMARY)
+        )
+        palette.setColor(
+            QPalette.ColorRole.Base, QColor(AppConfig.DARK_INPUT_FIELD_BACKGROUND)
+        )
+        palette.setColor(
+            QPalette.ColorRole.AlternateBase, QColor(AppConfig.DARK_ITEM_HOVER)
+        )
+        palette.setColor(QPalette.ColorRole.Text, QColor(AppConfig.DARK_TEXT_PRIMARY))
+        palette.setColor(QPalette.ColorRole.Button, QColor(AppConfig.DARK_BUTTON_BG))
+        palette.setColor(
+            QPalette.ColorRole.ButtonText, QColor(AppConfig.DARK_TEXT_PRIMARY)
+        )
+        palette.setColor(
+            QPalette.ColorRole.Highlight, QColor(AppConfig.DARK_HIGHLIGHT_BG)
+        )
+        palette.setColor(
+            QPalette.ColorRole.HighlightedText, QColor(AppConfig.DARK_HIGHLIGHT_TEXT)
+        )
+        palette.setColor(
+            QPalette.ColorRole.PlaceholderText, QColor(AppConfig.DARK_TEXT_TERTIARY)
+        )
+        self.setPalette(palette)
+        self.setAutoFillBackground(True)
+
+    def _get_input_style(self, base_bg=AppConfig.DARK_INPUT_FIELD_BACKGROUND) -> str:
+        checkmark_svg_path = "assets/icons/checkmark_light.svg"  # Default
+        if hasattr(AppConfig, "PROJECT_ROOT") and AppConfig.PROJECT_ROOT:
+            # MODIFIED: Construct full path and replace backslashes for URL
+            full_icon_path = os.path.join(
+                AppConfig.PROJECT_ROOT, "assets", "icons", "checkmark_light.svg"
+            )
+            checkmark_svg_path = full_icon_path.replace(os.sep, "/")
+            # Check if the file exists for debugging, but don't halt if not found here, Qt will handle it
+            if not os.path.exists(full_icon_path):
+                self.logger.warning(
+                    f"Checkbox icon not found at expected path: {full_icon_path}"
+                )
+        else:
+            self.logger.warning(
+                "AppConfig.PROJECT_ROOT not available for icon path construction."
+            )
+
+        return f"""
+            QLineEdit, QComboBox, QTextEdit, QDoubleSpinBox, QDateEdit {{ 
+                background-color: {base_bg}; color: {AppConfig.DARK_TEXT_PRIMARY}; 
+                border: 1px solid {AppConfig.DARK_BORDER}; border-radius: 4px; 
+                padding: 6px 8px; font-size: 13px; min-height: 20px; 
+            }}
+            QLineEdit:focus, QComboBox:focus, QTextEdit:focus, QDoubleSpinBox:focus, QDateEdit:focus {{ 
+                border-color: {AppConfig.DARK_PRIMARY_ACTION}; 
+            }}
+            QComboBox::drop-down {{ border: none; background-color: transparent; }}
+            QComboBox::down-arrow {{ color: {AppConfig.DARK_TEXT_SECONDARY}; }} 
+            QComboBox QAbstractItemView {{ 
+                background-color: {AppConfig.DARK_WIDGET_BACKGROUND}; color: {AppConfig.DARK_TEXT_PRIMARY}; 
+                border: 1px solid {AppConfig.DARK_BORDER}; 
+                selection-background-color: {AppConfig.DARK_HIGHLIGHT_BG}; 
+                selection-color: {AppConfig.DARK_HIGHLIGHT_TEXT}; 
+            }}
+             QCheckBox::indicator {{ width: 14px; height: 14px; border-radius: 3px; border: 1px solid {AppConfig.DARK_BORDER};}}
+             QCheckBox::indicator:checked {{ 
+                 background-color: {AppConfig.DARK_PRIMARY_ACTION}; 
+                 border-color: {AppConfig.DARK_PRIMARY_ACTION}; 
+                 image: url({checkmark_svg_path}); 
+             }}
+             QCheckBox {{ color: {AppConfig.DARK_TEXT_SECONDARY}; background: transparent; padding-left: 5px;}}
+        """
+
+    def _get_generic_button_style(self) -> str:
+        return (
+            f"QPushButton {{background-color: {AppConfig.DARK_BUTTON_BG}; color: {AppConfig.DARK_TEXT_PRIMARY}; "
+            f"border: 1px solid {AppConfig.DARK_BORDER}; border-radius: 4px; padding: 8px 12px; "
+            f"font-size: 12px; font-weight: 500; min-height: 28px;}} "
+            f"QPushButton:hover {{ background-color: {AppConfig.DARK_BUTTON_HOVER}; }} "
+            f"QPushButton:disabled {{ background-color: {AppConfig.DARK_HEADER_FOOTER}; color: {AppConfig.DARK_TEXT_TERTIARY}; }}"
+        )
+
+    def _create_label(self, text: str, is_bold: bool = False) -> QLabel:
+        label = QLabel(text)
+        font = QFont(AppConfig.DEFAULT_FONT_FAMILY, 10)
+        if is_bold:
+            font.setBold(True)
+        label.setFont(font)
+        label.setStyleSheet(
+            f"color: {AppConfig.DARK_TEXT_PRIMARY}; background: transparent;"
+        )
+        return label
+
+    def _setup_ui(self):
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(15, 15, 15, 15)
+        main_layout.setSpacing(15)
+
+        header_frame = QFrame()
+        header_frame.setObjectName("HeaderFrame")
+        header_layout = QGridLayout(header_frame)
+        header_layout.setSpacing(10)
+
+        horse_name_display_text = f"<b>Horse:</b> {self.current_horse.horse_name if self.current_horse and self.current_horse.horse_name else 'N/A'}"
+        horse_name_display = self._create_label(horse_name_display_text)
+        header_layout.addWidget(horse_name_display, 0, 0, 1, 4)
+
+        header_layout.addWidget(
+            self._create_label("Owner*:"), 1, 0, Qt.AlignmentFlag.AlignRight
+        )
+        self.owner_combo = QComboBox()
+        header_layout.addWidget(self.owner_combo, 1, 1)
+
+        header_layout.addWidget(
+            self._create_label("Administered By*:"), 1, 2, Qt.AlignmentFlag.AlignRight
+        )
+        self.administered_by_combo = QComboBox()
+        header_layout.addWidget(self.administered_by_combo, 1, 3)
+
+        header_layout.addWidget(
+            self._create_label("Service Date*:"), 2, 0, Qt.AlignmentFlag.AlignRight
+        )
+        self.service_date_edit = QDateEdit(QDate.currentDate())
+        self.service_date_edit.setCalendarPopup(True)
+        self.service_date_edit.setDisplayFormat("yyyy-MM-dd")
+        header_layout.addWidget(self.service_date_edit, 2, 1)
+
+        header_layout.addWidget(
+            self._create_label("Billing Date:"), 2, 2, Qt.AlignmentFlag.AlignRight
+        )
+        self.billing_date_edit = QDateEdit()
+        self.billing_date_edit.setCalendarPopup(True)
+        self.billing_date_edit.setDisplayFormat("yyyy-MM-dd")
+        self.billing_date_edit.setSpecialValueText(" ")
+        self.billing_date_edit.setDate(QDate.currentDate())
+        header_layout.addWidget(self.billing_date_edit, 2, 3)
+
+        self.print_all_notes_checkbox = QCheckBox("Print All Item Notes on Statement")
+        self.print_all_notes_checkbox.setChecked(True)
+        header_layout.addWidget(self.print_all_notes_checkbox, 3, 0, 1, 2)
+
+        input_style = self._get_input_style()
+        for i in range(header_layout.count()):
+            widget = header_layout.itemAt(i).widget()
+            if isinstance(widget, (QComboBox, QDateEdit, QCheckBox)):
+                widget.setStyleSheet(input_style)
+
+        main_layout.addWidget(header_frame)
+
+        self.charges_table = QTableWidget()
+        self.charges_table.setColumnCount(self.TABLE_COLUMN_COUNT)
+        self.charges_table.setHorizontalHeaderLabels(
+            [
+                "Charge Code",
+                "Description",
+                "Qty",
+                "Unit Price",
+                "Total",
+                "Item Notes",
+                "Print",
+                "Action",
+            ]
+        )
+        self.charges_table.setSelectionBehavior(
+            QAbstractItemView.SelectionBehavior.SelectRows
+        )
+        self.charges_table.setSelectionMode(
+            QAbstractItemView.SelectionMode.SingleSelection
+        )
+
+        header = self.charges_table.horizontalHeader()
+        header.setSectionResizeMode(
+            self.COL_CHARGE_CODE, QHeaderView.ResizeMode.Stretch
+        )
+        header.setSectionResizeMode(
+            self.COL_DESCRIPTION, QHeaderView.ResizeMode.Stretch
+        )
+        header.setSectionResizeMode(
+            self.COL_QTY, QHeaderView.ResizeMode.ResizeToContents
+        )
+        header.setSectionResizeMode(
+            self.COL_UNIT_PRICE, QHeaderView.ResizeMode.ResizeToContents
+        )
+        header.setSectionResizeMode(
+            self.COL_TOTAL, QHeaderView.ResizeMode.ResizeToContents
+        )
+        header.setSectionResizeMode(self.COL_ITEM_NOTES, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(
+            self.COL_PRINT_NOTES, QHeaderView.ResizeMode.ResizeToContents
+        )
+        header.setSectionResizeMode(
+            self.COL_REMOVE_ROW, QHeaderView.ResizeMode.ResizeToContents
+        )
+
+        self.charges_table.setMinimumHeight(300)
+        main_layout.addWidget(self.charges_table)
+
+        self.add_row_btn = QPushButton("➕ Add Charge Item")
+        self.add_row_btn.setStyleSheet(
+            self._get_generic_button_style().replace(
+                AppConfig.DARK_BUTTON_BG, AppConfig.DARK_PRIMARY_ACTION
+            )
+        )
+        add_row_layout = QHBoxLayout()
+        add_row_layout.addStretch()
+        add_row_layout.addWidget(self.add_row_btn)
+        main_layout.addLayout(add_row_layout)
+
+        summary_layout = QHBoxLayout()
+        summary_layout.addStretch()
+        summary_layout.addWidget(self._create_label("Batch Subtotal:", is_bold=True))
+        self.batch_subtotal_label = self._create_label("$0.00", is_bold=True)
+        font = self.batch_subtotal_label.font()
+        font.setPointSize(12)
+        self.batch_subtotal_label.setFont(font)
+        summary_layout.addWidget(self.batch_subtotal_label)
+        main_layout.addLayout(summary_layout)
+
+        self.button_box = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Save
+            | QDialogButtonBox.StandardButton.Cancel
+        )
+        self.button_box.button(QDialogButtonBox.StandardButton.Save).setText(
+            "Save Charges"
+        )
+
+        generic_btn_style = self._get_generic_button_style()
+        save_btn_style = (
+            generic_btn_style.replace(
+                AppConfig.DARK_BUTTON_BG, AppConfig.DARK_SUCCESS_ACTION
+            )
+            + "color: white;"
+        )
+        self.button_box.button(QDialogButtonBox.StandardButton.Save).setStyleSheet(
+            save_btn_style
+        )
+        self.button_box.button(QDialogButtonBox.StandardButton.Cancel).setStyleSheet(
+            generic_btn_style
+        )
+
+        main_layout.addWidget(self.button_box)
+
+    def _setup_connections(self):
+        if self.button_box:
+            self.button_box.accepted.connect(self._on_save_charges)
+            self.button_box.rejected.connect(self.reject)
+
+        if self.add_row_btn:
+            self.add_row_btn.clicked.connect(self._add_charge_row)
+
+        if self.charges_table:
+            self.charges_table.cellChanged.connect(self._on_table_cell_changed)
+
+    def _load_initial_data(self):
+        self.logger.debug("Loading initial data for AddChargeDialog...")
+        if self.current_horse and self.current_horse.owners:
+            self._owners_list = self.current_horse.owners
+            if self.owner_combo:
+                self.owner_combo.clear()
+                for owner in self._owners_list:
+                    display_name = (
+                        owner.farm_name
+                        or f"{owner.first_name or ''} {owner.last_name or ''}".strip()
+                        or f"ID: {owner.owner_id}"
+                    )
+                    self.owner_combo.addItem(display_name, owner.owner_id)
+                if self._owners_list:
+                    self.owner_combo.setCurrentIndex(0)
+        else:
+            self._owners_list = self.financial_controller.get_active_owners_for_lookup()
+            if self.owner_combo:
+                self.owner_combo.clear()
+                for owner in self._owners_list:
+                    display_name = (
+                        owner.farm_name
+                        or f"{owner.first_name or ''} {owner.last_name or ''}".strip()
+                        or f"ID: {owner.owner_id}"
+                    )
+                    self.owner_combo.addItem(display_name, owner.owner_id)
+
+        self._users_list = self.financial_controller.get_active_users_for_lookup()
+        if self.administered_by_combo:
+            self.administered_by_combo.clear()
+            current_user_found_idx = -1
+            for idx, user in enumerate(self._users_list):
+                self.administered_by_combo.addItem(
+                    user.user_name or user.user_id, user.user_id
+                )
+                if user.user_id == self.current_user_id:
+                    current_user_found_idx = idx
+            if current_user_found_idx != -1:
+                self.administered_by_combo.setCurrentIndex(current_user_found_idx)
+
+        self._charge_codes_list = (
+            self.financial_controller.get_charge_codes_for_lookup()
+        )
+        self.logger.debug(
+            f"Loaded {len(self._charge_codes_list)} charge codes for lookup."
+        )
+
+    def _add_charge_row(self, charge_data: Optional[Dict] = None):
+        if not self.charges_table:
+            return
+
+        row_position = self.charges_table.rowCount()
+        self.charges_table.insertRow(row_position)
+
+        charge_code_combo = QComboBox()
+        charge_code_combo.addItem("Select Charge Code...", None)
+        for cc in self._charge_codes_list:
+            charge_code_combo.addItem(f"{cc.code} - {cc.description[:30]}...", cc.id)
+        charge_code_combo.setStyleSheet(self._get_input_style())
+        self.charges_table.setCellWidget(
+            row_position, self.COL_CHARGE_CODE, charge_code_combo
+        )
+        charge_code_combo.currentIndexChanged.connect(
+            lambda idx, r=row_position: self._on_charge_code_selected_in_row(r, idx)
+        )
+
+        desc_edit = QLineEdit(charge_data.get("description", "") if charge_data else "")
+        desc_edit.setStyleSheet(self._get_input_style())
+        self.charges_table.setCellWidget(row_position, self.COL_DESCRIPTION, desc_edit)
+
+        qty_spin = QDoubleSpinBox()
+        qty_spin.setDecimals(3)
+        qty_spin.setRange(0.001, 9999.999)
+        qty_spin.setValue(charge_data.get("quantity", 1.000) if charge_data else 1.000)
+        qty_spin.setStyleSheet(self._get_input_style())
+        self.charges_table.setCellWidget(row_position, self.COL_QTY, qty_spin)
+
+        price_spin = QDoubleSpinBox()
+        price_spin.setDecimals(2)
+        price_spin.setRange(0.00, 99999.99)
+        price_spin.setPrefix("$ ")
+        price_spin.setValue(
+            charge_data.get("unit_price", 0.00) if charge_data else 0.00
+        )
+        price_spin.setStyleSheet(self._get_input_style())
+        self.charges_table.setCellWidget(row_position, self.COL_UNIT_PRICE, price_spin)
+
+        total_label = QLabel("$0.00")
+        total_label.setStyleSheet(
+            f"color: {AppConfig.DARK_TEXT_PRIMARY}; padding: 6px; background-color: transparent;"
+        )
+        total_label.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
+        self.charges_table.setCellWidget(row_position, self.COL_TOTAL, total_label)
+
+        notes_edit = QLineEdit(charge_data.get("item_notes", "") if charge_data else "")
+        notes_edit.setStyleSheet(self._get_input_style())
+        self.charges_table.setCellWidget(row_position, self.COL_ITEM_NOTES, notes_edit)
+
+        print_chk = QCheckBox()
+        print_chk.setChecked(
+            self.print_all_notes_checkbox.isChecked()
+            if self.print_all_notes_checkbox
+            else True
+        )
+        chk_widget = QWidget()
+        chk_layout = QHBoxLayout(chk_widget)
+        chk_layout.addWidget(print_chk)
+        chk_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        chk_layout.setContentsMargins(0, 0, 0, 0)
+        chk_widget.setStyleSheet("background:transparent;")
+        self.charges_table.setCellWidget(row_position, self.COL_PRINT_NOTES, chk_widget)
+
+        remove_btn = QPushButton("🗑️")
+        remove_btn.setStyleSheet(
+            self._get_generic_button_style().replace(
+                AppConfig.DARK_BUTTON_BG, AppConfig.DARK_DANGER_ACTION
+            )
+            + "padding: 5px; min-width: 30px; max-width:30px;"
+        )
+        remove_btn.setToolTip("Remove this charge item")
+        remove_btn.clicked.connect(
+            self._remove_charge_row_by_sender
+        )  # Connect without lambda
+        self.charges_table.setCellWidget(row_position, self.COL_REMOVE_ROW, remove_btn)
+
+        qty_spin.valueChanged.connect(
+            lambda val, r=row_position: self._update_row_total(r)
+        )
+        price_spin.valueChanged.connect(
+            lambda val, r=row_position: self._update_row_total(r)
+        )
+
+        self._update_row_total(row_position)
+
+    @Slot()
+    def _remove_charge_row_by_sender(self):
+        if not self.charges_table:
+            return
+        button = self.sender()
+        if button and isinstance(
+            button, QPushButton
+        ):  # Check if sender is a QPushButton
+            # Find the row of the button
+            for r in range(self.charges_table.rowCount()):
+                if self.charges_table.cellWidget(r, self.COL_REMOVE_ROW) == button:
+                    self.charges_table.removeRow(r)
+                    self._update_batch_subtotal()
+                    return  # Exit after removing the correct row
+
+    def _on_charge_code_selected_in_row(self, row: int, combo_box_index: int):
+        if not self.charges_table:
+            return
+
+        charge_code_combo_widget = self.charges_table.cellWidget(
+            row, self.COL_CHARGE_CODE
+        )
+        if not isinstance(charge_code_combo_widget, QComboBox):
+            return
+
+        selected_charge_code_id = charge_code_combo_widget.itemData(combo_box_index)
+
+        desc_widget = self.charges_table.cellWidget(row, self.COL_DESCRIPTION)
+        price_widget = self.charges_table.cellWidget(row, self.COL_UNIT_PRICE)
+
+        if selected_charge_code_id is not None:
+            charge_code_obj = next(
+                (
+                    cc
+                    for cc in self._charge_codes_list
+                    if cc.id == selected_charge_code_id
+                ),
+                None,
+            )
+            if charge_code_obj:
+                if isinstance(desc_widget, QLineEdit):
+                    desc_widget.setText(charge_code_obj.description)
+                if isinstance(price_widget, QDoubleSpinBox):
+                    price_widget.setValue(float(charge_code_obj.standard_charge))
+            else:
+                if isinstance(desc_widget, QLineEdit):
+                    desc_widget.clear()
+                if isinstance(price_widget, QDoubleSpinBox):
+                    price_widget.setValue(0.00)
+        else:
+            if isinstance(desc_widget, QLineEdit):
+                desc_widget.clear()
+            if isinstance(price_widget, QDoubleSpinBox):
+                price_widget.setValue(0.00)
+
+        self._update_row_total(row)
+
+    def _update_row_total(self, row: int):
+        if not self.charges_table:
+            return
+
+        qty_widget = self.charges_table.cellWidget(row, self.COL_QTY)
+        price_widget = self.charges_table.cellWidget(row, self.COL_UNIT_PRICE)
+        total_widget = self.charges_table.cellWidget(row, self.COL_TOTAL)
+
+        if (
+            isinstance(qty_widget, QDoubleSpinBox)
+            and isinstance(price_widget, QDoubleSpinBox)
+            and isinstance(total_widget, QLabel)
+        ):
+
+            qty = qty_widget.value()
+            price = price_widget.value()
+            row_total = qty * price
+            total_widget.setText(f"${row_total:.2f}")
+
+        self._update_batch_subtotal()
+
+    def _update_batch_subtotal(self):
+        if not self.charges_table or not self.batch_subtotal_label:
+            return
+
+        total_sum = 0.0
+        for r in range(self.charges_table.rowCount()):
+            total_widget = self.charges_table.cellWidget(r, self.COL_TOTAL)
+            if isinstance(total_widget, QLabel):
+                try:
+                    total_sum += float(total_widget.text().replace("$", ""))
+                except ValueError:
+                    pass
+
+        self.batch_subtotal_label.setText(f"${total_sum:.2f}")
+
+    @Slot(int, int)
+    def _on_table_cell_changed(self, row: int, column: int):
+        pass
+
+    def _collect_charge_items_data(self) -> Tuple[List[Dict[str, Any]], List[str]]:
+        if not self.charges_table:
+            return [], ["Table widget not initialized."]
+
+        items_data = []
+        errors: List[str] = []
+
+        for r in range(self.charges_table.rowCount()):
+            line_num = r + 1
+            item: Dict[str, Any] = {}
+
+            cc_combo_widget = self.charges_table.cellWidget(r, self.COL_CHARGE_CODE)
+            if isinstance(cc_combo_widget, QComboBox):
+                item["charge_code_id"] = cc_combo_widget.currentData()
+                if item["charge_code_id"] is None:
+                    errors.append(f"Line {line_num}: Charge Code must be selected.")
+            else:
+                errors.append(f"Line {line_num}: Charge Code widget error.")
+
+            desc_widget = self.charges_table.cellWidget(r, self.COL_DESCRIPTION)
+            if isinstance(desc_widget, QLineEdit):
+                item["description"] = desc_widget.text().strip()
+                if not item["description"]:
+                    errors.append(f"Line {line_num}: Description is required.")
+            else:
+                errors.append(f"Line {line_num}: Description widget error.")
+
+            qty_widget = self.charges_table.cellWidget(r, self.COL_QTY)
+            if isinstance(qty_widget, QDoubleSpinBox):
+                item["quantity"] = qty_widget.value()
+                if item["quantity"] <= 0:
+                    errors.append(f"Line {line_num}: Quantity must be greater than 0.")
+            else:
+                errors.append(f"Line {line_num}: Quantity widget error.")
+
+            price_widget = self.charges_table.cellWidget(r, self.COL_UNIT_PRICE)
+            if isinstance(price_widget, QDoubleSpinBox):
+                item["unit_price"] = price_widget.value()
+            else:
+                errors.append(f"Line {line_num}: Unit Price widget error.")
+
+            notes_widget = self.charges_table.cellWidget(r, self.COL_ITEM_NOTES)
+            if isinstance(notes_widget, QLineEdit):
+                item["item_notes"] = notes_widget.text().strip() or None
+
+            print_chk_container = self.charges_table.cellWidget(r, self.COL_PRINT_NOTES)
+            if (
+                isinstance(print_chk_container, QWidget)
+                and print_chk_container.layout()
+                and isinstance(
+                    print_chk_container.layout().itemAt(0).widget(), QCheckBox
+                )
+            ):
+                item["item_print_on_statement"] = (
+                    print_chk_container.layout().itemAt(0).widget().isChecked()
+                )
+            else:
+                item["item_print_on_statement"] = True
+
+            # Check if any error occurred FOR THIS ROW before appending
+            current_row_has_error = any(f"Line {line_num}" in e for e in errors)
+            if not current_row_has_error:
+                items_data.append(item)
+
+        return items_data, errors
+
+    def _on_save_charges(self):
+        self.logger.info("Save Charges clicked.")
+
+        header_errors: List[str] = []
+        selected_owner_id = self.owner_combo.currentData() if self.owner_combo else None
+        if selected_owner_id is None:
+            header_errors.append("Owner must be selected.")
+
+        service_date_val = (
+            self.service_date_edit.date().toPython() if self.service_date_edit else None
+        )
+        if not service_date_val:
+            header_errors.append("Service Date is required.")
+        elif service_date_val > date.today():
+            header_errors.append("Service Date cannot be in the future.")
+
+        billing_date_val = None
+        if (
+            self.billing_date_edit
+            and self.billing_date_edit.text().strip() != ""
+            and self.billing_date_edit.specialValueText()
+            != self.billing_date_edit.text()
+        ):
+            billing_date_val = self.billing_date_edit.date().toPython()
+            if (
+                billing_date_val
+                and service_date_val
+                and billing_date_val < service_date_val
+            ):
+                header_errors.append("Billing Date cannot be before Service Date.")
+
+        administered_by_user_id_val = (
+            self.administered_by_combo.currentData()
+            if self.administered_by_combo
+            else None
+        )
+        if administered_by_user_id_val is None:
+            header_errors.append("'Administered By' user must be selected.")
+
+        if header_errors:
+            QMessageBox.warning(
+                self,
+                "Input Error",
+                "Please correct header information:\n- " + "\n- ".join(header_errors),
+            )
+            return
+
+        charge_items, item_errors = self._collect_charge_items_data()
+
+        # Consolidate all errors before showing QMessageBox
+        all_validation_errors = header_errors + item_errors
+        # Also, call the controller's validation for each item if it exists
+        # This part was in the financial_controller, let's assume it's called by add_charge_batch_to_horse
+        # For UI, we've done widget-level checks.
+
+        if (
+            item_errors
+        ):  # If _collect_charge_items_data found structural issues or basic item errors
+            QMessageBox.warning(
+                self,
+                "Input Error",
+                "Please correct charge items:\n- " + "\n- ".join(item_errors),
+            )
+            return
+
+        if not charge_items:
+            QMessageBox.information(
+                self, "No Charges", "Please add at least one charge item to save."
+            )
+            return
+
+        success, message, _ = self.financial_controller.add_charge_batch_to_horse(
+            horse_id=self.current_horse.horse_id,
+            owner_id=selected_owner_id,
+            charge_items=charge_items,
+            batch_service_date=service_date_val,
+            batch_billing_date=billing_date_val,
+            administered_by_user_id=administered_by_user_id_val,
+            batch_print_on_statement=(
+                self.print_all_notes_checkbox.isChecked()
+                if self.print_all_notes_checkbox
+                else True
+            ),
+        )
+
+        if success:
+            QMessageBox.information(self, "Success", message)
+            self.charges_saved.emit()
+            super().accept()
+        else:
+            # Message from controller might already include specific validation errors
+            QMessageBox.critical(self, "Save Failed", message)
+
+
+if __name__ == "__main__":
+    import sys
+    from PySide6.QtWidgets import QApplication
+
+    class MockHorse:
+        horse_id = 1
+        horse_name = "Test Horse"
+        owners = []
+
+    class MockOwner:
+        def __init__(self, id, farm_name, first_name="", last_name=""):
+            self.owner_id = id
+            self.farm_name = farm_name
+            self.first_name = first_name
+            self.last_name = last_name
+
+    class MockUser:
+        def __init__(self, id, name):
+            self.user_id = id
+            self.user_name = name
+
+    class MockChargeCode:
+        def __init__(self, id, code, desc, price):
+            self.id = id
+            self.code = code
+            self.description = desc
+            self.standard_charge = price  # Should be Decimal or float compatible
+
+    mock_owner1 = MockOwner(1, "Sunrise Stables", "John", "Doe")
+    mock_owner2 = MockOwner(2, "Willow Creek", "Jane", "Smith")
+    mock_horse_obj = MockHorse()
+    mock_horse_obj.owners = [mock_owner1, mock_owner2]
+
+    mock_user1 = MockUser("vet1", "Dr. Alice")
+    mock_user2 = MockUser("tech1", "Bob The Tech")
+
+    mock_cc1 = MockChargeCode(101, "VAC01", "Annual Vaccination", 75.00)
+    mock_cc2 = MockChargeCode(102, "EXM05", "Lameness Exam", 150.00)
+
+    class MockController:
+        def get_active_owners_for_lookup(self):
+            return [mock_owner1, mock_owner2]
+
+        def get_active_users_for_lookup(self):
+            return [mock_user1, mock_user2]
+
+        def get_charge_codes_for_lookup(self):
+            return [mock_cc1, mock_cc2]
+
+        def add_charge_batch_to_horse(
+            self,
+            horse_id,
+            owner_id,
+            charge_items,
+            batch_service_date,
+            batch_billing_date,
+            administered_by_user_id,
+            batch_print_on_statement,
+        ):
+            self.logger.info(
+                f"MockController: add_charge_batch_to_horse called with: horse_id={horse_id}, owner_id={owner_id}, items={len(charge_items)}"
+            )
+
+            # Simulate controller-side validation (example)
+            all_item_errors = []
+            for i, item in enumerate(charge_items):
+                if not item.get("charge_code_id"):
+                    all_item_errors.append(
+                        f"Controller Validation Line {i+1}: Charge Code is missing."
+                    )
+                if not item.get("description"):
+                    all_item_errors.append(
+                        f"Controller Validation Line {i+1}: Description is missing."
+                    )
+                # Add more specific validations here as in your actual controller's validate_charge_data
+
+            if all_item_errors:
+                return (
+                    False,
+                    "Controller validation failed:\n- " + "\n- ".join(all_item_errors),
+                    None,
+                )
+
+            return True, f"{len(charge_items)} charges saved successfully (mock).", []
+
+        def __init__(self):  # Add logger to mock controller
+            self.logger = logging.getLogger(self.__class__.__name__)
+
+    app = QApplication(sys.argv)
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s - %(levelname)s - %(name)s - %(module)s:%(lineno)d - %(message)s",
+    )
+
+    mock_fc = MockController()
+
+    # Ensure parent_view=None is acceptable or provide a mock QWidget
+    dialog = AddChargeDialog(
+        parent_view=None,
+        horse=mock_horse_obj,
+        current_user_id="vet1",
+        financial_controller=mock_fc,
+    )
+    dialog.show()
+    sys.exit(app.exec())
+
+
+=============== FILE: views\horse\horse_unified_management.py ===============
+
+# views/horse/horse_unified_management.py
+
+"""
+EDSI Veterinary Management System - Unified Horse Management Screen (Dark Theme)
+Version: 1.7.38
+Purpose: Unified interface for horse management.
+         - Integrated BillingTab.
+         - Instantiate FinancialController.
+         - Updated load_horse_details and display_empty_state for BillingTab.
+Last Updated: June 4, 2025
+Author: Gemini (Further modified by Coding partner)
+
+Changelog:
+- v1.7.38 (2025-06-04):
+    - Full rewrite to integrate BillingTab.
+    - Added instantiation of FinancialController.
+    - BillingTab added to the main QTabWidget.
+    - Updated load_horse_details and display_empty_state to call billing_tab.set_current_horse().
+- v1.7.37 (2025-05-31):
+    - Fixed AttributeError in `load_horses` method by removing invalid
+      second argument `QListWidgetItem.SelectionOption.NoUpdate` from
+      `self.horse_list.setCurrentRow(i, ...)`. This fix is applied
+      to the user's baseline v1.7.34.
+# ... (Original changelog from v1.7.34 if any, or previous relevant entries like v1.7.33)
+"""
+
+import logging
+from datetime import (
+    datetime,
+    date,
+)  # Keep datetime if used by other parts, date is used.
+from typing import Optional, List, Dict  # Keep List, Dict if used.
+
+from PySide6.QtWidgets import (
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QFrame,
+    QListWidgetItem,
+    QTabWidget,
+    QWidget,
+    QSplitter,
+    QRadioButton,
+    QButtonGroup,
+    QApplication,
+    QMenu,
+    QDialog,  # Keep if other dialogs are directly used or for type hinting
+    QMessageBox,
+    QStatusBar,
+)
+from PySide6.QtCore import Qt, Signal, QTimer, QDate  # Keep QTimer, QDate if used.
+from PySide6.QtGui import (
+    QFont,
+    QPalette,  # Keep if directly used for palette manipulation beyond BaseView
+    QColor,  # Keep if directly used
+    QAction,
+    QKeyEvent,
+    QShowEvent,
+    QCloseEvent,
+    # QDoubleValidator, # Not directly used in this file's provided snippet
+)
+from sqlalchemy.orm.exc import DetachedInstanceError
+
+from views.base_view import BaseView
+from config.app_config import (
+    AppConfig,  # Used for styling constants directly
+    DARK_BACKGROUND,
+    DARK_WIDGET_BACKGROUND,
+    DARK_HEADER_FOOTER,
+    DARK_BORDER,
+    DARK_TEXT_PRIMARY,
+    DARK_TEXT_SECONDARY,
+    DARK_TEXT_TERTIARY,
+    DARK_PRIMARY_ACTION,
+    DARK_BUTTON_BG,
+    DARK_BUTTON_HOVER,
+    DARK_ITEM_HOVER,
+    DARK_HIGHLIGHT_BG,
+    DARK_HIGHLIGHT_TEXT,
+    DARK_INPUT_FIELD_BACKGROUND,
+    DEFAULT_FONT_FAMILY,
+    DARK_SUCCESS_ACTION,
+    DARK_DANGER_ACTION,
+)
+from controllers.horse_controller import HorseController
+from controllers.owner_controller import OwnerController
+from controllers.location_controller import LocationController
+from models import (
+    Horse,
+    Location as LocationModel,
+    Owner as OwnerModel,
+)  # Keep if type hints require specific models
+
+from .tabs.basic_info_tab import BasicInfoTab
+from .tabs.owners_tab import OwnersTab
+from .tabs.location_tab import LocationTab
+
+# NEW: Import BillingTab and FinancialController
+from .tabs.billing_tab import BillingTab
+from controllers.financial_controller import FinancialController
+
+
+class HorseUnifiedManagement(BaseView):
+    horse_selection_changed = Signal(int)
+    exit_requested = Signal()
+    setup_requested = Signal()
+    closing = Signal()
+
+    def __init__(self, current_user=None):
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.info(
+            f"HorseUnifiedManagement __init__ started for user: {current_user}"
+        )
+        self.current_user = current_user or "ADMIN"  # Ensure this is set
+        self.horse_controller = HorseController()
+        self.owner_controller = OwnerController()
+        self.location_controller = LocationController()
+        # NEW: Instantiate FinancialController
+        self.financial_controller = FinancialController()
+
+        self.tab_widget: Optional[QTabWidget] = None
+        self.basic_info_tab: Optional[BasicInfoTab] = None
+        self.owners_tab: Optional[OwnersTab] = None
+        self.location_tab: Optional[LocationTab] = None
+        # NEW: Add BillingTab attribute
+        self.billing_tab: Optional[BillingTab] = None
+
+        self.horse_list: Optional[QWidget] = (
+            None  # Assuming HorseListWidget from user file
+        )
+        self.empty_frame: Optional[QFrame] = None
+        self.horse_details_content_widget: Optional[QWidget] = None
+        self.horse_title: Optional[QLabel] = None
+        self.horse_info_line: Optional[QLabel] = None
+        self.add_horse_btn: Optional[QPushButton] = None
+        self.edit_horse_btn: Optional[QPushButton] = None
+        self.refresh_btn: Optional[QPushButton] = None
+        self.help_btn: Optional[QPushButton] = None
+        self.print_btn: Optional[QPushButton] = None
+        self.setup_icon_btn: Optional[QPushButton] = None
+        self.user_menu_button: Optional[QPushButton] = None
+        self.user_menu: Optional[QMenu] = None
+        self.active_only_radio: Optional[QRadioButton] = None
+        self.all_horses_radio: Optional[QRadioButton] = None
+        self.deactivated_radio: Optional[QRadioButton] = None
+        self.filter_group: Optional[QButtonGroup] = None
+        self.search_input: Optional[QLineEdit] = None
+        self.splitter: Optional[QSplitter] = None
+        self.list_widget_container: Optional[QWidget] = None
+        self.details_widget: Optional[QWidget] = None
+        self.details_layout: Optional[QVBoxLayout] = None
+        self.status_bar: Optional[QStatusBar] = None
+        self.status_label: Optional[QLabel] = None
+        self.footer_horse_count_label: Optional[QLabel] = None
+        self.shortcut_label: Optional[QLabel] = None
+
+        super().__init__()  # Call after all members are initialized
+
+        self.horses_list_data: List[Horse] = []
+        self.current_horse: Optional[Horse] = None
+        self._has_changes_in_active_tab: bool = False
+        self._is_new_mode: bool = False
+
+        self.search_timer = QTimer(self)
+        self.search_timer.setSingleShot(True)
+        self.search_timer.timeout.connect(self.perform_search)
+
+        self.logger.debug("Scheduling load_initial_data with QTimer.singleShot(0).")
+        QTimer.singleShot(0, self.load_initial_data)
+        self.logger.info(
+            "HorseUnifiedManagement screen __init__ finished (initial data load deferred)."
+        )
+
+    def setup_ui(self):
+        self.logger.info("HorseUnifiedManagement.setup_ui: EXECUTION CONFIRMED.")
+
+        self.set_title("Horse Management")  # From BaseView
+        self.resize(1200, 800)  # From BaseView (or could be here)
+
+        main_layout = QVBoxLayout(
+            self.central_widget
+        )  # self.central_widget from BaseView
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
+        self.setup_header(main_layout)
+        self.setup_action_bar(main_layout)
+        self.setup_main_content(main_layout)
+        self.setup_footer(main_layout)
+        self.setup_connections()
+
+        self.logger.info("HorseUnifiedManagement.setup_ui: All components initialized.")
+
+    def showEvent(self, event: QShowEvent):
+        self.logger.info("HorseUnifiedManagement showEvent: START")
+        super().showEvent(event)
+
+        self.logger.debug(
+            "showEvent: Checking core UI elements (empty_frame, horse_details_content_widget)..."
+        )
+        if (
+            not hasattr(self, "empty_frame")
+            or not self.empty_frame
+            or not hasattr(self, "horse_details_content_widget")
+            or not self.horse_details_content_widget
+        ):
+            self.logger.error(
+                "showEvent: Core UI elements for displaying state are NOT ready. UI setup might be incomplete. Aborting showEvent further processing."
+            )
+            return
+        self.logger.debug("showEvent: Core UI elements check PASSED.")
+
+        if self.current_horse:
+            self.logger.debug(
+                "showEvent: current_horse exists. Calling display_details_state."
+            )
+            self.display_details_state()
+            self.logger.debug("showEvent: display_details_state call completed.")
+            if (
+                self.basic_info_tab
+                and not self._is_new_mode
+                and hasattr(self.basic_info_tab, "_is_editing")
+                and not self.basic_info_tab._is_editing
+            ):
+                self.logger.debug("showEvent: Setting basic_info_tab to read-only.")
+                if hasattr(self.basic_info_tab, "set_form_read_only"):
+                    self.basic_info_tab.set_form_read_only(True)
+                self.logger.debug("showEvent: basic_info_tab set to read-only.")
+        else:
+            self.logger.debug(
+                "showEvent: No current_horse. Calling display_empty_state."
+            )
+            self.display_empty_state()
+            self.logger.debug("showEvent: display_empty_state call completed.")
+
+        self.logger.debug("showEvent: Calling update_main_action_buttons_state.")
+        self.update_main_action_buttons_state()
+        self.logger.debug("showEvent: update_main_action_buttons_state call completed.")
+
+        self.logger.info(
+            "HorseUnifiedManagement showEvent: FINISHED - screen should be visible."
+        )
+
+    def display_empty_state(self):
+        self.logger.debug("display_empty_state: START")
+
+        if hasattr(self, "empty_frame") and self.empty_frame:
+            self.logger.debug("display_empty_state: Showing empty_frame.")
+            self.empty_frame.show()
+        else:
+            self.logger.warning(
+                "display_empty_state: empty_frame not available or not valid."
+            )
+
+        if (
+            hasattr(self, "horse_details_content_widget")
+            and self.horse_details_content_widget
+        ):
+            self.logger.debug(
+                "display_empty_state: Hiding horse_details_content_widget."
+            )
+            self.horse_details_content_widget.hide()
+        else:
+            self.logger.warning(
+                "display_empty_state: horse_details_content_widget not available."
+            )
+
+        self.current_horse = None
+        self._is_new_mode = False
+        self._has_changes_in_active_tab = False
+        self.logger.debug("display_empty_state: Basic state flags reset.")
+
+        if self.basic_info_tab:
+            self.logger.debug(
+                "display_empty_state: Calling basic_info_tab.clear_fields()."
+            )
+            try:
+                self.basic_info_tab.clear_fields()
+                self.logger.debug(
+                    "display_empty_state: basic_info_tab.clear_fields() successful."
+                )
+                if hasattr(self.basic_info_tab, "set_form_read_only"):
+                    self.logger.debug(
+                        "display_empty_state: Attempting basic_info_tab.set_form_read_only(True)."
+                    )
+                    self.basic_info_tab.set_form_read_only(True)
+                    self.logger.debug(
+                        "display_empty_state: basic_info_tab.set_form_read_only(True) done."
+                    )
+            except Exception as e:
+                self.logger.error(
+                    f"display_empty_state: Error in basic_info_tab.clear_fields or set_form_read_only: {e}",
+                    exc_info=True,
+                )
+
+            if hasattr(self.basic_info_tab, "update_buttons_state"):
+                self.logger.debug(
+                    "display_empty_state: Calling basic_info_tab.update_buttons_state(...)."
+                )
+                try:
+                    self.basic_info_tab.update_buttons_state(
+                        is_editing_or_new=False, has_selection=False, has_changes=False
+                    )
+                    self.logger.debug(
+                        "display_empty_state: basic_info_tab.update_buttons_state() successful."
+                    )
+                except Exception as e:
+                    self.logger.error(
+                        f"display_empty_state: Error in basic_info_tab.update_buttons_state: {e}",
+                        exc_info=True,
+                    )
+        else:
+            self.logger.error("display_empty_state: BasicInfoTab is None.")
+
+        if self.owners_tab and hasattr(self.owners_tab, "load_owners_for_horse"):
+            self.logger.debug(
+                "display_empty_state: Calling owners_tab.load_owners_for_horse(None)."
+            )
+            try:
+                self.owners_tab.load_owners_for_horse(None)
+                self.logger.debug(
+                    "display_empty_state: owners_tab.load_owners_for_horse(None) successful."
+                )
+            except Exception as e:
+                self.logger.error(
+                    f"display_empty_state: Error in owners_tab.load_owners_for_horse: {e}",
+                    exc_info=True,
+                )
+        else:
+            self.logger.warning(
+                "display_empty_state: OwnersTab is None or missing method."
+            )
+
+        if self.location_tab and hasattr(self.location_tab, "load_location_for_horse"):
+            self.logger.debug(
+                "display_empty_state: Calling location_tab.load_location_for_horse(None)."
+            )
+            try:
+                self.location_tab.load_location_for_horse(None)
+                self.logger.debug(
+                    "display_empty_state: location_tab.load_location_for_horse(None) successful."
+                )
+            except Exception as e:
+                self.logger.error(
+                    f"display_empty_state: Error in location_tab.load_location_for_horse: {e}",
+                    exc_info=True,
+                )
+        else:
+            self.logger.warning(
+                "display_empty_state: LocationTab is None or missing method."
+            )
+
+        # NEW: Clear BillingTab as well
+        if self.billing_tab and hasattr(self.billing_tab, "set_current_horse"):
+            self.logger.debug(
+                "display_empty_state: Calling billing_tab.set_current_horse(None)."
+            )
+            try:
+                self.billing_tab.set_current_horse(None)
+                self.logger.debug(
+                    "display_empty_state: billing_tab.set_current_horse(None) successful."
+                )
+            except Exception as e:
+                self.logger.error(
+                    f"display_empty_state: Error in billing_tab.set_current_horse: {e}",
+                    exc_info=True,
+                )
+        else:
+            self.logger.warning(
+                "display_empty_state: BillingTab is None or missing set_current_horse method."
+            )
+
+        if hasattr(self, "horse_title") and self.horse_title:
+            self.logger.debug("display_empty_state: Setting horse_title text.")
+            self.horse_title.setText("No Horse Selected")
+        else:
+            self.logger.warning(
+                "display_empty_state: horse_title QLabel not available."
+            )
+
+        self.logger.debug("display_empty_state: Calling _update_horse_info_line(None).")
+        self._update_horse_info_line(None)
+        self.logger.debug(
+            "display_empty_state: _update_horse_info_line(None) call completed."
+        )
+
+        self.logger.debug("display_empty_state: Calling update_status.")
+        self.update_status(
+            "No horse selected. Add a new horse or select from list."
+        )  # From BaseView
+        self.logger.info("display_empty_state: FINISHED")
+
+    def update_main_action_buttons_state(self):
+        self.logger.debug("update_main_action_buttons_state: START")
+        can_add_new = not self._is_new_mode and not self._has_changes_in_active_tab
+        if hasattr(self, "add_horse_btn") and self.add_horse_btn:
+            self.add_horse_btn.setEnabled(can_add_new)
+            self.logger.debug(
+                f"update_main_action_buttons_state: add_horse_btn enabled: {can_add_new}"
+            )
+        else:
+            self.logger.warning(
+                "add_horse_btn not initialized in update_main_action_buttons_state"
+            )
+
+        form_is_editable_by_tab = False
+        if self.basic_info_tab and hasattr(self.basic_info_tab, "_is_editing"):
+            form_is_editable_by_tab = self.basic_info_tab._is_editing
+
+        can_edit_selected = (
+            self.current_horse is not None
+            and not self._is_new_mode
+            and not self._has_changes_in_active_tab
+            and not form_is_editable_by_tab
+        )
+
+        if hasattr(self, "edit_horse_btn") and self.edit_horse_btn:
+            self.edit_horse_btn.setEnabled(can_edit_selected)
+            self.logger.debug(
+                f"update_main_action_buttons_state: edit_horse_btn enabled: {can_edit_selected}"
+            )
+        else:
+            self.logger.warning(
+                "edit_horse_btn not initialized in update_main_action_buttons_state"
+            )
+
+        if self.basic_info_tab and hasattr(self.basic_info_tab, "update_buttons_state"):
+            self.logger.debug(
+                "update_main_action_buttons_state: Updating basic_info_tab buttons."
+            )
+            try:
+                is_editing_or_new_val = self._is_new_mode or form_is_editable_by_tab
+                has_selection_val = self.current_horse is not None
+                has_changes_val = self._has_changes_in_active_tab
+                self.basic_info_tab.update_buttons_state(
+                    is_editing_or_new_val, has_selection_val, has_changes_val
+                )
+            except Exception as e:
+                self.logger.error(
+                    f"update_main_action_buttons_state: Error calling basic_info_tab.update_buttons_state: {e}",
+                    exc_info=True,
+                )
+
+        if self.owners_tab and hasattr(self.owners_tab, "update_buttons_state"):
+            self.logger.debug(
+                "update_main_action_buttons_state: Updating owners_tab buttons."
+            )
+            try:
+                self.owners_tab.update_buttons_state()
+            except Exception as e:
+                self.logger.error(
+                    f"update_main_action_buttons_state: Error calling owners_tab.update_buttons_state: {e}",
+                    exc_info=True,
+                )
+
+        if self.location_tab and hasattr(self.location_tab, "update_buttons_state"):
+            self.logger.debug(
+                "update_main_action_buttons_state: Updating location_tab buttons."
+            )
+            try:
+                self.location_tab.update_buttons_state()
+            except Exception as e:
+                self.logger.error(
+                    f"update_main_action_buttons_state: Error calling location_tab.update_buttons_state: {e}",
+                    exc_info=True,
+                )
+
+        if self.billing_tab and hasattr(self.billing_tab, "update_buttons_state"):
+            self.logger.debug(
+                "update_main_action_buttons_state: Updating billing_tab buttons."
+            )
+            try:
+                self.billing_tab.update_buttons_state()
+            except Exception as e:
+                self.logger.error(
+                    f"update_main_action_buttons_state: Error calling billing_tab.update_buttons_state: {e}",
+                    exc_info=True,
+                )
+
+        self.logger.debug("update_main_action_buttons_state: FINISHED")
+
+    def discard_changes(self):
+        self.logger.debug("discard_changes: START")
+        if not self._is_new_mode and not self._has_changes_in_active_tab:
+            if (
+                self.current_horse
+                and self.basic_info_tab
+                and hasattr(self.basic_info_tab, "_is_editing")
+                and self.basic_info_tab._is_editing
+            ):
+                self.logger.info(
+                    "discard_changes: Form in edit mode, no data changes. Reverting to read-only."
+                )
+                if hasattr(self.basic_info_tab, "set_form_read_only"):
+                    self.basic_info_tab.set_form_read_only(True)
+                self.update_main_action_buttons_state()
+                self.update_status(
+                    f"Viewing: {self.current_horse.horse_name or 'horse'}"
+                )
+                self.logger.debug("discard_changes: FINISHED (no actual changes)")
+                return
+            self.update_status("No changes to discard.")
+            self.logger.debug("discard_changes: FINISHED (no changes to discard)")
+            return
+
+        if self.show_question(
+            "Confirm Discard", "Discard unsaved changes?"
+        ):  # From BaseView
+            self.logger.info("discard_changes: User confirmed discard.")
+            was_in_new_mode = self._is_new_mode
+            self._is_new_mode = False
+            self._has_changes_in_active_tab = False
+            if self.basic_info_tab:
+                self.logger.debug("discard_changes: Clearing BasicInfoTab.")
+                try:
+                    self.basic_info_tab.clear_fields()
+                    if hasattr(self.basic_info_tab, "set_form_read_only"):
+                        self.basic_info_tab.set_form_read_only(True)
+                except Exception as e:
+                    self.logger.error(
+                        f"discard_changes: Error in basic_info_tab.clear_fields/set_form_read_only: {e}",
+                        exc_info=True,
+                    )
+
+            if self.current_horse and not was_in_new_mode:
+                self.logger.debug(
+                    f"discard_changes: Reloading horse ID {self.current_horse.horse_id}."
+                )
+                self.load_horse_details(self.current_horse.horse_id)
+            else:
+                self.logger.debug(
+                    "discard_changes: Was new or no current horse. Selecting first in list or empty state."
+                )
+                if self.horse_list and self.horse_list.count() > 0:  # type: ignore
+                    self.horse_list.setCurrentRow(0)  # type: ignore
+                else:
+                    self.display_empty_state()
+            self.update_main_action_buttons_state()
+            self.update_status("Changes discarded.")
+        else:
+            self.logger.info("discard_changes: User cancelled discard.")
+        self.logger.debug("discard_changes: FINISHED")
+
+    def load_initial_data(self):
+        self.logger.info("load_initial_data: START - Attempting to load horses.")
+        try:
+            self.load_horses()
+            self.logger.info(
+                "load_initial_data: FINISHED - load_horses call completed."
+            )
+        except Exception as e:
+            self.logger.error(
+                f"load_initial_data: CRITICAL ERROR during load_horses: {e}",
+                exc_info=True,
+            )
+            self.show_error(
+                "Initial Data Load Failed", f"Could not load initial horse data: {e}"
+            )  # From BaseView
+
+    def closeEvent(self, event: QCloseEvent):
+        self.logger.warning(f"HorseUnifiedManagement closeEvent. Type: {event.type()}")
+        self.closing.emit()
+        super().closeEvent(event)
+        self.logger.warning("HorseUnifiedManagement finished processing closeEvent.")
+
+    def get_form_input_style(self, base_bg=DARK_INPUT_FIELD_BACKGROUND):
+        return f"""
+            QLineEdit, QComboBox, QDateEdit, QDoubleSpinBox {{ background-color: {base_bg}; color: {DARK_TEXT_PRIMARY}; border: 1px solid {DARK_BORDER}; border-radius: 4px; padding: 6px 10px; font-size: 13px; }}
+            QLineEdit:focus, QComboBox:focus, QDateEdit:focus, QDoubleSpinBox:focus {{ border-color: {DARK_PRIMARY_ACTION}; }}
+            QLineEdit:disabled, QComboBox:disabled, QDateEdit:disabled, QDoubleSpinBox:disabled {{ background-color: {DARK_HEADER_FOOTER}; color: {DARK_TEXT_TERTIARY}; border-color: {DARK_HEADER_FOOTER}; }}
+            QComboBox::drop-down {{ border: none; background-color: transparent; width: 15px; }} QComboBox::down-arrow {{ color: {DARK_TEXT_SECONDARY}; }}
+            QDateEdit::up-button, QDateEdit::down-button {{ width: 18px; }}
+            QComboBox QAbstractItemView {{ background-color: {DARK_WIDGET_BACKGROUND}; color: {DARK_TEXT_PRIMARY}; border: 1px solid {DARK_BORDER}; selection-background-color: {DARK_HIGHLIGHT_BG}; selection-color: {DARK_HIGHLIGHT_TEXT}; }}
+        """
+
+    def get_generic_button_style(self):
+        return f"""
+            QPushButton {{ background-color: {DARK_BUTTON_BG}; color: {DARK_TEXT_PRIMARY}; border: 1px solid {DARK_BORDER}; border-radius: 4px; padding: 8px 12px; font-size: 12px; font-weight: 500; min-height: 28px; }} 
+            QPushButton:hover {{ background-color: {DARK_BUTTON_HOVER}; }} 
+            QPushButton:disabled {{ background-color: {DARK_HEADER_FOOTER}; color: {DARK_TEXT_TERTIARY}; }}
+        """
+
+    def get_toolbar_button_style(self, bg_color_hex, text_color_hex="#ffffff"):
+        if len(bg_color_hex) == 4 and bg_color_hex.startswith("#"):
+            bg_color_hex = f"#{bg_color_hex[1]*2}{bg_color_hex[2]*2}{bg_color_hex[3]*2}"
+        try:
+            base_qcolor = QColor(bg_color_hex)
+            hover_bg = base_qcolor.lighter(115).name()
+            pressed_bg = base_qcolor.darker(110).name()
+        except ValueError:
+            hover_bg, pressed_bg = DARK_BUTTON_HOVER, DARK_BUTTON_BG
+            self.logger.warning(
+                f"Could not parse color: {bg_color_hex} for button style."
+            )
+        return f"""
+            QPushButton {{ background-color: {bg_color_hex}; color: {text_color_hex}; border: none; border-radius: 4px; padding: 8px 16px; font-size: 13px; font-weight: 500; }} 
+            QPushButton:hover {{ background-color: {hover_bg}; }} QPushButton:pressed {{ background-color: {pressed_bg}; }} 
+            QPushButton:disabled {{ background-color: #adb5bd; color: #f8f9fa; }}
+        """
+
+    def setup_header(self, parent_layout):
+        self.logger.debug("setup_header: START")
+        header_frame = QFrame()
+        header_frame.setObjectName("HeaderFrame")
+        header_frame.setFixedHeight(55)
+        header_frame.setStyleSheet(
+            f"""#HeaderFrame{{background-color:{DARK_HEADER_FOOTER};border:none;padding:0 20px;}} QLabel{{color:{DARK_TEXT_PRIMARY};background-color:transparent;}} QPushButton#UserMenuButton{{color:{DARK_TEXT_SECONDARY};font-size:12px;background-color:transparent;border:none;padding:5px;text-align:right;}} QPushButton#UserMenuButton::menu-indicator{{image:none;}} QPushButton#UserMenuButton:hover{{color:{DARK_TEXT_PRIMARY};background-color:{QColor(DARK_ITEM_HOVER).lighter(110).name(QColor.NameFormat.HexRgb)}33;}}"""
+        )
+        header_layout = QHBoxLayout(header_frame)
+        header_layout.setContentsMargins(0, 0, 0, 0)
+        header_layout.setSpacing(15)
+        left_widget = QWidget()
+        left_layout = QVBoxLayout(left_widget)
+        left_layout.setSpacing(2)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.addStretch()
+        title_label = QLabel("EDSI - Horse Management")
+        title_label.setFont(QFont(DEFAULT_FONT_FAMILY, 15, QFont.Weight.Bold))
+        left_layout.addWidget(title_label)
+        breadcrumb_label = QLabel("🏠 Horse Management")
+        breadcrumb_label.setStyleSheet(
+            f"color:{DARK_TEXT_SECONDARY};font-size:11px;background:transparent;"
+        )
+        left_layout.addWidget(breadcrumb_label)
+        left_layout.addStretch()
+        right_widget = QWidget()
+        right_layout = QHBoxLayout(right_widget)
+        right_layout.setSpacing(10)
+        right_layout.setContentsMargins(0, 0, 0, 0)
+        right_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        self.refresh_btn = QPushButton("🔄")
+        self.refresh_btn.setToolTip("Refresh Data (F5)")
+        self.help_btn = QPushButton("❓")
+        self.help_btn.setToolTip("Help (F1)")
+        self.print_btn = QPushButton("🖨️")
+        self.print_btn.setToolTip("Print Options")
+        self.setup_icon_btn = QPushButton("⚙️")
+        self.setup_icon_btn.setToolTip("System Setup")
+        header_button_style = f"""QPushButton{{background-color:{DARK_BUTTON_BG};color:{DARK_TEXT_PRIMARY};border:1px solid {DARK_BORDER};border-radius:4px;padding:5px;font-size:14px;min-width:28px;max-width:28px;min-height:28px;max-height:28px;}} QPushButton:hover{{background-color:{DARK_BUTTON_HOVER};}} QPushButton:pressed{{background-color:{DARK_BUTTON_BG};}}"""
+        for btn in [
+            self.refresh_btn,
+            self.help_btn,
+            self.print_btn,
+            self.setup_icon_btn,
+        ]:
+            if btn:
+                btn.setStyleSheet(header_button_style)
+        self.user_menu_button = QPushButton(f"👤 User: {self.current_user}")
+        self.user_menu_button.setObjectName("UserMenuButton")
+        self.user_menu_button.setToolTip("User options")
+        self.user_menu_button.setFlat(True)
+        self.user_menu = QMenu(self)
+        self.user_menu.setStyleSheet(
+            f"""QMenu{{background-color:{DARK_WIDGET_BACKGROUND};color:{DARK_TEXT_PRIMARY};border:1px solid {DARK_BORDER};padding:5px;}} QMenu::item{{padding:5px 20px 5px 20px;min-width:100px;}} QMenu::item:selected{{background-color:{DARK_HIGHLIGHT_BG}70;color:{DARK_HIGHLIGHT_TEXT};}} QMenu::separator{{height:1px;background:{DARK_BORDER};margin-left:5px;margin-right:5px;}}"""
+        )
+        logout_action = QAction("Log Out", self)
+        logout_action.triggered.connect(self.handle_logout_request_from_menu)
+        self.user_menu.addAction(logout_action)
+        if self.user_menu_button:
+            self.user_menu_button.setMenu(self.user_menu)
+        for btn in [
+            self.refresh_btn,
+            self.help_btn,
+            self.print_btn,
+            self.setup_icon_btn,
+            self.user_menu_button,
+        ]:
+            if btn:
+                right_layout.addWidget(btn)
+        header_layout.addWidget(left_widget)
+        header_layout.addStretch()
+        header_layout.addWidget(right_widget)
+        parent_layout.addWidget(header_frame)
+        self.logger.debug("setup_header: END")
+
+    def setup_action_bar(self, parent_layout):
+        self.logger.debug("setup_action_bar: START")
+        action_bar_frame = QFrame()
+        action_bar_frame.setObjectName("ActionBarFrame")
+        action_bar_frame.setFixedHeight(50)
+        action_bar_frame.setStyleSheet(
+            f"""#ActionBarFrame{{background-color:{DARK_BACKGROUND};border:none;border-bottom:1px solid {DARK_BORDER};padding:0 20px;}} QPushButton{{min-height:30px;}} QLabel{{color:{DARK_TEXT_SECONDARY};background:transparent;}} QRadioButton::indicator{{width:13px;height:13px;}} QRadioButton{{color:{DARK_TEXT_SECONDARY};background:transparent;padding:5px;}}"""
+        )
+        action_bar_layout = QHBoxLayout(action_bar_frame)
+        action_bar_layout.setContentsMargins(0, 0, 0, 0)
+        action_bar_layout.setSpacing(12)
+        action_bar_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        self.add_horse_btn = QPushButton("➕ Add Horse")
+        self.edit_horse_btn = QPushButton("✓ Edit Selected")
+        action_button_style_str = self.get_generic_button_style()
+        add_btn_bg_color = DARK_PRIMARY_ACTION
+        if len(add_btn_bg_color) == 4:
+            add_btn_bg_color = f"#{add_btn_bg_color[1]*2}{add_btn_bg_color[2]*2}{add_btn_bg_color[3]*2}"
+        if self.add_horse_btn:
+            self.add_horse_btn.setStyleSheet(
+                action_button_style_str.replace(
+                    DARK_BUTTON_BG, add_btn_bg_color + "B3"
+                ).replace(f"color:{DARK_TEXT_PRIMARY}", "color:white;")
+            )
+        if self.edit_horse_btn:
+            self.edit_horse_btn.setStyleSheet(action_button_style_str)
+        action_bar_layout.addWidget(self.add_horse_btn)
+        action_bar_layout.addWidget(self.edit_horse_btn)
+        self.filter_group = QButtonGroup(self)
+        self.active_only_radio = QRadioButton("Active Only")
+        self.all_horses_radio = QRadioButton("All Horses")
+        self.deactivated_radio = QRadioButton("Deactivated")
+        for btn in [
+            self.active_only_radio,
+            self.all_horses_radio,
+            self.deactivated_radio,
+        ]:
+            if btn:
+                self.filter_group.addButton(btn)
+                action_bar_layout.addWidget(btn)
+        if self.active_only_radio:
+            self.active_only_radio.setChecked(True)
+        action_bar_layout.addStretch()
+        self.search_input = QLineEdit()
+        if self.search_input:
+            self.search_input.setPlaceholderText("🔍 Search...")
+            self.search_input.setFixedHeight(30)
+            self.search_input.setFixedWidth(220)
+            self.search_input.setStyleSheet(
+                self.get_form_input_style(base_bg=DARK_HEADER_FOOTER)
+            )
+        action_bar_layout.addWidget(self.search_input)
+        if self.edit_horse_btn:
+            self.edit_horse_btn.setEnabled(False)
+        parent_layout.addWidget(action_bar_frame)
+        self.logger.debug("setup_action_bar: END")
+
+    def setup_main_content(self, parent_layout):
+        self.logger.debug("setup_main_content: START")
+        self.splitter = QSplitter(Qt.Orientation.Horizontal)
+        self.splitter.setHandleWidth(1)
+        self.splitter.setStyleSheet(
+            f"""QSplitter{{background-color:{DARK_BACKGROUND};border:none;}} QSplitter::handle{{background-color:{DARK_BORDER};}} QSplitter::handle:horizontal{{width:1px;}} QSplitter::handle:pressed{{background-color:{DARK_TEXT_SECONDARY};}}"""
+        )
+        self.setup_horse_list_panel()
+        self.setup_horse_details_panel()
+        self.splitter.setSizes([300, 850])
+        self.splitter.setStretchFactor(0, 0)
+        self.splitter.setStretchFactor(1, 1)
+        self.splitter.setCollapsible(0, False)
+        self.splitter.setCollapsible(1, False)
+        parent_layout.addWidget(self.splitter, 1)
+        self.logger.debug("setup_main_content: END")
+
+    def setup_horse_list_panel(self):
+        from .widgets.horse_list_widget import (
+            HorseListWidget,
+        )  # Local import if it's not globally needed
+
+        self.list_widget_container = QWidget()
+        self.list_widget_container.setStyleSheet(
+            f"background-color:{DARK_BACKGROUND};border:none;border-right:1px solid {DARK_BORDER};"
+        )
+        list_layout = QVBoxLayout(self.list_widget_container)
+        list_layout.setContentsMargins(0, 0, 0, 0)
+        list_layout.setSpacing(0)
+        self.horse_list = (
+            HorseListWidget()
+        )  # Assuming HorseListWidget is the actual class
+        if self.horse_list:
+            self.horse_list.setMinimumWidth(250)  # type: ignore
+        list_layout.addWidget(self.horse_list, 1)  # type: ignore
+        if self.splitter:
+            self.splitter.addWidget(self.list_widget_container)
+
+    def setup_horse_details_panel(self):
+        self.logger.debug("setup_horse_details_panel: START")
+        self.details_widget = QWidget()
+        self.details_widget.setStyleSheet(
+            f"background-color:{DARK_BACKGROUND};border:none;"
+        )
+        self.details_layout = QVBoxLayout(self.details_widget)
+        self.details_layout.setContentsMargins(15, 10, 15, 10)
+        self.details_layout.setSpacing(15)
+        self.horse_details_content_widget = QWidget()
+        details_content_layout = QVBoxLayout(self.horse_details_content_widget)
+        details_content_layout.setContentsMargins(0, 0, 0, 0)
+        details_content_layout.setSpacing(15)
+        self.setup_horse_header_details(details_content_layout)
+        self.setup_horse_tabs(details_content_layout)
+        self.setup_empty_state()
+        if self.details_layout and self.empty_frame:
+            self.details_layout.addWidget(self.empty_frame)
+        if self.details_layout and self.horse_details_content_widget:
+            self.details_layout.addWidget(self.horse_details_content_widget)
+        if self.horse_details_content_widget:
+            self.horse_details_content_widget.hide()
+        if self.splitter:
+            self.splitter.addWidget(self.details_widget)
+        self.logger.debug("setup_horse_details_panel: END")
+
+    def setup_empty_state(self):
+        self.logger.debug("setup_empty_state (frame creation): START")
+        self.empty_frame = QFrame()
+        self.empty_frame.setObjectName("EmptyFrame")
+        self.empty_frame.setStyleSheet(
+            "#EmptyFrame{background-color:transparent;border:none;}"
+        )
+        empty_layout = QVBoxLayout(self.empty_frame)
+        empty_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        empty_layout.setSpacing(15)
+        empty_label = QLabel("Select a horse from the list, or click 'Add Horse'.")
+        empty_label.setStyleSheet(
+            f"color:{DARK_TEXT_SECONDARY};font-size:16px;background:transparent;"
+        )
+        empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        empty_layout.addWidget(empty_label)
+        self.logger.debug("setup_empty_state (frame creation): FINISHED")
+
+    def setup_horse_header_details(self, parent_layout):
+        header_widget = QWidget()
+        header_layout = QVBoxLayout(header_widget)
+        header_layout.setContentsMargins(0, 0, 0, 0)
+        header_layout.setSpacing(5)
+        self.horse_title = QLabel("Horse Name")
+        self.horse_title.setFont(QFont(DEFAULT_FONT_FAMILY, 18, QFont.Weight.Bold))
+        self.horse_title.setStyleSheet(
+            f"color:{DARK_TEXT_PRIMARY};background:transparent;"
+        )
+        self.horse_info_line = QLabel(
+            "Acct: N/A | 👥 No Owner | Breed: N/A | Color: N/A | Sex: N/A | Age: N/A | 📍 N/A"
+        )
+        self.horse_info_line.setStyleSheet(
+            f"color:{DARK_TEXT_SECONDARY};font-size:12px;background:transparent;"
+        )
+        self.horse_info_line.setWordWrap(True)
+        header_layout.addWidget(self.horse_title)
+        header_layout.addWidget(self.horse_info_line)
+        parent_layout.addWidget(header_widget)
+
+    def setup_horse_tabs(self, parent_layout_for_tabs):  # Version from artifact
+        self.logger.info("--- HORSEUNIFIEDMANAGEMENT.SETUP_HORSE_TABS START ---")
+        try:
+            self.tab_widget = QTabWidget()
+            self.tab_widget.setObjectName("DetailsTabWidget")
+            self.tab_widget.setStyleSheet(
+                f"""QTabWidget#DetailsTabWidget::pane{{border:1px solid {AppConfig.DARK_BORDER};background-color:{AppConfig.DARK_WIDGET_BACKGROUND};border-radius:6px;margin-top:-1px;}} QTabBar::tab{{padding:8px 15px;margin-right:2px;background-color:{AppConfig.DARK_BUTTON_BG};color:{AppConfig.DARK_TEXT_SECONDARY};border:1px solid {AppConfig.DARK_BORDER};border-bottom:none;border-top-left-radius:5px;border-top-right-radius:5px;min-width:90px;font-size:13px;font-weight:500;}} QTabBar::tab:selected{{background-color:{AppConfig.DARK_WIDGET_BACKGROUND};color:{AppConfig.DARK_TEXT_PRIMARY};border-color:{AppConfig.DARK_BORDER};border-bottom-color:{AppConfig.DARK_WIDGET_BACKGROUND};}} QTabBar::tab:!selected:hover{{background-color:{AppConfig.DARK_BUTTON_HOVER};color:{AppConfig.DARK_TEXT_PRIMARY};}} QTabBar{{border:none;background-color:transparent;margin-bottom:0px;}}"""
+            )
+
+            try:
+                self.basic_info_tab = BasicInfoTab(
+                    horse_controller=self.horse_controller, parent=self
+                )
+                self.tab_widget.addTab(self.basic_info_tab, "📋 Basic Info")
+                self.logger.info("BasicInfoTab created.")
+            except Exception as e_basic:
+                self.logger.error(f"ERROR BasicInfoTab: {e_basic}", exc_info=True)
+                self.basic_info_tab = None
+
+            try:
+                self.owners_tab = OwnersTab(
+                    parent_view=self,
+                    horse_controller=self.horse_controller,
+                    owner_controller=self.owner_controller,
+                )
+                self.tab_widget.addTab(self.owners_tab, "👥 Owners")
+                self.logger.info("OwnersTab created.")
+            except Exception as e_owners:
+                self.logger.error(f"ERROR OwnersTab: {e_owners}", exc_info=True)
+                self.owners_tab = None
+
+            try:
+                self.location_tab = LocationTab(
+                    parent_view=self,
+                    horse_controller=self.horse_controller,
+                    location_controller=self.location_controller,
+                )
+                self.tab_widget.addTab(self.location_tab, "📍 Location")
+                self.logger.info("LocationTab created.")
+            except Exception as e_location:
+                self.logger.error(f"ERROR LocationTab: {e_location}", exc_info=True)
+                self.location_tab = None
+
+            try:  # NEW: Billing Tab
+                self.billing_tab = BillingTab(
+                    parent_view=self, financial_controller=self.financial_controller
+                )
+                self.tab_widget.addTab(self.billing_tab, "💰 Billing")
+                self.logger.info("BillingTab created.")
+            except Exception as e_billing:
+                self.logger.error(f"ERROR BillingTab: {e_billing}", exc_info=True)
+                self.billing_tab = None
+
+            placeholder_tabs = ["📊 History"]
+            for name in placeholder_tabs:
+                placeholder_widget = QWidget(
+                    objectName=f"Placeholder_{name.replace(' ','')}Tab"
+                )
+                layout = QVBoxLayout(placeholder_widget)
+                label = QLabel(f"{name} - Coming Soon")
+                label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                layout.addWidget(label)
+                self.tab_widget.addTab(placeholder_widget, name)
+
+            parent_layout_for_tabs.addWidget(self.tab_widget, 1)
+            self.logger.info("Tabs added.")
+        except Exception as e:
+            self.logger.error(f"ERROR setup_horse_tabs: {e}", exc_info=True)
+            if hasattr(self, "tab_widget") and self.tab_widget:
+                self.tab_widget.deleteLater()
+            self.tab_widget = None
+            self.basic_info_tab = None
+            self.owners_tab = None
+            self.location_tab = None
+            self.billing_tab = None
+
+    def _handle_location_assignment_change(self, location_data: Dict):
+        self.logger.info(f"Received location_assignment_changed: {location_data}")
+        if self.current_horse and self.current_horse.horse_id is not None:
+            horse_id_that_changed = self.current_horse.horse_id
+            self.logger.info(
+                f"Location changed for horse ID {horse_id_that_changed}. Reloading details."
+            )
+            self.load_horse_details(horse_id_that_changed)
+            if self.current_horse:
+                current_loc_name = "[N/A - Error]"
+                try:
+                    current_loc_name = (
+                        self.current_horse.location.location_name
+                        if self.current_horse.location
+                        and hasattr(self.current_horse.location, "location_name")
+                        else "N/A"
+                    )
+                except DetachedInstanceError:
+                    current_loc_name = "[Location N/A - Session Issue]"
+                self.update_status(
+                    f"Location updated to '{current_loc_name}' for {self.current_horse.horse_name or 'horse'}."
+                )
+        else:
+            self.logger.warning(
+                "Location assignment changed, but no current_horse or valid horse_id to refresh."
+            )
+
+    def _get_display_owner_name(self, horse: Optional[Horse]) -> str:
+        if not horse:
+            return "No Owner"
+        owner_name_display = "No Owner"
+        try:
+            if (
+                horse.owners and len(horse.owners) > 0
+            ):  # horse.owners is a list of Owner objects
+                actual_owner = horse.owners[0]
+                if actual_owner:
+                    name_parts: List[str] = []
+                    if (
+                        hasattr(actual_owner, "farm_name")
+                        and actual_owner.farm_name
+                        and actual_owner.farm_name.strip()
+                    ):
+                        name_parts.append(actual_owner.farm_name.strip())
+                    person_name_parts: List[str] = []
+                    if (
+                        hasattr(actual_owner, "first_name")
+                        and actual_owner.first_name
+                        and actual_owner.first_name.strip()
+                    ):
+                        person_name_parts.append(actual_owner.first_name.strip())
+                    if (
+                        hasattr(actual_owner, "last_name")
+                        and actual_owner.last_name
+                        and actual_owner.last_name.strip()
+                    ):
+                        person_name_parts.append(actual_owner.last_name.strip())
+                    person_name_str = " ".join(person_name_parts).strip()
+                    if person_name_str:
+                        if name_parts:
+                            name_parts.append(f"({person_name_str})")
+                        else:
+                            name_parts.append(person_name_str)
+                    if name_parts:
+                        owner_name_display = " ".join(name_parts)
+                    elif hasattr(actual_owner, "owner_id"):
+                        owner_name_display = f"Owner ID: {actual_owner.owner_id}"
+                    else:
+                        owner_name_display = "Owner Data Incomplete"
+                else:
+                    owner_name_display = "Owner Data Missing"
+        except DetachedInstanceError:
+            logger_obj = getattr(self, "logger", logging.getLogger(__name__))
+            logger_obj.warning(
+                f"Detached: horse.owners, Horse ID {horse.horse_id if horse else 'N/A'}."
+            )
+            owner_name_display = "[Own N/A - Detached]"
+        except Exception as e:
+            self.logger.error(
+                f"Error constructing owner display name: {e}", exc_info=True
+            )
+            owner_name_display = "[Owner Display Error]"
+        return owner_name_display
+
+    def _get_display_location_name(self, horse: Optional[Horse]) -> str:
+        if not horse:
+            return "N/A"
+        location_name_str = "N/A"
+        try:
+            if horse.location and hasattr(horse.location, "location_name"):
+                location_name_str = horse.location.location_name or "N/A"
+        except DetachedInstanceError:
+            logger_obj = getattr(self, "logger", logging.getLogger(__name__))
+            logger_obj.warning(
+                f"Detached: horse.location, ID {horse.horse_id if horse else 'N/A'}."
+            )
+            location_name_str = "[Loc N/A - Detached]"
+        except Exception as e:
+            self.logger.error(f"Error getting location name: {e}", exc_info=True)
+            location_name_str = "[Location Error]"
+        return location_name_str
+
+    def _update_horse_info_line(self, horse: Optional[Horse]):
+        if not hasattr(self, "horse_info_line") or self.horse_info_line is None:
+            self.logger.error(
+                "_update_horse_info_line: horse_info_line QLabel is None."
+            )
+            return
+        if not horse:
+            self.horse_info_line.setText(
+                "Acct: N/A | 👥 No Owner | Breed: N/A | Color: N/A | Sex: N/A | Age: N/A | 📍 N/A"
+            )
+            return
+        age_str = "Age N/A"
+        if self.horse_list and hasattr(self.horse_list, "_calculate_age"):
+            age_str = self.horse_list._calculate_age(horse.date_of_birth)  # type: ignore
+        owner_name = self._get_display_owner_name(horse)
+        location_name_val = self._get_display_location_name(horse)
+        self.horse_info_line.setText(
+            f"Acct: {horse.account_number or 'N/A'} | 👥 {owner_name} | Breed: {horse.breed or 'N/A'} | Color: {horse.color or 'N/A'} | Sex: {horse.sex or 'N/A'} | Age: {age_str} | 📍 {location_name_val}"
+        )
+
+    def load_horse_details(self, horse_id: int):  # Version from artifact
+        self.logger.info(f"load_horse_details: START for horse ID: {horse_id}")
+        horse = self.horse_controller.get_horse_by_id(horse_id)
+        if not horse:
+            self.show_error("Error", f"Could not load horse ID {horse_id}.")
+            self.display_empty_state()
+            self.logger.info("load_horse_details: FINISHED (horse not found)")
+            return
+        self.current_horse = horse
+        self._is_new_mode = False
+        self._has_changes_in_active_tab = False
+        if hasattr(self, "horse_title") and self.horse_title:
+            self.horse_title.setText(horse.horse_name or "Unnamed Horse")
+        self._update_horse_info_line(horse)
+        if self.basic_info_tab:
+            self.basic_info_tab.populate_form_data(horse)
+        if self.owners_tab:
+            self.owners_tab.load_owners_for_horse(horse)
+        if self.location_tab:
+            self.location_tab.load_location_for_horse(horse)
+        if self.billing_tab:  # NEW
+            self.logger.debug("load_horse_details: Loading BillingTab data")
+            self.billing_tab.set_current_horse(horse)
+        self.display_details_state()
+        self.update_main_action_buttons_state()
+        self.update_status(f"Viewing: {horse.horse_name or 'Unnamed Horse'}")
+        self.logger.info(f"load_horse_details: FINISHED for horse ID: {horse_id}")
+
+    def add_new_horse(self):
+        self.logger.info("add_new_horse: START")
+        if self._has_changes_in_active_tab and not self.show_question(
+            "Unsaved Changes", "Discard current changes and start new horse record?"
+        ):
+            self.logger.info("add_new_horse: Aborted due to unsaved changes.")
+            return
+        self._is_new_mode = True
+        self._has_changes_in_active_tab = False
+        self.current_horse = None
+        if self.horse_list and self.horse_list.selectionModel():  # type: ignore
+            self.logger.debug("add_new_horse: Clearing horse list selection.")
+            self.horse_list.blockSignals(True)  # type: ignore
+            self.horse_list.selectionModel().clear()  # type: ignore
+            self.horse_list.blockSignals(False)  # type: ignore
+        if self.basic_info_tab and hasattr(self.basic_info_tab, "set_new_mode"):
+            self.logger.debug("add_new_horse: Setting BasicInfoTab to new mode.")
+            self.basic_info_tab.set_new_mode(is_new=True)
+        else:
+            self.logger.error("add_new_horse: BasicInfoTab missing or no set_new_mode.")
+            self.show_error("UI Error", "Details form unavailable.")
+            self._is_new_mode = False
+            return
+        if self.owners_tab:
+            self.owners_tab.load_owners_for_horse(None)
+        if self.location_tab:
+            self.location_tab.load_location_for_horse(None)
+        if self.billing_tab:
+            self.billing_tab.set_current_horse(None)  # NEW
+        if hasattr(self, "horse_title") and self.horse_title:
+            self.horse_title.setText("New Horse Record")
+        self._update_horse_info_line(None)
+        self.display_details_state()
+        if self.tab_widget and self.basic_info_tab:
+            self.logger.debug("add_new_horse: Setting current tab to BasicInfoTab.")
+            self.tab_widget.setCurrentWidget(self.basic_info_tab)
+        self.update_main_action_buttons_state()
+        self.update_status("Enter details for new horse.")
+        self.logger.info("add_new_horse: FINISHED")
+
+    def _on_tab_data_modified(self):
+        if (
+            self.basic_info_tab
+            and hasattr(self.basic_info_tab, "horse_name_input")
+            and self.basic_info_tab.horse_name_input
+            and not self.basic_info_tab.horse_name_input.isReadOnly()
+        ):
+            if not self._has_changes_in_active_tab:
+                self._has_changes_in_active_tab = True
+                self.logger.debug("_on_tab_data_modified: Change detected. Flag set.")
+            self.update_main_action_buttons_state()
+        else:
+            self.logger.debug(
+                "_on_tab_data_modified: Signal received, but form read-only or input missing."
+            )
+
+    def _on_owner_association_changed(self, message: str):
+        self.logger.info(f"_on_owner_association_changed: {message}")
+        self.update_status(message)
+        if self.current_horse and self.current_horse.horse_id is not None:
+            self.load_horse_details(self.current_horse.horse_id)
+        self.update_main_action_buttons_state()
+
+    def handle_toggle_active_status_from_tab(self, new_active_status_requested: bool):
+        self.logger.info(
+            f"handle_toggle_active_status_from_tab: Requested: {new_active_status_requested}"
+        )
+        if self.current_horse:
+            self.handle_toggle_active_status()
+        else:
+            self.logger.warning(
+                "handle_toggle_active_status_from_tab: No current horse."
+            )
+
+    def setup_footer(self, parent_layout):
+        self.logger.debug("setup_footer: START")
+        self.status_bar = QStatusBar()
+        self.status_bar.setFixedHeight(28)
+        self.status_bar.setStyleSheet(
+            f"""QStatusBar{{background-color:{DARK_HEADER_FOOTER};color:{DARK_TEXT_SECONDARY};border:none;border-top:1px solid {DARK_BORDER};padding:0 15px;font-size:11px;}}QStatusBar::item{{border:none;}}QLabel{{color:{DARK_TEXT_SECONDARY};background:transparent;font-size:11px;}}"""
+        )
+        parent_layout.addWidget(self.status_bar)
+        self.status_label = QLabel("Ready")
+        self.footer_horse_count_label = QLabel("Showing 0 of 0 horses")
+        self.shortcut_label = QLabel("F5=Refresh | Ctrl+N=New | Ctrl+S=Save")
+        self.status_bar.addWidget(self.status_label, 1)
+        self.status_bar.addPermanentWidget(self.footer_horse_count_label)
+        separator_label = QLabel(" | ")
+        separator_label.setStyleSheet(
+            f"color:{DARK_BORDER};background:transparent;margin:0 5px;"
+        )
+        self.status_bar.addPermanentWidget(separator_label)
+        self.status_bar.addPermanentWidget(self.shortcut_label)
+        self.logger.debug("setup_footer: FINISHED")
+
+    def save_changes(self):
+        self.logger.info("save_changes: START")
+        if not self.basic_info_tab:
+            self.logger.error("save_changes: BasicInfoTab missing.")
+            self.show_error("Save Error", "UI component missing.")
+            return
+        if not self._has_changes_in_active_tab and not self._is_new_mode:
+            self.update_status("No changes to save.")
+            if (
+                hasattr(self.basic_info_tab, "_is_editing")
+                and self.basic_info_tab._is_editing
+                and hasattr(self.basic_info_tab, "set_form_read_only")
+            ):
+                self.basic_info_tab.set_form_read_only(True)
+                self.update_main_action_buttons_state()
+            return
+        horse_data = self.basic_info_tab.get_data_from_form()
+        if (
+            self.current_horse
+            and self.current_horse.current_location_id is not None
+            and not self._is_new_mode
+        ):
+            horse_data["current_location_id"] = self.current_horse.current_location_id
+        elif "current_location_id" not in horse_data:
+            horse_data["current_location_id"] = None
+        self.logger.debug(
+            f"save_changes: Validating data. New: {self._is_new_mode}. Data: {horse_data}"
+        )
+        is_valid, errors = self.horse_controller.validate_horse_data(
+            horse_data,
+            is_new=self._is_new_mode,
+            horse_id_to_check_for_unique=(
+                self.current_horse.horse_id
+                if not self._is_new_mode and self.current_horse
+                else None
+            ),
+        )
+        if not is_valid:
+            self.show_warning(
+                "Validation Error", "Correct errors:\n\n- " + "\n- ".join(errors)
+            )
+            self.logger.info("save_changes: Validation failed.")
+            return
+        try:
+            saved_id: Optional[int] = None
+            success: bool = False
+            msg: str = ""
+            if not self._is_new_mode and self.current_horse:
+                self.logger.debug(
+                    f"save_changes: Updating horse ID {self.current_horse.horse_id}"
+                )
+                success, msg = self.horse_controller.update_horse(
+                    self.current_horse.horse_id, horse_data, self.current_user
+                )
+                if success:
+                    saved_id = self.current_horse.horse_id
+            else:
+                self.logger.debug("save_changes: Creating new horse")
+                success, msg, new_horse_obj = self.horse_controller.create_horse(
+                    horse_data, self.current_user
+                )
+                if success and new_horse_obj:
+                    saved_id = new_horse_obj.horse_id
+                elif success and not new_horse_obj:
+                    self.logger.error(
+                        f"save_changes: Horse creation success={success}, but new_horse_obj is None. Msg: {msg}"
+                    )
+            if success:
+                self.logger.info(f"save_changes: Save successful. Message: {msg}")
+                self.show_info("Success", msg)
+                self._has_changes_in_active_tab = False
+                if self.basic_info_tab and hasattr(
+                    self.basic_info_tab, "mark_as_saved"
+                ):
+                    self.basic_info_tab.mark_as_saved()
+                if self._is_new_mode and saved_id is not None:
+                    newly_saved_horse = self.horse_controller.get_horse_by_id(saved_id)
+                    if newly_saved_horse:
+                        self.current_horse = newly_saved_horse
+                        self._is_new_mode = False
+                        self.logger.debug(
+                            f"save_changes: New horse {saved_id} set as current."
+                        )
+                    else:
+                        self.logger.error(
+                            f"save_changes: Failed to re-fetch new horse {saved_id}."
+                        )
+                        self.display_empty_state()
+                        self.load_horses()
+                        return
+                self.load_horses()
+                if saved_id is not None and self.horse_list:  # type: ignore
+                    self.logger.debug(
+                        f"save_changes: Verifying selection for horse ID {saved_id} in list after load_horses."
+                    )
+                    found_and_selected = False
+                    for i in range(self.horse_list.count()):  # type: ignore
+                        item = self.horse_list.item(i)  # type: ignore
+                        if item and item.data(Qt.ItemDataRole.UserRole) == saved_id:
+                            if self.horse_list.currentRow() != i:
+                                self.horse_list.setCurrentRow(i)  # type: ignore
+                            else:
+                                self.load_horse_details(saved_id)
+                            found_and_selected = True
+                            self.logger.debug(
+                                f"save_changes: Verified/reselected row {i} for ID {saved_id}."
+                            )
+                            break
+                    if not found_and_selected:
+                        self.logger.debug(
+                            f"save_changes: Horse ID {saved_id} not found in list after save/refresh for final reselection attempt."
+                        )
+                        if self.horse_list.count() > 0:
+                            self.horse_list.setCurrentRow(0)  # type: ignore
+                        else:
+                            self.display_empty_state()
+                elif self.horse_list and self.horse_list.count() > 0:
+                    self.horse_list.setCurrentRow(0)  # type: ignore
+                elif not self.horse_list or self.horse_list.count() == 0:
+                    self.display_empty_state()  # type: ignore
+            else:
+                self.logger.error(f"save_changes: Save failed. Message: {msg}")
+                self.show_error("Save Failed", msg or "Unknown error.")
+        except Exception as e:
+            self.logger.error(f"save_changes: Exception: {e}", exc_info=True)
+            self.show_error("Save Error", f"Unexpected error: {e}")
+        self.logger.info("save_changes: FINISHED")
+
+    def populate_horse_list(self):
+        self.logger.debug("populate_horse_list: START")
+        if not hasattr(self, "horse_list") or not self.horse_list:
+            self.logger.error("populate_horse_list: horse_list widget not ready.")
+            return
+        current_selected_id = None
+        if self.horse_list.currentItem():
+            current_selected_id = self.horse_list.currentItem().data(Qt.ItemDataRole.UserRole)  # type: ignore
+        self.logger.debug(
+            f"populate_horse_list: Clearing list. Previously selected ID: {current_selected_id}"
+        )
+        self.horse_list.clear()  # type: ignore
+        for horse_obj in self.horses_list_data:
+            item = QListWidgetItem()
+            item_widget = self.horse_list.create_horse_list_item_widget(horse_obj)  # type: ignore
+            item.setSizeHint(item_widget.sizeHint())
+            item.setData(Qt.ItemDataRole.UserRole, horse_obj.horse_id)
+            self.horse_list.addItem(item)  # type: ignore
+            self.horse_list.setItemWidget(item, item_widget)  # type: ignore
+        self.logger.debug(
+            f"populate_horse_list: List populated with {len(self.horses_list_data)} items."
+        )
+        if hasattr(self, "footer_horse_count_label") and self.footer_horse_count_label:
+            total_horses_in_db = len(
+                self.horse_controller.search_horses(status="all", search_term="")
+            )
+            self.footer_horse_count_label.setText(f"Showing {self.horse_list.count()} of {total_horses_in_db} total horses")  # type: ignore
+        if current_selected_id is not None:
+            for i in range(self.horse_list.count()):  # type: ignore
+                if (
+                    self.horse_list.item(i).data(Qt.ItemDataRole.UserRole)
+                    == current_selected_id
+                ):
+                    self.horse_list.setCurrentRow(i)
+                    self.logger.debug(
+                        f"populate_horse_list: Reselected row {i} for ID {current_selected_id}"
+                    )
+                    break  # type: ignore
+        self.logger.debug("populate_horse_list: FINISHED")
+
+    def load_horses(self):
+        self.logger.debug("load_horses: START")
+        try:
+            if (
+                not hasattr(self, "search_input")
+                or self.search_input is None
+                or not hasattr(self, "active_only_radio")
+                or self.active_only_radio is None
+                or not hasattr(self, "all_horses_radio")
+                or self.all_horses_radio is None
+                or not hasattr(self, "deactivated_radio")
+                or self.deactivated_radio is None
+            ):
+                self.logger.error("load_horses: Search/filter UI elements not ready.")
+                return
+            search_term = self.search_input.text()
+            status_filter = "active"
+            if self.all_horses_radio.isChecked():
+                status_filter = "all"
+            elif self.deactivated_radio.isChecked():
+                status_filter = "inactive"
+            self.logger.info(
+                f"load_horses: Filter status: '{status_filter}', Search: '{search_term}'"
+            )
+            previously_selected_id = None
+            if self.current_horse and not self._is_new_mode:
+                previously_selected_id = self.current_horse.horse_id
+            elif self.horse_list and self.horse_list.currentItem():  # type: ignore
+                current_item_data = self.horse_list.currentItem().data(Qt.ItemDataRole.UserRole)  # type: ignore
+                if isinstance(current_item_data, int):
+                    previously_selected_id = current_item_data
+            self.logger.debug(
+                f"load_horses: Previously selected ID to try and reselect: {previously_selected_id}"
+            )
+            self.horses_list_data = self.horse_controller.search_horses(
+                search_term=search_term, status=status_filter
+            )
+            self.logger.debug(
+                f"load_horses: {len(self.horses_list_data)} horses found by controller."
+            )
+            self.populate_horse_list()
+            if not self.horses_list_data:
+                self.logger.debug(
+                    "load_horses: No horses found, displaying empty state."
+                )
+                self.display_empty_state()
+                self.logger.debug("load_horses: FINISHED (no horses)")
+                return
+            reselected_successfully = False
+            if previously_selected_id is not None and self.horse_list:  # type: ignore
+                for i in range(self.horse_list.count()):  # type: ignore
+                    item = self.horse_list.item(i)  # type: ignore
+                    if (
+                        item
+                        and item.data(Qt.ItemDataRole.UserRole)
+                        == previously_selected_id
+                    ):
+                        self.logger.debug(
+                            f"load_horses: Attempting to reselect ID {previously_selected_id} at row {i}."
+                        )
+                        self.horse_list.setCurrentRow(i)  # type: ignore
+                        reselected_successfully = True
+                        self.logger.debug(
+                            "load_horses: Reselected row. on_selection_changed will handle details load."
+                        )
+                        break
+            if (
+                not reselected_successfully
+                and self.horse_list
+                and self.horse_list.count() > 0
+            ):
+                self.logger.debug(
+                    "load_horses: No reselection or previous ID not found, selecting row 0."
+                )
+                self.horse_list.setCurrentRow(0)  # type: ignore
+            elif not self.horse_list or self.horse_list.count() == 0:
+                self.logger.debug(
+                    "load_horses: List is empty after populate, displaying empty state."
+                )
+                self.display_empty_state()  # type: ignore
+            if not (self.horse_list and self.horse_list.currentItem()):
+                self.update_main_action_buttons_state()  # type: ignore
+        except Exception as e:
+            self.logger.error(f"load_horses: ERROR: {e}", exc_info=True)
+            self.show_error("Load Horses Error", f"{e}")
+            self.horses_list_data = []
+            if hasattr(self, "horse_list") and self.horse_list:
+                self.populate_horse_list()  # type: ignore
+            self.display_empty_state()
+        self.logger.debug("load_horses: FINISHED")
+
+    def on_search_text_changed(self):
+        if hasattr(self.search_timer, "isActive") and self.search_timer.isActive():
+            self.search_timer.stop()
+        self.search_timer.start(350)
+
+    def perform_search(self):
+        self.logger.debug(
+            f"perform_search: Term: '{self.search_input.text() if self.search_input else ''}'"
+        )
+        self.load_horses()
+
+    def on_filter_changed(self):
+        sender_widget = self.sender()
+        if isinstance(sender_widget, QRadioButton) and sender_widget.isChecked():
+            self.logger.info(f"on_filter_changed: To {sender_widget.text()}")
+            self.load_horses()
+
+    def on_selection_changed(self):
+        self.logger.debug("on_selection_changed: START")
+        if not self.horse_list:
+            self.logger.warning("on_selection_changed: horse_list is None.")
+            return  # type: ignore
+        selected_items = self.horse_list.selectedItems()  # type: ignore
+        if not selected_items:
+            self.logger.debug("on_selection_changed: No items selected.")
+            if not self._is_new_mode and not self._has_changes_in_active_tab:
+                self.display_empty_state()
+            return
+        selected_item = selected_items[0]
+        newly_selected_horse_id = selected_item.data(Qt.ItemDataRole.UserRole)
+        self.logger.debug(
+            f"on_selection_changed: Newly selected ID: {newly_selected_horse_id}"
+        )
+        current_horse_id = self.current_horse.horse_id if self.current_horse else None
+        self.logger.debug(
+            f"on_selection_changed: Current horse ID: {current_horse_id}, New mode: {self._is_new_mode}, Has changes: {self._has_changes_in_active_tab}"
+        )
+        if (self._has_changes_in_active_tab or self._is_new_mode) and (
+            newly_selected_horse_id != current_horse_id
+            or (self._is_new_mode and newly_selected_horse_id is not None)
+        ):
+            self.logger.debug(
+                "on_selection_changed: Unsaved changes detected. Prompting user."
+            )
+            if not self.show_question(
+                "Unsaved Changes",
+                f"Discard unsaved {'new horse record' if self._is_new_mode else 'changes to current horse'}?",
+            ):
+                self.logger.debug(
+                    "on_selection_changed: User chose NOT to discard. Reverting selection."
+                )
+                self.horse_list.blockSignals(True)  # type: ignore
+                if current_horse_id is not None and not self._is_new_mode:
+                    for i in range(self.horse_list.count()):  # type: ignore
+                        if (
+                            self.horse_list.item(i).data(Qt.ItemDataRole.UserRole)
+                            == current_horse_id
+                        ):
+                            self.horse_list.setCurrentRow(i)
+                            break  # type: ignore
+                else:
+                    self.horse_list.clearSelection()  # type: ignore
+                self.horse_list.blockSignals(False)
+                self.logger.debug("on_selection_changed: FINISHED (reverted selection)")
+                return  # type: ignore
+            self.logger.debug("on_selection_changed: User chose to discard changes.")
+            self._has_changes_in_active_tab = False
+            self._is_new_mode = False
+            self.logger.debug(
+                "on_selection_changed: Flags reset (_has_changes_in_active_tab, _is_new_mode)."
+            )
+        if newly_selected_horse_id is not None:
+            if newly_selected_horse_id == current_horse_id and not self._is_new_mode:
+                self.logger.debug(
+                    f"on_selection_changed: Same horse ID ({current_horse_id}) re-selected. Ensuring read-only state."
+                )
+                if (
+                    self.basic_info_tab
+                    and hasattr(self.basic_info_tab, "_is_editing")
+                    and self.basic_info_tab._is_editing
+                    and not self._has_changes_in_active_tab
+                    and hasattr(self.basic_info_tab, "set_form_read_only")
+                ):
+                    self.basic_info_tab.set_form_read_only(True)
+                self.update_main_action_buttons_state()
+                self.logger.debug(
+                    "on_selection_changed: FINISHED (same horse, no load unless it was new mode that got discarded)"
+                )
+                return
+            self.load_horse_details(newly_selected_horse_id)
+        else:
+            self.logger.debug(
+                "on_selection_changed: newly_selected_horse_id is None, displaying empty state."
+            )
+            self.display_empty_state()
+        self.logger.debug("on_selection_changed: FINISHED")
+
+    def edit_selected_horse(self):
+        self.logger.debug("edit_selected_horse: START")
+        if self.current_horse and not self._is_new_mode:
+            if not self.tab_widget:
+                self.logger.error("edit_selected_horse: Tab widget missing.")
+                self.show_error("UI Error", "Tabs unavailable.")
+                return
+            current_tab_widget = self.tab_widget.currentWidget()
+            self.logger.debug(
+                f"edit_selected_horse: Current tab: {current_tab_widget.objectName() if current_tab_widget else 'None'}"
+            )
+            if (
+                current_tab_widget == self.basic_info_tab
+                and self.basic_info_tab
+                and hasattr(self.basic_info_tab, "set_edit_mode")
+            ):
+                self.logger.debug(
+                    "edit_selected_horse: Setting BasicInfoTab to edit mode."
+                )
+                self.basic_info_tab.set_edit_mode(True)
+                self._has_changes_in_active_tab = False
+            elif hasattr(current_tab_widget, "set_edit_mode"):
+                self.logger.debug(
+                    f"edit_selected_horse: Setting current tab {current_tab_widget.objectName()} to edit mode."
+                )
+                current_tab_widget.set_edit_mode(True)
+                self._has_changes_in_active_tab = False  # type: ignore
+            else:
+                self.logger.info(
+                    f"edit_selected_horse: Current tab does not support direct edit. Defaulting to BasicInfoTab edit mode."
+                )
+                if self.basic_info_tab and hasattr(
+                    self.basic_info_tab, "set_edit_mode"
+                ):
+                    self.basic_info_tab.set_edit_mode(True)
+                    self._has_changes_in_active_tab = False
+            self.update_main_action_buttons_state()
+            self.update_status(
+                f"Editing details for: {self.current_horse.horse_name or 'Unnamed Horse'}"
+            )
+        elif self._is_new_mode:
+            self.show_info(
+                "Information", "Currently adding new. Save or discard first."
+            )
+        else:
+            self.show_info("Edit Horse", "Select a horse to edit.")
+        self.logger.debug("edit_selected_horse: FINISHED")
+
+    def refresh_data(self):
+        self.logger.debug("refresh_data: START")
+        if (
+            self._has_changes_in_active_tab or self._is_new_mode
+        ) and not self.show_question("Unsaved Changes", "Discard and refresh?"):
+            self.logger.debug("refresh_data: Aborted due to unsaved changes.")
+            return
+        self.logger.info("refresh_data: Proceeding with refresh.")
+        self._has_changes_in_active_tab = False
+        self._is_new_mode = False
+        self.load_horses()
+        self.update_status("Data refreshed.")
+        self.logger.debug("refresh_data: FINISHED")
+
+    def show_help(self):
+        self.logger.debug("show_help: Displaying help message.")
+        QMessageBox.information(
+            self,
+            "EDSI Help",
+            "Horse Management Screen:\n\n- Use the list on the left to select a horse.\n- Click 'Add Horse' or Ctrl+N to create a new record.\n- Click 'Edit Selected' to modify the current horse's basic info.\n- Tabs on the right show different aspects of the horse's data.\n- Use radio buttons to filter the list by status.\n- Search box filters by name, account, chip, etc.\n- F5 to refresh. Ctrl+S to save (when editing). Esc to discard (when editing).",
+        )
+
+    def display_details_state(self):
+        self.logger.debug("display_details_state: START")
+        if hasattr(self, "empty_frame") and self.empty_frame:
+            self.empty_frame.hide()
+        if (
+            hasattr(self, "horse_details_content_widget")
+            and self.horse_details_content_widget
+        ):
+            self.horse_details_content_widget.show()
+        self.logger.debug("display_details_state: FINISHED")
+
+    def update_status(self, message, timeout=4000):  # From BaseView
+        if hasattr(self, "status_label") and self.status_label:
+            self.status_label.setText(message)
+            if timeout > 0:
+                QTimer.singleShot(
+                    timeout, lambda: self.clear_status_if_matches(message)
+                )
+
+    def clear_status_if_matches(self, original_message):  # From BaseView
+        if (
+            hasattr(self, "status_label")
+            and self.status_label
+            and self.status_label.text() == original_message
+        ):
+            self.status_label.setText("Ready")
+
+    def handle_toggle_active_status(self):
+        self.logger.debug("handle_toggle_active_status: START")
+        if not self.current_horse:
+            self.logger.warning("handle_toggle_active_status: No current horse.")
+            return
+        action_verb = "activate" if not self.current_horse.is_active else "deactivate"
+        horse_name_display = (
+            self.current_horse.horse_name or f"ID {self.current_horse.horse_id}"
+        )
+        self.logger.debug(
+            f"handle_toggle_active_status: Prompting to {action_verb} '{horse_name_display}'."
+        )
+        if self.show_question(
+            f"Confirm {action_verb.capitalize()}",
+            f"Are you sure you want to {action_verb} horse '{horse_name_display}'?",
+        ):
+            self.logger.info(
+                f"handle_toggle_active_status: User confirmed. Calling controller to {action_verb}."
+            )
+            controller_method = (
+                self.horse_controller.activate_horse
+                if not self.current_horse.is_active
+                else self.horse_controller.deactivate_horse
+            )
+            success, message = controller_method(
+                self.current_horse.horse_id, self.current_user
+            )
+            if success:
+                self.logger.info(
+                    f"handle_toggle_active_status: {action_verb.capitalize()} successful. {message}"
+                )
+                self.show_info("Status Changed", message)
+                self.load_horse_details(self.current_horse.horse_id)
+                self.load_horses()
+                if self.basic_info_tab and hasattr(
+                    self.basic_info_tab, "populate_form_data"
+                ):
+                    self.basic_info_tab.populate_form_data(self.current_horse)
+            else:
+                self.logger.error(
+                    f"handle_toggle_active_status: {action_verb.capitalize()} failed. {message}"
+                )
+                self.show_error(f"{action_verb.capitalize()} Failed", message)
+        else:
+            self.logger.info("handle_toggle_active_status: User cancelled.")
+        self.logger.debug("handle_toggle_active_status: FINISHED")
+
+    def handle_logout_request_from_menu(self):
+        self.logger.info(
+            f"handle_logout_request_from_menu: User '{self.current_user}' logout."
+        )
+        self.exit_requested.emit()
+
+    def keyPressEvent(self, event: QKeyEvent):
+        key = event.key()
+        modifiers = QApplication.keyboardModifiers()
+        self.logger.debug(f"keyPressEvent: Key {key}, Modifiers {modifiers}")
+        if key == Qt.Key.Key_F5:
+            self.refresh_data()
+        elif modifiers == Qt.KeyboardModifier.ControlModifier and key == Qt.Key.Key_N:
+            if (
+                hasattr(self, "add_horse_btn")
+                and self.add_horse_btn
+                and self.add_horse_btn.isEnabled()
+            ):
+                self.add_new_horse()
+        elif modifiers == Qt.KeyboardModifier.ControlModifier and key == Qt.Key.Key_S:
+            if (
+                self.tab_widget
+                and self.basic_info_tab
+                and self.tab_widget.currentWidget() == self.basic_info_tab
+                and hasattr(self.basic_info_tab, "save_btn")
+                and self.basic_info_tab.save_btn.isEnabled()
+            ):
+                self.logger.info("keyPressEvent: Ctrl+S triggering BasicInfoTab save.")
+                self.basic_info_tab.save_requested.emit()
+            else:
+                self.logger.info(
+                    "keyPressEvent: Ctrl+S conditions not met for BasicInfoTab save."
+                )
+        elif key == Qt.Key.Key_F1:
+            self.show_help()
+        elif key == Qt.Key.Key_Escape:
+            active_modal_widget = QApplication.activeModalWidget()
+            if active_modal_widget and isinstance(active_modal_widget, QDialog):
+                self.logger.debug(
+                    "keyPressEvent: Escape rejecting active modal dialog."
+                )
+                active_modal_widget.reject()
+            elif self._has_changes_in_active_tab or self._is_new_mode:
+                self.logger.debug("keyPressEvent: Escape triggering discard_changes.")
+                self.discard_changes()
+            elif (
+                self.basic_info_tab
+                and hasattr(self.basic_info_tab, "_is_editing")
+                and self.basic_info_tab._is_editing
+            ):
+                self.logger.debug(
+                    "keyPressEvent: Escape reverting BasicInfoTab to read-only."
+                )
+                self.discard_changes()
+            else:
+                super().keyPressEvent(event)
+        else:
+            super().keyPressEvent(event)
+
+    def setup_connections(self):  # Version from artifact
+        self.logger.info("--- HORSEUNIFIEDMANAGEMENT.SETUP_CONNECTIONS START ---")
+        if hasattr(self, "add_horse_btn") and self.add_horse_btn:
+            self.add_horse_btn.clicked.connect(self.add_new_horse)
+        if hasattr(self, "edit_horse_btn") and self.edit_horse_btn:
+            self.edit_horse_btn.clicked.connect(self.edit_selected_horse)
+        if hasattr(self, "refresh_btn") and self.refresh_btn:
+            self.refresh_btn.clicked.connect(self.refresh_data)
+        if hasattr(self, "help_btn") and self.help_btn:
+            self.help_btn.clicked.connect(self.show_help)
+        if hasattr(self, "setup_icon_btn") and self.setup_icon_btn:
+            self.setup_icon_btn.clicked.connect(self.setup_requested.emit)
+        if hasattr(self, "active_only_radio") and self.active_only_radio:
+            self.active_only_radio.toggled.connect(self.on_filter_changed)
+        if hasattr(self, "all_horses_radio") and self.all_horses_radio:
+            self.all_horses_radio.toggled.connect(self.on_filter_changed)
+        if hasattr(self, "deactivated_radio") and self.deactivated_radio:
+            self.deactivated_radio.toggled.connect(self.on_filter_changed)
+        if hasattr(self, "search_input") and self.search_input:
+            self.search_input.textChanged.connect(self.on_search_text_changed)
+        if hasattr(self, "horse_list") and self.horse_list:
+            self.horse_list.itemSelectionChanged.connect(self.on_selection_changed)  # type: ignore
+        if self.basic_info_tab:
+            self.logger.info("Connecting BasicInfoTab signals.")
+            if hasattr(self.basic_info_tab, "data_modified"):
+                self.basic_info_tab.data_modified.connect(self._on_tab_data_modified)
+            if hasattr(self.basic_info_tab, "save_requested"):
+                self.basic_info_tab.save_requested.connect(self.save_changes)
+            if hasattr(self.basic_info_tab, "discard_requested"):
+                self.basic_info_tab.discard_requested.connect(self.discard_changes)
+            if hasattr(self.basic_info_tab, "toggle_active_requested"):
+                self.basic_info_tab.toggle_active_requested.connect(
+                    self.handle_toggle_active_status_from_tab
+                )
+        else:
+            self.logger.warning(
+                "BasicInfoTab is None, its signals cannot be connected."
+            )
+        if self.owners_tab:
+            self.logger.info("Connecting OwnersTab signals.")
+            if hasattr(self.owners_tab, "owner_association_changed"):
+                self.owners_tab.owner_association_changed.connect(
+                    self._on_owner_association_changed
+                )
+        else:
+            self.logger.warning("OwnersTab is None, its signals cannot be connected.")
+        if self.location_tab:
+            self.logger.info("Connecting LocationTab signals.")
+            if hasattr(self.location_tab, "location_assignment_changed"):
+                self.location_tab.location_assignment_changed.connect(
+                    self._handle_location_assignment_change
+                )
+        else:
+            self.logger.warning("LocationTab is None, its signals cannot be connected.")
+        if self.billing_tab:  # NEW
+            self.logger.info("Connecting BillingTab signals (if any needed by parent).")
+            # Example: if BillingTab emits a signal that HorseUnifiedManagement needs to react to
+            # self.billing_tab.charges_updated.connect(self.handle_billing_charges_updated) # Placeholder
+        self.logger.info("--- HORSEUNIFIEDMANAGEMENT.SETUP_CONNECTIONS END ---")
+
+
+=============== FILE: models\horse_models.py ===============
+
+# models/horse_models.py
+"""
+EDSI Veterinary Management System - Horse Related SQLAlchemy Models
+Version: 1.2.17
+Purpose: Defines the data models for horses, owners, and their relationships.
+         - Reverted `back_populates` on HorseLocation.location relationship
+           to "current_horses" to match expected relationship name on Location model.
+Last Updated: May 25, 2025
+Author: Gemini
+
+Changelog:
+- v1.2.17 (2025-05-25):
+    - HorseLocation model: Changed `back_populates` for the `location` relationship
+      from "horse_assignments" back to "current_horses" to resolve an
+      InvalidRequestError due to mismatched relationship names with the
+      (unseen) Location model. This assumes "current_horses" is the correct
+      corresponding attribute on the Location model.
+- v1.2.16 (2025-05-25):
+    - HorseLocation model: Added `is_current_location` (Boolean) column.
+    - Changed `back_populates` on HorseLocation.location to "horse_assignments" (this change is being reverted in v1.2.17).
+- v1.2.15 (2025-05-23):
+    - Horse model: Removed `species_id` column and `species` relationship.
+# ... (rest of previous changelog entries assumed present)
+"""
+from sqlalchemy import Column, Integer, String, Date, Boolean, ForeignKey, Numeric, Text
+from sqlalchemy.orm import relationship, validates
+from sqlalchemy.ext.hybrid import hybrid_property
+from datetime import date
+
+from .base_model import Base, BaseModel
+
+
+class HorseOwner(Base):
+    __tablename__ = "horse_owners"
+    horse_id = Column(Integer, ForeignKey("horses.horse_id"), primary_key=True)
+    owner_id = Column(Integer, ForeignKey("owners.owner_id"), primary_key=True)
+    percentage_ownership = Column(Numeric(5, 2), nullable=True)
+
+    horse = relationship("Horse", back_populates="owner_associations")
+    owner = relationship("Owner", back_populates="horse_associations")
+
+
+class HorseLocation(BaseModel):
+    __tablename__ = "horse_locations"
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    horse_id = Column(Integer, ForeignKey("horses.horse_id"), nullable=False)
+    location_id = Column(Integer, ForeignKey("locations.location_id"), nullable=False)
+    date_arrived = Column(Date, nullable=False, default=date.today)
+    date_departed = Column(Date, nullable=True)
+    notes = Column(Text, nullable=True)
+    is_current_location = Column(Boolean, default=False, nullable=False, index=True)
+
+    horse = relationship("Horse", back_populates="location_history")
+    # REVERTED: back_populates to "current_horses" based on previous changelog
+    # and to resolve InvalidRequestError.
+    # This assumes the Location model has a relationship:
+    # current_horses = relationship("HorseLocation", back_populates="location")
+    location = relationship("Location", back_populates="current_horses")
+
+
+class Horse(BaseModel):
+    __tablename__ = "horses"
+
+    horse_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    horse_name = Column(String(255), nullable=False, index=True)
+    account_number = Column(String(50), index=True, nullable=True)
+    breed = Column(String(100), nullable=True)
+    color = Column(String(50), nullable=True)
+    sex = Column(String(20), nullable=True)
+    date_of_birth = Column(Date, nullable=True)
+    height_hands = Column(Numeric(4, 2), nullable=True)
+
+    chip_number = Column(String(50), nullable=True, unique=True)
+    tattoo_number = Column(String(50), nullable=True, unique=True)
+    description = Column(Text, nullable=True)
+
+    is_active = Column(Boolean, default=True, nullable=False)
+    date_deceased = Column(Date, nullable=True)
+    coggins_date = Column(Date, nullable=True)
+
+    current_location_id = Column(
+        Integer, ForeignKey("locations.location_id"), nullable=True
+    )
+
+    owner_associations = relationship(
+        "HorseOwner", back_populates="horse", cascade="all, delete-orphan"
+    )
+    owners = relationship(
+        "Owner",
+        secondary="horse_owners",
+        back_populates="horses",
+        viewonly=True,
+        lazy="selectin",
+    )
+
+    location_history = relationship(
+        "HorseLocation",
+        back_populates="horse",
+        order_by="desc(HorseLocation.date_arrived)",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+    location = relationship(
+        "Location", foreign_keys=[current_location_id], lazy="joined"
+    )
+
+    @hybrid_property
+    def age(self):
+        if self.date_of_birth:
+            today = date.today()
+            return (
+                today.year
+                - self.date_of_birth.year
+                - (
+                    (today.month, today.day)
+                    < (self.date_of_birth.month, self.date_of_birth.day)
+                )
+            )
+        return None
+
+    @validates("chip_number", "tattoo_number")
+    def convert_empty_to_none(self, key, value):
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
+
+=============== FILE: models\owner_models.py ===============
+
+# models/owner_models.py
+"""
+EDSI Veterinary Management System - Owner Related Models
+Version: 1.1.7
+Purpose: Defines SQLAlchemy models for Owner and related entities.
+         - Removed the placeholder Invoice model to avoid conflict with the
+           definitive Invoice model in financial_models.py.
+Last Updated: June 4, 2025
+Author: Claude Assistant (Modified by Gemini)
+
+Changelog:
+- v1.1.7 (2025-06-04):
+    - Removed the placeholder `Invoice` class definition. The definitive `Invoice`
+      model is now in `models/financial_models.py`.
+      The backref from Owner to the new Invoice model is handled in financial_models.py.
+- v1.1.6 (2025-05-23):
+    - Ensured the `Invoice` class is correctly defined.
+    - Imported `sqlalchemy.sql.func` for `func.current_date()` default in `Invoice.invoice_date`.
+# ... (rest of previous changelog)
+"""
+
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Boolean,
+    Numeric,
+    Text,
+    ForeignKey,
+    Date,
+    DateTime,
+)
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+from datetime import datetime
+
+from .base_model import BaseModel
+
+
+class Owner(BaseModel):
+    """Model for horse owners (master list)."""
+
+    __tablename__ = "owners"
+
+    # Changed owner_id to id for potential consistency, but will keep owner_id if it's deeply embedded.
+    # For now, keeping owner_id as per existing structure.
+    # If financial_models.Transaction.owner_id refers to 'owners.id', then this needs to be 'id'.
+    # Checking financial_models.py: owner_id = Column(Integer, ForeignKey("owners.owner_id") ...
+    # So, owner_id is correct here.
+    owner_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    account_number = Column(String(20), unique=True, nullable=True, index=True)
+    farm_name = Column(String(100), nullable=True, index=True)
+    first_name = Column(String(50), nullable=True)
+    last_name = Column(String(50), nullable=True, index=True)
+
+    address_line1 = Column(String(100))
+    address_line2 = Column(String(100), nullable=True)
+    city = Column(String(50))
+
+    state_code = Column(
+        String(10), ForeignKey("state_provinces.state_code"), index=True
+    )
+
+    zip_code = Column(String(20))
+
+    phone = Column(String(20), nullable=True)
+    mobile_phone = Column(String(20), nullable=True)
+    email = Column(String(100), nullable=True, index=True)
+
+    is_active = Column(Boolean, default=True, nullable=False)
+
+    balance = Column(Numeric(10, 2), default=0.00)
+    credit_limit = Column(Numeric(10, 2), nullable=True)
+    billing_terms = Column(String(50), nullable=True)
+    service_charge_rate = Column(Numeric(5, 2), nullable=True)
+    discount_rate = Column(Numeric(5, 2), nullable=True)
+
+    notes = Column(Text, nullable=True)
+
+    state = relationship("StateProvince", foreign_keys=[state_code], backref="owners")
+
+    horse_associations = relationship(
+        "HorseOwner", back_populates="owner", cascade="all, delete-orphan"
+    )
+
+    horses = relationship(
+        "Horse", secondary="horse_owners", back_populates="owners", viewonly=True
+    )
+
+    billing_history = relationship(
+        "OwnerBillingHistory", back_populates="owner", cascade="all, delete-orphan"
+    )
+    payments_made = relationship(
+        "OwnerPayment", back_populates="owner", cascade="all, delete-orphan"
+    )
+
+    # The 'invoices' backref is now defined in financial_models.Invoice linking to this Owner model.
+    # No need for: # invoices = relationship("Invoice", back_populates="owner")
+
+    def __repr__(self):
+        display_name = (
+            self.farm_name
+            or f"{self.first_name or ''} {self.last_name or ''}".strip()
+            or f"ID:{self.owner_id}"
+        )
+        return f"<Owner(owner_id={self.owner_id}, name='{display_name}')>"
+
+
+class OwnerBillingHistory(BaseModel):
+    """Billing history entries for an owner."""
+
+    __tablename__ = "owner_billing_history"
+
+    history_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    owner_id = Column(
+        Integer, ForeignKey("owners.owner_id"), nullable=False, index=True
+    )
+    entry_date = Column(DateTime, default=datetime.utcnow)
+    description = Column(String(255), nullable=False)
+    amount_change = Column(Numeric(10, 2), nullable=False)  # Made non-nullable
+    new_balance = Column(Numeric(10, 2), nullable=False)  # Made non-nullable
+
+    owner = relationship("Owner", back_populates="billing_history")
+
+    def __repr__(self):
+        return f"<OwnerBillingHistory(owner_id={self.owner_id}, date='{self.entry_date}', desc='{self.description}')>"
+
+
+class OwnerPayment(BaseModel):
+    """Payments made by an owner."""
+
+    __tablename__ = "owner_payments"
+
+    payment_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    owner_id = Column(
+        Integer, ForeignKey("owners.owner_id"), nullable=False, index=True
+    )
+    payment_date = Column(Date, nullable=False, default=func.current_date)
+    amount = Column(Numeric(10, 2), nullable=False)
+    payment_method = Column(String(50), nullable=False)  # Made non-nullable
+    reference_number = Column(String(100), nullable=True)
+    notes = Column(Text, nullable=True)  # Nullable is fine for notes
+
+    owner = relationship(
+        "Owner", foreign_keys=[owner_id], back_populates="payments_made"
+    )
+
+    def __repr__(self):
+        return f"<OwnerPayment(owner_id={self.owner_id}, date='{self.payment_date}', amount={self.amount})>"
+
+
+# class Invoice(BaseModel): # REMOVED - Definitive model is in financial_models.py
+#    pass
+
+
+=============== FILE: models\reference_models.py ===============
+
+# models/reference_models.py
+"""
+EDSI Veterinary Management System - Reference Data Models
+Version: 1.1.22
+Purpose: Defines SQLAlchemy models for various reference data entities.
+         - Removed placeholder Transaction and TransactionDetail models
+           to avoid conflict with definitive models in financial_models.py.
+Last Updated: June 4, 2025
+Author: Claude Assistant (Modified by Gemini)
+
+Changelog:
+- v1.1.22 (2025-06-04):
+    - Removed placeholder `Transaction` and `TransactionDetail` class definitions
+      as these are now fully defined in `models/financial_models.py`.
+- v1.1.21 (2025-06-03):
+    - In `Location` model: Uncommented the `current_horses` relationship to
+      `HorseLocation` and ensured `back_populates="location"` is correct.
+      This fixes the `InvalidRequestError: Mapper 'Mapper[Location(locations)]'
+      has no property 'current_horses'` during mapper configuration.
+# ... (rest of previous changelog)
+"""
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Boolean,
+    Text,
+    ForeignKey,
+    Date,
+    Numeric,
+    DateTime,
+    Table,
+)
+from sqlalchemy.orm import (
+    relationship,
+    backref,
+)
+from sqlalchemy.sql import func
+
+from .base_model import (
+    Base,
+    BaseModel,
+)
+
+
+class StateProvince(
+    BaseModel, Base
+):  # BaseModel already inherits Base, so just BaseModel is fine.
+    # Or if Base is intended to be mixed in for some reason, it's okay.
+    # For consistency, let's assume BaseModel is sufficient as it inherits Base.
+    # Will correct to just BaseModel if this is the standard in your other models.
+    # Re-checking your base_model.py: BaseModel(Base). So this is fine.
+    __tablename__ = "state_provinces"
+    state_province_id = Column(
+        Integer, primary_key=True, index=True, autoincrement=True
+    )
+    state_code = Column(String(10), nullable=False, unique=True, index=True)
+    state_name = Column(String(50), nullable=False)
+    country_code = Column(String(10), nullable=False, default="USA")
+    is_active = Column(Boolean, default=True, nullable=False)
+
+    def __repr__(self):
+        return (
+            f"<StateProvince(state_code='{self.state_code}', name='{self.state_name}')>"
+        )
+
+
+class ChargeCodeCategory(BaseModel, Base):
+    __tablename__ = "charge_code_categories"
+
+    category_id = Column(
+        Integer,
+        primary_key=True,
+        index=True,
+        autoincrement=True,
+        doc="Unique category identifier",
+    )
+    name = Column(
+        String(100),
+        nullable=False,
+        index=True,
+        doc="Name of the category level (e.g., 'Anthelmintics', 'Administered')",
+    )
+    parent_id = Column(
+        Integer,
+        ForeignKey("charge_code_categories.category_id"),
+        nullable=True,
+        index=True,
+        doc="ID of the parent category, if any",
+    )
+    level = Column(
+        Integer,
+        nullable=False,
+        index=True,
+        doc="Hierarchy level (e.g., 1 for main Category, 2 for Process)",
+    )
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+
+    parent = relationship(
+        "ChargeCodeCategory", remote_side=[category_id], backref=backref("children")
+    )
+
+    charge_codes = relationship("ChargeCode", back_populates="category")
+
+    def __repr__(self):
+        return f"<ChargeCodeCategory(id={self.category_id}, name='{self.name}', level={self.level}, parent_id={self.parent_id})>"
+
+
+class ChargeCode(BaseModel, Base):
+    __tablename__ = "charge_codes"
+    # Changed from charge_code_id to id to match financial_models.Transaction.charge_code_id ForeignKey target
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    code = Column(String(20), nullable=False, unique=True, index=True)
+    alternate_code = Column(String(50), nullable=True, index=True)
+    description = Column(String(255), nullable=False)
+
+    category_id = Column(
+        Integer,
+        ForeignKey("charge_code_categories.category_id"),
+        nullable=True,
+        index=True,
+    )
+
+    standard_charge = Column(Numeric(10, 2), nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    taxable = Column(Boolean, default=False)
+
+    category = relationship("ChargeCodeCategory", back_populates="charge_codes")
+
+    def __repr__(self):
+        return f"<ChargeCode(code='{self.code}', description='{self.description}')>"
+
+
+class Veterinarian(BaseModel, Base):
+    __tablename__ = "veterinarians"
+    vet_id = Column(
+        Integer, primary_key=True, index=True, autoincrement=True
+    )  # Consider renaming to 'id' for consistency if preferred
+    first_name = Column(String(50), nullable=False)
+    last_name = Column(String(50), nullable=False, index=True)
+    license_number = Column(String(50), unique=True)
+    specialty = Column(String(100))
+    phone = Column(String(20))
+    email = Column(String(100), unique=True)
+    is_active = Column(Boolean, default=True)
+
+    def __repr__(self):
+        return f"<Veterinarian(vet_id={self.vet_id}, name='{self.first_name} {self.last_name}')>"
+
+
+class Location(BaseModel, Base):
+    __tablename__ = "locations"
+    location_id = Column(
+        Integer, primary_key=True, index=True, autoincrement=True
+    )  # Consider renaming to 'id'
+    location_name = Column(String(100), nullable=False, unique=True, index=True)
+    address_line1 = Column(String(100), nullable=True)
+    address_line2 = Column(String(100), nullable=True)
+    city = Column(String(50), nullable=True)
+    state_code = Column(
+        String(10), ForeignKey("state_provinces.state_code"), nullable=True, index=True
+    )
+    zip_code = Column(String(20), nullable=True)
+    country_code = Column(String(10), default="USA", nullable=True)
+    phone = Column(String(20), nullable=True)
+    contact_person = Column(String(100), nullable=True)
+    email = Column(String(100), nullable=True, index=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+
+    state = relationship("StateProvince")
+    current_horses = relationship("HorseLocation", back_populates="location")
+
+    def __repr__(self):
+        return (
+            f"<Location(location_id={self.location_id}, name='{self.location_name}')>"
+        )
+
+
+# --- Placeholder models removed ---
+# class Transaction(BaseModel, Base): # REMOVED
+#     __tablename__ = "transactions"
+#     transaction_id = Column(Integer, primary_key=True)
+#     description = Column(String(100))
+
+# class TransactionDetail(BaseModel, Base): # REMOVED
+#     __tablename__ = "transaction_details"
+#     detail_id = Column(Integer, primary_key=True)
+#     transaction_id = Column(Integer, ForeignKey("transactions.transaction_id")) # This would now be an error if Transaction was removed
+#     notes = Column(String(100))
+
+
+class Procedure(BaseModel, Base):
+    __tablename__ = "procedures"
+    procedure_id = Column(Integer, primary_key=True)
+    name = Column(String(100))
+
+
+class Drug(BaseModel, Base):
+    __tablename__ = "drugs"
+    drug_id = Column(Integer, primary_key=True)
+    name = Column(String(100))
+
+
+class TreatmentLog(BaseModel, Base):
+    __tablename__ = "treatment_logs"
+    log_id = Column(Integer, primary_key=True)
+    details = Column(String(255))
+
+
+class CommunicationLog(BaseModel, Base):
+    __tablename__ = "communication_logs"
+    log_id = Column(Integer, primary_key=True)
+    summary = Column(String(255))
+
+
+class Document(BaseModel, Base):
+    __tablename__ = "documents"
+    document_id = Column(Integer, primary_key=True)
+    file_path = Column(String(255))
+
+
+class Reminder(BaseModel, Base):
+    __tablename__ = "reminders"
+    reminder_id = Column(Integer, primary_key=True)
+    due_date = Column(Date)
+
+
+class Appointment(BaseModel, Base):
+    __tablename__ = "appointments"
+    appointment_id = Column(Integer, primary_key=True, index=True)
+    horse_id = Column(Integer, ForeignKey("horses.horse_id"), nullable=True)
+    owner_id = Column(Integer, ForeignKey("owners.owner_id"), nullable=True)
+    vet_id = Column(Integer, ForeignKey("veterinarians.vet_id"), nullable=True)
+    location_id = Column(Integer, ForeignKey("locations.location_id"), nullable=True)
+    appointment_datetime = Column(DateTime, nullable=False, server_default=func.now())
+    duration_minutes = Column(Integer, default=30)
+    reason = Column(String(255))
+    notes = Column(Text)
+    status = Column(String(50), default="Scheduled")
+    is_confirmed = Column(Boolean, default=False)
+
+    def __repr__(self):
+        return f"<Appointment(id={self.appointment_id}, datetime='{self.appointment_datetime}', reason='{self.reason}')>"
+
+
+=============== FILE: models\user_models.py ===============
+
+# models/user_models.py
+
+"""
+EDSI Veterinary Management System - User and Authentication Models
+Version: 2.0.1
+Purpose: Simplified user authentication models with clean relationships.
+         Added password hashing and verification methods to User model.
+Last Updated: May 29, 2025
+Author: Claude Assistant (Modified by Gemini)
+
+Changelog:
+- v2.0.1 (2025-05-29):
+    - Added bcrypt import for password hashing.
+    - Added set_password(self, password) method to User class to hash
+      and store passwords using bcrypt.
+    - Added check_password(self, password) method to User class to verify
+      passwords against the stored bcrypt hash.
+- v2.0.0 (2025-05-24):
+    - Complete rewrite for Phase 1 (Chunk 1) simplification
+    - Simplified User model with essential fields only
+    - Clean Role and UserRole relationship management
+    - Removed SystemConfig (deferred to future phases)
+    - Fixed circular import issues
+    - Clean inheritance from BaseModel and Base
+    - Simplified field definitions and constraints
+    - Focused on working authentication foundation
+    - Consistent naming and documentation
+"""
+
+from datetime import datetime
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
+import bcrypt  # Added for password hashing
+
+from config.database_config import Base
+from models.base_model import BaseModel
+
+
+class Role(BaseModel):
+    """
+    User roles for permission management.
+    """
+
+    __tablename__ = "roles"
+
+    role_id = Column(
+        Integer,
+        primary_key=True,
+        index=True,
+        autoincrement=True,
+        doc="Unique role identifier",
+    )
+
+    name = Column(
+        String(50),
+        unique=True,
+        index=True,
+        nullable=False,
+        doc="Role name (e.g., 'ADMIN', 'USER', 'VETERINARIAN')",  # Doc updated
+    )
+
+    description = Column(String(255), nullable=True, doc="Role description")
+
+    # Relationships
+    users = relationship(
+        "User",
+        secondary="user_roles",
+        back_populates="roles",
+        doc="Users assigned to this role",
+    )
+
+    def __repr__(self):
+        return f"<Role(role_id={self.role_id}, name='{self.name}')>"
+
+
+class UserRole(Base):
+    """
+    Association table for User-Role many-to-many relationship.
+    This is a simple link table without audit fields.
+    """
+
+    __tablename__ = "user_roles"
+
+    user_id = Column(
+        String(20), ForeignKey("users.user_id"), primary_key=True, doc="User identifier"
+    )
+
+    role_id = Column(
+        Integer, ForeignKey("roles.role_id"), primary_key=True, doc="Role identifier"
+    )
+
+    def __repr__(self):
+        return f"<UserRole(user_id='{self.user_id}', role_id={self.role_id})>"
+
+
+class User(BaseModel):
+    """
+    User account for authentication and system access.
+    """
+
+    __tablename__ = "users"
+
+    user_id = Column(
+        String(20), primary_key=True, index=True, doc="Unique user login identifier"
+    )
+
+    password_hash = Column(
+        String(255),  # bcrypt hashes are typically 60 chars, 255 is ample
+        nullable=False,
+        doc="Hashed password for authentication",
+    )
+
+    user_name = Column(String(100), nullable=True, doc="Display name for the user")
+
+    email = Column(
+        String(100), unique=True, index=True, nullable=True, doc="User email address"
+    )
+
+    is_active = Column(
+        Boolean,
+        default=True,
+        nullable=False,
+        index=True,
+        doc="Whether the user account is active",
+    )
+
+    last_login = Column(
+        DateTime, nullable=True, doc="Timestamp of last successful login"
+    )
+
+    # Optional user preferences (simplified)
+    printer_id = Column(String(20), nullable=True, doc="Default printer for this user")
+
+    default_screen_colors = Column(
+        String(100), nullable=True, doc="User's preferred screen color scheme"
+    )
+
+    # Relationships
+    roles = relationship(
+        "Role",
+        secondary="user_roles",
+        back_populates="users",
+        doc="Roles assigned to this user",
+    )
+
+    def set_password(self, password: str):
+        """
+        Hashes the provided password and stores it.
+        """
+        if not password:
+            # Or raise an error, depending on policy for empty passwords
+            # For now, assuming controller validates non-empty password for new users.
+            # If an empty password is to be disallowed universally, raise ValueError here.
+            return
+        # Generate a salt and hash the password
+        salt = bcrypt.gensalt()
+        hashed_password = bcrypt.hashpw(password.encode("utf-8"), salt)
+        # Store the hash as a string
+        self.password_hash = hashed_password.decode("utf-8")
+
+    def check_password(self, password: str) -> bool:
+        """
+        Checks the provided password against the stored hash.
+        """
+        if not self.password_hash or not password:
+            return False
+        return bcrypt.checkpw(
+            password.encode("utf-8"), self.password_hash.encode("utf-8")
+        )
+
+    def __repr__(self):
+        return f"<User(user_id='{self.user_id}', user_name='{self.user_name}', active={self.is_active})>"
+
+    def has_role(self, role_name: str) -> bool:
+        """
+        Check if user has a specific role.
+
+        Args:
+            role_name: Name of the role to check
+
+        Returns:
+            True if user has the role, False otherwise
+        """
+        return any(
+            role.name.upper() == role_name.upper() for role in self.roles
+        )  # Made case-insensitive for robustness
+
+    def is_admin(self) -> bool:
+        """
+        Check if user has admin privileges.
+
+        Returns:
+            True if user is an admin, False otherwise
+        """
+        return self.has_role("ADMIN")  # Ensure "ADMIN" matches the actual role name
+
+    def update_last_login(self) -> None:
+        """
+        Update the last login timestamp to current time.
+        """
+        self.last_login = datetime.utcnow()
+
+    def deactivate(self) -> None:
+        """
+        Deactivate the user account.
+        """
+        self.is_active = False
+
+    def activate(self) -> None:
+        """
+        Activate the user account.
+        """
+        self.is_active = True
+
+
+=============== FILE: models\__init__.py ===============
+
+# models/__init__.py
+"""
+EDSI Veterinary Management System - Models Package
+Version: (Adjust version as needed)
+Purpose: Initializes the models package, making all data models accessible.
+         Ensures definitive Transaction and Invoice models from financial_models are primary.
+Last Updated: June 4, 2025
+Author: Gemini
+
+Changelog:
+- (Date): Adjusted imports to prioritize Transaction and Invoice from financial_models.
+          Removed direct import of placeholder Transaction from reference_models.
+          Commented out placeholder Invoice from owner_models in __all__.
+"""
+
+from .base_model import Base, BaseModel
+from .user_models import User, Role, UserRole
+from .horse_models import Horse, HorseOwner, HorseLocation
+from .owner_models import (
+    Owner,
+    OwnerBillingHistory,
+    OwnerPayment,
+)  # Invoice placeholder removed from this file directly
+from .reference_models import (
+    StateProvince,
+    ChargeCodeCategory,
+    ChargeCode,
+    Veterinarian,
+    Location,
+    Procedure,
+    Drug,
+    TreatmentLog,
+    CommunicationLog,
+    Document,
+    Reminder,
+    Appointment,
+    # Placeholder Transaction and TransactionDetail removed from reference_models.py
+)
+from .financial_models import Transaction, Invoice  # Definitive financial models
+
+__all__ = [
+    "Base",
+    "BaseModel",
+    "User",
+    "Role",
+    "UserRole",
+    "Horse",
+    "HorseOwner",
+    "HorseLocation",
+    "Owner",
+    "OwnerBillingHistory",
+    "OwnerPayment",
+    # Note: The placeholder Invoice from owner_models.py has been removed from that file.
+    # The 'Invoice' in this list now unambiguously refers to the one from financial_models.
+    "StateProvince",
+    "ChargeCodeCategory",
+    "ChargeCode",
+    "Veterinarian",
+    "Location",
+    "Procedure",
+    "Drug",
+    "TreatmentLog",
+    "CommunicationLog",
+    "Document",
+    "Reminder",
+    "Appointment",
+    # New Definitive Models
+    "Transaction",
+    "Invoice",
+]
+
+
+=============== FILE: config\database_config.py ===============
+
+# config/database_config.py
+
+"""
+EDSI Veterinary Management System - Database Configuration
+Version: 2.0.3 (Example version, update as needed)
+Purpose: Simplified database connection and session management using SQLAlchemy.
+         Ensures ADMIN user password is set using bcrypt via User.set_password(),
+         with robust handling for pre-existing non-bcrypt hashes.
+         Added new financial models to _import_models.
+Last Updated: June 4, 2025
+Author: Claude Assistant (Modified by Gemini)
+
+Changelog:
+- v2.0.3 (2025-06-04):
+    - Added Transaction and Invoice from financial_models to _import_models method
+      to ensure their tables are created by Base.metadata.create_all.
+- v2.0.2 (2025-05-29):
+    - Made _ensure_default_admin_user method more robust:
+        - It now tries to check the ADMIN password using bcrypt.
+        - If check_password fails (returns False or raises ValueError due to
+          invalid hash format like old SHA256), it then calls
+          user.set_password() to ensure the password becomes "admin1234"
+          hashed with bcrypt.
+        - This resolves the "ValueError: Invalid salt" during startup.
+- v2.0.1 (2025-05-29):
+    - Modified _ensure_default_admin_user method to use user.set_password()
+      (which uses bcrypt) for the ADMIN user's password ("admin1234")
+      instead of directly setting a SHA-256 hash.
+    - Removed hashlib import as it's no longer used.
+- v2.0.0 (2025-05-24):
+    - Complete rewrite for Phase 1 (Chunk 1) simplification.
+"""
+
+import logging
+import os
+from typing import Optional
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker, scoped_session, Session as SQLAlchemySession
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.exc import SQLAlchemyError
+
+from config.app_config import AppConfig
+
+# Create Base for all models
+Base = declarative_base()
+
+# Setup logger
+db_logger = logging.getLogger("database_operations")
+
+
+class DatabaseManager:
+    """
+    Simplified database manager for EDSI application.
+    Handles database initialization, session creation, and table management.
+    """
+
+    def __init__(self):
+        self.engine = None
+        self.SessionLocal: Optional[scoped_session[SQLAlchemySession]] = None
+        self.db_url: Optional[str] = None
+        self.logger = logging.getLogger(self.__class__.__name__)
+
+    def initialize_database(self, db_url: Optional[str] = None) -> None:
+        """
+        Initialize database connection and create tables.
+        """
+        if self.engine:
+            self.logger.info("Database already initialized")
+            return
+
+        self.db_url = db_url or AppConfig.get_database_url()
+        if not self.db_url:
+            raise ValueError("DATABASE_URL is not configured")
+
+        self.logger.info(f"Initializing database: {self.db_url}")
+
+        try:
+            self.engine = create_engine(
+                self.db_url,
+                echo=False,  # Set to True for SQL logging, False for production
+                pool_pre_ping=True,
+            )
+
+            self.SessionLocal = scoped_session(
+                sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
+            )
+
+            self.logger.info("Database engine and session factory created")
+            self.create_tables()
+            self._test_connection()
+            self._ensure_default_admin_user()
+            self.logger.info("Database initialization completed successfully")
+
+        except SQLAlchemyError as e:
+            self.logger.error(f"SQLAlchemy error during database initialization: {e}")
+            raise
+        except Exception as e:
+            self.logger.error(f"Unexpected error during database initialization: {e}")
+            raise
+
+    def get_session(self) -> SQLAlchemySession:
+        """
+        Get a database session.
+        """
+        if not self.SessionLocal:
+            raise RuntimeError(
+                "Database not initialized. Call initialize_database() first."
+            )
+        return self.SessionLocal()
+
+    def create_tables(self) -> None:
+        """
+        Create all database tables.
+        """
+        if not self.engine:
+            raise RuntimeError("Database engine not initialized")
+
+        try:
+            self.logger.info("Creating database tables...")
+            self._import_models()  # This ensures all models are known to Base
+            Base.metadata.create_all(bind=self.engine)
+            table_names = list(Base.metadata.tables.keys())
+            self.logger.info(f"Database tables created/verified: {table_names}")
+
+        except Exception as e:
+            self.logger.error(f"Error creating database tables: {e}")
+            raise
+
+    def _import_models(self) -> None:
+        """
+        Import all model classes to ensure they are registered with Base.
+        This is crucial for Base.metadata.create_all() to work correctly.
+        """
+        try:
+            from models.base_model import BaseModel  # Already imported by other models
+            from models.user_models import User, Role, UserRole
+            from models.horse_models import Horse, HorseOwner, HorseLocation
+            from models.owner_models import Owner, OwnerBillingHistory, OwnerPayment
+
+            # The placeholder Invoice from owner_models is implicitly imported if not removed from its __init__ or owner_models.py
+            from models.reference_models import (
+                StateProvince,
+                ChargeCodeCategory,
+                ChargeCode,
+                Veterinarian,
+                Location,
+                Procedure,  # Placeholder
+                Drug,  # Placeholder
+                TreatmentLog,  # Placeholder
+                CommunicationLog,  # Placeholder
+                Document,  # Placeholder
+                Reminder,  # Placeholder
+                Appointment,  # Placeholder
+                # The placeholder Transaction & TransactionDetail from reference_models might also be imported
+                # if not removed from its __init__ or reference_models.py
+            )
+
+            # Import new financial models
+            from models.financial_models import Transaction, Invoice
+
+            self.logger.debug(
+                "Models imported for table creation, including new financial models."
+            )
+        except ImportError as e:
+            self.logger.error(
+                f"Critical error: Could not import core models for table creation: {e}",
+                exc_info=True,
+            )
+            # Depending on severity, you might want to raise this error
+            # raise ImportError(f"Failed to import essential models: {e}") from e
+        except Exception as e:
+            self.logger.error(
+                f"Unexpected error during model imports for table creation: {e}",
+                exc_info=True,
+            )
+
+    def _test_connection(self) -> None:
+        """
+        Test database connection.
+        """
+        try:
+            with self.get_session() as session:
+                session.execute(text("SELECT 1"))
+            self.logger.info("Database connection test successful")
+        except Exception as e:
+            self.logger.error(f"Database connection test failed: {e}")
+            raise
+
+    def _ensure_default_admin_user(self) -> None:
+        """
+        Ensure default admin user always exists with correct credentials
+        (password hashed using bcrypt via User.set_password).
+        Handles pre-existing non-bcrypt hashes for ADMIN by resetting the password.
+        """
+        try:
+            with self.get_session() as session:
+                from models.user_models import (
+                    User,
+                    Role,
+                )
+
+                self.logger.info(
+                    "Ensuring default ADMIN user exists with bcrypt password."
+                )
+
+                admin_role_name = "ADMIN"
+                admin_role = (
+                    session.query(Role).filter(Role.name == admin_role_name).first()
+                )
+                if not admin_role:
+                    self.logger.warning(
+                        f"Role '{admin_role_name}' not found. Creating it now. "
+                        "It's recommended to run add_initial_data.py for full role setup."
+                    )
+                    admin_role = Role(
+                        name=admin_role_name,
+                        description="System Administrator (auto-created by db_config)",
+                        created_by="SYSTEM_DB_CONFIG",
+                        modified_by="SYSTEM_DB_CONFIG",
+                    )
+                    session.add(admin_role)
+                    session.flush()
+                    self.logger.info(f"Created '{admin_role_name}' role.")
+
+                admin_user = session.query(User).filter(User.user_id == "ADMIN").first()
+                default_password = "admin1234"
+                admin_default_name = "System Administrator"
+                admin_default_email = "admin@edsi.local"
+
+                if admin_user:
+                    password_reset_done = False
+                    attributes_updated = False
+
+                    try:
+                        if not admin_user.check_password(default_password):
+                            self.logger.info(
+                                "ADMIN user password check failed. Resetting."
+                            )
+                            admin_user.set_password(default_password)
+                            password_reset_done = True
+                    except ValueError as e:
+                        self.logger.warning(
+                            f"ADMIN password hash not bcrypt/valid ({e}). Resetting password."
+                        )
+                        admin_user.set_password(default_password)
+                        password_reset_done = True
+
+                    if password_reset_done:
+                        admin_user.modified_by = "SYSTEM_DB_CONFIG_PWD"
+                        self.logger.info(
+                            "ADMIN user password has been set/reset to a bcrypt hash."
+                        )
+
+                    if not admin_user.is_active:
+                        admin_user.is_active = True
+                        self.logger.info("Activated ADMIN user.")
+                        attributes_updated = True
+
+                    if admin_user.user_name != admin_default_name:
+                        admin_user.user_name = admin_default_name
+                        self.logger.info(
+                            f"Set ADMIN user_name to '{admin_default_name}'."
+                        )
+                        attributes_updated = True
+
+                    if admin_user.email != admin_default_email:
+                        admin_user.email = admin_default_email
+                        self.logger.info(f"Set ADMIN email to '{admin_default_email}'.")
+                        attributes_updated = True
+
+                    if attributes_updated and not password_reset_done:
+                        admin_user.modified_by = "SYSTEM_DB_CONFIG_ATTR"
+
+                    if password_reset_done or attributes_updated:
+                        self.logger.info("ADMIN user record updated/verified.")
+                    else:
+                        self.logger.info(
+                            "ADMIN user credentials, status, and name are correct."
+                        )
+
+                else:
+                    self.logger.info("ADMIN user not found. Creating new ADMIN user...")
+                    admin_user = User(
+                        user_id="ADMIN",
+                        user_name=admin_default_name,
+                        email=admin_default_email,
+                        is_active=True,
+                        created_by="SYSTEM_DB_CONFIG",
+                        modified_by="SYSTEM_DB_CONFIG",
+                    )
+                    admin_user.set_password(default_password)
+                    session.add(admin_user)
+                    session.flush()
+                    self.logger.info("Created new ADMIN user with bcrypt password.")
+
+                if admin_role and admin_role not in admin_user.roles:
+                    admin_user.roles.append(admin_role)
+                    self.logger.info("Linked ADMIN user to ADMIN role.")
+                elif not admin_role:
+                    self.logger.error(
+                        f"Cannot link ADMIN user to '{admin_role_name}' role as role object is missing."
+                    )
+
+                session.commit()
+                self.logger.info(
+                    f"Default ADMIN user ready (Username: ADMIN, Password: {default_password})"
+                )
+
+        except Exception as e:
+            self.logger.error(f"Error ensuring default admin user: {e}", exc_info=True)
+            if "session" in locals() and session.is_active:
+                session.rollback()
+
+    def close(self) -> None:
+        if self.SessionLocal:
+            self.SessionLocal.remove()
+            self.logger.info("Database sessions closed")
+        if self.engine:
+            self.engine.dispose()
+            self.logger.info("Database engine disposed")
+
+    def get_engine(self):
+        return self.engine
+
+
+db_manager = DatabaseManager()
+
+
+def get_db_session() -> SQLAlchemySession:
+    return db_manager.get_session()
+
+
+def init_database(db_url: Optional[str] = None) -> None:
+    db_manager.initialize_database(db_url)
+
+
+=============== FILE: views\horse\tabs\__init__.py ===============
+
+
+
+=============== FILE: views\horse\dialogs\__init__.py ===============
+
+
+
+=============== END OF DUMP ===============

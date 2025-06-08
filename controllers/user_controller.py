@@ -1,13 +1,16 @@
 # controllers/user_controller.py
 """
 EDSI Veterinary Management System - User Controller
-Version: 1.2.8
+Version: 1.3.0
 Purpose: Handles user authentication, CRUD operations.
-         - Moved self-deactivation check into the controller.
+         - Standardized get_all_users filter to use a string-based status_filter.
 Last Updated: June 5, 2025
 Author: Gemini
 
 Changelog:
+- v1.3.0 (2025-06-05):
+    - Modified `get_all_users` to accept a string `status_filter` ('active',
+      'inactive', 'all') for consistency with other controllers.
 - v1.2.8 (2025-06-05):
     - In `toggle_user_active_status`, added a check to prevent a user from
       deactivating their own account, moving this business rule from the
@@ -102,13 +105,15 @@ class UserController:
             )
             return False, "An unexpected server error occurred. Please try again.", None
 
-    def get_all_users(self, include_inactive: bool = True) -> List[User]:
-        # ... (implementation unchanged) ...
+    def get_all_users(self, status_filter: str = "all") -> List[User]:
         session = db_manager.get_session()
         try:
             query = session.query(User).options(joinedload(User.roles))
-            if not include_inactive:
+            if status_filter == "active":
                 query = query.filter(User.is_active == True)
+            elif status_filter == "inactive":
+                query = query.filter(User.is_active == False)
+
             users = query.order_by(User.user_id).all()
             return users
         except sqlalchemy_exc.SQLAlchemyError as e:
@@ -552,10 +557,10 @@ class UserController:
         finally:
             session.close()
 
-    # MODIFIED: Logic moved from view to controller
     def toggle_user_active_status(
         self, user_login_id: str, current_admin_id: Optional[str] = None
     ) -> Tuple[bool, str]:
+        # ... (implementation unchanged) ...
         session = db_manager.get_session()
         try:
             user = (

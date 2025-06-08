@@ -1,144 +1,144 @@
-2025-06-04 20:53:54,615 - INFO - add_initial_data.py:912 - Running script to add initial data to the database...
-2025-06-04 20:53:54,615 - INFO - database_config.py:75 - Initializing database: sqlite:///C:\Projects\EDMS\edsi_database.db
-2025-06-04 20:53:54,624 - INFO - database_config.py:88 - Database engine and session factory created
-2025-06-04 20:53:54,624 - INFO - database_config.py:119 - Creating database tables...
-2025-06-04 20:53:54,851 - INFO - database_config.py:123 - Database tables created/verified: ['roles', 'user_roles', 'users', 'horse_owners', 'horse_locations', 'horses', 'owners', 'owner_billing_history', 'owner_payments', 'state_provinces', 'charge_code_categories', 'charge_codes', 'veterinarians', 'locations', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'transactions', 'invoices']
-2025-06-04 20:53:54,852 - INFO - database_config.py:184 - Database connection test successful
-2025-06-04 20:53:54,852 - INFO - database_config.py:202 - Ensuring default ADMIN user exists with bcrypt password.
-2025-06-04 20:53:54,875 - WARNING - database_config.py:211 - Role 'ADMIN' not found. Creating it now. It's recommended to run add_initial_data.py for full role setup.
-2025-06-04 20:53:54,877 - INFO - database_config.py:223 - Created 'ADMIN' role.
-2025-06-04 20:53:54,878 - INFO - database_config.py:282 - ADMIN user not found. Creating new ADMIN user...
-2025-06-04 20:53:55,035 - INFO - database_config.py:294 - Created new ADMIN user with bcrypt password.
-2025-06-04 20:53:55,037 - INFO - database_config.py:298 - Linked ADMIN user to ADMIN role.
-2025-06-04 20:53:55,040 - INFO - database_config.py:305 - Default ADMIN user ready (Username: ADMIN, Password: admin1234)
-2025-06-04 20:53:55,040 - INFO - database_config.py:92 - Database initialization completed successfully
-2025-06-04 20:53:55,040 - INFO - add_initial_data.py:919 - Database initialized and tables created (if they didn't exist).
-2025-06-04 20:53:55,041 - INFO - add_initial_data.py:929 - Starting to add initial reference data...
-2025-06-04 20:53:55,041 - INFO - add_initial_data.py:107 - Role 'ADMIN' already exists, skipping.
-2025-06-04 20:53:55,041 - INFO - add_initial_data.py:105 - Prepared role: MANAGER
-2025-06-04 20:53:55,041 - INFO - add_initial_data.py:105 - Prepared role: VETERINARIAN
-2025-06-04 20:53:55,042 - INFO - add_initial_data.py:105 - Prepared role: TECHNICIAN
-2025-06-04 20:53:55,042 - INFO - add_initial_data.py:105 - Prepared role: RECEPTIONIST
-2025-06-04 20:53:55,042 - INFO - add_initial_data.py:105 - Prepared role: CLIENT
-2025-06-04 20:53:55,042 - INFO - add_initial_data.py:110 - Successfully prepared 5 new roles.
-2025-06-04 20:53:55,042 - INFO - add_initial_data.py:141 - Admin user 'ADMIN' already exists.
-2025-06-04 20:53:55,206 - INFO - add_initial_data.py:939 - Committed roles and admin user.
-2025-06-04 20:53:55,207 - INFO - add_initial_data.py:158 - Preparing charge code categories...
-2025-06-04 20:53:55,210 - INFO - add_initial_data.py:274 - Prepared category: ANTHELMINTICS (Level 1, Parent ID: None) with ID 1
-2025-06-04 20:53:55,211 - INFO - add_initial_data.py:274 - Prepared category: ADMINISTERED (Level 2, Parent ID: 1) with ID 2
-2025-06-04 20:53:55,211 - INFO - add_initial_data.py:274 - Prepared category: DISPENSED (Level 2, Parent ID: 1) with ID 3
-2025-06-04 20:53:55,212 - INFO - add_initial_data.py:274 - Prepared category: CALL FEES (Level 1, Parent ID: None) with ID 4
-2025-06-04 20:53:55,212 - INFO - add_initial_data.py:274 - Prepared category: DIAGNOSTIC PROCEDURES (Level 1, Parent ID: None) with ID 5
-2025-06-04 20:53:55,213 - INFO - add_initial_data.py:274 - Prepared category: NERVE BLOCKS (Level 2, Parent ID: 5) with ID 6
-2025-06-04 20:53:55,213 - INFO - add_initial_data.py:274 - Prepared category: JOINT BLOCKS (Level 2, Parent ID: 5) with ID 7
-2025-06-04 20:53:55,214 - INFO - add_initial_data.py:274 - Prepared category: RADIOLOGY - FRONT LEG (Level 2, Parent ID: 5) with ID 8
-2025-06-04 20:53:55,214 - INFO - add_initial_data.py:274 - Prepared category: RADIOLOGY - HIND LEG (Level 2, Parent ID: 5) with ID 9
-2025-06-04 20:53:55,215 - INFO - add_initial_data.py:274 - Prepared category: RADIOLOGY - OTHER (Level 2, Parent ID: 5) with ID 10
-2025-06-04 20:53:55,215 - INFO - add_initial_data.py:274 - Prepared category: ULTRASOUND EXAM OF EXTREMITIES (Level 2, Parent ID: 5) with ID 11
-2025-06-04 20:53:55,216 - INFO - add_initial_data.py:274 - Prepared category: OTHER (Level 2, Parent ID: 5) with ID 12
-2025-06-04 20:53:55,216 - INFO - add_initial_data.py:274 - Prepared category: EXAMINATIONS (Level 1, Parent ID: None) with ID 13
-2025-06-04 20:53:55,217 - INFO - add_initial_data.py:274 - Prepared category: SICK HORSE EXAMS (Level 2, Parent ID: 13) with ID 14
-2025-06-04 20:53:55,218 - INFO - add_initial_data.py:274 - Prepared category: OTHER EXAMS (Level 2, Parent ID: 13) with ID 15
-2025-06-04 20:53:55,219 - INFO - add_initial_data.py:274 - Prepared category: IMMUNIZATIONS (Level 1, Parent ID: None) with ID 16
-2025-06-04 20:53:55,220 - INFO - add_initial_data.py:274 - Prepared category: HORSE (Level 2, Parent ID: 16) with ID 17
-2025-06-04 20:53:55,220 - INFO - add_initial_data.py:274 - Prepared category: LABORATORY PROCEDURES (Level 1, Parent ID: None) with ID 18
-2025-06-04 20:53:55,221 - INFO - add_initial_data.py:274 - Prepared category: BLOOD WORK (Level 2, Parent ID: 18) with ID 19
-2025-06-04 20:53:55,222 - INFO - add_initial_data.py:274 - Prepared category: OTHER (Level 2, Parent ID: 18) with ID 20
-2025-06-04 20:53:55,222 - INFO - add_initial_data.py:274 - Prepared category: MEDICATION ADMINISTERED (Level 1, Parent ID: None) with ID 21
-2025-06-04 20:53:55,223 - INFO - add_initial_data.py:274 - Prepared category: ANABOLIC STEROIDS (Level 2, Parent ID: 21) with ID 22
-2025-06-04 20:53:55,223 - INFO - add_initial_data.py:274 - Prepared category: ANTIBIOTICS (Level 2, Parent ID: 21) with ID 23
-2025-06-04 20:53:55,224 - INFO - add_initial_data.py:274 - Prepared category: DIURETICS (Level 2, Parent ID: 21) with ID 24
-2025-06-04 20:53:55,224 - INFO - add_initial_data.py:274 - Prepared category: FLUIDS ADMINISTERED (Level 2, Parent ID: 21) with ID 25
-2025-06-04 20:53:55,225 - INFO - add_initial_data.py:274 - Prepared category: GASTROINTESTINAL TREATMENTS (Level 2, Parent ID: 21) with ID 26
-2025-06-04 20:53:55,225 - INFO - add_initial_data.py:274 - Prepared category: INTRA-ARTICULAR INJECTIONS (Level 2, Parent ID: 21) with ID 27
-2025-06-04 20:53:55,226 - INFO - add_initial_data.py:274 - Prepared category: OTHER HORMONES (Level 2, Parent ID: 21) with ID 28
-2025-06-04 20:53:55,226 - INFO - add_initial_data.py:274 - Prepared category: NON-ARTICULAR INJECTIONS (Level 2, Parent ID: 21) with ID 29
-2025-06-04 20:53:55,227 - INFO - add_initial_data.py:274 - Prepared category: NSAID'S ANALGESICS (Level 2, Parent ID: 21) with ID 30
-2025-06-04 20:53:55,228 - INFO - add_initial_data.py:274 - Prepared category: TRANQUILIZERS & ANESTHETICS (Level 2, Parent ID: 21) with ID 31
-2025-06-04 20:53:55,228 - INFO - add_initial_data.py:274 - Prepared category: VITAMINS (Level 2, Parent ID: 21) with ID 32
-2025-06-04 20:53:55,229 - INFO - add_initial_data.py:274 - Prepared category: OTHER (Level 2, Parent ID: 21) with ID 33
-2025-06-04 20:53:55,230 - INFO - add_initial_data.py:274 - Prepared category: MEDICATIONS DISPENSED (Level 1, Parent ID: None) with ID 34
-2025-06-04 20:53:55,231 - INFO - add_initial_data.py:274 - Prepared category: OTHER HORMONES (Level 2, Parent ID: 34) with ID 35
-2025-06-04 20:53:55,232 - INFO - add_initial_data.py:274 - Prepared category: ANTIBIOTICS - PENICILLINS (Level 2, Parent ID: 34) with ID 36
-2025-06-04 20:53:55,232 - INFO - add_initial_data.py:274 - Prepared category: ANTIBIOTICS - OTHER (Level 2, Parent ID: 34) with ID 37
-2025-06-04 20:53:55,233 - INFO - add_initial_data.py:274 - Prepared category: BANDAGES & MATERIALS (Level 2, Parent ID: 34) with ID 38
-2025-06-04 20:53:55,233 - INFO - add_initial_data.py:274 - Prepared category: DERMATITIS/TOPICAL ANTISEPTICS (Level 2, Parent ID: 34) with ID 39
-2025-06-04 20:53:55,234 - INFO - add_initial_data.py:274 - Prepared category: DIURETICS (Level 2, Parent ID: 34) with ID 40
-2025-06-04 20:53:55,235 - INFO - add_initial_data.py:274 - Prepared category: FLUIDS (Level 2, Parent ID: 34) with ID 41
-2025-06-04 20:53:55,235 - INFO - add_initial_data.py:274 - Prepared category: G.I. MEDICATIONS (Level 2, Parent ID: 34) with ID 42
-2025-06-04 20:53:55,235 - INFO - add_initial_data.py:289 - Successfully prepared new charge code categories.
-2025-06-04 20:53:55,238 - INFO - add_initial_data.py:946 - Committed charge code categories.
-2025-06-04 20:53:55,239 - INFO - add_initial_data.py:770 - Prepared state/province: Alabama
-2025-06-04 20:53:55,239 - INFO - add_initial_data.py:770 - Prepared state/province: Alaska
-2025-06-04 20:53:55,239 - INFO - add_initial_data.py:770 - Prepared state/province: Arizona
-2025-06-04 20:53:55,239 - INFO - add_initial_data.py:770 - Prepared state/province: Arkansas
-2025-06-04 20:53:55,239 - INFO - add_initial_data.py:770 - Prepared state/province: California
-2025-06-04 20:53:55,239 - INFO - add_initial_data.py:770 - Prepared state/province: Colorado
-2025-06-04 20:53:55,239 - INFO - add_initial_data.py:770 - Prepared state/province: Connecticut
-2025-06-04 20:53:55,239 - INFO - add_initial_data.py:770 - Prepared state/province: Delaware
-2025-06-04 20:53:55,239 - INFO - add_initial_data.py:770 - Prepared state/province: Florida
-2025-06-04 20:53:55,239 - INFO - add_initial_data.py:770 - Prepared state/province: Georgia
-2025-06-04 20:53:55,240 - INFO - add_initial_data.py:770 - Prepared state/province: Hawaii
-2025-06-04 20:53:55,240 - INFO - add_initial_data.py:770 - Prepared state/province: Idaho
-2025-06-04 20:53:55,240 - INFO - add_initial_data.py:770 - Prepared state/province: Illinois
-2025-06-04 20:53:55,240 - INFO - add_initial_data.py:770 - Prepared state/province: Indiana
-2025-06-04 20:53:55,240 - INFO - add_initial_data.py:770 - Prepared state/province: Iowa
-2025-06-04 20:53:55,240 - INFO - add_initial_data.py:770 - Prepared state/province: Kansas
-2025-06-04 20:53:55,240 - INFO - add_initial_data.py:770 - Prepared state/province: Kentucky
-2025-06-04 20:53:55,240 - INFO - add_initial_data.py:770 - Prepared state/province: Louisiana
-2025-06-04 20:53:55,240 - INFO - add_initial_data.py:770 - Prepared state/province: Maine
-2025-06-04 20:53:55,240 - INFO - add_initial_data.py:770 - Prepared state/province: Maryland
-2025-06-04 20:53:55,240 - INFO - add_initial_data.py:770 - Prepared state/province: Massachusetts
-2025-06-04 20:53:55,240 - INFO - add_initial_data.py:770 - Prepared state/province: Michigan
-2025-06-04 20:53:55,240 - INFO - add_initial_data.py:770 - Prepared state/province: Minnesota
-2025-06-04 20:53:55,240 - INFO - add_initial_data.py:770 - Prepared state/province: Mississippi
-2025-06-04 20:53:55,240 - INFO - add_initial_data.py:770 - Prepared state/province: Missouri
-2025-06-04 20:53:55,241 - INFO - add_initial_data.py:770 - Prepared state/province: Montana
-2025-06-04 20:53:55,241 - INFO - add_initial_data.py:770 - Prepared state/province: Nebraska
-2025-06-04 20:53:55,241 - INFO - add_initial_data.py:770 - Prepared state/province: Nevada
-2025-06-04 20:53:55,241 - INFO - add_initial_data.py:770 - Prepared state/province: New Hampshire
-2025-06-04 20:53:55,241 - INFO - add_initial_data.py:770 - Prepared state/province: New Jersey
-2025-06-04 20:53:55,241 - INFO - add_initial_data.py:770 - Prepared state/province: New Mexico
-2025-06-04 20:53:55,241 - INFO - add_initial_data.py:770 - Prepared state/province: New York
-2025-06-04 20:53:55,241 - INFO - add_initial_data.py:770 - Prepared state/province: North Carolina
-2025-06-04 20:53:55,241 - INFO - add_initial_data.py:770 - Prepared state/province: North Dakota
-2025-06-04 20:53:55,241 - INFO - add_initial_data.py:770 - Prepared state/province: Ohio
-2025-06-04 20:53:55,241 - INFO - add_initial_data.py:770 - Prepared state/province: Oklahoma
-2025-06-04 20:53:55,241 - INFO - add_initial_data.py:770 - Prepared state/province: Oregon
-2025-06-04 20:53:55,241 - INFO - add_initial_data.py:770 - Prepared state/province: Pennsylvania
-2025-06-04 20:53:55,241 - INFO - add_initial_data.py:770 - Prepared state/province: Rhode Island
-2025-06-04 20:53:55,241 - INFO - add_initial_data.py:770 - Prepared state/province: South Carolina
-2025-06-04 20:53:55,242 - INFO - add_initial_data.py:770 - Prepared state/province: South Dakota
-2025-06-04 20:53:55,242 - INFO - add_initial_data.py:770 - Prepared state/province: Tennessee
-2025-06-04 20:53:55,242 - INFO - add_initial_data.py:770 - Prepared state/province: Texas
-2025-06-04 20:53:55,242 - INFO - add_initial_data.py:770 - Prepared state/province: Utah
-2025-06-04 20:53:55,242 - INFO - add_initial_data.py:770 - Prepared state/province: Vermont
-2025-06-04 20:53:55,242 - INFO - add_initial_data.py:770 - Prepared state/province: Virginia
-2025-06-04 20:53:55,242 - INFO - add_initial_data.py:770 - Prepared state/province: Washington
-2025-06-04 20:53:55,242 - INFO - add_initial_data.py:770 - Prepared state/province: West Virginia
-2025-06-04 20:53:55,242 - INFO - add_initial_data.py:770 - Prepared state/province: Wisconsin
-2025-06-04 20:53:55,242 - INFO - add_initial_data.py:770 - Prepared state/province: Wyoming
-2025-06-04 20:53:55,242 - INFO - add_initial_data.py:770 - Prepared state/province: Alberta
-2025-06-04 20:53:55,242 - INFO - add_initial_data.py:770 - Prepared state/province: British Columbia
-2025-06-04 20:53:55,242 - INFO - add_initial_data.py:770 - Prepared state/province: Manitoba
-2025-06-04 20:53:55,242 - INFO - add_initial_data.py:770 - Prepared state/province: New Brunswick
-2025-06-04 20:53:55,243 - INFO - add_initial_data.py:770 - Prepared state/province: Newfoundland and Labrador
-2025-06-04 20:53:55,243 - INFO - add_initial_data.py:770 - Prepared state/province: Nova Scotia
-2025-06-04 20:53:55,243 - INFO - add_initial_data.py:770 - Prepared state/province: Ontario
-2025-06-04 20:53:55,243 - INFO - add_initial_data.py:770 - Prepared state/province: Prince Edward Island
-2025-06-04 20:53:55,243 - INFO - add_initial_data.py:770 - Prepared state/province: Quebec
-2025-06-04 20:53:55,243 - INFO - add_initial_data.py:770 - Prepared state/province: Saskatchewan
-2025-06-04 20:53:55,243 - INFO - add_initial_data.py:773 - Added 60 new states/provinces.
-2025-06-04 20:53:55,248 - INFO - add_initial_data.py:953 - Committed states/provinces.
-2025-06-04 20:53:55,249 - INFO - add_initial_data.py:831 - Prepared location: Main Stable
-2025-06-04 20:53:55,250 - INFO - add_initial_data.py:831 - Prepared location: Quarantine Barn
-2025-06-04 20:53:55,250 - INFO - add_initial_data.py:831 - Prepared location: West Wing Stalls
-2025-06-04 20:53:55,251 - INFO - add_initial_data.py:892 - Prepared owner: Willow Creek Stables
-2025-06-04 20:53:55,251 - INFO - add_initial_data.py:892 - Prepared owner: Davis
-2025-06-04 20:53:55,252 - INFO - add_initial_data.py:319 - Preparing sample charge codes with hierarchical categories...
-2025-06-04 20:53:55,252 - INFO - add_initial_data.py:375 - Prepared charge code: 9991 with category_id: 2
-2025-06-04 20:53:55,253 - INFO - add_initial_data.py:375 - Prepared charge code: EXAM001 with category_id: 13
-2025-06-04 20:53:55,253 - INFO - add_initial_data.py:388 - Successfully prepared 2 new charge codes.
-2025-06-04 20:53:55,259 - INFO - add_initial_data.py:964 - Committed locations, owners, and sample charge codes.
-2025-06-04 20:53:55,259 - INFO - add_initial_data.py:966 - Initial data setup process completed and committed successfully.
-2025-06-04 20:53:55,259 - INFO - add_initial_data.py:986 - Database session closed.
+2025-06-05 21:22:58,342 - INFO - add_initial_data.py:912 - Running script to add initial data to the database...
+2025-06-05 21:22:58,342 - INFO - database_config.py:75 - Initializing database: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-06-05 21:22:58,350 - INFO - database_config.py:88 - Database engine and session factory created
+2025-06-05 21:22:58,350 - INFO - database_config.py:119 - Creating database tables...
+2025-06-05 21:22:58,577 - INFO - database_config.py:123 - Database tables created/verified: ['roles', 'user_roles', 'users', 'horse_owners', 'horse_locations', 'horses', 'owners', 'owner_billing_history', 'owner_payments', 'state_provinces', 'charge_code_categories', 'charge_codes', 'veterinarians', 'locations', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'transactions', 'invoices']
+2025-06-05 21:22:58,577 - INFO - database_config.py:184 - Database connection test successful
+2025-06-05 21:22:58,578 - INFO - database_config.py:202 - Ensuring default ADMIN user exists with bcrypt password.
+2025-06-05 21:22:58,598 - WARNING - database_config.py:211 - Role 'ADMIN' not found. Creating it now. It's recommended to run add_initial_data.py for full role setup.
+2025-06-05 21:22:58,599 - INFO - database_config.py:223 - Created 'ADMIN' role.
+2025-06-05 21:22:58,600 - INFO - database_config.py:282 - ADMIN user not found. Creating new ADMIN user...
+2025-06-05 21:22:58,759 - INFO - database_config.py:294 - Created new ADMIN user with bcrypt password.
+2025-06-05 21:22:58,760 - INFO - database_config.py:298 - Linked ADMIN user to ADMIN role.
+2025-06-05 21:22:58,763 - INFO - database_config.py:305 - Default ADMIN user ready (Username: ADMIN, Password: admin1234)
+2025-06-05 21:22:58,764 - INFO - database_config.py:92 - Database initialization completed successfully
+2025-06-05 21:22:58,764 - INFO - add_initial_data.py:919 - Database initialized and tables created (if they didn't exist).
+2025-06-05 21:22:58,764 - INFO - add_initial_data.py:929 - Starting to add initial reference data...
+2025-06-05 21:22:58,765 - INFO - add_initial_data.py:107 - Role 'ADMIN' already exists, skipping.
+2025-06-05 21:22:58,765 - INFO - add_initial_data.py:105 - Prepared role: MANAGER
+2025-06-05 21:22:58,765 - INFO - add_initial_data.py:105 - Prepared role: VETERINARIAN
+2025-06-05 21:22:58,765 - INFO - add_initial_data.py:105 - Prepared role: TECHNICIAN
+2025-06-05 21:22:58,766 - INFO - add_initial_data.py:105 - Prepared role: RECEPTIONIST
+2025-06-05 21:22:58,766 - INFO - add_initial_data.py:105 - Prepared role: CLIENT
+2025-06-05 21:22:58,766 - INFO - add_initial_data.py:110 - Successfully prepared 5 new roles.
+2025-06-05 21:22:58,766 - INFO - add_initial_data.py:141 - Admin user 'ADMIN' already exists.
+2025-06-05 21:22:58,933 - INFO - add_initial_data.py:939 - Committed roles and admin user.
+2025-06-05 21:22:58,934 - INFO - add_initial_data.py:158 - Preparing charge code categories...
+2025-06-05 21:22:58,937 - INFO - add_initial_data.py:274 - Prepared category: ANTHELMINTICS (Level 1, Parent ID: None) with ID 1
+2025-06-05 21:22:58,938 - INFO - add_initial_data.py:274 - Prepared category: ADMINISTERED (Level 2, Parent ID: 1) with ID 2
+2025-06-05 21:22:58,939 - INFO - add_initial_data.py:274 - Prepared category: DISPENSED (Level 2, Parent ID: 1) with ID 3
+2025-06-05 21:22:58,939 - INFO - add_initial_data.py:274 - Prepared category: CALL FEES (Level 1, Parent ID: None) with ID 4
+2025-06-05 21:22:58,940 - INFO - add_initial_data.py:274 - Prepared category: DIAGNOSTIC PROCEDURES (Level 1, Parent ID: None) with ID 5
+2025-06-05 21:22:58,940 - INFO - add_initial_data.py:274 - Prepared category: NERVE BLOCKS (Level 2, Parent ID: 5) with ID 6
+2025-06-05 21:22:58,941 - INFO - add_initial_data.py:274 - Prepared category: JOINT BLOCKS (Level 2, Parent ID: 5) with ID 7
+2025-06-05 21:22:58,941 - INFO - add_initial_data.py:274 - Prepared category: RADIOLOGY - FRONT LEG (Level 2, Parent ID: 5) with ID 8
+2025-06-05 21:22:58,942 - INFO - add_initial_data.py:274 - Prepared category: RADIOLOGY - HIND LEG (Level 2, Parent ID: 5) with ID 9
+2025-06-05 21:22:58,942 - INFO - add_initial_data.py:274 - Prepared category: RADIOLOGY - OTHER (Level 2, Parent ID: 5) with ID 10
+2025-06-05 21:22:58,943 - INFO - add_initial_data.py:274 - Prepared category: ULTRASOUND EXAM OF EXTREMITIES (Level 2, Parent ID: 5) with ID 11
+2025-06-05 21:22:58,943 - INFO - add_initial_data.py:274 - Prepared category: OTHER (Level 2, Parent ID: 5) with ID 12
+2025-06-05 21:22:58,944 - INFO - add_initial_data.py:274 - Prepared category: EXAMINATIONS (Level 1, Parent ID: None) with ID 13
+2025-06-05 21:22:58,944 - INFO - add_initial_data.py:274 - Prepared category: SICK HORSE EXAMS (Level 2, Parent ID: 13) with ID 14
+2025-06-05 21:22:58,945 - INFO - add_initial_data.py:274 - Prepared category: OTHER EXAMS (Level 2, Parent ID: 13) with ID 15
+2025-06-05 21:22:58,947 - INFO - add_initial_data.py:274 - Prepared category: IMMUNIZATIONS (Level 1, Parent ID: None) with ID 16
+2025-06-05 21:22:58,948 - INFO - add_initial_data.py:274 - Prepared category: HORSE (Level 2, Parent ID: 16) with ID 17
+2025-06-05 21:22:58,948 - INFO - add_initial_data.py:274 - Prepared category: LABORATORY PROCEDURES (Level 1, Parent ID: None) with ID 18
+2025-06-05 21:22:58,949 - INFO - add_initial_data.py:274 - Prepared category: BLOOD WORK (Level 2, Parent ID: 18) with ID 19
+2025-06-05 21:22:58,949 - INFO - add_initial_data.py:274 - Prepared category: OTHER (Level 2, Parent ID: 18) with ID 20
+2025-06-05 21:22:58,950 - INFO - add_initial_data.py:274 - Prepared category: MEDICATION ADMINISTERED (Level 1, Parent ID: None) with ID 21
+2025-06-05 21:22:58,950 - INFO - add_initial_data.py:274 - Prepared category: ANABOLIC STEROIDS (Level 2, Parent ID: 21) with ID 22
+2025-06-05 21:22:58,951 - INFO - add_initial_data.py:274 - Prepared category: ANTIBIOTICS (Level 2, Parent ID: 21) with ID 23
+2025-06-05 21:22:58,951 - INFO - add_initial_data.py:274 - Prepared category: DIURETICS (Level 2, Parent ID: 21) with ID 24
+2025-06-05 21:22:58,952 - INFO - add_initial_data.py:274 - Prepared category: FLUIDS ADMINISTERED (Level 2, Parent ID: 21) with ID 25
+2025-06-05 21:22:58,952 - INFO - add_initial_data.py:274 - Prepared category: GASTROINTESTINAL TREATMENTS (Level 2, Parent ID: 21) with ID 26
+2025-06-05 21:22:58,953 - INFO - add_initial_data.py:274 - Prepared category: INTRA-ARTICULAR INJECTIONS (Level 2, Parent ID: 21) with ID 27
+2025-06-05 21:22:58,953 - INFO - add_initial_data.py:274 - Prepared category: OTHER HORMONES (Level 2, Parent ID: 21) with ID 28
+2025-06-05 21:22:58,954 - INFO - add_initial_data.py:274 - Prepared category: NON-ARTICULAR INJECTIONS (Level 2, Parent ID: 21) with ID 29
+2025-06-05 21:22:58,955 - INFO - add_initial_data.py:274 - Prepared category: NSAID'S ANALGESICS (Level 2, Parent ID: 21) with ID 30
+2025-06-05 21:22:58,955 - INFO - add_initial_data.py:274 - Prepared category: TRANQUILIZERS & ANESTHETICS (Level 2, Parent ID: 21) with ID 31
+2025-06-05 21:22:58,956 - INFO - add_initial_data.py:274 - Prepared category: VITAMINS (Level 2, Parent ID: 21) with ID 32
+2025-06-05 21:22:58,956 - INFO - add_initial_data.py:274 - Prepared category: OTHER (Level 2, Parent ID: 21) with ID 33
+2025-06-05 21:22:58,957 - INFO - add_initial_data.py:274 - Prepared category: MEDICATIONS DISPENSED (Level 1, Parent ID: None) with ID 34
+2025-06-05 21:22:58,958 - INFO - add_initial_data.py:274 - Prepared category: OTHER HORMONES (Level 2, Parent ID: 34) with ID 35
+2025-06-05 21:22:58,958 - INFO - add_initial_data.py:274 - Prepared category: ANTIBIOTICS - PENICILLINS (Level 2, Parent ID: 34) with ID 36
+2025-06-05 21:22:58,959 - INFO - add_initial_data.py:274 - Prepared category: ANTIBIOTICS - OTHER (Level 2, Parent ID: 34) with ID 37
+2025-06-05 21:22:58,959 - INFO - add_initial_data.py:274 - Prepared category: BANDAGES & MATERIALS (Level 2, Parent ID: 34) with ID 38
+2025-06-05 21:22:58,960 - INFO - add_initial_data.py:274 - Prepared category: DERMATITIS/TOPICAL ANTISEPTICS (Level 2, Parent ID: 34) with ID 39
+2025-06-05 21:22:58,960 - INFO - add_initial_data.py:274 - Prepared category: DIURETICS (Level 2, Parent ID: 34) with ID 40
+2025-06-05 21:22:58,961 - INFO - add_initial_data.py:274 - Prepared category: FLUIDS (Level 2, Parent ID: 34) with ID 41
+2025-06-05 21:22:58,964 - INFO - add_initial_data.py:274 - Prepared category: G.I. MEDICATIONS (Level 2, Parent ID: 34) with ID 42
+2025-06-05 21:22:58,964 - INFO - add_initial_data.py:289 - Successfully prepared new charge code categories.
+2025-06-05 21:22:58,967 - INFO - add_initial_data.py:946 - Committed charge code categories.
+2025-06-05 21:22:58,968 - INFO - add_initial_data.py:770 - Prepared state/province: Alabama
+2025-06-05 21:22:58,968 - INFO - add_initial_data.py:770 - Prepared state/province: Alaska
+2025-06-05 21:22:58,968 - INFO - add_initial_data.py:770 - Prepared state/province: Arizona
+2025-06-05 21:22:58,968 - INFO - add_initial_data.py:770 - Prepared state/province: Arkansas
+2025-06-05 21:22:58,968 - INFO - add_initial_data.py:770 - Prepared state/province: California
+2025-06-05 21:22:58,968 - INFO - add_initial_data.py:770 - Prepared state/province: Colorado
+2025-06-05 21:22:58,968 - INFO - add_initial_data.py:770 - Prepared state/province: Connecticut
+2025-06-05 21:22:58,968 - INFO - add_initial_data.py:770 - Prepared state/province: Delaware
+2025-06-05 21:22:58,968 - INFO - add_initial_data.py:770 - Prepared state/province: Florida
+2025-06-05 21:22:58,968 - INFO - add_initial_data.py:770 - Prepared state/province: Georgia
+2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Hawaii
+2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Idaho
+2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Illinois
+2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Indiana
+2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Iowa
+2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Kansas
+2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Kentucky
+2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Louisiana
+2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Maine
+2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Maryland
+2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Massachusetts
+2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Michigan
+2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Minnesota
+2025-06-05 21:22:58,970 - INFO - add_initial_data.py:770 - Prepared state/province: Mississippi
+2025-06-05 21:22:58,970 - INFO - add_initial_data.py:770 - Prepared state/province: Missouri
+2025-06-05 21:22:58,970 - INFO - add_initial_data.py:770 - Prepared state/province: Montana
+2025-06-05 21:22:58,970 - INFO - add_initial_data.py:770 - Prepared state/province: Nebraska
+2025-06-05 21:22:58,970 - INFO - add_initial_data.py:770 - Prepared state/province: Nevada
+2025-06-05 21:22:58,970 - INFO - add_initial_data.py:770 - Prepared state/province: New Hampshire
+2025-06-05 21:22:58,970 - INFO - add_initial_data.py:770 - Prepared state/province: New Jersey
+2025-06-05 21:22:58,970 - INFO - add_initial_data.py:770 - Prepared state/province: New Mexico
+2025-06-05 21:22:58,970 - INFO - add_initial_data.py:770 - Prepared state/province: New York
+2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: North Carolina
+2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: North Dakota
+2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: Ohio
+2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: Oklahoma
+2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: Oregon
+2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: Pennsylvania
+2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: Rhode Island
+2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: South Carolina
+2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: South Dakota
+2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: Tennessee
+2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: Texas
+2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: Utah
+2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: Vermont
+2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: Virginia
+2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: Washington
+2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: West Virginia
+2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: Wisconsin
+2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: Wyoming
+2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: Alberta
+2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: British Columbia
+2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: Manitoba
+2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: New Brunswick
+2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: Newfoundland and Labrador
+2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: Nova Scotia
+2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: Ontario
+2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: Prince Edward Island
+2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: Quebec
+2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: Saskatchewan
+2025-06-05 21:22:58,973 - INFO - add_initial_data.py:773 - Added 60 new states/provinces.
+2025-06-05 21:22:58,978 - INFO - add_initial_data.py:953 - Committed states/provinces.
+2025-06-05 21:22:58,980 - INFO - add_initial_data.py:831 - Prepared location: Main Stable
+2025-06-05 21:22:58,981 - INFO - add_initial_data.py:831 - Prepared location: Quarantine Barn
+2025-06-05 21:22:58,981 - INFO - add_initial_data.py:831 - Prepared location: West Wing Stalls
+2025-06-05 21:22:58,982 - INFO - add_initial_data.py:892 - Prepared owner: Willow Creek Stables
+2025-06-05 21:22:58,982 - INFO - add_initial_data.py:892 - Prepared owner: Davis
+2025-06-05 21:22:58,982 - INFO - add_initial_data.py:319 - Preparing sample charge codes with hierarchical categories...
+2025-06-05 21:22:58,983 - INFO - add_initial_data.py:375 - Prepared charge code: 9991 with category_id: 2
+2025-06-05 21:22:58,983 - INFO - add_initial_data.py:375 - Prepared charge code: EXAM001 with category_id: 13
+2025-06-05 21:22:58,984 - INFO - add_initial_data.py:388 - Successfully prepared 2 new charge codes.
+2025-06-05 21:22:58,989 - INFO - add_initial_data.py:964 - Committed locations, owners, and sample charge codes.
+2025-06-05 21:22:58,989 - INFO - add_initial_data.py:966 - Initial data setup process completed and committed successfully.
+2025-06-05 21:22:58,989 - INFO - add_initial_data.py:986 - Database session closed.

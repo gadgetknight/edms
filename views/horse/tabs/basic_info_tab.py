@@ -1,26 +1,25 @@
 # views/horse/tabs/basic_info_tab.py
 """
 EDSI Veterinary Management System - Horse Basic Info Tab
-Version: 1.2.20
+Version: 1.3.1
 Purpose: UI for displaying and editing basic information of a horse.
-         - Implemented robust owner name display logic in populate_form_data
-           for the owner_display_label.
-Last Updated: May 26, 2025
+         - Fixed a NameError by importing QColor.
+Last Updated: June 7, 2025
 Author: Gemini
 
 Changelog:
+- v1.3.1 (2025-06-07):
+    - Bug Fix: Fixed a `NameError` by importing `QColor` from `PySide6.QtGui`.
+- v1.3.0 (2025-06-07):
+    - Swapped the positions of the "Save Changes" and "Discard Changes" buttons.
+    - Styled the "Save Changes" button to be green for better visual cueing.
 - v1.2.20 (2025-05-26):
     - Updated `populate_form_data` to use more robust logic for displaying the
-      primary owner's name in `owner_display_label`. It now constructs the
-      name from farm_name, first_name, and last_name attributes of the
-      Owner model, similar to the logic in HorseUnifiedManagement's header.
+      primary owner's name in `owner_display_label`.
 - v1.2.19 (2025-05-26):
     - Added `owner_display_label` (QLabel) to show the primary owner's name.
-    - Positioned "Owner" field in the grid layout below "Location".
-    - Updated `populate_form_data` and `clear_fields`.
 - v1.2.18 (2025-05-25):
     - Modified `get_data_from_form` to return Python `datetime.date` objects.
-# ... (rest of previous changelog entries assumed present)
 """
 import logging
 from typing import Optional, Dict, Any, TYPE_CHECKING
@@ -41,15 +40,15 @@ from PySide6.QtWidgets import (
     QTextEdit,
     QFormLayout,
 )
-from PySide6.QtCore import Qt, Signal, QDate, QSize  # QSize for icon placeholder
-from PySide6.QtGui import QDoubleValidator, QIcon  # QIcon for icon placeholder
+from PySide6.QtCore import Qt, Signal, QDate, QSize
+from PySide6.QtGui import QDoubleValidator, QIcon, QColor
 
 from controllers.horse_controller import HorseController
+from config.app_config import AppConfig
 
-# No direct import of OwnerModel here, assuming Horse object has it via relationship
 
 if TYPE_CHECKING:
-    from models import Horse, Owner as OwnerModel  # For type hinting horse_data.owners
+    from models import Horse, Owner as OwnerModel
 
 
 class BasicInfoTab(QWidget):
@@ -85,11 +84,11 @@ class BasicInfoTab(QWidget):
         "QPushButton:pressed { background-color: #000000; }"
     )
     SAVE_BUTTON_STYLE = (
-        "QPushButton {"
-        "background-color: #607D8B; color: white; border: 1px solid #707070; "
-        "border-radius: 3px; padding: 6px 12px; }"
-        "QPushButton:hover { background-color: #78909C; }"
-        "QPushButton:pressed { background-color: #546E7A; }"
+        f"QPushButton {{"
+        f"background-color: {AppConfig.DARK_SUCCESS_ACTION}; color: white; border: 1px solid #707070; "
+        f"border-radius: 3px; padding: 6px 12px; }}"
+        f"QPushButton:hover {{ background-color: {QColor(AppConfig.DARK_SUCCESS_ACTION).lighter(115).name()}; }}"
+        f"QPushButton:pressed {{ background-color: {QColor(AppConfig.DARK_SUCCESS_ACTION).darker(110).name()}; }}"
     )
 
     def __init__(
@@ -117,7 +116,7 @@ class BasicInfoTab(QWidget):
         self.reg_number_input: QLineEdit
         self.tattoo_number_input: QLineEdit
         self.location_display_label: QLabel
-        self.owner_display_label: QLabel  # Added in v1.2.19
+        self.owner_display_label: QLabel
 
         self.account_number_input: QLineEdit
         self.color_input: QLineEdit
@@ -142,15 +141,6 @@ class BasicInfoTab(QWidget):
         )
 
     def _setup_ui(self):
-        # (Setup for layout, scroll_area, content_widget, top_grid_layout same as v1.2.19)
-        # (Rows 0-5 for Name to Band/Tag same as v1.2.19)
-        # (NEW Row 6: Owner is already in v1.2.19 _setup_ui as per my last response)
-        # (Coggins/Height layout, Description layout, Buttons layout same as v1.2.19)
-        # For brevity, re-confirming the structure is as per previous response that added owner_display_label.
-        # The only change is ensuring populate_form_data correctly fills owner_display_label.
-        # All other UI setup code from v1.2.19 (which included adding the owner_display_label to the grid) remains.
-
-        # --- Full _setup_ui from v1.2.19 (which included owner_display_label) ---
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         scroll_area = QScrollArea(self)
@@ -273,9 +263,7 @@ class BasicInfoTab(QWidget):
             self.owner_display_label.setMinimumHeight(
                 font_metrics.height() + 2 * padding + 2
             )
-        top_grid_layout.addWidget(
-            self.owner_display_label, 6, 1
-        )  # Spans one column for now
+        top_grid_layout.addWidget(self.owner_display_label, 6, 1)
 
         outer_layout.addLayout(top_grid_layout)
 
@@ -337,22 +325,20 @@ class BasicInfoTab(QWidget):
         self.save_btn.setObjectName("SaveButton")
         button_layout.addWidget(self.toggle_active_btn)
         button_layout.addStretch()
-        button_layout.addWidget(self.discard_btn)
         button_layout.addWidget(self.save_btn)
+        button_layout.addWidget(self.discard_btn)
         outer_layout.addWidget(button_frame)
         outer_layout.addStretch(1)
         scroll_area.setWidget(content_widget)
         self.main_layout.addWidget(scroll_area)
 
     def _request_toggle_active(self):
-        # (Same as v1.2.19)
         if self._current_horse_is_active:
             self.toggle_active_requested.emit(False)
         else:
             self.toggle_active_requested.emit(True)
 
     def update_toggle_active_button_text(self, is_active: bool):
-        # (Same as v1.2.19)
         self.toggle_active_btn.setText(
             "Deactivate Horse" if is_active else "Activate Horse"
         )
@@ -391,16 +377,13 @@ class BasicInfoTab(QWidget):
                 else "N/A"
             )
 
-            # Populate NEW owner field using robust name construction
             owner_name_display = "N/A"
             if (
                 hasattr(horse_data, "owners")
                 and horse_data.owners
                 and len(horse_data.owners) > 0
             ):
-                first_owner_model = horse_data.owners[
-                    0
-                ]  # This is an OwnerModel instance
+                first_owner_model = horse_data.owners[0]
                 if first_owner_model:
                     name_parts = []
                     if (
@@ -436,7 +419,7 @@ class BasicInfoTab(QWidget):
                         owner_name_display = "Owner Data Incomplete"
                 else:
                     owner_name_display = "Owner Data Missing"
-            else:  # No owners associated
+            else:
                 owner_name_display = "No Owner Associated"
             self.owner_display_label.setText(owner_name_display)
 
@@ -474,7 +457,6 @@ class BasicInfoTab(QWidget):
         self._suppress_data_changed_signal = False
 
     def _on_data_modified(self, *args):
-        # (Same as v1.2.19)
         if self._suppress_data_changed_signal:
             return
         if not self.horse_name_input.isReadOnly():
@@ -489,7 +471,6 @@ class BasicInfoTab(QWidget):
             )
 
     def get_data_from_form(self) -> Dict[str, Any]:
-        # (Same as v1.2.19 - owner is display only, not collected here)
         def get_date_object(date_edit_widget: QDateEdit) -> Optional[date]:
             q_date = date_edit_widget.date()
             if (
@@ -550,7 +531,6 @@ class BasicInfoTab(QWidget):
         return data
 
     def set_form_read_only(self, read_only: bool):
-        # (Same as v1.2.19)
         self.logger.debug(f"BasicInfoTab.set_form_read_only: {read_only}")
         self._suppress_data_changed_signal = True
         line_edit_fields = [
@@ -601,7 +581,7 @@ class BasicInfoTab(QWidget):
         self.brand_input.clear()
         self.band_tag_input.clear()
         self.location_display_label.setText("N/A")
-        self.owner_display_label.setText("N/A")  # Clear owner display
+        self.owner_display_label.setText("N/A")
         self.coggins_date_input.setDate(
             self.coggins_date_input.minimumDate().addDays(-1)
         )
@@ -615,8 +595,6 @@ class BasicInfoTab(QWidget):
         if not suppress_signal:
             self.data_modified.emit()
 
-    # (set_new_mode, set_edit_mode, update_buttons_state, has_unsaved_changes,
-    #  mark_as_saved, update_displayed_location methods remain the same as in v1.2.19)
     def set_new_mode(self, is_new: bool):
         self.logger.info(f"BasicInfoTab set_new_mode: {is_new}")
         self._is_new_mode = is_new

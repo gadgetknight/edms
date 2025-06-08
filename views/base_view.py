@@ -1,42 +1,34 @@
 # views/base_view.py
-
 """
 EDSI Veterinary Management System - Base View Class
-Version: 1.1.8
+Version: 1.2.0
 Purpose: Provides a base class for all main views/screens in the application,
          handling common UI setup like dark theme and status messages.
-         Corrected missing import for DARK_TEXT_TERTIARY.
-Last Updated: May 21, 2025
+Last Updated: June 7, 2025
 Author: Gemini
 
 Changelog:
+- v1.2.0 (2025-06-07):
+    - Added global stylesheet rules for QMessageBox buttons to provide
+      a consistent, "boxed-in" style with a green "Yes" button.
 - v1.1.8 (2025-05-21):
-    - Added `DARK_TEXT_TERTIARY` to the imports from `config.app_config`
-      to resolve a NameError during theme application.
+    - Added `DARK_TEXT_TERTIARY` to the imports from `config.app_config`.
 - v1.1.7 (2025-05-21):
-    - Added `DARK_PRIMARY_ACTION` to the imports from `config.app_config`
-      to resolve a NameError during theme application.
+    - Added `DARK_PRIMARY_ACTION` to the imports.
 - v1.1.6 (2025-05-21):
-    - Added unconditional print statements in `__init__` before and after calling
-      `apply_dark_theme_palette_and_global_styles`, and at the start/end of
-      `apply_dark_theme_palette_and_global_styles` itself, to check the type of
-      `self.tab_widget` if the instance is `HorseUnifiedManagement`.
+    - Added debug print statements for troubleshooting.
 - v1.1.5 (2025-05-20):
-    - Added detailed logging to BaseView.setup_ui to trace layout management
-      and confirm if the default or overridden setup_ui is being used.
+    - Added detailed logging to BaseView.setup_ui.
 - v1.1.4 (2025-05-18):
-    - Ensured central_widget always has a layout, even in default setup_ui.
+    - Ensured central_widget always has a layout.
 - v1.1.3 (2025-05-17):
     - Added placeholder for status_bar if not created by subclass.
 - v1.1.2 (2025-05-16):
     - Added show_confirmation_dialog and show_error_dialog methods.
-    - Refined status message display and clearing.
 - v1.1.1 (2025-05-15):
-    - Standardized status message methods (show_info, show_warning, show_error).
+    - Standardized status message methods.
 - v1.1.0 (2025-05-14):
     - Initial implementation with dark theme palette and global styles.
-    - Basic UI setup with a central widget.
-    - Abstracted common UI functionalities.
 """
 
 import logging
@@ -64,7 +56,10 @@ from config.app_config import (
     DARK_HEADER_FOOTER,
     DARK_PRIMARY_ACTION,
     DARK_ITEM_HOVER,
-    DARK_TEXT_TERTIARY,  # ADDED THIS IMPORT
+    DARK_TEXT_TERTIARY,
+    DARK_SUCCESS_ACTION,
+    DARK_BUTTON_BG,
+    DARK_BUTTON_HOVER,
 )
 
 
@@ -79,34 +74,22 @@ class BaseView(QMainWindow):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.info(f"BaseView __init__ for {self.__class__.__name__} started.")
 
-        # Set window flags if needed, e.g., to remove native title bar for custom one
-        # self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)
-
-        # Central widget and layout
-        # This is crucial: ensure central_widget is created BEFORE setCentralWidget
-        # and before setup_ui (which might replace its layout or add to it).
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         self.logger.info(
             f"BaseView __init__ for {self.__class__.__name__}: central_widget created."
         )
 
-        # Allow subclasses to define their own UI structure
-        # The `setup_ui` method in the subclass (e.g., UserManagementScreen)
-        # is responsible for populating self.central_widget.
         if hasattr(self, "setup_ui") and callable(self.setup_ui):
             self.logger.info(
                 f"BaseView __init__ for {self.__class__.__name__}: Calling overridden setup_ui()."
             )
-            self.setup_ui()  # This will call the setup_ui of the subclass
+            self.setup_ui()
         else:
-            # Default UI setup if subclass doesn't provide one
             self.logger.info(
                 f"BaseView __init__ for {self.__class__.__name__}: Using default BaseView setup_ui()."
             )
-            default_layout = QVBoxLayout(
-                self.central_widget
-            )  # Apply layout to central_widget
+            default_layout = QVBoxLayout(self.central_widget)
             default_label = QLabel(f"Welcome to {self.__class__.__name__}")
             default_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             default_layout.addWidget(default_label)
@@ -114,8 +97,6 @@ class BaseView(QMainWindow):
                 f"BaseView __init__ for {self.__class__.__name__}: Default QVBoxLayout set on central_widget."
             )
 
-        # Apply theme and styles after the subclass's setup_ui has potentially created widgets
-        # Check type of self.tab_widget if it's HorseUnifiedManagement
         if self.__class__.__name__ == "HorseUnifiedManagement":
             print(
                 f"--- BASEVIEW.__INIT__: BEFORE apply_dark_theme. self.tab_widget is {type(getattr(self, 'tab_widget', None))} ---"
@@ -128,14 +109,13 @@ class BaseView(QMainWindow):
                 f"--- BASEVIEW.__INIT__: AFTER apply_dark_theme. self.tab_widget is {type(getattr(self, 'tab_widget', None))} ---"
             )
 
-        # Initialize status bar if not already done by subclass
         if not hasattr(self, "status_bar") or self.status_bar is None:
             self.status_bar = QStatusBar()
             self.setStatusBar(self.status_bar)
             self.logger.info(
                 f"BaseView __init__ for {self.__class__.__name__}: Default QStatusBar created and set."
             )
-            self.update_status("Ready", 0)  # Initial status
+        self.update_status("Ready", 0)
 
         self.logger.info(f"BaseView __init__ for {self.__class__.__name__} finished.")
 
@@ -152,31 +132,24 @@ class BaseView(QMainWindow):
         palette.setColor(QPalette.ColorRole.Window, QColor(DARK_BACKGROUND))
         palette.setColor(QPalette.ColorRole.WindowText, QColor(DARK_TEXT_PRIMARY))
         palette.setColor(QPalette.ColorRole.Base, QColor(DARK_WIDGET_BACKGROUND))
-        palette.setColor(
-            QPalette.ColorRole.AlternateBase, QColor(DARK_BACKGROUND)
-        )  # For item views like QListWidget
+        palette.setColor(QPalette.ColorRole.AlternateBase, QColor(DARK_BACKGROUND))
         palette.setColor(QPalette.ColorRole.ToolTipBase, QColor(DARK_WIDGET_BACKGROUND))
         palette.setColor(QPalette.ColorRole.ToolTipText, QColor(DARK_TEXT_PRIMARY))
         palette.setColor(QPalette.ColorRole.Text, QColor(DARK_TEXT_PRIMARY))
         palette.setColor(QPalette.ColorRole.Button, QColor(DARK_WIDGET_BACKGROUND))
         palette.setColor(QPalette.ColorRole.ButtonText, QColor(DARK_TEXT_PRIMARY))
-        palette.setColor(
-            QPalette.ColorRole.BrightText, Qt.GlobalColor.red
-        )  # Often used for errors or important highlights
+        palette.setColor(QPalette.ColorRole.BrightText, Qt.GlobalColor.red)
         palette.setColor(QPalette.ColorRole.Link, QColor(DARK_PRIMARY_ACTION))
-        palette.setColor(
-            QPalette.ColorRole.Highlight, QColor(DARK_HIGHLIGHT_BG)
-        )  # Selection background
+        palette.setColor(QPalette.ColorRole.Highlight, QColor(DARK_HIGHLIGHT_BG))
         palette.setColor(
             QPalette.ColorRole.HighlightedText, QColor(DARK_HIGHLIGHT_TEXT)
-        )  # Selection text
+        )
 
-        # Disabled states
         palette.setColor(
             QPalette.ColorGroup.Disabled,
             QPalette.ColorRole.Text,
             QColor(DARK_TEXT_TERTIARY),
-        )  # THIS LINE WAS CAUSING THE NameError
+        )
         palette.setColor(
             QPalette.ColorGroup.Disabled,
             QPalette.ColorRole.ButtonText,
@@ -194,12 +167,8 @@ class BaseView(QMainWindow):
         )
 
         QApplication.setPalette(palette)
-        QApplication.instance().setPalette(palette)  # Ensure it's applied globally
+        QApplication.instance().setPalette(palette)
 
-        # Global stylesheet (can be overridden by more specific stylesheets)
-        # Styles for common widgets to ensure consistency
-        # More specific styling should be done in individual view/widget files
-        # using object names or class selectors.
         QApplication.instance().setStyleSheet(
             f"""
             QMainWindow, QDialog, QWidget {{
@@ -220,10 +189,10 @@ class BaseView(QMainWindow):
                 color: {DARK_TEXT_SECONDARY};
                 border-top: 1px solid {DARK_BORDER};
             }}
-            QStatusBar QLabel {{ /* Ensure labels in status bar inherit color */
+            QStatusBar QLabel {{
                 color: {DARK_TEXT_SECONDARY};
-                background-color: transparent; /* Important for status bar labels */
-                padding: 0 2px; /* Minimal padding for status bar items */
+                background-color: transparent;
+                padding: 0 2px;
             }}
             QMenuBar {{
                 background-color: {DARK_HEADER_FOOTER};
@@ -231,12 +200,12 @@ class BaseView(QMainWindow):
                 border-bottom: 1px solid {DARK_BORDER};
             }}
             QMenuBar::item {{
-                spacing: 3px; /* spacing between menu bar items */
+                spacing: 3px;
                 padding: 4px 10px;
                 background: transparent;
                 border-radius: 4px;
             }}
-            QMenuBar::item:selected {{ /* when selected using mouse or keyboard */
+            QMenuBar::item:selected {{
                 background: {DARK_ITEM_HOVER};
             }}
             QMenuBar::item:pressed {{
@@ -261,7 +230,6 @@ class BaseView(QMainWindow):
                 margin-left: 5px;
                 margin-right: 5px;
             }}
-            /* Basic ScrollBar Styling */
             QScrollBar:vertical {{
                 border: 1px solid {DARK_BORDER};
                 background: {DARK_WIDGET_BACKGROUND};
@@ -283,7 +251,6 @@ class BaseView(QMainWindow):
             QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
                 background: none;
             }}
-
             QScrollBar:horizontal {{
                 border: 1px solid {DARK_BORDER};
                 background: {DARK_WIDGET_BACKGROUND};
@@ -304,6 +271,25 @@ class BaseView(QMainWindow):
             }}
             QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {{
                 background: none;
+            }}
+            /* Styling for QMessageBox buttons */
+            QMessageBox QPushButton {{
+                background-color: {DARK_BUTTON_BG};
+                color: {DARK_TEXT_PRIMARY};
+                border: 1px solid {DARK_BORDER};
+                border-radius: 4px;
+                padding: 8px 16px;
+                min-width: 80px;
+            }}
+            QMessageBox QPushButton:hover {{
+                background-color: {DARK_BUTTON_HOVER};
+            }}
+            QMessageBox QPushButton[text="&Yes"] {{
+                background-color: {DARK_SUCCESS_ACTION};
+                color: white;
+            }}
+            QMessageBox QPushButton[text="&Yes"]:hover {{
+                background-color: {QColor(DARK_SUCCESS_ACTION).lighter(115).name()};
             }}
         """
         )
