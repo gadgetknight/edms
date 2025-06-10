@@ -1,12 +1,21 @@
 # views/horse/dialogs/add_charge_dialog.py
 """
 EDSI Veterinary Management System - Add Charge Dialog
-Version: 3.3.1
+Version: 3.4.0
 Purpose: Dialog for entering multiple charge transactions for a horse using a table.
-Last Updated: June 7, 2025
+Last Updated: June 9, 2025
 Author: Gemini
 
 Changelog:
+- v3.4.0 (2025-06-09):
+    - Refactored to use ChargeCodeController instead of FinancialController to
+      fetch the list of charge codes, resolving an AttributeError.
+    - Imported ChargeCodeController and instantiated it in __init__.
+    - Modified _load_initial_data to call get_all_charge_codes(status_filter="active").
+- v3.3.2 (2025-06-08):
+    - Bug Fix: Re-implemented "add row on Enter" functionality using a subclassed
+      QLineEdit to correctly intercept the key press and prevent the dialog
+      from closing prematurely.
 - v3.3.1 (2025-06-07):
     - Bug Fix: Corrected the behavior of the Enter key. It no longer closes the
       dialog but now correctly adds a new charge row for rapid data entry.
@@ -62,10 +71,10 @@ from PySide6.QtWidgets import (
     QAbstractSpinBox,
 )
 from PySide6.QtCore import Qt, Signal, QTimer, QEvent, QObject, Slot
-from PySide6.QtGui import QFont, QColor, QPainter, QPen
+from PySide6.QtGui import QFont, QColor, QPainter, QPen, QKeyEvent
 
 from models import Horse, Transaction, ChargeCode
-from controllers import FinancialController
+from controllers import FinancialController, ChargeCodeController
 from config.app_config import AppConfig
 
 
@@ -80,6 +89,19 @@ class BoxedCellDelegate(QStyledItemDelegate):
         painter.setPen(pen)
         painter.drawRect(option.rect)
         painter.restore()
+
+
+class EnterKeyLineEdit(QLineEdit):
+    """A QLineEdit that emits a signal when Enter is pressed and consumes the event."""
+
+    enter_pressed = Signal()
+
+    def keyPressEvent(self, event: QKeyEvent):
+        if event.key() in [Qt.Key.Key_Return, Qt.Key.Key_Enter]:
+            event.accept()
+            self.enter_pressed.emit()
+        else:
+            super().keyPressEvent(event)
 
 
 class AddChargeDialog(QDialog):
@@ -97,6 +119,7 @@ class AddChargeDialog(QDialog):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.horse = horse
         self.financial_controller = financial_controller
+        self.charge_code_controller = ChargeCodeController()
         self.current_user_id = QApplication.instance().current_user_id
 
         self.setWindowTitle(f"Add Charges for: {self.horse.horse_name}")
@@ -119,14 +142,14 @@ class AddChargeDialog(QDialog):
     def _get_input_field_style(self) -> str:
         """Generates the requested style for all input fields."""
         return f"""
-            QLineEdit, QDoubleSpinBox, QTextEdit {{
+            QLineEdit, QDoubleSpinBox, QTextEdit, EnterKeyLineEdit {{
                 background-color: #3E3E3E;
                 color: white;
                 border: 1px solid white;
                 border-radius: 4px;
                 padding: 5px;
             }}
-            QLineEdit:focus, QDoubleSpinBox:focus, QTextEdit:focus {{
+            QLineEdit:focus, QDoubleSpinBox:focus, QTextEdit:focus, EnterKeyLineEdit:focus {{
                 border: 1px solid {AppConfig.DARK_PRIMARY_ACTION};
             }}
             QCheckBox::indicator {{
@@ -194,7 +217,7 @@ class AddChargeDialog(QDialog):
         self.cancel_button = self.button_box.addButton(
             "Cancel", QDialogButtonBox.ButtonRole.RejectRole
         )
-        self.save_button.setAutoDefault(False)  # Prevent Enter from triggering save
+        self.save_button.setAutoDefault(False)
         self.cancel_button.setAutoDefault(False)
 
         totals_container = QWidget()
@@ -325,8 +348,8 @@ class AddChargeDialog(QDialog):
         self.notes_edit.textChanged.connect(self._save_notes_for_current_row)
 
     def _load_initial_data(self):
-        self._charge_codes_list = (
-            self.financial_controller.get_charge_codes_for_lookup()
+        self._charge_codes_list = self.charge_code_controller.get_all_charge_codes(
+            status_filter="active"
         )
         self._charge_code_lookup = {
             cc.code.upper(): cc for cc in self._charge_codes_list
@@ -359,18 +382,18 @@ class AddChargeDialog(QDialog):
         field_style = self._get_input_field_style()
 
         # Code
-        code_edit = QLineEdit()
+        code_edit = EnterKeyLineEdit()
         code_edit.setStyleSheet(field_style)
         code_completer = QCompleter([cc.code for cc in self._charge_codes_list])
         code_completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         code_completer.popup().setStyleSheet(field_style)
         code_edit.setCompleter(code_completer)
-        code_edit.editingFinished.connect(lambda: self._on_code_entered(row))
-        code_edit.returnPressed.connect(lambda: self._handle_enter_in_row(row))
+        code_edit.editingFinished.connect(lambda r=row: self._on_code_entered(r))
+        code_edit.enter_pressed.connect(lambda r=row: self._handle_enter_in_row(r))
         self.charges_table.setCellWidget(row, 0, code_edit)
 
         # Alt Code
-        alt_code_edit = QLineEdit()
+        alt_code_edit = EnterKeyLineEdit()
         alt_code_edit.setStyleSheet(field_style)
         alt_code_completer = QCompleter(
             [cc.alternate_code for cc in self._charge_codes_list if cc.alternate_code]
@@ -378,8 +401,10 @@ class AddChargeDialog(QDialog):
         alt_code_completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         alt_code_completer.popup().setStyleSheet(field_style)
         alt_code_edit.setCompleter(alt_code_completer)
-        alt_code_edit.editingFinished.connect(lambda: self._on_alt_code_entered(row))
-        alt_code_edit.returnPressed.connect(lambda: self._handle_enter_in_row(row))
+        alt_code_edit.editingFinished.connect(
+            lambda r=row: self._on_alt_code_entered(r)
+        )
+        alt_code_edit.enter_pressed.connect(lambda r=row: self._handle_enter_in_row(r))
         self.charges_table.setCellWidget(row, 1, alt_code_edit)
 
         # Description (read-only)
@@ -536,6 +561,9 @@ class AddChargeDialog(QDialog):
         self.tax_rate_input.blockSignals(True)
         self.tax_rate_input.setValue(0.0)
         self.tax_rate_input.blockSignals(False)
+        # We don't call _update_totals here, as this is the primary signal source for totals when edited manually.
+        # The valueChanged on this spinbox will trigger a separate totals update.
+        # To be safe, we'll call it.
         self._update_totals()
 
     def get_data_from_table(self) -> List[Dict[str, Any]]:

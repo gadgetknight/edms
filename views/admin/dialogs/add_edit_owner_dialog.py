@@ -1,14 +1,19 @@
 # views/admin/dialogs/add_edit_owner_dialog.py
 """
 EDSI Veterinary Management System - Add/Edit Owner Dialog
-Version: 1.0.0
+Version: 1.1.0
 Purpose: Dialog for creating and editing Owner master file records,
          including contact, address, and financial information.
          Styled to match HorseUnifiedManagement forms, using QGridLayout.
-Last Updated: June 2, 2025
+Last Updated: June 9, 2025
 Author: Gemini
 
 Changelog:
+- v1.1.0 (2025-06-09):
+    - Fixed validation logic to correctly ignore the current record's own
+      account number when checking for duplicates in edit mode.
+    - Updated the main action button text to display "Save Owner" in edit mode
+      and "Create Owner" in add mode for better clarity.
 - v1.0.0 (2025-06-02):
     - Initial implementation.
     - Includes fields for account info, name, address (with state dropdown
@@ -344,7 +349,6 @@ class AddEditOwnerDialog(QDialog):
             if field:
                 field.setStyleSheet(form_style)
 
-        # Special read-only style for balance and country code (as it's auto-populated)
         read_only_style_addon = f"QLineEdit {{ background-color: {DARK_HEADER_FOOTER}; color: {DARK_TEXT_TERTIARY}; }}"
         if self.balance_display_input:
             self.balance_display_input.setStyleSheet(form_style + read_only_style_addon)
@@ -357,8 +361,13 @@ class AddEditOwnerDialog(QDialog):
         self.button_box = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
+
+        ok_button = self.button_box.button(QDialogButtonBox.StandardButton.Ok)
+        ok_button.setText("Save Owner" if self.is_edit_mode else "Create Owner")
+
         self.button_box.accepted.connect(self.validate_and_accept)
         self.button_box.rejected.connect(self.reject)
+
         generic_button_style = self._get_dialog_generic_button_style()
         for button in self.button_box.buttons():
             button.setMinimumHeight(30)
@@ -379,7 +388,6 @@ class AddEditOwnerDialog(QDialog):
         self.state_combo.currentIndexChanged.connect(self._on_state_changed)
 
     def _load_reference_data_into_combos(self):
-        # Load States
         if not self.state_combo:
             self.logger.error("State combo not initialized.")
             return
@@ -389,9 +397,7 @@ class AddEditOwnerDialog(QDialog):
             states = ref_data.get("states", [])
             for state_data in states:
                 display_name = f"{state_data['name']} ({state_data['id']})"
-                country_code = state_data.get(
-                    "country_code", "USA"
-                )  # Default to USA if not present
+                country_code = state_data.get("country_code", "USA")
                 if country_code.upper() != "USA":
                     display_name += f" - {country_code}"
                 self.state_combo.addItem(
@@ -407,7 +413,6 @@ class AddEditOwnerDialog(QDialog):
                 self, "Data Load Error", "Could not load states for selection."
             )
 
-        # Load Billing Terms
         if not self.billing_terms_combo:
             self.logger.error("Billing terms combo not initialized.")
             return
@@ -453,14 +458,12 @@ class AddEditOwnerDialog(QDialog):
                         and item_data.get("state_code") == current_state_code
                     ):
                         self.state_combo.setCurrentIndex(i)
-                        # _on_state_changed will be triggered, setting country_code_input
                         break
             else:
                 self.state_combo.setCurrentIndex(0)
-                self.country_code_input.clear()  # Clear country if no state
+                self.country_code_input.clear()
 
             self.zip_code_input.setText(self.owner.zip_code or "")
-            # self.country_code_input will be set by _on_state_changed or if state_code is initially None
 
             self.phone_input.setText(self.owner.phone or "")
             self.mobile_phone_input.setText(self.owner.mobile_phone or "")
@@ -535,8 +538,14 @@ class AddEditOwnerDialog(QDialog):
         if owner_data is None:
             return
 
+        owner_id_to_ignore = (
+            self.owner.owner_id if self.is_edit_mode and self.owner else None
+        )
+
         is_valid, errors = self.owner_controller.validate_owner_data(
-            owner_data, is_new=(not self.is_edit_mode)
+            owner_data,
+            is_new=(not self.is_edit_mode),
+            owner_id_to_ignore=owner_id_to_ignore,
         )
         if not is_valid:
             QMessageBox.warning(
@@ -552,7 +561,7 @@ class AddEditOwnerDialog(QDialog):
                     self.owner.owner_id, owner_data, self.current_user_id
                 )
             else:
-                success, message, _ = self.owner_controller.create_master_owner(  # type: ignore
+                success, message, _ = self.owner_controller.create_master_owner(
                     owner_data, self.current_user_id
                 )
             if success:

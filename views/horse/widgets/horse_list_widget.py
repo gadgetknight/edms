@@ -1,17 +1,21 @@
 # views/horse/widgets/horse_list_widget.py
-
 """
 EDSI Veterinary Management System - Horse List Widget
-Version: 1.0.1
+Version: 1.0.3
 Purpose: Custom QListWidget for displaying a list of horses with specific styling
-         and item representation. Corrected AppConfig constant usage.
-Last Updated: May 18, 2025
-Author: Claude Assistant
+         and item representation. Corrected double-click event handling.
+Last Updated: June 8, 2025
+Author: Claude Assistant (Modified by Gemini)
 
 Changelog:
+- v1.0.3 (2025-06-08):
+    - Re-implemented `mouseDoubleClickEvent` to more reliably emit the
+      `itemDoubleClicked` signal, fixing the double-click-to-edit feature.
+- v1.0.2 (2025-06-08):
+    - Bug Fix: Overrode `mouseDoubleClickEvent` to ensure the `itemDoubleClicked`
+      signal is emitted correctly, even when using custom item widgets.
 - v1.0.1 (2025-05-18):
-    - Corrected AppConfig constant usage. Imported constants directly instead of
-      accessing them via the AppConfig class.
+    - Corrected AppConfig constant usage.
 - v1.0.0 (2025-05-17):
     - Initial extraction from horse_unified_management.py.
 """
@@ -21,10 +25,9 @@ from typing import Optional
 from datetime import date
 
 from PySide6.QtWidgets import QListWidget, QVBoxLayout, QLabel, QWidget
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QMouseEvent
 from PySide6.QtCore import Qt
 
-# Corrected import: Import constants directly
 from config.app_config import (
     DARK_WIDGET_BACKGROUND,
     DARK_TEXT_PRIMARY,
@@ -55,23 +58,36 @@ class HorseListWidget(QListWidget):
             }}
             QListWidget::item:selected {{
                 background-color: {DARK_PRIMARY_ACTION}40; /* RGBA */
-                border-left: 3px solid {DARK_PRIMARY_ACTION}; color: #ffffff;
+                border-left: 3px solid {DARK_PRIMARY_ACTION};
+                color: #ffffff;
             }}
             QListWidget::item:hover:!selected {{ background-color: {DARK_ITEM_HOVER}; }}
             """
         )
 
+    def mouseDoubleClickEvent(self, event: QMouseEvent):
+        """
+        Overrides the default double-click handler to ensure the itemDoubleClicked
+        signal is emitted reliably, even when using custom widgets.
+        """
+        item = self.itemAt(event.pos())
+        if item:
+            self.logger.debug(
+                f"Double click detected on item for horse ID: {item.data(Qt.ItemDataRole.UserRole)}"
+            )
+            self.itemDoubleClicked.emit(item)
+        # We do not call the super() implementation, as we are handling the event completely.
+        # This prevents any potential conflicts.
+
     def create_horse_list_item_widget(self, horse) -> QWidget:
         """
         Creates a custom widget for displaying a single horse item in the list.
         Args:
-            horse: The horse data object (expected to have attributes like
-                   horse_name, account_number, breed, color, sex, date_of_birth, location).
+            horse: The horse data object.
         Returns:
             QWidget: The custom widget for the list item.
         """
         widget = QWidget()
-        # Ensure the widget itself doesn't override the transparent background needed for items
         widget.setStyleSheet(
             f"background-color: transparent; border: none; color: {DARK_TEXT_PRIMARY};"
         )
@@ -119,7 +135,6 @@ class HorseListWidget(QListWidget):
             str: A string representation of the horse's age.
         """
         if not birth_date_obj or not isinstance(birth_date_obj, date):
-            # self.logger.warning(f"Invalid birth_date_obj for age calculation: {birth_date_obj}")
             return "Age N/A"
         try:
             today = date.today()

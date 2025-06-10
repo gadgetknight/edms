@@ -1,144 +1,573 @@
-2025-06-05 21:22:58,342 - INFO - add_initial_data.py:912 - Running script to add initial data to the database...
-2025-06-05 21:22:58,342 - INFO - database_config.py:75 - Initializing database: sqlite:///C:\Projects\EDMS\edsi_database.db
-2025-06-05 21:22:58,350 - INFO - database_config.py:88 - Database engine and session factory created
-2025-06-05 21:22:58,350 - INFO - database_config.py:119 - Creating database tables...
-2025-06-05 21:22:58,577 - INFO - database_config.py:123 - Database tables created/verified: ['roles', 'user_roles', 'users', 'horse_owners', 'horse_locations', 'horses', 'owners', 'owner_billing_history', 'owner_payments', 'state_provinces', 'charge_code_categories', 'charge_codes', 'veterinarians', 'locations', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'transactions', 'invoices']
-2025-06-05 21:22:58,577 - INFO - database_config.py:184 - Database connection test successful
-2025-06-05 21:22:58,578 - INFO - database_config.py:202 - Ensuring default ADMIN user exists with bcrypt password.
-2025-06-05 21:22:58,598 - WARNING - database_config.py:211 - Role 'ADMIN' not found. Creating it now. It's recommended to run add_initial_data.py for full role setup.
-2025-06-05 21:22:58,599 - INFO - database_config.py:223 - Created 'ADMIN' role.
-2025-06-05 21:22:58,600 - INFO - database_config.py:282 - ADMIN user not found. Creating new ADMIN user...
-2025-06-05 21:22:58,759 - INFO - database_config.py:294 - Created new ADMIN user with bcrypt password.
-2025-06-05 21:22:58,760 - INFO - database_config.py:298 - Linked ADMIN user to ADMIN role.
-2025-06-05 21:22:58,763 - INFO - database_config.py:305 - Default ADMIN user ready (Username: ADMIN, Password: admin1234)
-2025-06-05 21:22:58,764 - INFO - database_config.py:92 - Database initialization completed successfully
-2025-06-05 21:22:58,764 - INFO - add_initial_data.py:919 - Database initialized and tables created (if they didn't exist).
-2025-06-05 21:22:58,764 - INFO - add_initial_data.py:929 - Starting to add initial reference data...
-2025-06-05 21:22:58,765 - INFO - add_initial_data.py:107 - Role 'ADMIN' already exists, skipping.
-2025-06-05 21:22:58,765 - INFO - add_initial_data.py:105 - Prepared role: MANAGER
-2025-06-05 21:22:58,765 - INFO - add_initial_data.py:105 - Prepared role: VETERINARIAN
-2025-06-05 21:22:58,765 - INFO - add_initial_data.py:105 - Prepared role: TECHNICIAN
-2025-06-05 21:22:58,766 - INFO - add_initial_data.py:105 - Prepared role: RECEPTIONIST
-2025-06-05 21:22:58,766 - INFO - add_initial_data.py:105 - Prepared role: CLIENT
-2025-06-05 21:22:58,766 - INFO - add_initial_data.py:110 - Successfully prepared 5 new roles.
-2025-06-05 21:22:58,766 - INFO - add_initial_data.py:141 - Admin user 'ADMIN' already exists.
-2025-06-05 21:22:58,933 - INFO - add_initial_data.py:939 - Committed roles and admin user.
-2025-06-05 21:22:58,934 - INFO - add_initial_data.py:158 - Preparing charge code categories...
-2025-06-05 21:22:58,937 - INFO - add_initial_data.py:274 - Prepared category: ANTHELMINTICS (Level 1, Parent ID: None) with ID 1
-2025-06-05 21:22:58,938 - INFO - add_initial_data.py:274 - Prepared category: ADMINISTERED (Level 2, Parent ID: 1) with ID 2
-2025-06-05 21:22:58,939 - INFO - add_initial_data.py:274 - Prepared category: DISPENSED (Level 2, Parent ID: 1) with ID 3
-2025-06-05 21:22:58,939 - INFO - add_initial_data.py:274 - Prepared category: CALL FEES (Level 1, Parent ID: None) with ID 4
-2025-06-05 21:22:58,940 - INFO - add_initial_data.py:274 - Prepared category: DIAGNOSTIC PROCEDURES (Level 1, Parent ID: None) with ID 5
-2025-06-05 21:22:58,940 - INFO - add_initial_data.py:274 - Prepared category: NERVE BLOCKS (Level 2, Parent ID: 5) with ID 6
-2025-06-05 21:22:58,941 - INFO - add_initial_data.py:274 - Prepared category: JOINT BLOCKS (Level 2, Parent ID: 5) with ID 7
-2025-06-05 21:22:58,941 - INFO - add_initial_data.py:274 - Prepared category: RADIOLOGY - FRONT LEG (Level 2, Parent ID: 5) with ID 8
-2025-06-05 21:22:58,942 - INFO - add_initial_data.py:274 - Prepared category: RADIOLOGY - HIND LEG (Level 2, Parent ID: 5) with ID 9
-2025-06-05 21:22:58,942 - INFO - add_initial_data.py:274 - Prepared category: RADIOLOGY - OTHER (Level 2, Parent ID: 5) with ID 10
-2025-06-05 21:22:58,943 - INFO - add_initial_data.py:274 - Prepared category: ULTRASOUND EXAM OF EXTREMITIES (Level 2, Parent ID: 5) with ID 11
-2025-06-05 21:22:58,943 - INFO - add_initial_data.py:274 - Prepared category: OTHER (Level 2, Parent ID: 5) with ID 12
-2025-06-05 21:22:58,944 - INFO - add_initial_data.py:274 - Prepared category: EXAMINATIONS (Level 1, Parent ID: None) with ID 13
-2025-06-05 21:22:58,944 - INFO - add_initial_data.py:274 - Prepared category: SICK HORSE EXAMS (Level 2, Parent ID: 13) with ID 14
-2025-06-05 21:22:58,945 - INFO - add_initial_data.py:274 - Prepared category: OTHER EXAMS (Level 2, Parent ID: 13) with ID 15
-2025-06-05 21:22:58,947 - INFO - add_initial_data.py:274 - Prepared category: IMMUNIZATIONS (Level 1, Parent ID: None) with ID 16
-2025-06-05 21:22:58,948 - INFO - add_initial_data.py:274 - Prepared category: HORSE (Level 2, Parent ID: 16) with ID 17
-2025-06-05 21:22:58,948 - INFO - add_initial_data.py:274 - Prepared category: LABORATORY PROCEDURES (Level 1, Parent ID: None) with ID 18
-2025-06-05 21:22:58,949 - INFO - add_initial_data.py:274 - Prepared category: BLOOD WORK (Level 2, Parent ID: 18) with ID 19
-2025-06-05 21:22:58,949 - INFO - add_initial_data.py:274 - Prepared category: OTHER (Level 2, Parent ID: 18) with ID 20
-2025-06-05 21:22:58,950 - INFO - add_initial_data.py:274 - Prepared category: MEDICATION ADMINISTERED (Level 1, Parent ID: None) with ID 21
-2025-06-05 21:22:58,950 - INFO - add_initial_data.py:274 - Prepared category: ANABOLIC STEROIDS (Level 2, Parent ID: 21) with ID 22
-2025-06-05 21:22:58,951 - INFO - add_initial_data.py:274 - Prepared category: ANTIBIOTICS (Level 2, Parent ID: 21) with ID 23
-2025-06-05 21:22:58,951 - INFO - add_initial_data.py:274 - Prepared category: DIURETICS (Level 2, Parent ID: 21) with ID 24
-2025-06-05 21:22:58,952 - INFO - add_initial_data.py:274 - Prepared category: FLUIDS ADMINISTERED (Level 2, Parent ID: 21) with ID 25
-2025-06-05 21:22:58,952 - INFO - add_initial_data.py:274 - Prepared category: GASTROINTESTINAL TREATMENTS (Level 2, Parent ID: 21) with ID 26
-2025-06-05 21:22:58,953 - INFO - add_initial_data.py:274 - Prepared category: INTRA-ARTICULAR INJECTIONS (Level 2, Parent ID: 21) with ID 27
-2025-06-05 21:22:58,953 - INFO - add_initial_data.py:274 - Prepared category: OTHER HORMONES (Level 2, Parent ID: 21) with ID 28
-2025-06-05 21:22:58,954 - INFO - add_initial_data.py:274 - Prepared category: NON-ARTICULAR INJECTIONS (Level 2, Parent ID: 21) with ID 29
-2025-06-05 21:22:58,955 - INFO - add_initial_data.py:274 - Prepared category: NSAID'S ANALGESICS (Level 2, Parent ID: 21) with ID 30
-2025-06-05 21:22:58,955 - INFO - add_initial_data.py:274 - Prepared category: TRANQUILIZERS & ANESTHETICS (Level 2, Parent ID: 21) with ID 31
-2025-06-05 21:22:58,956 - INFO - add_initial_data.py:274 - Prepared category: VITAMINS (Level 2, Parent ID: 21) with ID 32
-2025-06-05 21:22:58,956 - INFO - add_initial_data.py:274 - Prepared category: OTHER (Level 2, Parent ID: 21) with ID 33
-2025-06-05 21:22:58,957 - INFO - add_initial_data.py:274 - Prepared category: MEDICATIONS DISPENSED (Level 1, Parent ID: None) with ID 34
-2025-06-05 21:22:58,958 - INFO - add_initial_data.py:274 - Prepared category: OTHER HORMONES (Level 2, Parent ID: 34) with ID 35
-2025-06-05 21:22:58,958 - INFO - add_initial_data.py:274 - Prepared category: ANTIBIOTICS - PENICILLINS (Level 2, Parent ID: 34) with ID 36
-2025-06-05 21:22:58,959 - INFO - add_initial_data.py:274 - Prepared category: ANTIBIOTICS - OTHER (Level 2, Parent ID: 34) with ID 37
-2025-06-05 21:22:58,959 - INFO - add_initial_data.py:274 - Prepared category: BANDAGES & MATERIALS (Level 2, Parent ID: 34) with ID 38
-2025-06-05 21:22:58,960 - INFO - add_initial_data.py:274 - Prepared category: DERMATITIS/TOPICAL ANTISEPTICS (Level 2, Parent ID: 34) with ID 39
-2025-06-05 21:22:58,960 - INFO - add_initial_data.py:274 - Prepared category: DIURETICS (Level 2, Parent ID: 34) with ID 40
-2025-06-05 21:22:58,961 - INFO - add_initial_data.py:274 - Prepared category: FLUIDS (Level 2, Parent ID: 34) with ID 41
-2025-06-05 21:22:58,964 - INFO - add_initial_data.py:274 - Prepared category: G.I. MEDICATIONS (Level 2, Parent ID: 34) with ID 42
-2025-06-05 21:22:58,964 - INFO - add_initial_data.py:289 - Successfully prepared new charge code categories.
-2025-06-05 21:22:58,967 - INFO - add_initial_data.py:946 - Committed charge code categories.
-2025-06-05 21:22:58,968 - INFO - add_initial_data.py:770 - Prepared state/province: Alabama
-2025-06-05 21:22:58,968 - INFO - add_initial_data.py:770 - Prepared state/province: Alaska
-2025-06-05 21:22:58,968 - INFO - add_initial_data.py:770 - Prepared state/province: Arizona
-2025-06-05 21:22:58,968 - INFO - add_initial_data.py:770 - Prepared state/province: Arkansas
-2025-06-05 21:22:58,968 - INFO - add_initial_data.py:770 - Prepared state/province: California
-2025-06-05 21:22:58,968 - INFO - add_initial_data.py:770 - Prepared state/province: Colorado
-2025-06-05 21:22:58,968 - INFO - add_initial_data.py:770 - Prepared state/province: Connecticut
-2025-06-05 21:22:58,968 - INFO - add_initial_data.py:770 - Prepared state/province: Delaware
-2025-06-05 21:22:58,968 - INFO - add_initial_data.py:770 - Prepared state/province: Florida
-2025-06-05 21:22:58,968 - INFO - add_initial_data.py:770 - Prepared state/province: Georgia
-2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Hawaii
-2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Idaho
-2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Illinois
-2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Indiana
-2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Iowa
-2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Kansas
-2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Kentucky
-2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Louisiana
-2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Maine
-2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Maryland
-2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Massachusetts
-2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Michigan
-2025-06-05 21:22:58,969 - INFO - add_initial_data.py:770 - Prepared state/province: Minnesota
-2025-06-05 21:22:58,970 - INFO - add_initial_data.py:770 - Prepared state/province: Mississippi
-2025-06-05 21:22:58,970 - INFO - add_initial_data.py:770 - Prepared state/province: Missouri
-2025-06-05 21:22:58,970 - INFO - add_initial_data.py:770 - Prepared state/province: Montana
-2025-06-05 21:22:58,970 - INFO - add_initial_data.py:770 - Prepared state/province: Nebraska
-2025-06-05 21:22:58,970 - INFO - add_initial_data.py:770 - Prepared state/province: Nevada
-2025-06-05 21:22:58,970 - INFO - add_initial_data.py:770 - Prepared state/province: New Hampshire
-2025-06-05 21:22:58,970 - INFO - add_initial_data.py:770 - Prepared state/province: New Jersey
-2025-06-05 21:22:58,970 - INFO - add_initial_data.py:770 - Prepared state/province: New Mexico
-2025-06-05 21:22:58,970 - INFO - add_initial_data.py:770 - Prepared state/province: New York
-2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: North Carolina
-2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: North Dakota
-2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: Ohio
-2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: Oklahoma
-2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: Oregon
-2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: Pennsylvania
-2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: Rhode Island
-2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: South Carolina
-2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: South Dakota
-2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: Tennessee
-2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: Texas
-2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: Utah
-2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: Vermont
-2025-06-05 21:22:58,971 - INFO - add_initial_data.py:770 - Prepared state/province: Virginia
-2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: Washington
-2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: West Virginia
-2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: Wisconsin
-2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: Wyoming
-2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: Alberta
-2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: British Columbia
-2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: Manitoba
-2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: New Brunswick
-2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: Newfoundland and Labrador
-2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: Nova Scotia
-2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: Ontario
-2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: Prince Edward Island
-2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: Quebec
-2025-06-05 21:22:58,972 - INFO - add_initial_data.py:770 - Prepared state/province: Saskatchewan
-2025-06-05 21:22:58,973 - INFO - add_initial_data.py:773 - Added 60 new states/provinces.
-2025-06-05 21:22:58,978 - INFO - add_initial_data.py:953 - Committed states/provinces.
-2025-06-05 21:22:58,980 - INFO - add_initial_data.py:831 - Prepared location: Main Stable
-2025-06-05 21:22:58,981 - INFO - add_initial_data.py:831 - Prepared location: Quarantine Barn
-2025-06-05 21:22:58,981 - INFO - add_initial_data.py:831 - Prepared location: West Wing Stalls
-2025-06-05 21:22:58,982 - INFO - add_initial_data.py:892 - Prepared owner: Willow Creek Stables
-2025-06-05 21:22:58,982 - INFO - add_initial_data.py:892 - Prepared owner: Davis
-2025-06-05 21:22:58,982 - INFO - add_initial_data.py:319 - Preparing sample charge codes with hierarchical categories...
-2025-06-05 21:22:58,983 - INFO - add_initial_data.py:375 - Prepared charge code: 9991 with category_id: 2
-2025-06-05 21:22:58,983 - INFO - add_initial_data.py:375 - Prepared charge code: EXAM001 with category_id: 13
-2025-06-05 21:22:58,984 - INFO - add_initial_data.py:388 - Successfully prepared 2 new charge codes.
-2025-06-05 21:22:58,989 - INFO - add_initial_data.py:964 - Committed locations, owners, and sample charge codes.
-2025-06-05 21:22:58,989 - INFO - add_initial_data.py:966 - Initial data setup process completed and committed successfully.
-2025-06-05 21:22:58,989 - INFO - add_initial_data.py:986 - Database session closed.
+2025-06-10 17:11:26,809 - INFO - add_initial_data.py:3786 - Running script to add initial data to the database...
+2025-06-10 17:11:26,810 - INFO - database_config.py:75 - Initializing database: sqlite:///C:\Projects\EDMS\edsi_database.db
+2025-06-10 17:11:26,818 - INFO - database_config.py:88 - Database engine and session factory created
+2025-06-10 17:11:26,818 - INFO - database_config.py:119 - Creating database tables...
+2025-06-10 17:11:26,821 - INFO - database_config.py:123 - Database tables created/verified: ['roles', 'user_roles', 'users', 'horse_owners', 'horse_locations', 'horses', 'owners', 'owner_billing_history', 'owner_payments', 'state_provinces', 'charge_code_categories', 'charge_codes', 'veterinarians', 'locations', 'procedures', 'drugs', 'treatment_logs', 'communication_logs', 'documents', 'reminders', 'appointments', 'transactions', 'invoices', 'company_profile']
+2025-06-10 17:11:26,821 - INFO - database_config.py:184 - Database connection test successful
+2025-06-10 17:11:26,821 - INFO - database_config.py:202 - Ensuring default ADMIN user exists with bcrypt password.
+2025-06-10 17:11:27,000 - INFO - database_config.py:277 - ADMIN user credentials, status, and name are correct.
+2025-06-10 17:11:27,002 - INFO - database_config.py:305 - Default ADMIN user ready (Username: ADMIN, Password: admin1234)
+2025-06-10 17:11:27,002 - INFO - database_config.py:92 - Database initialization completed successfully
+2025-06-10 17:11:27,002 - INFO - add_initial_data.py:3789 - Database initialized.
+2025-06-10 17:11:27,002 - INFO - add_initial_data.py:3796 - Starting to add initial reference data...
+2025-06-10 17:11:27,003 - INFO - add_initial_data.py:93 - Role 'ADMIN' already exists, skipping.
+2025-06-10 17:11:27,003 - INFO - add_initial_data.py:91 - Prepared role: MANAGER
+2025-06-10 17:11:27,003 - INFO - add_initial_data.py:91 - Prepared role: VETERINARIAN
+2025-06-10 17:11:27,003 - INFO - add_initial_data.py:91 - Prepared role: TECHNICIAN
+2025-06-10 17:11:27,005 - INFO - add_initial_data.py:91 - Prepared role: RECEPTIONIST
+2025-06-10 17:11:27,005 - INFO - add_initial_data.py:91 - Prepared role: CLIENT
+2025-06-10 17:11:27,005 - INFO - add_initial_data.py:96 - Successfully prepared 5 new roles.
+2025-06-10 17:11:27,006 - INFO - add_initial_data.py:127 - Admin user 'ADMIN' already exists.
+2025-06-10 17:11:27,168 - INFO - add_initial_data.py:3804 - Committed roles and admin user.
+2025-06-10 17:11:27,168 - INFO - add_initial_data.py:144 - Preparing charge code categories...
+2025-06-10 17:11:27,171 - INFO - add_initial_data.py:278 - Prepared category: ANTHELMINTICS (Level 1, Parent ID: None) with ID 1
+2025-06-10 17:11:27,172 - INFO - add_initial_data.py:278 - Prepared category: ADMINISTERED (Level 2, Parent ID: 1) with ID 2
+2025-06-10 17:11:27,174 - INFO - add_initial_data.py:278 - Prepared category: DISPENSED (Level 2, Parent ID: 1) with ID 3
+2025-06-10 17:11:27,174 - INFO - add_initial_data.py:278 - Prepared category: CALL FEES (Level 1, Parent ID: None) with ID 4
+2025-06-10 17:11:27,175 - INFO - add_initial_data.py:278 - Prepared category: DIAGNOSTIC PROCEDURES (Level 1, Parent ID: None) with ID 5
+2025-06-10 17:11:27,175 - INFO - add_initial_data.py:278 - Prepared category: NERVE BLOCKS (Level 2, Parent ID: 5) with ID 6
+2025-06-10 17:11:27,176 - INFO - add_initial_data.py:278 - Prepared category: JOINT BLOCKS (Level 2, Parent ID: 5) with ID 7
+2025-06-10 17:11:27,176 - INFO - add_initial_data.py:278 - Prepared category: RADIOLOGY - FRONT LEG (Level 2, Parent ID: 5) with ID 8
+2025-06-10 17:11:27,177 - INFO - add_initial_data.py:278 - Prepared category: RADIOLOGY - HIND LEG (Level 2, Parent ID: 5) with ID 9
+2025-06-10 17:11:27,177 - INFO - add_initial_data.py:278 - Prepared category: RADIOLOGY - OTHER (Level 2, Parent ID: 5) with ID 10
+2025-06-10 17:11:27,178 - INFO - add_initial_data.py:278 - Prepared category: ULTRASOUND EXAM OF EXTREMITIES (Level 2, Parent ID: 5) with ID 11
+2025-06-10 17:11:27,178 - INFO - add_initial_data.py:278 - Prepared category: OTHER (Level 2, Parent ID: 5) with ID 12
+2025-06-10 17:11:27,179 - INFO - add_initial_data.py:278 - Prepared category: EXAMINATIONS (Level 1, Parent ID: None) with ID 13
+2025-06-10 17:11:27,179 - INFO - add_initial_data.py:278 - Prepared category: SICK HORSE EXAMS (Level 2, Parent ID: 13) with ID 14
+2025-06-10 17:11:27,180 - INFO - add_initial_data.py:278 - Prepared category: OTHER EXAMS (Level 2, Parent ID: 13) with ID 15
+2025-06-10 17:11:27,180 - INFO - add_initial_data.py:278 - Prepared category: IMMUNIZATIONS (Level 1, Parent ID: None) with ID 16
+2025-06-10 17:11:27,180 - INFO - add_initial_data.py:278 - Prepared category: HORSE (Level 2, Parent ID: 16) with ID 17
+2025-06-10 17:11:27,181 - INFO - add_initial_data.py:278 - Prepared category: LABORATORY PROCEDURES (Level 1, Parent ID: None) with ID 18
+2025-06-10 17:11:27,181 - INFO - add_initial_data.py:278 - Prepared category: BLOOD WORK (Level 2, Parent ID: 18) with ID 19
+2025-06-10 17:11:27,182 - INFO - add_initial_data.py:278 - Prepared category: OTHER (Level 2, Parent ID: 18) with ID 20
+2025-06-10 17:11:27,182 - INFO - add_initial_data.py:278 - Prepared category: MEDICATION ADMINISTERED (Level 1, Parent ID: None) with ID 21
+2025-06-10 17:11:27,183 - INFO - add_initial_data.py:278 - Prepared category: ANABOLIC STEROIDS (Level 2, Parent ID: 21) with ID 22
+2025-06-10 17:11:27,183 - INFO - add_initial_data.py:278 - Prepared category: ANTIBIOTICS (Level 2, Parent ID: 21) with ID 23
+2025-06-10 17:11:27,184 - INFO - add_initial_data.py:278 - Prepared category: DIURETICS (Level 2, Parent ID: 21) with ID 24
+2025-06-10 17:11:27,184 - INFO - add_initial_data.py:278 - Prepared category: FLUIDS ADMINISTERED (Level 2, Parent ID: 21) with ID 25
+2025-06-10 17:11:27,185 - INFO - add_initial_data.py:278 - Prepared category: GASTROINTESTINAL TREATMENTS (Level 2, Parent ID: 21) with ID 26
+2025-06-10 17:11:27,185 - INFO - add_initial_data.py:278 - Prepared category: INTRA-ARTICULAR INJECTIONS (Level 2, Parent ID: 21) with ID 27
+2025-06-10 17:11:27,185 - INFO - add_initial_data.py:278 - Prepared category: OTHER HORMONES (Level 2, Parent ID: 21) with ID 28
+2025-06-10 17:11:27,186 - INFO - add_initial_data.py:278 - Prepared category: NON-ARTICULAR INJECTIONS (Level 2, Parent ID: 21) with ID 29
+2025-06-10 17:11:27,186 - INFO - add_initial_data.py:278 - Prepared category: NSAID'S ANALGESICS (Level 2, Parent ID: 21) with ID 30
+2025-06-10 17:11:27,187 - INFO - add_initial_data.py:278 - Prepared category: TRANQUILIZERS & ANESTHETICS (Level 2, Parent ID: 21) with ID 31
+2025-06-10 17:11:27,187 - INFO - add_initial_data.py:278 - Prepared category: VITAMINS (Level 2, Parent ID: 21) with ID 32
+2025-06-10 17:11:27,188 - INFO - add_initial_data.py:278 - Prepared category: OTHER (Level 2, Parent ID: 21) with ID 33
+2025-06-10 17:11:27,188 - INFO - add_initial_data.py:278 - Prepared category: MEDICATIONS DISPENSED (Level 1, Parent ID: None) with ID 34
+2025-06-10 17:11:27,189 - INFO - add_initial_data.py:278 - Prepared category: OTHER HORMONES (Level 2, Parent ID: 34) with ID 35
+2025-06-10 17:11:27,191 - INFO - add_initial_data.py:278 - Prepared category: ANTIBIOTICS - PENICILLINS (Level 2, Parent ID: 34) with ID 36
+2025-06-10 17:11:27,192 - INFO - add_initial_data.py:278 - Prepared category: ANTIBIOTICS - OTHER (Level 2, Parent ID: 34) with ID 37
+2025-06-10 17:11:27,192 - INFO - add_initial_data.py:278 - Prepared category: BANDAGES & MATERIALS (Level 2, Parent ID: 34) with ID 38
+2025-06-10 17:11:27,193 - INFO - add_initial_data.py:278 - Prepared category: DERMATITIS/TOPICAL ANTISEPTICS (Level 2, Parent ID: 34) with ID 39
+2025-06-10 17:11:27,193 - INFO - add_initial_data.py:278 - Prepared category: DIURETICS (Level 2, Parent ID: 34) with ID 40
+2025-06-10 17:11:27,194 - INFO - add_initial_data.py:278 - Prepared category: FLUIDS (Level 2, Parent ID: 34) with ID 41
+2025-06-10 17:11:27,194 - INFO - add_initial_data.py:278 - Prepared category: G.I. MEDICATIONS (Level 2, Parent ID: 34) with ID 42
+2025-06-10 17:11:27,195 - INFO - add_initial_data.py:278 - Prepared category: INJECTABLE NSAID'S (Level 2, Parent ID: 34) with ID 43
+2025-06-10 17:11:27,195 - INFO - add_initial_data.py:278 - Prepared category: OTHER INJECTABLE ANTI-INFLAM. (Level 2, Parent ID: 34) with ID 44
+2025-06-10 17:11:27,195 - INFO - add_initial_data.py:278 - Prepared category: INTRA-ARTICULAR PRODUCTS (Level 2, Parent ID: 34) with ID 45
+2025-06-10 17:11:27,196 - INFO - add_initial_data.py:278 - Prepared category: LEG PREPARATIONS (Level 2, Parent ID: 34) with ID 46
+2025-06-10 17:11:27,196 - INFO - add_initial_data.py:278 - Prepared category: NEEDLES & SYRINGES (Level 2, Parent ID: 34) with ID 47
+2025-06-10 17:11:27,197 - INFO - add_initial_data.py:278 - Prepared category: ORAL NSAID'S (Level 2, Parent ID: 34) with ID 48
+2025-06-10 17:11:27,197 - INFO - add_initial_data.py:278 - Prepared category: OTHER ORAL ANTI-INFLAM. (Level 2, Parent ID: 34) with ID 49
+2025-06-10 17:11:27,198 - INFO - add_initial_data.py:278 - Prepared category: OPHTHALMIC DRUGS (Level 2, Parent ID: 34) with ID 50
+2025-06-10 17:11:27,198 - INFO - add_initial_data.py:278 - Prepared category: RESPIRATORY DRUGS (Level 2, Parent ID: 34) with ID 51
+2025-06-10 17:11:27,199 - INFO - add_initial_data.py:278 - Prepared category: TOPICAL MEDICATIONS (Level 2, Parent ID: 34) with ID 52
+2025-06-10 17:11:27,199 - INFO - add_initial_data.py:278 - Prepared category: TRANQUILIZERS & MUSCLE RELAX. (Level 2, Parent ID: 34) with ID 53
+2025-06-10 17:11:27,200 - INFO - add_initial_data.py:278 - Prepared category: VITAMINS (Level 2, Parent ID: 34) with ID 54
+2025-06-10 17:11:27,200 - INFO - add_initial_data.py:278 - Prepared category: NON-VITAMIN FEED SUPPLEMENTS (Level 2, Parent ID: 34) with ID 55
+2025-06-10 17:11:27,201 - INFO - add_initial_data.py:278 - Prepared category: OTHER (Level 2, Parent ID: 34) with ID 56
+2025-06-10 17:11:27,201 - INFO - add_initial_data.py:278 - Prepared category: REPRODUCTIVE PROCEDURES (Level 1, Parent ID: None) with ID 57
+2025-06-10 17:11:27,201 - INFO - add_initial_data.py:278 - Prepared category: GENERAL BROODMARE WORK (Level 2, Parent ID: 57) with ID 58
+2025-06-10 17:11:27,202 - INFO - add_initial_data.py:278 - Prepared category: SURGICAL PROCEDURES (Level 1, Parent ID: None) with ID 59
+2025-06-10 17:11:27,202 - INFO - add_initial_data.py:278 - Prepared category: VET. PROCEDURES & SERVICES (Level 1, Parent ID: None) with ID 60
+2025-06-10 17:11:27,203 - INFO - add_initial_data.py:278 - Prepared category: BANDAGING (Level 2, Parent ID: 60) with ID 61
+2025-06-10 17:11:27,203 - INFO - add_initial_data.py:278 - Prepared category: OTHER (Level 2, Parent ID: 60) with ID 62
+2025-06-10 17:11:27,204 - INFO - add_initial_data.py:278 - Prepared category: OTHER (Level 1, Parent ID: None) with ID 63
+2025-06-10 17:11:27,204 - INFO - add_initial_data.py:293 - Successfully prepared new charge code categories.
+2025-06-10 17:11:27,207 - INFO - add_initial_data.py:3809 - Committed charge code categories.
+2025-06-10 17:11:27,208 - INFO - add_initial_data.py:694 - Prepared state/province: Alabama
+2025-06-10 17:11:27,208 - INFO - add_initial_data.py:694 - Prepared state/province: Alaska
+2025-06-10 17:11:27,208 - INFO - add_initial_data.py:694 - Prepared state/province: Arizona
+2025-06-10 17:11:27,208 - INFO - add_initial_data.py:694 - Prepared state/province: Arkansas
+2025-06-10 17:11:27,208 - INFO - add_initial_data.py:694 - Prepared state/province: California
+2025-06-10 17:11:27,208 - INFO - add_initial_data.py:694 - Prepared state/province: Colorado
+2025-06-10 17:11:27,209 - INFO - add_initial_data.py:694 - Prepared state/province: Connecticut
+2025-06-10 17:11:27,209 - INFO - add_initial_data.py:694 - Prepared state/province: Delaware
+2025-06-10 17:11:27,209 - INFO - add_initial_data.py:694 - Prepared state/province: Florida
+2025-06-10 17:11:27,209 - INFO - add_initial_data.py:694 - Prepared state/province: Georgia
+2025-06-10 17:11:27,209 - INFO - add_initial_data.py:694 - Prepared state/province: Hawaii
+2025-06-10 17:11:27,209 - INFO - add_initial_data.py:694 - Prepared state/province: Idaho
+2025-06-10 17:11:27,209 - INFO - add_initial_data.py:694 - Prepared state/province: Illinois
+2025-06-10 17:11:27,209 - INFO - add_initial_data.py:694 - Prepared state/province: Indiana
+2025-06-10 17:11:27,209 - INFO - add_initial_data.py:694 - Prepared state/province: Iowa
+2025-06-10 17:11:27,209 - INFO - add_initial_data.py:694 - Prepared state/province: Kansas
+2025-06-10 17:11:27,210 - INFO - add_initial_data.py:694 - Prepared state/province: Kentucky
+2025-06-10 17:11:27,210 - INFO - add_initial_data.py:694 - Prepared state/province: Louisiana
+2025-06-10 17:11:27,210 - INFO - add_initial_data.py:694 - Prepared state/province: Maine
+2025-06-10 17:11:27,210 - INFO - add_initial_data.py:694 - Prepared state/province: Maryland
+2025-06-10 17:11:27,210 - INFO - add_initial_data.py:694 - Prepared state/province: Massachusetts
+2025-06-10 17:11:27,210 - INFO - add_initial_data.py:694 - Prepared state/province: Michigan
+2025-06-10 17:11:27,210 - INFO - add_initial_data.py:694 - Prepared state/province: Minnesota
+2025-06-10 17:11:27,210 - INFO - add_initial_data.py:694 - Prepared state/province: Mississippi
+2025-06-10 17:11:27,210 - INFO - add_initial_data.py:694 - Prepared state/province: Missouri
+2025-06-10 17:11:27,210 - INFO - add_initial_data.py:694 - Prepared state/province: Montana
+2025-06-10 17:11:27,210 - INFO - add_initial_data.py:694 - Prepared state/province: Nebraska
+2025-06-10 17:11:27,210 - INFO - add_initial_data.py:694 - Prepared state/province: Nevada
+2025-06-10 17:11:27,210 - INFO - add_initial_data.py:694 - Prepared state/province: New Hampshire
+2025-06-10 17:11:27,211 - INFO - add_initial_data.py:694 - Prepared state/province: New Jersey
+2025-06-10 17:11:27,211 - INFO - add_initial_data.py:694 - Prepared state/province: New Mexico
+2025-06-10 17:11:27,211 - INFO - add_initial_data.py:694 - Prepared state/province: New York
+2025-06-10 17:11:27,211 - INFO - add_initial_data.py:694 - Prepared state/province: North Carolina
+2025-06-10 17:11:27,211 - INFO - add_initial_data.py:694 - Prepared state/province: North Dakota
+2025-06-10 17:11:27,211 - INFO - add_initial_data.py:694 - Prepared state/province: Ohio
+2025-06-10 17:11:27,211 - INFO - add_initial_data.py:694 - Prepared state/province: Oklahoma
+2025-06-10 17:11:27,211 - INFO - add_initial_data.py:694 - Prepared state/province: Oregon
+2025-06-10 17:11:27,211 - INFO - add_initial_data.py:694 - Prepared state/province: Pennsylvania
+2025-06-10 17:11:27,211 - INFO - add_initial_data.py:694 - Prepared state/province: Rhode Island
+2025-06-10 17:11:27,211 - INFO - add_initial_data.py:694 - Prepared state/province: South Carolina
+2025-06-10 17:11:27,211 - INFO - add_initial_data.py:694 - Prepared state/province: South Dakota
+2025-06-10 17:11:27,211 - INFO - add_initial_data.py:694 - Prepared state/province: Tennessee
+2025-06-10 17:11:27,211 - INFO - add_initial_data.py:694 - Prepared state/province: Texas
+2025-06-10 17:11:27,211 - INFO - add_initial_data.py:694 - Prepared state/province: Utah
+2025-06-10 17:11:27,212 - INFO - add_initial_data.py:694 - Prepared state/province: Vermont
+2025-06-10 17:11:27,212 - INFO - add_initial_data.py:694 - Prepared state/province: Virginia
+2025-06-10 17:11:27,212 - INFO - add_initial_data.py:694 - Prepared state/province: Washington
+2025-06-10 17:11:27,212 - INFO - add_initial_data.py:694 - Prepared state/province: West Virginia
+2025-06-10 17:11:27,212 - INFO - add_initial_data.py:694 - Prepared state/province: Wisconsin
+2025-06-10 17:11:27,212 - INFO - add_initial_data.py:694 - Prepared state/province: Wyoming
+2025-06-10 17:11:27,212 - INFO - add_initial_data.py:694 - Prepared state/province: Alberta
+2025-06-10 17:11:27,212 - INFO - add_initial_data.py:694 - Prepared state/province: British Columbia
+2025-06-10 17:11:27,212 - INFO - add_initial_data.py:694 - Prepared state/province: Manitoba
+2025-06-10 17:11:27,212 - INFO - add_initial_data.py:694 - Prepared state/province: New Brunswick
+2025-06-10 17:11:27,212 - INFO - add_initial_data.py:694 - Prepared state/province: Newfoundland and Labrador
+2025-06-10 17:11:27,212 - INFO - add_initial_data.py:694 - Prepared state/province: Nova Scotia
+2025-06-10 17:11:27,213 - INFO - add_initial_data.py:694 - Prepared state/province: Ontario
+2025-06-10 17:11:27,213 - INFO - add_initial_data.py:694 - Prepared state/province: Prince Edward Island
+2025-06-10 17:11:27,213 - INFO - add_initial_data.py:694 - Prepared state/province: Quebec
+2025-06-10 17:11:27,213 - INFO - add_initial_data.py:694 - Prepared state/province: Saskatchewan
+2025-06-10 17:11:27,213 - INFO - add_initial_data.py:697 - Added 60 new states/provinces.
+2025-06-10 17:11:27,219 - INFO - add_initial_data.py:3813 - Committed states/provinces.
+2025-06-10 17:11:27,220 - INFO - add_initial_data.py:755 - Prepared location: Main Stable
+2025-06-10 17:11:27,220 - INFO - add_initial_data.py:755 - Prepared location: Quarantine Barn
+2025-06-10 17:11:27,221 - INFO - add_initial_data.py:755 - Prepared location: West Wing Stalls
+2025-06-10 17:11:27,224 - INFO - add_initial_data.py:817 - Prepared owner: Willow Creek Stables
+2025-06-10 17:11:27,224 - INFO - add_initial_data.py:817 - Prepared owner: Quail Pond Farms
+2025-06-10 17:11:27,224 - INFO - add_initial_data.py:836 - Preparing complete charge code list...
+2025-06-10 17:11:27,226 - INFO - add_initial_data.py:3767 - Prepared charge code: 9991 with category_id: 2
+2025-06-10 17:11:27,226 - INFO - add_initial_data.py:3767 - Prepared charge code: 413 with category_id: 2
+2025-06-10 17:11:27,227 - INFO - add_initial_data.py:3767 - Prepared charge code: 412 with category_id: 2
+2025-06-10 17:11:27,228 - INFO - add_initial_data.py:3767 - Prepared charge code: 414 with category_id: 2
+2025-06-10 17:11:27,228 - INFO - add_initial_data.py:3767 - Prepared charge code: 107 with category_id: 2
+2025-06-10 17:11:27,229 - INFO - add_initial_data.py:3767 - Prepared charge code: 576 with category_id: 2
+2025-06-10 17:11:27,229 - INFO - add_initial_data.py:3767 - Prepared charge code: 405 with category_id: 2
+2025-06-10 17:11:27,230 - INFO - add_initial_data.py:3767 - Prepared charge code: 400 with category_id: 2
+2025-06-10 17:11:27,230 - INFO - add_initial_data.py:3767 - Prepared charge code: 403 with category_id: 2
+2025-06-10 17:11:27,231 - INFO - add_initial_data.py:3767 - Prepared charge code: 402 with category_id: 2
+2025-06-10 17:11:27,231 - INFO - add_initial_data.py:3767 - Prepared charge code: 406 with category_id: 2
+2025-06-10 17:11:27,232 - INFO - add_initial_data.py:3767 - Prepared charge code: 420 with category_id: 2
+2025-06-10 17:11:27,232 - INFO - add_initial_data.py:3767 - Prepared charge code: 109 with category_id: 2
+2025-06-10 17:11:27,233 - INFO - add_initial_data.py:3767 - Prepared charge code: 411 with category_id: 2
+2025-06-10 17:11:27,233 - INFO - add_initial_data.py:3767 - Prepared charge code: 9634 with category_id: 3
+2025-06-10 17:11:27,234 - INFO - add_initial_data.py:3767 - Prepared charge code: 424 with category_id: 3
+2025-06-10 17:11:27,234 - INFO - add_initial_data.py:3767 - Prepared charge code: 39 with category_id: 3
+2025-06-10 17:11:27,235 - INFO - add_initial_data.py:3767 - Prepared charge code: 426 with category_id: 3
+2025-06-10 17:11:27,235 - INFO - add_initial_data.py:3767 - Prepared charge code: 581 with category_id: 3
+2025-06-10 17:11:27,236 - INFO - add_initial_data.py:3767 - Prepared charge code: 429 with category_id: 3
+2025-06-10 17:11:27,238 - INFO - add_initial_data.py:3767 - Prepared charge code: 425 with category_id: 3
+2025-06-10 17:11:27,239 - INFO - add_initial_data.py:3767 - Prepared charge code: 423 with category_id: 3
+2025-06-10 17:11:27,240 - INFO - add_initial_data.py:3767 - Prepared charge code: 422 with category_id: 3
+2025-06-10 17:11:27,240 - INFO - add_initial_data.py:3767 - Prepared charge code: 650 with category_id: 4
+2025-06-10 17:11:27,240 - INFO - add_initial_data.py:3767 - Prepared charge code: 101 with category_id: 4
+2025-06-10 17:11:27,240 - INFO - add_initial_data.py:3767 - Prepared charge code: 100 with category_id: 4
+2025-06-10 17:11:27,241 - INFO - add_initial_data.py:3767 - Prepared charge code: 103 with category_id: 4
+2025-06-10 17:11:27,241 - INFO - add_initial_data.py:3767 - Prepared charge code: 102 with category_id: 4
+2025-06-10 17:11:27,242 - INFO - add_initial_data.py:3767 - Prepared charge code: 32 with category_id: 6
+2025-06-10 17:11:27,242 - INFO - add_initial_data.py:3767 - Prepared charge code: 33 with category_id: 6
+2025-06-10 17:11:27,243 - INFO - add_initial_data.py:3767 - Prepared charge code: 35 with category_id: 6
+2025-06-10 17:11:27,244 - INFO - add_initial_data.py:3767 - Prepared charge code: 31 with category_id: 6
+2025-06-10 17:11:27,244 - INFO - add_initial_data.py:3767 - Prepared charge code: 34 with category_id: 7
+2025-06-10 17:11:27,245 - INFO - add_initial_data.py:3767 - Prepared charge code: 3 with category_id: 8
+2025-06-10 17:11:27,245 - INFO - add_initial_data.py:3767 - Prepared charge code: 5 with category_id: 8
+2025-06-10 17:11:27,246 - INFO - add_initial_data.py:3767 - Prepared charge code: 1 with category_id: 8
+2025-06-10 17:11:27,247 - INFO - add_initial_data.py:3767 - Prepared charge code: 7 with category_id: 8
+2025-06-10 17:11:27,247 - INFO - add_initial_data.py:3767 - Prepared charge code: 8 with category_id: 8
+2025-06-10 17:11:27,248 - INFO - add_initial_data.py:3767 - Prepared charge code: 6 with category_id: 8
+2025-06-10 17:11:27,248 - INFO - add_initial_data.py:3767 - Prepared charge code: 4 with category_id: 8
+2025-06-10 17:11:27,249 - INFO - add_initial_data.py:3767 - Prepared charge code: 2 with category_id: 8
+2025-06-10 17:11:27,249 - INFO - add_initial_data.py:3767 - Prepared charge code: 9 with category_id: 9
+2025-06-10 17:11:27,250 - INFO - add_initial_data.py:3767 - Prepared charge code: 13 with category_id: 9
+2025-06-10 17:11:27,250 - INFO - add_initial_data.py:3767 - Prepared charge code: 15 with category_id: 9
+2025-06-10 17:11:27,251 - INFO - add_initial_data.py:3767 - Prepared charge code: 11 with category_id: 9
+2025-06-10 17:11:27,251 - INFO - add_initial_data.py:3767 - Prepared charge code: 17 with category_id: 9
+2025-06-10 17:11:27,252 - INFO - add_initial_data.py:3767 - Prepared charge code: 10 with category_id: 9
+2025-06-10 17:11:27,254 - INFO - add_initial_data.py:3767 - Prepared charge code: 14 with category_id: 9
+2025-06-10 17:11:27,254 - INFO - add_initial_data.py:3767 - Prepared charge code: 16 with category_id: 9
+2025-06-10 17:11:27,255 - INFO - add_initial_data.py:3767 - Prepared charge code: 12 with category_id: 9
+2025-06-10 17:11:27,255 - INFO - add_initial_data.py:3767 - Prepared charge code: 18 with category_id: 9
+2025-06-10 17:11:27,256 - INFO - add_initial_data.py:3767 - Prepared charge code: 20 with category_id: 10
+2025-06-10 17:11:27,256 - INFO - add_initial_data.py:3767 - Prepared charge code: 40 with category_id: 11
+2025-06-10 17:11:27,257 - INFO - add_initial_data.py:3767 - Prepared charge code: 1017 with category_id: 12
+2025-06-10 17:11:27,257 - INFO - add_initial_data.py:3767 - Prepared charge code: 41 with category_id: 12
+2025-06-10 17:11:27,258 - INFO - add_initial_data.py:3767 - Prepared charge code: 7732 with category_id: 12
+2025-06-10 17:11:27,258 - INFO - add_initial_data.py:3767 - Prepared charge code: 7342 with category_id: 12
+2025-06-10 17:11:27,259 - INFO - add_initial_data.py:3767 - Prepared charge code: 8801 with category_id: 12
+2025-06-10 17:11:27,260 - INFO - add_initial_data.py:3767 - Prepared charge code: 200 with category_id: 14
+2025-06-10 17:11:27,261 - INFO - add_initial_data.py:3767 - Prepared charge code: 201 with category_id: 14
+2025-06-10 17:11:27,261 - INFO - add_initial_data.py:3767 - Prepared charge code: 204 with category_id: 14
+2025-06-10 17:11:27,262 - INFO - add_initial_data.py:3767 - Prepared charge code: 205 with category_id: 14
+2025-06-10 17:11:27,262 - INFO - add_initial_data.py:3767 - Prepared charge code: 209 with category_id: 14
+2025-06-10 17:11:27,263 - INFO - add_initial_data.py:3767 - Prepared charge code: 206 with category_id: 14
+2025-06-10 17:11:27,263 - INFO - add_initial_data.py:3767 - Prepared charge code: 215 with category_id: 14
+2025-06-10 17:11:27,264 - INFO - add_initial_data.py:3767 - Prepared charge code: 207 with category_id: 14
+2025-06-10 17:11:27,264 - INFO - add_initial_data.py:3767 - Prepared charge code: 208 with category_id: 14
+2025-06-10 17:11:27,265 - INFO - add_initial_data.py:3767 - Prepared charge code: 772 with category_id: 15
+2025-06-10 17:11:27,266 - INFO - add_initial_data.py:3767 - Prepared charge code: 213 with category_id: 15
+2025-06-10 17:11:27,266 - INFO - add_initial_data.py:3767 - Prepared charge code: 212 with category_id: 15
+2025-06-10 17:11:27,267 - INFO - add_initial_data.py:3767 - Prepared charge code: 211 with category_id: 15
+2025-06-10 17:11:27,267 - INFO - add_initial_data.py:3767 - Prepared charge code: 202 with category_id: 15
+2025-06-10 17:11:27,268 - INFO - add_initial_data.py:3767 - Prepared charge code: 210 with category_id: 15
+2025-06-10 17:11:27,269 - INFO - add_initial_data.py:3767 - Prepared charge code: 4567 with category_id: 17
+2025-06-10 17:11:27,270 - INFO - add_initial_data.py:3767 - Prepared charge code: 5588 with category_id: 17
+2025-06-10 17:11:27,270 - INFO - add_initial_data.py:3767 - Prepared charge code: 3120 with category_id: 17
+2025-06-10 17:11:27,271 - INFO - add_initial_data.py:3767 - Prepared charge code: 300 with category_id: 17
+2025-06-10 17:11:27,271 - INFO - add_initial_data.py:3767 - Prepared charge code: 302 with category_id: 17
+2025-06-10 17:11:27,272 - INFO - add_initial_data.py:3767 - Prepared charge code: 305 with category_id: 17
+2025-06-10 17:11:27,272 - INFO - add_initial_data.py:3767 - Prepared charge code: 303 with category_id: 17
+2025-06-10 17:11:27,273 - INFO - add_initial_data.py:3767 - Prepared charge code: 7908 with category_id: 17
+2025-06-10 17:11:27,273 - INFO - add_initial_data.py:3767 - Prepared charge code: 311 with category_id: 17
+2025-06-10 17:11:27,274 - INFO - add_initial_data.py:3767 - Prepared charge code: 309 with category_id: 17
+2025-06-10 17:11:27,275 - INFO - add_initial_data.py:3767 - Prepared charge code: 307 with category_id: 17
+2025-06-10 17:11:27,275 - INFO - add_initial_data.py:3767 - Prepared charge code: 304 with category_id: 17
+2025-06-10 17:11:27,276 - INFO - add_initial_data.py:3767 - Prepared charge code: 312 with category_id: 17
+2025-06-10 17:11:27,277 - INFO - add_initial_data.py:3767 - Prepared charge code: 308 with category_id: 17
+2025-06-10 17:11:27,277 - INFO - add_initial_data.py:3767 - Prepared charge code: 3125 with category_id: 17
+2025-06-10 17:11:27,278 - INFO - add_initial_data.py:3767 - Prepared charge code: 301 with category_id: 17
+2025-06-10 17:11:27,278 - INFO - add_initial_data.py:3767 - Prepared charge code: 5410 with category_id: 17
+2025-06-10 17:11:27,279 - INFO - add_initial_data.py:3767 - Prepared charge code: 140 with category_id: 17
+2025-06-10 17:11:27,279 - INFO - add_initial_data.py:3767 - Prepared charge code: 69 with category_id: 19
+2025-06-10 17:11:27,280 - INFO - add_initial_data.py:3767 - Prepared charge code: 53 with category_id: 19
+2025-06-10 17:11:27,280 - INFO - add_initial_data.py:3767 - Prepared charge code: 52 with category_id: 19
+2025-06-10 17:11:27,281 - INFO - add_initial_data.py:3767 - Prepared charge code: 50 with category_id: 19
+2025-06-10 17:11:27,281 - INFO - add_initial_data.py:3767 - Prepared charge code: 51 with category_id: 19
+2025-06-10 17:11:27,282 - INFO - add_initial_data.py:3767 - Prepared charge code: 9995 with category_id: 19
+2025-06-10 17:11:27,282 - INFO - add_initial_data.py:3767 - Prepared charge code: 9754 with category_id: 19
+2025-06-10 17:11:27,283 - INFO - add_initial_data.py:3767 - Prepared charge code: 60 with category_id: 19
+2025-06-10 17:11:27,284 - INFO - add_initial_data.py:3767 - Prepared charge code: 116 with category_id: 19
+2025-06-10 17:11:27,284 - INFO - add_initial_data.py:3767 - Prepared charge code: 62 with category_id: 19
+2025-06-10 17:11:27,285 - INFO - add_initial_data.py:3767 - Prepared charge code: 55 with category_id: 19
+2025-06-10 17:11:27,286 - INFO - add_initial_data.py:3767 - Prepared charge code: 9996 with category_id: 19
+2025-06-10 17:11:27,286 - INFO - add_initial_data.py:3767 - Prepared charge code: 61 with category_id: 19
+2025-06-10 17:11:27,287 - INFO - add_initial_data.py:3767 - Prepared charge code: 70 with category_id: 20
+2025-06-10 17:11:27,287 - INFO - add_initial_data.py:3767 - Prepared charge code: 75 with category_id: 20
+2025-06-10 17:11:27,288 - INFO - add_initial_data.py:3767 - Prepared charge code: 71 with category_id: 20
+2025-06-10 17:11:27,288 - INFO - add_initial_data.py:3767 - Prepared charge code: 271 with category_id: 22
+2025-06-10 17:11:27,289 - INFO - add_initial_data.py:3767 - Prepared charge code: 670 with category_id: 22
+2025-06-10 17:11:27,289 - INFO - add_initial_data.py:3767 - Prepared charge code: 674 with category_id: 22
+2025-06-10 17:11:27,290 - INFO - add_initial_data.py:3767 - Prepared charge code: 676 with category_id: 22
+2025-06-10 17:11:27,290 - INFO - add_initial_data.py:3767 - Prepared charge code: 8920 with category_id: 23
+2025-06-10 17:11:27,291 - INFO - add_initial_data.py:3767 - Prepared charge code: 25 with category_id: 23
+2025-06-10 17:11:27,292 - INFO - add_initial_data.py:3767 - Prepared charge code: 814 with category_id: 23
+2025-06-10 17:11:27,292 - INFO - add_initial_data.py:3767 - Prepared charge code: 998 with category_id: 23
+2025-06-10 17:11:27,293 - INFO - add_initial_data.py:3767 - Prepared charge code: 607 with category_id: 23
+2025-06-10 17:11:27,293 - INFO - add_initial_data.py:3767 - Prepared charge code: 600 with category_id: 23
+2025-06-10 17:11:27,294 - INFO - add_initial_data.py:3767 - Prepared charge code: 608 with category_id: 23
+2025-06-10 17:11:27,295 - INFO - add_initial_data.py:3767 - Prepared charge code: 610 with category_id: 23
+2025-06-10 17:11:27,295 - INFO - add_initial_data.py:3767 - Prepared charge code: 22 with category_id: 24
+2025-06-10 17:11:27,296 - INFO - add_initial_data.py:3767 - Prepared charge code: 760 with category_id: 24
+2025-06-10 17:11:27,296 - INFO - add_initial_data.py:3767 - Prepared charge code: 892 with category_id: 25
+2025-06-10 17:11:27,297 - INFO - add_initial_data.py:3767 - Prepared charge code: 770 with category_id: 25
+2025-06-10 17:11:27,297 - INFO - add_initial_data.py:3767 - Prepared charge code: 778 with category_id: 25
+2025-06-10 17:11:27,298 - INFO - add_initial_data.py:3767 - Prepared charge code: 703 with category_id: 26
+2025-06-10 17:11:27,298 - INFO - add_initial_data.py:3767 - Prepared charge code: 992 with category_id: 27
+2025-06-10 17:11:27,299 - INFO - add_initial_data.py:3767 - Prepared charge code: 991 with category_id: 27
+2025-06-10 17:11:27,300 - INFO - add_initial_data.py:3767 - Prepared charge code: 993 with category_id: 27
+2025-06-10 17:11:27,301 - INFO - add_initial_data.py:3767 - Prepared charge code: 994 with category_id: 27
+2025-06-10 17:11:27,301 - INFO - add_initial_data.py:3767 - Prepared charge code: 720 with category_id: 27
+2025-06-10 17:11:27,302 - INFO - add_initial_data.py:3767 - Prepared charge code: 721 with category_id: 27
+2025-06-10 17:11:27,302 - INFO - add_initial_data.py:3767 - Prepared charge code: 738 with category_id: 27
+2025-06-10 17:11:27,303 - INFO - add_initial_data.py:3767 - Prepared charge code: 433 with category_id: 27
+2025-06-10 17:11:27,303 - INFO - add_initial_data.py:3767 - Prepared charge code: 990 with category_id: 27
+2025-06-10 17:11:27,304 - INFO - add_initial_data.py:3767 - Prepared charge code: 723 with category_id: 27
+2025-06-10 17:11:27,305 - INFO - add_initial_data.py:3767 - Prepared charge code: 724 with category_id: 27
+2025-06-10 17:11:27,305 - INFO - add_initial_data.py:3767 - Prepared charge code: 124 with category_id: 27
+2025-06-10 17:11:27,306 - INFO - add_initial_data.py:3767 - Prepared charge code: 726 with category_id: 27
+2025-06-10 17:11:27,306 - INFO - add_initial_data.py:3767 - Prepared charge code: 727 with category_id: 27
+2025-06-10 17:11:27,307 - INFO - add_initial_data.py:3767 - Prepared charge code: 125 with category_id: 27
+2025-06-10 17:11:27,307 - INFO - add_initial_data.py:3767 - Prepared charge code: 680 with category_id: 28
+2025-06-10 17:11:27,308 - INFO - add_initial_data.py:3767 - Prepared charge code: 681 with category_id: 28
+2025-06-10 17:11:27,309 - INFO - add_initial_data.py:3767 - Prepared charge code: 682 with category_id: 28
+2025-06-10 17:11:27,309 - INFO - add_initial_data.py:3767 - Prepared charge code: 1251 with category_id: 28
+2025-06-10 17:11:27,310 - INFO - add_initial_data.py:3767 - Prepared charge code: 683 with category_id: 28
+2025-06-10 17:11:27,310 - INFO - add_initial_data.py:3767 - Prepared charge code: 404 with category_id: 28
+2025-06-10 17:11:27,311 - INFO - add_initial_data.py:3767 - Prepared charge code: 733 with category_id: 29
+2025-06-10 17:11:27,312 - INFO - add_initial_data.py:3767 - Prepared charge code: 700 with category_id: 29
+2025-06-10 17:11:27,312 - INFO - add_initial_data.py:3767 - Prepared charge code: 742 with category_id: 29
+2025-06-10 17:11:27,313 - INFO - add_initial_data.py:3767 - Prepared charge code: 1018 with category_id: 29
+2025-06-10 17:11:27,313 - INFO - add_initial_data.py:3767 - Prepared charge code: 740 with category_id: 29
+2025-06-10 17:11:27,314 - INFO - add_initial_data.py:3767 - Prepared charge code: 743 with category_id: 29
+2025-06-10 17:11:27,314 - INFO - add_initial_data.py:3767 - Prepared charge code: 792 with category_id: 29
+2025-06-10 17:11:27,315 - INFO - add_initial_data.py:3767 - Prepared charge code: 751 with category_id: 29
+2025-06-10 17:11:27,316 - INFO - add_initial_data.py:3767 - Prepared charge code: 748 with category_id: 29
+2025-06-10 17:11:27,316 - INFO - add_initial_data.py:3767 - Prepared charge code: 750 with category_id: 29
+2025-06-10 17:11:27,317 - INFO - add_initial_data.py:3767 - Prepared charge code: 749 with category_id: 29
+2025-06-10 17:11:27,317 - INFO - add_initial_data.py:3767 - Prepared charge code: 4876 with category_id: 29
+2025-06-10 17:11:27,318 - INFO - add_initial_data.py:3767 - Prepared charge code: 741 with category_id: 29
+2025-06-10 17:11:27,318 - INFO - add_initial_data.py:3767 - Prepared charge code: 640 with category_id: 30
+2025-06-10 17:11:27,319 - INFO - add_initial_data.py:3767 - Prepared charge code: 641 with category_id: 30
+2025-06-10 17:11:27,319 - INFO - add_initial_data.py:3767 - Prepared charge code: 643 with category_id: 30
+2025-06-10 17:11:27,320 - INFO - add_initial_data.py:3767 - Prepared charge code: 138 with category_id: 30
+2025-06-10 17:11:27,321 - INFO - add_initial_data.py:3767 - Prepared charge code: 649 with category_id: 30
+2025-06-10 17:11:27,321 - INFO - add_initial_data.py:3767 - Prepared charge code: 660 with category_id: 30
+2025-06-10 17:11:27,322 - INFO - add_initial_data.py:3767 - Prepared charge code: 642 with category_id: 30
+2025-06-10 17:11:27,322 - INFO - add_initial_data.py:3767 - Prepared charge code: 995 with category_id: 30
+2025-06-10 17:11:27,323 - INFO - add_initial_data.py:3767 - Prepared charge code: 663 with category_id: 30
+2025-06-10 17:11:27,323 - INFO - add_initial_data.py:3767 - Prepared charge code: 666 with category_id: 30
+2025-06-10 17:11:27,324 - INFO - add_initial_data.py:3767 - Prepared charge code: 621 with category_id: 30
+2025-06-10 17:11:27,324 - INFO - add_initial_data.py:3767 - Prepared charge code: 648 with category_id: 30
+2025-06-10 17:11:27,325 - INFO - add_initial_data.py:3767 - Prepared charge code: 553 with category_id: 30
+2025-06-10 17:11:27,325 - INFO - add_initial_data.py:3767 - Prepared charge code: 84 with category_id: 30
+2025-06-10 17:11:27,326 - INFO - add_initial_data.py:3767 - Prepared charge code: 688 with category_id: 31
+2025-06-10 17:11:27,326 - INFO - add_initial_data.py:3767 - Prepared charge code: 1020 with category_id: 31
+2025-06-10 17:11:27,327 - INFO - add_initial_data.py:3767 - Prepared charge code: 693 with category_id: 31
+2025-06-10 17:11:27,328 - INFO - add_initial_data.py:3767 - Prepared charge code: 549 with category_id: 31
+2025-06-10 17:11:27,328 - INFO - add_initial_data.py:3767 - Prepared charge code: 699 with category_id: 31
+2025-06-10 17:11:27,329 - INFO - add_initial_data.py:3767 - Prepared charge code: 690 with category_id: 31
+2025-06-10 17:11:27,329 - INFO - add_initial_data.py:3767 - Prepared charge code: 692 with category_id: 31
+2025-06-10 17:11:27,331 - INFO - add_initial_data.py:3767 - Prepared charge code: 1260 with category_id: 31
+2025-06-10 17:11:27,331 - INFO - add_initial_data.py:3767 - Prepared charge code: 5961 with category_id: 32
+2025-06-10 17:11:27,332 - INFO - add_initial_data.py:3767 - Prepared charge code: 9233 with category_id: 32
+2025-06-10 17:11:27,333 - INFO - add_initial_data.py:3767 - Prepared charge code: 623 with category_id: 32
+2025-06-10 17:11:27,333 - INFO - add_initial_data.py:3767 - Prepared charge code: 222 with category_id: 32
+2025-06-10 17:11:27,334 - INFO - add_initial_data.py:3767 - Prepared charge code: 671 with category_id: 32
+2025-06-10 17:11:27,334 - INFO - add_initial_data.py:3767 - Prepared charge code: 220 with category_id: 32
+2025-06-10 17:11:27,335 - INFO - add_initial_data.py:3767 - Prepared charge code: 620 with category_id: 32
+2025-06-10 17:11:27,335 - INFO - add_initial_data.py:3767 - Prepared charge code: 555 with category_id: 32
+2025-06-10 17:11:27,336 - INFO - add_initial_data.py:3767 - Prepared charge code: 536 with category_id: 32
+2025-06-10 17:11:27,336 - INFO - add_initial_data.py:3767 - Prepared charge code: 629 with category_id: 32
+2025-06-10 17:11:27,336 - INFO - add_initial_data.py:3767 - Prepared charge code: 626 with category_id: 32
+2025-06-10 17:11:27,337 - INFO - add_initial_data.py:3767 - Prepared charge code: 1261 with category_id: 32
+2025-06-10 17:11:27,337 - INFO - add_initial_data.py:3767 - Prepared charge code: 796 with category_id: 32
+2025-06-10 17:11:27,338 - INFO - add_initial_data.py:3767 - Prepared charge code: 791 with category_id: 32
+2025-06-10 17:11:27,338 - INFO - add_initial_data.py:3767 - Prepared charge code: 794 with category_id: 32
+2025-06-10 17:11:27,339 - INFO - add_initial_data.py:3767 - Prepared charge code: 630 with category_id: 32
+2025-06-10 17:11:27,339 - INFO - add_initial_data.py:3767 - Prepared charge code: 628 with category_id: 32
+2025-06-10 17:11:27,340 - INFO - add_initial_data.py:3767 - Prepared charge code: 625 with category_id: 32
+2025-06-10 17:11:27,340 - INFO - add_initial_data.py:3767 - Prepared charge code: 632 with category_id: 32
+2025-06-10 17:11:27,341 - INFO - add_initial_data.py:3767 - Prepared charge code: 619 with category_id: 32
+2025-06-10 17:11:27,341 - INFO - add_initial_data.py:3767 - Prepared charge code: 9228 with category_id: 33
+2025-06-10 17:11:27,342 - INFO - add_initial_data.py:3767 - Prepared charge code: 6066 with category_id: 33
+2025-06-10 17:11:27,343 - INFO - add_initial_data.py:3767 - Prepared charge code: 4019 with category_id: 33
+2025-06-10 17:11:27,343 - INFO - add_initial_data.py:3767 - Prepared charge code: 9876 with category_id: 33
+2025-06-10 17:11:27,344 - INFO - add_initial_data.py:3767 - Prepared charge code: 996 with category_id: 33
+2025-06-10 17:11:27,344 - INFO - add_initial_data.py:3767 - Prepared charge code: 30 with category_id: 33
+2025-06-10 17:11:27,345 - INFO - add_initial_data.py:3767 - Prepared charge code: 790 with category_id: 33
+2025-06-10 17:11:27,346 - INFO - add_initial_data.py:3767 - Prepared charge code: 2000 with category_id: 33
+2025-06-10 17:11:27,347 - INFO - add_initial_data.py:3767 - Prepared charge code: 645 with category_id: 33
+2025-06-10 17:11:27,347 - INFO - add_initial_data.py:3767 - Prepared charge code: 421 with category_id: 33
+2025-06-10 17:11:27,348 - INFO - add_initial_data.py:3767 - Prepared charge code: 85 with category_id: 33
+2025-06-10 17:11:27,348 - INFO - add_initial_data.py:3767 - Prepared charge code: 7789 with category_id: 33
+2025-06-10 17:11:27,349 - INFO - add_initial_data.py:3767 - Prepared charge code: 8111 with category_id: 33
+2025-06-10 17:11:27,349 - INFO - add_initial_data.py:3767 - Prepared charge code: 571 with category_id: 33
+2025-06-10 17:11:27,350 - INFO - add_initial_data.py:3767 - Prepared charge code: 3091 with category_id: 33
+2025-06-10 17:11:27,350 - INFO - add_initial_data.py:3767 - Prepared charge code: 797 with category_id: 33
+2025-06-10 17:11:27,351 - INFO - add_initial_data.py:3767 - Prepared charge code: 985 with category_id: 33
+2025-06-10 17:11:27,351 - INFO - add_initial_data.py:3767 - Prepared charge code: 801 with category_id: 33
+2025-06-10 17:11:27,352 - INFO - add_initial_data.py:3767 - Prepared charge code: 802 with category_id: 33
+2025-06-10 17:11:27,352 - INFO - add_initial_data.py:3767 - Prepared charge code: 691 with category_id: 33
+2025-06-10 17:11:27,353 - INFO - add_initial_data.py:3767 - Prepared charge code: 916 with category_id: 33
+2025-06-10 17:11:27,353 - INFO - add_initial_data.py:3767 - Prepared charge code: 917 with category_id: 33
+2025-06-10 17:11:27,354 - INFO - add_initial_data.py:3767 - Prepared charge code: 798 with category_id: 33
+2025-06-10 17:11:27,354 - INFO - add_initial_data.py:3767 - Prepared charge code: 806 with category_id: 33
+2025-06-10 17:11:27,355 - INFO - add_initial_data.py:3767 - Prepared charge code: 807 with category_id: 33
+2025-06-10 17:11:27,356 - INFO - add_initial_data.py:3767 - Prepared charge code: 918 with category_id: 33
+2025-06-10 17:11:27,356 - INFO - add_initial_data.py:3767 - Prepared charge code: 805 with category_id: 33
+2025-06-10 17:11:27,357 - INFO - add_initial_data.py:3767 - Prepared charge code: 960 with category_id: 33
+2025-06-10 17:11:27,357 - INFO - add_initial_data.py:3767 - Prepared charge code: 539 with category_id: 33
+2025-06-10 17:11:27,358 - INFO - add_initial_data.py:3767 - Prepared charge code: 262 with category_id: 33
+2025-06-10 17:11:27,358 - INFO - add_initial_data.py:3767 - Prepared charge code: 154 with category_id: 33
+2025-06-10 17:11:27,359 - INFO - add_initial_data.py:3767 - Prepared charge code: 979 with category_id: 35
+2025-06-10 17:11:27,360 - INFO - add_initial_data.py:3767 - Prepared charge code: 146 with category_id: 35
+2025-06-10 17:11:27,361 - INFO - add_initial_data.py:3767 - Prepared charge code: 687 with category_id: 35
+2025-06-10 17:11:27,362 - INFO - add_initial_data.py:3767 - Prepared charge code: 1009 with category_id: 35
+2025-06-10 17:11:27,362 - INFO - add_initial_data.py:3767 - Prepared charge code: 1254 with category_id: 35
+2025-06-10 17:11:27,363 - INFO - add_initial_data.py:3767 - Prepared charge code: 981 with category_id: 35
+2025-06-10 17:11:27,364 - INFO - add_initial_data.py:3767 - Prepared charge code: 970 with category_id: 35
+2025-06-10 17:11:27,364 - INFO - add_initial_data.py:3767 - Prepared charge code: 982 with category_id: 35
+2025-06-10 17:11:27,365 - INFO - add_initial_data.py:3767 - Prepared charge code: 684 with category_id: 35
+2025-06-10 17:11:27,365 - INFO - add_initial_data.py:3767 - Prepared charge code: 980 with category_id: 35
+2025-06-10 17:11:27,366 - INFO - add_initial_data.py:3767 - Prepared charge code: 6098 with category_id: 35
+2025-06-10 17:11:27,366 - INFO - add_initial_data.py:3767 - Prepared charge code: 8854 with category_id: 35
+2025-06-10 17:11:27,367 - INFO - add_initial_data.py:3767 - Prepared charge code: 800 with category_id: 36
+2025-06-10 17:11:27,367 - INFO - add_initial_data.py:3767 - Prepared charge code: 8500 with category_id: 36
+2025-06-10 17:11:27,368 - INFO - add_initial_data.py:3767 - Prepared charge code: 804 with category_id: 36
+2025-06-10 17:11:27,369 - INFO - add_initial_data.py:3767 - Prepared charge code: 857 with category_id: 37
+2025-06-10 17:11:27,369 - INFO - add_initial_data.py:3767 - Prepared charge code: 858 with category_id: 37
+2025-06-10 17:11:27,370 - INFO - add_initial_data.py:3767 - Prepared charge code: 37 with category_id: 37
+2025-06-10 17:11:27,370 - INFO - add_initial_data.py:3767 - Prepared charge code: 826 with category_id: 37
+2025-06-10 17:11:27,371 - INFO - add_initial_data.py:3767 - Prepared charge code: 817 with category_id: 37
+2025-06-10 17:11:27,371 - INFO - add_initial_data.py:3767 - Prepared charge code: 819 with category_id: 37
+2025-06-10 17:11:27,372 - INFO - add_initial_data.py:3767 - Prepared charge code: 1015 with category_id: 37
+2025-06-10 17:11:27,372 - INFO - add_initial_data.py:3767 - Prepared charge code: 544 with category_id: 37
+2025-06-10 17:11:27,373 - INFO - add_initial_data.py:3767 - Prepared charge code: 820 with category_id: 37
+2025-06-10 17:11:27,374 - INFO - add_initial_data.py:3767 - Prepared charge code: 63 with category_id: 37
+2025-06-10 17:11:27,374 - INFO - add_initial_data.py:3767 - Prepared charge code: 3906 with category_id: 37
+2025-06-10 17:11:27,375 - INFO - add_initial_data.py:3767 - Prepared charge code: 927 with category_id: 38
+2025-06-10 17:11:27,376 - INFO - add_initial_data.py:3767 - Prepared charge code: 923 with category_id: 38
+2025-06-10 17:11:27,377 - INFO - add_initial_data.py:3767 - Prepared charge code: 926 with category_id: 38
+2025-06-10 17:11:27,377 - INFO - add_initial_data.py:3767 - Prepared charge code: 988 with category_id: 39
+2025-06-10 17:11:27,378 - INFO - add_initial_data.py:3767 - Prepared charge code: 900 with category_id: 39
+2025-06-10 17:11:27,378 - INFO - add_initial_data.py:3767 - Prepared charge code: 899 with category_id: 39
+2025-06-10 17:11:27,379 - INFO - add_initial_data.py:3767 - Prepared charge code: 1016 with category_id: 39
+2025-06-10 17:11:27,380 - INFO - add_initial_data.py:3767 - Prepared charge code: 28 with category_id: 40
+2025-06-10 17:11:27,380 - INFO - add_initial_data.py:3767 - Prepared charge code: 592 with category_id: 40
+2025-06-10 17:11:27,381 - INFO - add_initial_data.py:3767 - Prepared charge code: 1257 with category_id: 41
+2025-06-10 17:11:27,381 - INFO - add_initial_data.py:3767 - Prepared charge code: 1250 with category_id: 42
+2025-06-10 17:11:27,382 - INFO - add_initial_data.py:3767 - Prepared charge code: 863 with category_id: 42
+2025-06-10 17:11:27,382 - INFO - add_initial_data.py:3767 - Prepared charge code: 1252 with category_id: 42
+2025-06-10 17:11:27,383 - INFO - add_initial_data.py:3767 - Prepared charge code: 358 with category_id: 42
+2025-06-10 17:11:27,383 - INFO - add_initial_data.py:3767 - Prepared charge code: 1010 with category_id: 42
+2025-06-10 17:11:27,384 - INFO - add_initial_data.py:3767 - Prepared charge code: 655 with category_id: 42
+2025-06-10 17:11:27,384 - INFO - add_initial_data.py:3767 - Prepared charge code: 656 with category_id: 42
+2025-06-10 17:11:27,385 - INFO - add_initial_data.py:3767 - Prepared charge code: 1002 with category_id: 42
+2025-06-10 17:11:27,385 - INFO - add_initial_data.py:3767 - Prepared charge code: 1003 with category_id: 42
+2025-06-10 17:11:27,386 - INFO - add_initial_data.py:3767 - Prepared charge code: 144 with category_id: 42
+2025-06-10 17:11:27,386 - INFO - add_initial_data.py:3767 - Prepared charge code: 43 with category_id: 42
+2025-06-10 17:11:27,387 - INFO - add_initial_data.py:3767 - Prepared charge code: 894 with category_id: 43
+2025-06-10 17:11:27,387 - INFO - add_initial_data.py:3767 - Prepared charge code: 893 with category_id: 43
+2025-06-10 17:11:27,388 - INFO - add_initial_data.py:3767 - Prepared charge code: 6210 with category_id: 43
+2025-06-10 17:11:27,388 - INFO - add_initial_data.py:3767 - Prepared charge code: 229 with category_id: 43
+2025-06-10 17:11:27,389 - INFO - add_initial_data.py:3767 - Prepared charge code: 891 with category_id: 43
+2025-06-10 17:11:27,389 - INFO - add_initial_data.py:3767 - Prepared charge code: 837 with category_id: 43
+2025-06-10 17:11:27,390 - INFO - add_initial_data.py:3767 - Prepared charge code: 47 with category_id: 43
+2025-06-10 17:11:27,391 - INFO - add_initial_data.py:3767 - Prepared charge code: 8904 with category_id: 43
+2025-06-10 17:11:27,392 - INFO - add_initial_data.py:3767 - Prepared charge code: 4798 with category_id: 44
+2025-06-10 17:11:27,392 - INFO - add_initial_data.py:3767 - Prepared charge code: 901 with category_id: 44
+2025-06-10 17:11:27,393 - INFO - add_initial_data.py:3767 - Prepared charge code: 903 with category_id: 44
+2025-06-10 17:11:27,394 - INFO - add_initial_data.py:3767 - Prepared charge code: 1019 with category_id: 44
+2025-06-10 17:11:27,394 - INFO - add_initial_data.py:3767 - Prepared charge code: 46 with category_id: 44
+2025-06-10 17:11:27,395 - INFO - add_initial_data.py:3767 - Prepared charge code: 1014 with category_id: 44
+2025-06-10 17:11:27,395 - INFO - add_initial_data.py:3767 - Prepared charge code: 147 with category_id: 44
+2025-06-10 17:11:27,396 - INFO - add_initial_data.py:3767 - Prepared charge code: 1012 with category_id: 45
+2025-06-10 17:11:27,397 - INFO - add_initial_data.py:3767 - Prepared charge code: 368 with category_id: 45
+2025-06-10 17:11:27,397 - INFO - add_initial_data.py:3767 - Prepared charge code: 367 with category_id: 45
+2025-06-10 17:11:27,398 - INFO - add_initial_data.py:3767 - Prepared charge code: 879 with category_id: 46
+2025-06-10 17:11:27,398 - INFO - add_initial_data.py:3767 - Prepared charge code: 882 with category_id: 46
+2025-06-10 17:11:27,399 - INFO - add_initial_data.py:3767 - Prepared charge code: 881 with category_id: 46
+2025-06-10 17:11:27,399 - INFO - add_initial_data.py:3767 - Prepared charge code: 36 with category_id: 46
+2025-06-10 17:11:27,400 - INFO - add_initial_data.py:3767 - Prepared charge code: 953 with category_id: 47
+2025-06-10 17:11:27,400 - INFO - add_initial_data.py:3767 - Prepared charge code: 933 with category_id: 47
+2025-06-10 17:11:27,401 - INFO - add_initial_data.py:3767 - Prepared charge code: 937 with category_id: 47
+2025-06-10 17:11:27,401 - INFO - add_initial_data.py:3767 - Prepared charge code: 935 with category_id: 47
+2025-06-10 17:11:27,402 - INFO - add_initial_data.py:3767 - Prepared charge code: 944 with category_id: 47
+2025-06-10 17:11:27,402 - INFO - add_initial_data.py:3767 - Prepared charge code: 946 with category_id: 47
+2025-06-10 17:11:27,403 - INFO - add_initial_data.py:3767 - Prepared charge code: 940 with category_id: 47
+2025-06-10 17:11:27,403 - INFO - add_initial_data.py:3767 - Prepared charge code: 947 with category_id: 47
+2025-06-10 17:11:27,404 - INFO - add_initial_data.py:3767 - Prepared charge code: 948 with category_id: 47
+2025-06-10 17:11:27,404 - INFO - add_initial_data.py:3767 - Prepared charge code: 950 with category_id: 47
+2025-06-10 17:11:27,405 - INFO - add_initial_data.py:3767 - Prepared charge code: 951 with category_id: 47
+2025-06-10 17:11:27,406 - INFO - add_initial_data.py:3767 - Prepared charge code: 949 with category_id: 47
+2025-06-10 17:11:27,406 - INFO - add_initial_data.py:3767 - Prepared charge code: 7023 with category_id: 48
+2025-06-10 17:11:27,407 - INFO - add_initial_data.py:3767 - Prepared charge code: 4960 with category_id: 48
+2025-06-10 17:11:27,407 - INFO - add_initial_data.py:3767 - Prepared charge code: 82 with category_id: 48
+2025-06-10 17:11:27,408 - INFO - add_initial_data.py:3767 - Prepared charge code: 897 with category_id: 48
+2025-06-10 17:11:27,409 - INFO - add_initial_data.py:3767 - Prepared charge code: 24 with category_id: 48
+2025-06-10 17:11:27,409 - INFO - add_initial_data.py:3767 - Prepared charge code: 836 with category_id: 48
+2025-06-10 17:11:27,410 - INFO - add_initial_data.py:3767 - Prepared charge code: 6051 with category_id: 48
+2025-06-10 17:11:27,411 - INFO - add_initial_data.py:3767 - Prepared charge code: 905 with category_id: 49
+2025-06-10 17:11:27,411 - INFO - add_initial_data.py:3767 - Prepared charge code: 851 with category_id: 49
+2025-06-10 17:11:27,412 - INFO - add_initial_data.py:3767 - Prepared charge code: 852 with category_id: 49
+2025-06-10 17:11:27,412 - INFO - add_initial_data.py:3767 - Prepared charge code: 21 with category_id: 49
+2025-06-10 17:11:27,413 - INFO - add_initial_data.py:3767 - Prepared charge code: 6033 with category_id: 49
+2025-06-10 17:11:27,413 - INFO - add_initial_data.py:3767 - Prepared charge code: 527 with category_id: 50
+2025-06-10 17:11:27,414 - INFO - add_initial_data.py:3767 - Prepared charge code: 29 with category_id: 51
+2025-06-10 17:11:27,414 - INFO - add_initial_data.py:3767 - Prepared charge code: 554 with category_id: 51
+2025-06-10 17:11:27,415 - INFO - add_initial_data.py:3767 - Prepared charge code: 533 with category_id: 51
+2025-06-10 17:11:27,415 - INFO - add_initial_data.py:3767 - Prepared charge code: 997 with category_id: 51
+2025-06-10 17:11:27,416 - INFO - add_initial_data.py:3767 - Prepared charge code: 130 with category_id: 51
+2025-06-10 17:11:27,416 - INFO - add_initial_data.py:3767 - Prepared charge code: 1255 with category_id: 51
+2025-06-10 17:11:27,417 - INFO - add_initial_data.py:3767 - Prepared charge code: 127 with category_id: 51
+2025-06-10 17:11:27,417 - INFO - add_initial_data.py:3767 - Prepared charge code: 5503 with category_id: 51
+2025-06-10 17:11:27,418 - INFO - add_initial_data.py:3767 - Prepared charge code: 1500 with category_id: 51
+2025-06-10 17:11:27,418 - INFO - add_initial_data.py:3767 - Prepared charge code: 890 with category_id: 51
+2025-06-10 17:11:27,419 - INFO - add_initial_data.py:3767 - Prepared charge code: 1011 with category_id: 51
+2025-06-10 17:11:27,419 - INFO - add_initial_data.py:3767 - Prepared charge code: 1008 with category_id: 51
+2025-06-10 17:11:27,420 - INFO - add_initial_data.py:3767 - Prepared charge code: 131 with category_id: 51
+2025-06-10 17:11:27,421 - INFO - add_initial_data.py:3767 - Prepared charge code: 64 with category_id: 51
+2025-06-10 17:11:27,421 - INFO - add_initial_data.py:3767 - Prepared charge code: 6877 with category_id: 51
+2025-06-10 17:11:27,422 - INFO - add_initial_data.py:3767 - Prepared charge code: 865 with category_id: 52
+2025-06-10 17:11:27,422 - INFO - add_initial_data.py:3767 - Prepared charge code: 26 with category_id: 52
+2025-06-10 17:11:27,423 - INFO - add_initial_data.py:3767 - Prepared charge code: 866 with category_id: 52
+2025-06-10 17:11:27,423 - INFO - add_initial_data.py:3767 - Prepared charge code: 867 with category_id: 52
+2025-06-10 17:11:27,424 - INFO - add_initial_data.py:3767 - Prepared charge code: 9631 with category_id: 52
+2025-06-10 17:11:27,424 - INFO - add_initial_data.py:3767 - Prepared charge code: 542 with category_id: 53
+2025-06-10 17:11:27,425 - INFO - add_initial_data.py:3767 - Prepared charge code: 1013 with category_id: 53
+2025-06-10 17:11:27,426 - INFO - add_initial_data.py:3767 - Prepared charge code: 909 with category_id: 53
+2025-06-10 17:11:27,426 - INFO - add_initial_data.py:3767 - Prepared charge code: 547 with category_id: 53
+2025-06-10 17:11:27,427 - INFO - add_initial_data.py:3767 - Prepared charge code: 394 with category_id: 53
+2025-06-10 17:11:27,428 - INFO - add_initial_data.py:3767 - Prepared charge code: 550 with category_id: 53
+2025-06-10 17:11:27,428 - INFO - add_initial_data.py:3767 - Prepared charge code: 27 with category_id: 53
+2025-06-10 17:11:27,429 - INFO - add_initial_data.py:3767 - Prepared charge code: 1589 with category_id: 54
+2025-06-10 17:11:27,429 - INFO - add_initial_data.py:3767 - Prepared charge code: 587 with category_id: 54
+2025-06-10 17:11:27,430 - INFO - add_initial_data.py:3767 - Prepared charge code: 567 with category_id: 54
+2025-06-10 17:11:27,430 - INFO - add_initial_data.py:3767 - Prepared charge code: 563 with category_id: 54
+2025-06-10 17:11:27,431 - INFO - add_initial_data.py:3767 - Prepared charge code: 561 with category_id: 54
+2025-06-10 17:11:27,431 - INFO - add_initial_data.py:3767 - Prepared charge code: 559 with category_id: 54
+2025-06-10 17:11:27,432 - INFO - add_initial_data.py:3767 - Prepared charge code: 556 with category_id: 54
+2025-06-10 17:11:27,432 - INFO - add_initial_data.py:3767 - Prepared charge code: 150 with category_id: 54
+2025-06-10 17:11:27,433 - INFO - add_initial_data.py:3767 - Prepared charge code: 565 with category_id: 54
+2025-06-10 17:11:27,433 - INFO - add_initial_data.py:3767 - Prepared charge code: 1253 with category_id: 54
+2025-06-10 17:11:27,434 - INFO - add_initial_data.py:3767 - Prepared charge code: 45 with category_id: 54
+2025-06-10 17:11:27,434 - INFO - add_initial_data.py:3767 - Prepared charge code: 449 with category_id: 54
+2025-06-10 17:11:27,435 - INFO - add_initial_data.py:3767 - Prepared charge code: 346 with category_id: 54
+2025-06-10 17:11:27,436 - INFO - add_initial_data.py:3767 - Prepared charge code: 570 with category_id: 54
+2025-06-10 17:11:27,436 - INFO - add_initial_data.py:3767 - Prepared charge code: 448 with category_id: 54
+2025-06-10 17:11:27,437 - INFO - add_initial_data.py:3767 - Prepared charge code: 66 with category_id: 54
+2025-06-10 17:11:27,437 - INFO - add_initial_data.py:3767 - Prepared charge code: 6677 with category_id: 54
+2025-06-10 17:11:27,437 - INFO - add_initial_data.py:3767 - Prepared charge code: 399 with category_id: 55
+2025-06-10 17:11:27,439 - INFO - add_initial_data.py:3767 - Prepared charge code: 9990 with category_id: 56
+2025-06-10 17:11:27,439 - INFO - add_initial_data.py:3767 - Prepared charge code: 9994 with category_id: 56
+2025-06-10 17:11:27,440 - INFO - add_initial_data.py:3767 - Prepared charge code: 376 with category_id: 56
+2025-06-10 17:11:27,440 - INFO - add_initial_data.py:3767 - Prepared charge code: 1258 with category_id: 56
+2025-06-10 17:11:27,441 - INFO - add_initial_data.py:3767 - Prepared charge code: 141 with category_id: 56
+2025-06-10 17:11:27,442 - INFO - add_initial_data.py:3767 - Prepared charge code: 65 with category_id: 56
+2025-06-10 17:11:27,442 - INFO - add_initial_data.py:3767 - Prepared charge code: 500 with category_id: 56
+2025-06-10 17:11:27,443 - INFO - add_initial_data.py:3767 - Prepared charge code: 374 with category_id: 56
+2025-06-10 17:11:27,443 - INFO - add_initial_data.py:3767 - Prepared charge code: 250 with category_id: 56
+2025-06-10 17:11:27,444 - INFO - add_initial_data.py:3767 - Prepared charge code: 5908 with category_id: 58
+2025-06-10 17:11:27,444 - INFO - add_initial_data.py:3767 - Prepared charge code: 1275 with category_id: 58
+2025-06-10 17:11:27,445 - INFO - add_initial_data.py:3767 - Prepared charge code: 450 with category_id: 58
+2025-06-10 17:11:27,445 - INFO - add_initial_data.py:3767 - Prepared charge code: 98 with category_id: 58
+2025-06-10 17:11:27,446 - INFO - add_initial_data.py:3767 - Prepared charge code: 501 with category_id: 59
+2025-06-10 17:11:27,446 - INFO - add_initial_data.py:3767 - Prepared charge code: 1256 with category_id: 59
+2025-06-10 17:11:27,446 - INFO - add_initial_data.py:3767 - Prepared charge code: 503 with category_id: 59
+2025-06-10 17:11:27,447 - INFO - add_initial_data.py:3767 - Prepared charge code: 5030 with category_id: 59
+2025-06-10 17:11:27,447 - INFO - add_initial_data.py:3767 - Prepared charge code: 95 with category_id: 61
+2025-06-10 17:11:27,448 - INFO - add_initial_data.py:3767 - Prepared charge code: 1001 with category_id: 61
+2025-06-10 17:11:27,448 - INFO - add_initial_data.py:3767 - Prepared charge code: 99 with category_id: 62
+2025-06-10 17:11:27,449 - INFO - add_initial_data.py:3767 - Prepared charge code: 1000 with category_id: 62
+2025-06-10 17:11:27,449 - INFO - add_initial_data.py:3767 - Prepared charge code: 999 with category_id: 62
+2025-06-10 17:11:27,450 - INFO - add_initial_data.py:3767 - Prepared charge code: 23 with category_id: 62
+2025-06-10 17:11:27,450 - INFO - add_initial_data.py:3767 - Prepared charge code: 38 with category_id: 62
+2025-06-10 17:11:27,451 - INFO - add_initial_data.py:3767 - Prepared charge code: 92 with category_id: 62
+2025-06-10 17:11:27,452 - INFO - add_initial_data.py:3767 - Prepared charge code: 93 with category_id: 62
+2025-06-10 17:11:27,453 - INFO - add_initial_data.py:3767 - Prepared charge code: 106 with category_id: 62
+2025-06-10 17:11:27,453 - INFO - add_initial_data.py:3767 - Prepared charge code: 310 with category_id: 62
+2025-06-10 17:11:27,454 - INFO - add_initial_data.py:3767 - Prepared charge code: 1007 with category_id: 62
+2025-06-10 17:11:27,454 - INFO - add_initial_data.py:3767 - Prepared charge code: 1006 with category_id: 62
+2025-06-10 17:11:27,455 - INFO - add_initial_data.py:3767 - Prepared charge code: 1005 with category_id: 62
+2025-06-10 17:11:27,456 - INFO - add_initial_data.py:3767 - Prepared charge code: 1004 with category_id: 62
+2025-06-10 17:11:27,456 - INFO - add_initial_data.py:3767 - Prepared charge code: 707 with category_id: 62
+2025-06-10 17:11:27,457 - INFO - add_initial_data.py:3767 - Prepared charge code: 739 with category_id: 62
+2025-06-10 17:11:27,457 - INFO - add_initial_data.py:3767 - Prepared charge code: 5000 with category_id: 63
+2025-06-10 17:11:27,457 - INFO - add_initial_data.py:3767 - Prepared charge code: 5002 with category_id: 63
+2025-06-10 17:11:27,458 - INFO - add_initial_data.py:3767 - Prepared charge code: 5003 with category_id: 63
+2025-06-10 17:11:27,458 - INFO - add_initial_data.py:3767 - Prepared charge code: 3126 with category_id: 63
+2025-06-10 17:11:27,458 - INFO - add_initial_data.py:3767 - Prepared charge code: 9452 with category_id: 63
+2025-06-10 17:11:27,459 - INFO - add_initial_data.py:3767 - Prepared charge code: 5001 with category_id: 63
+2025-06-10 17:11:27,459 - INFO - add_initial_data.py:3767 - Prepared charge code: 5005 with category_id: 63
+2025-06-10 17:11:27,460 - INFO - add_initial_data.py:3767 - Prepared charge code: 808 with category_id: 63
+2025-06-10 17:11:27,460 - INFO - add_initial_data.py:3767 - Prepared charge code: 19 with category_id: 63
+2025-06-10 17:11:27,461 - INFO - add_initial_data.py:3776 - Successfully prepared 414 new charge codes.
+2025-06-10 17:11:27,477 - INFO - add_initial_data.py:3823 - Committed locations, owners, and all charge codes.
+2025-06-10 17:11:27,478 - INFO - add_initial_data.py:3825 - Initial data setup process completed successfully.
+2025-06-10 17:11:27,478 - INFO - add_initial_data.py:3839 - Database session closed.

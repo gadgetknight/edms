@@ -8,12 +8,16 @@ from .charge_code_controller import ChargeCodeController
 from .owner_controller import OwnerController
 from .financial_controller import FinancialController
 from .horse_controller import HorseController
+from .company_profile_controller import CompanyProfileController
+from .veterinarian_controller import VeterinarianController
 
 __all__ = [
     "UserController",
-    "Location_Controller",
+    "LocationController",
     "ChargeCodeController",
     "OwnerController",
     "FinancialController",
     "HorseController",
+    "CompanyProfileController",
+    "VeterinarianController",
 ]

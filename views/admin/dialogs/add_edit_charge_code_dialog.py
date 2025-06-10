@@ -1,31 +1,17 @@
 # views/admin/dialogs/add_edit_charge_code_dialog.py
 """
 EDSI Veterinary Management System - Add/Edit Charge Code Dialog
-Version: 1.1.11
+Version: 1.1.12
 Purpose: Dialog for creating and editing charge codes.
-         - Fixed dictionary key access for category path population.
-Last Updated: June 5, 2025
+Last Updated: June 9, 2025
 Author: Gemini
 
 Changelog:
+- v1.1.12 (2025-06-09):
+    - Bug Fix: In `validate_and_accept`, correctly pass the `charge_code_id_to_ignore`
+      parameter to the validation method to allow saving of edited records.
 - v1.1.11 (2025-06-05):
-    - Bug Fix: In `_populate_fields`, corrected the category path access from
-      attribute-style (`path[0].category_id`) to dictionary key-style (`path[0]['id']`).
-      This resolves the `AttributeError` when opening the dialog in edit mode.
-- v1.1.10 (2025-06-03):
-    - Added a slot `_on_alt_code_text_edited` connected to the `textEdited`
-      signal of `alt_code_input` to automatically convert input to uppercase
-      as the user types.
-- v1.1.9 (2025-06-03):
-    - Added `QHBoxLayout` to imports from `PySide6.QtWidgets` to resolve
-      a NameError in `_setup_ui` when creating `status_layout`.
-- v1.1.8 (2025-06-03):
-    - Made 'is_active_checkbox' and 'taxable_checkbox' disabled (read-only).
-- v1.1.7 (2025-06-03):
-    - Removed 'detail_category_combo' for a 2-level hierarchy.
-- v1.1.6 (2025-06-02):
-    - Added `QTimer` import.
-# ... (previous changelog entries)
+    - Bug Fix: Corrected dictionary key access for category path population.
 """
 
 import logging
@@ -62,9 +48,7 @@ try:
         os.path.join(current_script_path_for_assets, "..", "..", "..")
     )
     assets_path = os.path.join(project_root_for_assets, "assets", "icons")
-    if not os.path.exists(
-        os.path.join(assets_path, "checkmark_light.svg")
-    ):  # Basic check
+    if not os.path.exists(os.path.join(assets_path, "checkmark_light.svg")):
         assets_path = "assets/icons"
 except Exception:
     assets_path = "assets/icons"
@@ -141,20 +125,38 @@ class AddEditChargeCodeDialog(QDialog):
             os.sep, "/"
         )
         return f"""
-            QLineEdit, QComboBox, QTextEdit, QDoubleSpinBox {{ background-color: {base_bg}; color: {DARK_TEXT_PRIMARY}; border: 1px solid {DARK_BORDER}; border-radius: 4px; padding: 6px 10px; font-size: 13px; min-height: 20px; }}
-            QLineEdit:focus, QComboBox:focus, QTextEdit:focus, QDoubleSpinBox:focus {{ border-color: {DARK_PRIMARY_ACTION}; }}
-            QLineEdit:disabled, QComboBox:disabled, QTextEdit:disabled, QDoubleSpinBox:disabled {{ background-color: {DARK_HEADER_FOOTER}; color: {DARK_TEXT_TERTIARY}; border-color: {DARK_HEADER_FOOTER}; }}
-            QLineEdit[readOnly="true"] {{ background-color: {DARK_HEADER_FOOTER}; color: {DARK_TEXT_TERTIARY}; }}
-            QComboBox::drop-down {{ border: none; background-color: transparent; }}
-            QComboBox::down-arrow {{ color: {DARK_TEXT_SECONDARY}; }}
-            QComboBox QAbstractItemView {{ background-color: {DARK_WIDGET_BACKGROUND}; color: {DARK_TEXT_PRIMARY}; border: 1px solid {DARK_BORDER}; selection-background-color: {DARK_HIGHLIGHT_BG}; selection-color: {DARK_HIGHLIGHT_TEXT}; }}
-            QCheckBox::indicator:disabled {{ background-color: {DARK_INPUT_FIELD_BACKGROUND}; border: 1px solid {DARK_TEXT_TERTIARY}; }}
-            QCheckBox::indicator:checked:disabled {{ background-color: {DARK_PRIMARY_ACTION}; border: 1px solid {DARK_PRIMARY_ACTION}; image: url({checkmark_path}); }}
-            QCheckBox:disabled {{ color: {DARK_TEXT_SECONDARY}; }}
+            QLineEdit, QComboBox, QTextEdit, QDoubleSpinBox {{ background-color: {base_bg}; color: {DARK_TEXT_PRIMARY};
+            border: 1px solid {DARK_BORDER}; border-radius: 4px; padding: 6px 10px; font-size: 13px; min-height: 20px;
+            }}
+            QLineEdit:focus, QComboBox:focus, QTextEdit:focus, QDoubleSpinBox:focus {{ border-color: {DARK_PRIMARY_ACTION};
+            }}
+            QLineEdit:disabled, QComboBox:disabled, QTextEdit:disabled, QDoubleSpinBox:disabled {{ background-color: {DARK_HEADER_FOOTER};
+            color: {DARK_TEXT_TERTIARY}; border-color: {DARK_HEADER_FOOTER};
+            }}
+            QLineEdit[readOnly="true"] {{ background-color: {DARK_HEADER_FOOTER};
+            color: {DARK_TEXT_TERTIARY}; }}
+            QComboBox::drop-down {{ border: none; background-color: transparent;
+            }}
+            QComboBox::down-arrow {{ color: {DARK_TEXT_SECONDARY};
+            }}
+            QComboBox QAbstractItemView {{ background-color: {DARK_WIDGET_BACKGROUND}; color: {DARK_TEXT_PRIMARY};
+            border: 1px solid {DARK_BORDER}; selection-background-color: {DARK_HIGHLIGHT_BG}; selection-color: {DARK_HIGHLIGHT_TEXT}; }}
+            QCheckBox::indicator:disabled {{ background-color: {DARK_INPUT_FIELD_BACKGROUND};
+            border: 1px solid {DARK_TEXT_TERTIARY}; }}
+            QCheckBox::indicator:checked:disabled {{ background-color: {DARK_PRIMARY_ACTION};
+            border: 1px solid {DARK_PRIMARY_ACTION}; image: url({checkmark_path}); }}
+            QCheckBox:disabled {{ color: {DARK_TEXT_SECONDARY};
+            }}
         """
 
     def _get_dialog_generic_button_style(self) -> str:
-        return f"QPushButton {{background-color: {DARK_BUTTON_BG}; color: {DARK_TEXT_PRIMARY}; border: 1px solid {DARK_BORDER}; border-radius: 4px; padding: 8px 12px; font-size: 12px; font-weight: 500; min-height: 28px;}} QPushButton:hover {{ background-color: {DARK_BUTTON_HOVER}; }} QPushButton:disabled {{ background-color: {DARK_HEADER_FOOTER}; color: {DARK_TEXT_TERTIARY}; }}"
+        return (
+            f"QPushButton {{background-color: {DARK_BUTTON_BG}; color: {DARK_TEXT_PRIMARY}; "
+            f"border: 1px solid {DARK_BORDER}; border-radius: 4px; padding: 8px 12px; "
+            f"font-size: 12px; font-weight: 500; min-height: 28px;}} "
+            f"QPushButton:hover {{ background-color: {DARK_BUTTON_HOVER}; }} "
+            f"QPushButton:disabled {{ background-color: {DARK_HEADER_FOOTER}; color: {DARK_TEXT_TERTIARY}; }}"
+        )
 
     def _setup_palette(self):
         palette = QPalette()
@@ -315,7 +317,6 @@ class AddEditChargeCodeDialog(QDialog):
 
     @Slot(str)
     def _on_alt_code_text_edited(self, text: str):
-        """Automatically converts the alt_code_input text to uppercase."""
         if self.alt_code_input:
             current_text = text
             uppercase_text = current_text.upper()
@@ -391,7 +392,7 @@ class AddEditChargeCodeDialog(QDialog):
                     if self.sub_category_combo:
                         self.sub_category_combo.blockSignals(True)
                     if len(path) > 0 and self.main_category_combo:
-                        main_cat_id = path[0]["id"]  # FIXED
+                        main_cat_id = path[0]["id"]
                         index = self.main_category_combo.findData(main_cat_id)
                         if index >= 0:
                             self.main_category_combo.setCurrentIndex(index)
@@ -399,7 +400,7 @@ class AddEditChargeCodeDialog(QDialog):
                             self.main_category_combo.currentIndex()
                         )
                     if len(path) > 1 and self.sub_category_combo:
-                        sub_cat_id = path[1]["id"]  # FIXED
+                        sub_cat_id = path[1]["id"]
                         QTimer.singleShot(
                             0,
                             lambda: self._select_combo_item(
@@ -467,18 +468,15 @@ class AddEditChargeCodeDialog(QDialog):
         data = self.get_data()
         if data is None:
             return
-        validation_data_for_controller = data.copy()
-        if self.is_edit_mode and self.charge_code:
-            if self.is_active_checkbox:
-                validation_data_for_controller["is_active"] = (
-                    self.is_active_checkbox.isChecked()
-                )
-            if self.taxable_checkbox:
-                validation_data_for_controller["taxable"] = (
-                    self.taxable_checkbox.isChecked()
-                )
+
+        charge_code_id_to_ignore = (
+            self.charge_code.id if self.is_edit_mode and self.charge_code else None
+        )
+
         is_valid, errors = self.controller.validate_charge_code_data(
-            validation_data_for_controller, is_new=(not self.is_edit_mode)
+            data,
+            is_new=(not self.is_edit_mode),
+            charge_code_id_to_ignore=charge_code_id_to_ignore,
         )
         if not is_valid:
             QMessageBox.warning(
@@ -487,6 +485,7 @@ class AddEditChargeCodeDialog(QDialog):
                 "Please correct the following errors:\n- " + "\n- ".join(errors),
             )
             return
+
         try:
             if self.is_edit_mode and self.charge_code:
                 success, message = self.controller.update_charge_code(
@@ -496,6 +495,7 @@ class AddEditChargeCodeDialog(QDialog):
                 success, message, _ = self.controller.create_charge_code(
                     data, self.current_user_id
                 )
+
             if success:
                 if hasattr(self.parent_view, "show_info") and callable(
                     getattr(self.parent_view, "show_info")

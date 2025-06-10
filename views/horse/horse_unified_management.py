@@ -1,26 +1,24 @@
 # views/horse/horse_unified_management.py
 """
 EDSI Veterinary Management System - Unified Horse Management Screen (Dark Theme)
-Version: 1.8.1
-Purpose: Unified interface for horse management.
-         - Added detailed logging to deactivation workflow for diagnostics.
-Last Updated: June 7, 2025
-Author: Gemini (Further modified by Coding partner)
+Version: 1.12.0
+Purpose: Unified interface for horse management, including invoice history.
+Last Updated: June 10, 2025
+Author: Gemini
 
 Changelog:
-- v1.8.1 (2025-06-07):
-    - Added detailed logging to the `handle_toggle_active_status` method to
-      better diagnose why the deactivate button may not appear to be working.
-- v1.8.0 (2025-06-07):
-    - Added a connection for the `itemDoubleClicked` signal on the horse list
-      to enable editing a horse by double-clicking its entry.
-- v1.7.39 (2025-06-05):
-    - Bug Fix: Corrected the keyword argument from `parent_view` to `parent`
-      during the instantiation of `BillingTab`.
-- v1.7.38 (2025-06-04):
-    - Full rewrite to integrate BillingTab.
+- v1.12.0 (2025-06-10):
+    - Added _on_payment_recorded handler to refresh horse details after a
+      payment is made, ensuring all tabs reflect the new balance.
+- v1.11.0 (2025-06-09):
+    - Added _on_invoice_deleted handler to refresh the BillingTab and
+      InvoiceHistoryTab after an invoice is deleted.
+- v1.10.0 (2025-06-09):
+    - Implemented a signal/slot mechanism to refresh the InvoiceHistoryTab
+      automatically after an invoice is created in the BillingTab.
 """
 
+# ... (imports remain the same) ...
 import logging
 from datetime import (
     datetime,
@@ -83,6 +81,7 @@ from config.app_config import (
 from controllers.horse_controller import HorseController
 from controllers.owner_controller import OwnerController
 from controllers.location_controller import LocationController
+from controllers.financial_controller import FinancialController
 from models import (
     Horse,
     Location as LocationModel,
@@ -93,10 +92,11 @@ from .tabs.basic_info_tab import BasicInfoTab
 from .tabs.owners_tab import OwnersTab
 from .tabs.location_tab import LocationTab
 from .tabs.billing_tab import BillingTab
-from controllers.financial_controller import FinancialController
+from .tabs.invoice_history_tab import InvoiceHistoryTab
 
 
 class HorseUnifiedManagement(BaseView):
+    # ... (__init__ and other methods up to setup_connections remain the same) ...
     horse_selection_changed = Signal(int)
     exit_requested = Signal()
     setup_requested = Signal()
@@ -118,6 +118,7 @@ class HorseUnifiedManagement(BaseView):
         self.owners_tab: Optional[OwnersTab] = None
         self.location_tab: Optional[LocationTab] = None
         self.billing_tab: Optional[BillingTab] = None
+        self.invoice_history_tab: Optional[InvoiceHistoryTab] = None
 
         self.horse_list: Optional[QWidget] = None
         self.empty_frame: Optional[QFrame] = None
@@ -466,6 +467,7 @@ class HorseUnifiedManagement(BaseView):
 
         self.logger.debug("update_main_action_buttons_state: FINISHED")
 
+    # ... (other methods like discard_changes, load_initial_data, etc. remain unchanged) ...
     def discard_changes(self):
         self.logger.debug("discard_changes: START")
         if not self._is_new_mode and not self._has_changes_in_active_tab:
@@ -825,60 +827,39 @@ class HorseUnifiedManagement(BaseView):
                 f"""QTabWidget#DetailsTabWidget::pane{{border:1px solid {AppConfig.DARK_BORDER};background-color:{AppConfig.DARK_WIDGET_BACKGROUND};border-radius:6px;margin-top:-1px;}} QTabBar::tab{{padding:8px 15px;margin-right:2px;background-color:{AppConfig.DARK_BUTTON_BG};color:{AppConfig.DARK_TEXT_SECONDARY};border:1px solid {AppConfig.DARK_BORDER};border-bottom:none;border-top-left-radius:5px;border-top-right-radius:5px;min-width:90px;font-size:13px;font-weight:500;}} QTabBar::tab:selected{{background-color:{AppConfig.DARK_WIDGET_BACKGROUND};color:{AppConfig.DARK_TEXT_PRIMARY};border-color:{AppConfig.DARK_BORDER};border-bottom-color:{AppConfig.DARK_WIDGET_BACKGROUND};}} QTabBar::tab:!selected:hover{{background-color:{AppConfig.DARK_BUTTON_HOVER};color:{AppConfig.DARK_TEXT_PRIMARY};}} QTabBar{{border:none;background-color:transparent;margin-bottom:0px;}}"""
             )
 
-            try:
-                self.basic_info_tab = BasicInfoTab(
-                    horse_controller=self.horse_controller, parent=self
-                )
-                self.tab_widget.addTab(self.basic_info_tab, "📋 Basic Info")
-                self.logger.info("BasicInfoTab created.")
-            except Exception as e_basic:
-                self.logger.error(f"ERROR BasicInfoTab: {e_basic}", exc_info=True)
-                self.basic_info_tab = None
+            self.basic_info_tab = BasicInfoTab(
+                horse_controller=self.horse_controller, parent=self
+            )
+            self.tab_widget.addTab(self.basic_info_tab, "📋 Basic Info")
+            self.logger.info("BasicInfoTab created.")
 
-            try:
-                self.owners_tab = OwnersTab(
-                    parent_view=self,
-                    horse_controller=self.horse_controller,
-                    owner_controller=self.owner_controller,
-                )
-                self.tab_widget.addTab(self.owners_tab, "👥 Owners")
-                self.logger.info("OwnersTab created.")
-            except Exception as e_owners:
-                self.logger.error(f"ERROR OwnersTab: {e_owners}", exc_info=True)
-                self.owners_tab = None
+            self.owners_tab = OwnersTab(
+                parent_view=self,
+                horse_controller=self.horse_controller,
+                owner_controller=self.owner_controller,
+            )
+            self.tab_widget.addTab(self.owners_tab, "👥 Owners")
+            self.logger.info("OwnersTab created.")
 
-            try:
-                self.location_tab = LocationTab(
-                    parent_view=self,
-                    horse_controller=self.horse_controller,
-                    location_controller=self.location_controller,
-                )
-                self.tab_widget.addTab(self.location_tab, "📍 Location")
-                self.logger.info("LocationTab created.")
-            except Exception as e_location:
-                self.logger.error(f"ERROR LocationTab: {e_location}", exc_info=True)
-                self.location_tab = None
+            self.location_tab = LocationTab(
+                parent_view=self,
+                horse_controller=self.horse_controller,
+                location_controller=self.location_controller,
+            )
+            self.tab_widget.addTab(self.location_tab, "📍 Location")
+            self.logger.info("LocationTab created.")
 
-            try:
-                self.billing_tab = BillingTab(
-                    financial_controller=self.financial_controller, parent=self
-                )
-                self.tab_widget.addTab(self.billing_tab, "💰 Billing")
-                self.logger.info("BillingTab created.")
-            except Exception as e_billing:
-                self.logger.error(f"ERROR BillingTab: {e_billing}", exc_info=True)
-                self.billing_tab = None
+            self.billing_tab = BillingTab(
+                financial_controller=self.financial_controller, parent=self
+            )
+            self.tab_widget.addTab(self.billing_tab, "💰 Billing")
+            self.logger.info("BillingTab created.")
 
-            placeholder_tabs = ["📊 History"]
-            for name in placeholder_tabs:
-                placeholder_widget = QWidget(
-                    objectName=f"Placeholder_{name.replace(' ','')}Tab"
-                )
-                layout = QVBoxLayout(placeholder_widget)
-                label = QLabel(f"{name} - Coming Soon")
-                label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                layout.addWidget(label)
-                self.tab_widget.addTab(placeholder_widget, name)
+            self.invoice_history_tab = InvoiceHistoryTab(
+                financial_controller=self.financial_controller, parent=self
+            )
+            self.tab_widget.addTab(self.invoice_history_tab, "🧾 Invoice History")
+            self.logger.info("InvoiceHistoryTab created.")
 
             parent_layout_for_tabs.addWidget(self.tab_widget, 1)
             self.logger.info("Tabs added.")
@@ -891,6 +872,7 @@ class HorseUnifiedManagement(BaseView):
             self.owners_tab = None
             self.location_tab = None
             self.billing_tab = None
+            self.invoice_history_tab = None
 
     def _handle_location_assignment_change(self, location_data: Dict):
         self.logger.info(f"Received location_assignment_changed: {location_data}")
@@ -1033,13 +1015,16 @@ class HorseUnifiedManagement(BaseView):
         if self.location_tab:
             self.location_tab.load_location_for_horse(horse)
         if self.billing_tab:
-            self.logger.debug("load_horse_details: Loading BillingTab data")
             self.billing_tab.set_current_horse(horse)
+        if self.invoice_history_tab:
+            self.invoice_history_tab.set_current_horse(horse)
+
         self.display_details_state()
         self.update_main_action_buttons_state()
         self.update_status(f"Viewing: {horse.horse_name or 'Unnamed Horse'}")
         self.logger.info(f"load_horse_details: FINISHED for horse ID: {horse_id}")
 
+    # ... (the rest of the HorseUnifiedManagement methods remain unchanged) ...
     def add_new_horse(self):
         self.logger.info("add_new_horse: START")
         if self._has_changes_in_active_tab and not self.show_question(
@@ -1069,6 +1054,9 @@ class HorseUnifiedManagement(BaseView):
             self.location_tab.load_location_for_horse(None)
         if self.billing_tab:
             self.billing_tab.set_current_horse(None)
+        if self.invoice_history_tab:
+            self.invoice_history_tab.set_current_horse(None)
+
         if hasattr(self, "horse_title") and self.horse_title:
             self.horse_title.setText("New Horse Record")
         self._update_horse_info_line(None)
@@ -1497,7 +1485,7 @@ class HorseUnifiedManagement(BaseView):
             self.display_empty_state()
         self.logger.debug("on_selection_changed: FINISHED")
 
-    def edit_selected_horse(self, item=None):  # Accept optional item argument
+    def edit_selected_horse(self, item=None):
         self.logger.info(f"edit_selected_horse triggered. Item: {item}")
         if self.current_horse and not self._is_new_mode:
             if not self.tab_widget:
@@ -1567,89 +1555,6 @@ class HorseUnifiedManagement(BaseView):
             "Horse Management Screen:\n\n- Use the list on the left to select a horse.\n- Double-click a horse to edit.\n- Click 'Add Horse' or Ctrl+N to create a new record.\n- Tabs on the right show different aspects of the horse's data.\n- Use radio buttons to filter the list by status.\n- Search box filters by name, account, chip, etc.\n- F5 to refresh. Ctrl+S to save (when editing). Esc to discard (when editing).",
         )
 
-    def display_details_state(self):
-        self.logger.debug("display_details_state: START")
-        if hasattr(self, "empty_frame") and self.empty_frame:
-            self.empty_frame.hide()
-        if (
-            hasattr(self, "horse_details_content_widget")
-            and self.horse_details_content_widget
-        ):
-            self.horse_details_content_widget.show()
-        self.logger.debug("display_details_state: FINISHED")
-
-    def update_status(self, message, timeout=4000):
-        if hasattr(self, "status_label") and self.status_label:
-            self.status_label.setText(message)
-            if timeout > 0:
-                QTimer.singleShot(
-                    timeout, lambda: self.clear_status_if_matches(message)
-                )
-
-    def clear_status_if_matches(self, original_message):
-        if (
-            hasattr(self, "status_label")
-            and self.status_label
-            and self.status_label.text() == original_message
-        ):
-            self.status_label.setText("Ready")
-
-    def handle_toggle_active_status(self):
-        self.logger.info("handle_toggle_active_status: Received request.")
-        if not self.current_horse:
-            self.logger.warning(
-                "handle_toggle_active_status: No current horse selected."
-            )
-            return
-
-        is_currently_active = self.current_horse.is_active
-        action_verb = "deactivate" if is_currently_active else "activate"
-        horse_name_display = (
-            self.current_horse.horse_name or f"ID {self.current_horse.horse_id}"
-        )
-
-        self.logger.debug(
-            f"handle_toggle_active_status: Prompting to {action_verb} '{horse_name_display}'. Current state is is_active={is_currently_active}."
-        )
-        if self.show_question(
-            f"Confirm {action_verb.capitalize()}",
-            f"Are you sure you want to {action_verb} horse '{horse_name_display}'?",
-        ):
-            self.logger.info(
-                f"handle_toggle_active_status: User confirmed. Calling controller to {action_verb}."
-            )
-            controller_method = (
-                self.horse_controller.deactivate_horse
-                if is_currently_active
-                else self.horse_controller.activate_horse
-            )
-            success, message = controller_method(
-                self.current_horse.horse_id, self.current_user
-            )
-            if success:
-                self.logger.info(
-                    f"handle_toggle_active_status: {action_verb.capitalize()} successful. {message}"
-                )
-                self.show_info("Status Changed", message)
-                # We must reload the horse list to reflect the status change,
-                # and then reload the details of the current horse.
-                self.load_horses()
-                self.load_horse_details(self.current_horse.horse_id)
-            else:
-                self.logger.error(
-                    f"handle_toggle_active_status: {action_verb.capitalize()} failed. {message}"
-                )
-                self.show_error(f"{action_verb.capitalize()} Failed", message)
-        else:
-            self.logger.info("handle_toggle_active_status: User cancelled.")
-        self.logger.debug("handle_toggle_active_status: FINISHED")
-
-    def handle_logout_request_from_menu(self):
-        self.logger.info(
-            f"handle_logout_request_from_menu: User '{self.current_user}' logout."
-        )
-        self.exit_requested.emit()
-
     def keyPressEvent(self, event: QKeyEvent):
         key = event.key()
         modifiers = QApplication.keyboardModifiers()
@@ -1703,6 +1608,33 @@ class HorseUnifiedManagement(BaseView):
         else:
             super().keyPressEvent(event)
 
+    def handle_logout_request_from_menu(self):
+        self.logger.info(
+            f"handle_logout_request_from_menu: User '{self.current_user}' logout."
+        )
+        self.exit_requested.emit()
+
+    def _on_invoice_created(self):
+        self.logger.info("Invoice created signal received, refreshing history tab.")
+        if self.invoice_history_tab:
+            self.invoice_history_tab.load_invoices()
+
+    def _on_invoice_deleted(self):
+        self.logger.info(
+            "Invoice deleted signal received, refreshing all relevant tabs."
+        )
+        if self.invoice_history_tab:
+            self.invoice_history_tab.load_invoices()
+        if self.billing_tab:
+            self.billing_tab.load_transactions()
+
+    def _on_payment_recorded(self):
+        self.logger.info(
+            "Payment recorded signal received, refreshing all horse details."
+        )
+        if self.current_horse:
+            self.load_horse_details(self.current_horse.horse_id)
+
     def setup_connections(self):
         self.logger.info("--- HORSEUNIFIEDMANAGEMENT.SETUP_CONNECTIONS START ---")
         if hasattr(self, "add_horse_btn") and self.add_horse_btn:
@@ -1726,6 +1658,7 @@ class HorseUnifiedManagement(BaseView):
         if hasattr(self, "horse_list") and self.horse_list:
             self.horse_list.itemSelectionChanged.connect(self.on_selection_changed)
             self.horse_list.itemDoubleClicked.connect(self.edit_selected_horse)
+
         if self.basic_info_tab:
             self.logger.info("Connecting BasicInfoTab signals.")
             if hasattr(self.basic_info_tab, "data_modified"):
@@ -1759,7 +1692,23 @@ class HorseUnifiedManagement(BaseView):
         else:
             self.logger.warning("LocationTab is None, its signals cannot be connected.")
         if self.billing_tab:
-            self.logger.info("Connecting BillingTab signals (if any needed by parent).")
-            # Example: if BillingTab emits a signal that HorseUnifiedManagement needs to react to
-            # self.billing_tab.charges_updated.connect(self.handle_billing_charges_updated) # Placeholder
+            self.billing_tab.status_message.connect(self.update_status)
+            if hasattr(self.billing_tab, "invoice_created"):
+                self.billing_tab.invoice_created.connect(self._on_invoice_created)
+
+        if self.invoice_history_tab:
+            self.logger.info("Connecting InvoiceHistoryTab signals.")
+            self.invoice_history_tab.status_message.connect(self.update_status)
+            if hasattr(self.invoice_history_tab, "invoice_deleted"):
+                self.invoice_history_tab.invoice_deleted.connect(
+                    self._on_invoice_deleted
+                )
+            if hasattr(self.invoice_history_tab, "payment_recorded"):
+                self.invoice_history_tab.payment_recorded.connect(
+                    self._on_payment_recorded
+                )
+        else:
+            self.logger.warning(
+                "InvoiceHistoryTab is None, its signals cannot be connected."
+            )
         self.logger.info("--- HORSEUNIFIEDMANAGEMENT.SETUP_CONNECTIONS END ---")

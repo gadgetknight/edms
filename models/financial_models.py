@@ -1,20 +1,21 @@
 # models/financial_models.py
 """
 EDSI Veterinary Management System - Financial Data Models
-Version: 1.1.0
+Version: 1.3.0
 Purpose: Defines SQLAlchemy models for financial records like Transactions and Invoices.
-         - Added fields for per-line taxable flag, item notes, and total invoice tax.
-Last Updated: June 5, 2025
+Last Updated: June 9, 2025
 Author: Gemini
 
 Changelog:
+- v1.3.0 (2025-06-09):
+    - Set `autoincrement=True` on the Invoice.invoice_id primary key to ensure
+      the database engine never reuses an invoice number after it has been deleted.
+- v1.2.0 (2025-06-09):
+    - Added a `status` column to the `Transaction` model to explicitly track
+      whether a charge is active or has been processed into an invoice.
 - v1.1.0 (2025-06-05):
-    - Added `taxable` (Boolean) and `item_notes` (Text) columns to the `Transaction`
-      model to support per-item tax flagging and notes.
-    - Added `tax_total` (Numeric) column to the `Invoice` model to store the
-      manually entered total tax amount for an invoice.
-- v1.0.0 (2025-06-04):
-    - Initial creation of definitive Transaction and Invoice models.
+    - Added `taxable` (Boolean) and `item_notes` (Text) columns to the `Transaction` model.
+    - Added `tax_total` (Numeric) column to the `Invoice` model.
 """
 
 from sqlalchemy import (
@@ -54,12 +55,10 @@ class Transaction(BaseModel):
         Integer, ForeignKey("invoices.invoice_id"), nullable=True, index=True
     )
 
-    # Links to the specific charge code from the reference table
     charge_code_id = Column(
         Integer, ForeignKey("charge_codes.id"), nullable=False, index=True
     )
 
-    # Who administered or recorded the charge
     administered_by_user_id = Column(
         String(20), ForeignKey("users.user_id"), nullable=True
     )
@@ -69,10 +68,10 @@ class Transaction(BaseModel):
     quantity = Column(Numeric(10, 2), nullable=False, default=1)
     unit_price = Column(Numeric(10, 2), nullable=False)
     total_price = Column(Numeric(10, 2), nullable=False)
-
-    # New fields for enhanced billing UI
     taxable = Column(Boolean, default=False, nullable=False)
     item_notes = Column(Text, nullable=True)
+
+    status = Column(String(50), nullable=False, default="ACTIVE", index=True)
 
     # Relationships
     horse = relationship("Horse")
@@ -92,7 +91,7 @@ class Invoice(BaseModel):
 
     __tablename__ = "invoices"
 
-    invoice_id = Column(Integer, primary_key=True, index=True)
+    invoice_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     owner_id = Column(
         Integer, ForeignKey("owners.owner_id"), nullable=False, index=True
     )
@@ -101,17 +100,12 @@ class Invoice(BaseModel):
     due_date = Column(Date, nullable=True)
 
     subtotal = Column(Numeric(10, 2), nullable=False, default=0.00)
-
-    # New field for manually entered tax
     tax_total = Column(Numeric(10, 2), nullable=True)
-
     grand_total = Column(Numeric(10, 2), nullable=False, default=0.00)
     amount_paid = Column(Numeric(10, 2), nullable=False, default=0.00)
     balance_due = Column(Numeric(10, 2), nullable=False, default=0.00)
 
-    status = Column(
-        String(50), nullable=False, default="Unpaid", index=True
-    )  # e.g., Unpaid, Paid, Overdue, Void
+    status = Column(String(50), nullable=False, default="Unpaid", index=True)
 
     # Relationships
     owner = relationship("Owner", backref="invoices")

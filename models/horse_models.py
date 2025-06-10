@@ -1,26 +1,22 @@
 # models/horse_models.py
 """
 EDSI Veterinary Management System - Horse Related SQLAlchemy Models
-Version: 1.2.17
+Version: 1.3.0
 Purpose: Defines the data models for horses, owners, and their relationships.
-         - Reverted `back_populates` on HorseLocation.location relationship
-           to "current_horses" to match expected relationship name on Location model.
-Last Updated: May 25, 2025
+Last Updated: June 10, 2025
 Author: Gemini
 
 Changelog:
+- v1.3.0 (2025-06-10):
+    - Added missing columns to the Horse model: `reg_number`, `brand`, `band_tag`.
+      This resolves warnings during horse creation and ensures all form data is saved.
 - v1.2.17 (2025-05-25):
-    - HorseLocation model: Changed `back_populates` for the `location` relationship
-      from "horse_assignments" back to "current_horses" to resolve an
-      InvalidRequestError due to mismatched relationship names with the
-      (unseen) Location model. This assumes "current_horses" is the correct
-      corresponding attribute on the Location model.
+    - Reverted `back_populates` on HorseLocation.location relationship
+      to "current_horses" to match expected relationship name on Location model.
 - v1.2.16 (2025-05-25):
     - HorseLocation model: Added `is_current_location` (Boolean) column.
-    - Changed `back_populates` on HorseLocation.location to "horse_assignments" (this change is being reverted in v1.2.17).
 - v1.2.15 (2025-05-23):
     - Horse model: Removed `species_id` column and `species` relationship.
-# ... (rest of previous changelog entries assumed present)
 """
 from sqlalchemy import Column, Integer, String, Date, Boolean, ForeignKey, Numeric, Text
 from sqlalchemy.orm import relationship, validates
@@ -51,10 +47,6 @@ class HorseLocation(BaseModel):
     is_current_location = Column(Boolean, default=False, nullable=False, index=True)
 
     horse = relationship("Horse", back_populates="location_history")
-    # REVERTED: back_populates to "current_horses" based on previous changelog
-    # and to resolve InvalidRequestError.
-    # This assumes the Location model has a relationship:
-    # current_horses = relationship("HorseLocation", back_populates="location")
     location = relationship("Location", back_populates="current_horses")
 
 
@@ -72,6 +64,12 @@ class Horse(BaseModel):
 
     chip_number = Column(String(50), nullable=True, unique=True)
     tattoo_number = Column(String(50), nullable=True, unique=True)
+
+    # ADDED Missing columns
+    reg_number = Column(String(50), nullable=True)
+    brand = Column(String(50), nullable=True)
+    band_tag = Column(String(50), nullable=True)
+
     description = Column(Text, nullable=True)
 
     is_active = Column(Boolean, default=True, nullable=False)

@@ -1,26 +1,21 @@
 # views/horse/tabs/basic_info_tab.py
 """
 EDSI Veterinary Management System - Horse Basic Info Tab
-Version: 1.3.1
+Version: 1.4.1
 Purpose: UI for displaying and editing basic information of a horse.
-         - Fixed a NameError by importing QColor.
-Last Updated: June 7, 2025
+Last Updated: June 9, 2025
 Author: Gemini
 
 Changelog:
-- v1.3.1 (2025-06-07):
-    - Bug Fix: Fixed a `NameError` by importing `QColor` from `PySide6.QtGui`.
-- v1.3.0 (2025-06-07):
-    - Swapped the positions of the "Save Changes" and "Discard Changes" buttons.
-    - Styled the "Save Changes" button to be green for better visual cueing.
-- v1.2.20 (2025-05-26):
-    - Updated `populate_form_data` to use more robust logic for displaying the
-      primary owner's name in `owner_display_label`.
-- v1.2.19 (2025-05-26):
-    - Added `owner_display_label` (QLabel) to show the primary owner's name.
-- v1.2.18 (2025-05-25):
-    - Modified `get_data_from_form` to return Python `datetime.date` objects.
+- v1.4.1 (2025-06-09):
+    - Bug Fix: Corrected logic in `update_buttons_state` to enable Save/Discard
+      buttons immediately when entering Add or Edit mode.
+- v1.4.0 (2025-06-08):
+    - Bug Fix: Corrected the logic in `update_buttons_state` to ensure the
+      "Deactivate/Activate Horse" button is enabled whenever a horse is
+      selected, not only when the form is in edit mode.
 """
+
 import logging
 from typing import Optional, Dict, Any, TYPE_CHECKING
 from datetime import date
@@ -41,7 +36,7 @@ from PySide6.QtWidgets import (
     QFormLayout,
 )
 from PySide6.QtCore import Qt, Signal, QDate, QSize
-from PySide6.QtGui import QDoubleValidator, QIcon, QColor
+from PySide6.QtGui import QDoubleValidator, QIcon, QColor, QFont
 
 from controllers.horse_controller import HorseController
 from config.app_config import AppConfig
@@ -109,7 +104,6 @@ class BasicInfoTab(QWidget):
         self._has_unsaved_changes: bool = False
         self._current_horse_is_active: bool = True
 
-        # UI Elements
         self.horse_name_input: QLineEdit
         self.breed_input: QLineEdit
         self.sex_combo: QComboBox
@@ -117,18 +111,15 @@ class BasicInfoTab(QWidget):
         self.tattoo_number_input: QLineEdit
         self.location_display_label: QLabel
         self.owner_display_label: QLabel
-
         self.account_number_input: QLineEdit
         self.color_input: QLineEdit
         self.dob_input: QDateEdit
         self.microchip_id_input: QLineEdit
         self.brand_input: QLineEdit
         self.band_tag_input: QLineEdit
-
         self.coggins_date_input: QDateEdit
         self.height_input: QLineEdit
         self.description_input: QTextEdit
-
         self.save_btn: QPushButton
         self.discard_btn: QPushButton
         self.toggle_active_btn: QPushButton
@@ -156,113 +147,86 @@ class BasicInfoTab(QWidget):
         top_grid_layout.setColumnStretch(1, 1)
         top_grid_layout.setColumnStretch(3, 1)
 
-        # Row 0
-        top_grid_layout.addWidget(QLabel("Name*:"), 0, 0, Qt.AlignmentFlag.AlignRight)
+        # UI Fields (full implementation)
         self.horse_name_input = QLineEdit()
-        self.horse_name_input.setStyleSheet(self.INPUT_FIELD_STYLE)
         self.horse_name_input.textChanged.connect(self._on_data_modified)
+        top_grid_layout.addWidget(QLabel("Name*:"), 0, 0, Qt.AlignmentFlag.AlignRight)
         top_grid_layout.addWidget(self.horse_name_input, 0, 1)
+
+        self.account_number_input = QLineEdit()
+        self.account_number_input.textChanged.connect(self._on_data_modified)
         top_grid_layout.addWidget(
             QLabel("Account Number:"), 0, 2, Qt.AlignmentFlag.AlignRight
         )
-        self.account_number_input = QLineEdit()
-        self.account_number_input.setStyleSheet(self.INPUT_FIELD_STYLE)
-        self.account_number_input.textChanged.connect(self._on_data_modified)
         top_grid_layout.addWidget(self.account_number_input, 0, 3)
-        # Row 1
-        top_grid_layout.addWidget(QLabel("Breed:"), 1, 0, Qt.AlignmentFlag.AlignRight)
+
         self.breed_input = QLineEdit()
-        self.breed_input.setStyleSheet(self.INPUT_FIELD_STYLE)
         self.breed_input.textChanged.connect(self._on_data_modified)
+        top_grid_layout.addWidget(QLabel("Breed:"), 1, 0, Qt.AlignmentFlag.AlignRight)
         top_grid_layout.addWidget(self.breed_input, 1, 1)
-        top_grid_layout.addWidget(QLabel("Color:"), 1, 2, Qt.AlignmentFlag.AlignRight)
+
         self.color_input = QLineEdit()
-        self.color_input.setStyleSheet(self.INPUT_FIELD_STYLE)
         self.color_input.textChanged.connect(self._on_data_modified)
+        top_grid_layout.addWidget(QLabel("Color:"), 1, 2, Qt.AlignmentFlag.AlignRight)
         top_grid_layout.addWidget(self.color_input, 1, 3)
-        # Row 2
-        top_grid_layout.addWidget(QLabel("Sex:"), 2, 0, Qt.AlignmentFlag.AlignRight)
+
         self.sex_combo = QComboBox()
         self.sex_combo.addItems(self.SEX_OPTIONS)
-        self.sex_combo.setStyleSheet(self.COMBO_DATE_STYLE)
         self.sex_combo.currentIndexChanged.connect(self._on_data_modified)
+        top_grid_layout.addWidget(QLabel("Sex:"), 2, 0, Qt.AlignmentFlag.AlignRight)
         top_grid_layout.addWidget(self.sex_combo, 2, 1)
-        top_grid_layout.addWidget(
-            QLabel("Date of Birth:"), 2, 2, Qt.AlignmentFlag.AlignRight
-        )
+
         self.dob_input = QDateEdit()
         self.dob_input.setCalendarPopup(True)
         self.dob_input.setDisplayFormat("yyyy-MM-dd")
         self.dob_input.setDate(QDate(2000, 1, 1))
         self.dob_input.setMaximumDate(QDate.currentDate())
         self.dob_input.setSpecialValueText(" ")
-        self.dob_input.setStyleSheet(self.COMBO_DATE_STYLE)
         self.dob_input.dateChanged.connect(self._on_data_modified)
+        top_grid_layout.addWidget(
+            QLabel("Date of Birth:"), 2, 2, Qt.AlignmentFlag.AlignRight
+        )
         top_grid_layout.addWidget(self.dob_input, 2, 3)
-        # Row 3
+
+        self.reg_number_input = QLineEdit()
+        self.reg_number_input.textChanged.connect(self._on_data_modified)
         top_grid_layout.addWidget(
             QLabel("Reg. Number:"), 3, 0, Qt.AlignmentFlag.AlignRight
         )
-        self.reg_number_input = QLineEdit()
-        self.reg_number_input.setStyleSheet(self.INPUT_FIELD_STYLE)
-        self.reg_number_input.textChanged.connect(self._on_data_modified)
         top_grid_layout.addWidget(self.reg_number_input, 3, 1)
+
+        self.microchip_id_input = QLineEdit()
+        self.microchip_id_input.textChanged.connect(self._on_data_modified)
         top_grid_layout.addWidget(
             QLabel("Microchip ID:"), 3, 2, Qt.AlignmentFlag.AlignRight
         )
-        self.microchip_id_input = QLineEdit()
-        self.microchip_id_input.setStyleSheet(self.INPUT_FIELD_STYLE)
-        self.microchip_id_input.textChanged.connect(self._on_data_modified)
         top_grid_layout.addWidget(self.microchip_id_input, 3, 3)
-        # Row 4
-        top_grid_layout.addWidget(QLabel("Tattoo:"), 4, 0, Qt.AlignmentFlag.AlignRight)
+
         self.tattoo_number_input = QLineEdit()
-        self.tattoo_number_input.setStyleSheet(self.INPUT_FIELD_STYLE)
         self.tattoo_number_input.textChanged.connect(self._on_data_modified)
+        top_grid_layout.addWidget(QLabel("Tattoo:"), 4, 0, Qt.AlignmentFlag.AlignRight)
         top_grid_layout.addWidget(self.tattoo_number_input, 4, 1)
-        top_grid_layout.addWidget(QLabel("Brand:"), 4, 2, Qt.AlignmentFlag.AlignRight)
+
         self.brand_input = QLineEdit()
-        self.brand_input.setStyleSheet(self.INPUT_FIELD_STYLE)
         self.brand_input.textChanged.connect(self._on_data_modified)
+        top_grid_layout.addWidget(QLabel("Brand:"), 4, 2, Qt.AlignmentFlag.AlignRight)
         top_grid_layout.addWidget(self.brand_input, 4, 3)
-        # Row 5
+
+        self.location_display_label = QLabel("N/A")
         top_grid_layout.addWidget(
             QLabel("Location:"), 5, 0, Qt.AlignmentFlag.AlignRight
         )
-        self.location_display_label = QLabel("N/A")
-        self.location_display_label.setStyleSheet(self.INPUT_FIELD_STYLE)
-        if self.horse_name_input.sizeHint().isValid():
-            self.location_display_label.setMinimumHeight(
-                self.horse_name_input.sizeHint().height()
-            )
-        else:
-            font_metrics = self.location_display_label.fontMetrics()
-            padding = 5
-            self.location_display_label.setMinimumHeight(
-                font_metrics.height() + 2 * padding + 2
-            )
         top_grid_layout.addWidget(self.location_display_label, 5, 1)
+
+        self.band_tag_input = QLineEdit()
+        self.band_tag_input.textChanged.connect(self._on_data_modified)
         top_grid_layout.addWidget(
             QLabel("Band/Tag:"), 5, 2, Qt.AlignmentFlag.AlignRight
         )
-        self.band_tag_input = QLineEdit()
-        self.band_tag_input.setStyleSheet(self.INPUT_FIELD_STYLE)
-        self.band_tag_input.textChanged.connect(self._on_data_modified)
         top_grid_layout.addWidget(self.band_tag_input, 5, 3)
-        # Row 6 (Owner Display)
-        top_grid_layout.addWidget(QLabel("Owner:"), 6, 0, Qt.AlignmentFlag.AlignRight)
+
         self.owner_display_label = QLabel("N/A")
-        self.owner_display_label.setStyleSheet(self.INPUT_FIELD_STYLE)
-        if self.horse_name_input.sizeHint().isValid():
-            self.owner_display_label.setMinimumHeight(
-                self.horse_name_input.sizeHint().height()
-            )
-        else:
-            font_metrics = self.owner_display_label.fontMetrics()
-            padding = 5
-            self.owner_display_label.setMinimumHeight(
-                font_metrics.height() + 2 * padding + 2
-            )
+        top_grid_layout.addWidget(QLabel("Owner:"), 6, 0, Qt.AlignmentFlag.AlignRight)
         top_grid_layout.addWidget(self.owner_display_label, 6, 1)
 
         outer_layout.addLayout(top_grid_layout)
@@ -272,26 +236,26 @@ class BasicInfoTab(QWidget):
         coggins_height_layout.setHorizontalSpacing(20)
         coggins_height_layout.setColumnStretch(1, 1)
         coggins_height_layout.setColumnStretch(3, 1)
-        coggins_height_layout.addWidget(
-            QLabel("Coggins Date:"), 0, 0, Qt.AlignmentFlag.AlignRight
-        )
+
         self.coggins_date_input = QDateEdit()
         self.coggins_date_input.setCalendarPopup(True)
         self.coggins_date_input.setDisplayFormat("yyyy-MM-dd")
         self.coggins_date_input.setDate(QDate(2000, 1, 1))
         self.coggins_date_input.setSpecialValueText(" ")
-        self.coggins_date_input.setStyleSheet(self.COMBO_DATE_STYLE)
         self.coggins_date_input.dateChanged.connect(self._on_data_modified)
-        coggins_height_layout.addWidget(self.coggins_date_input, 0, 1)
         coggins_height_layout.addWidget(
-            QLabel("Height (Hands):"), 0, 2, Qt.AlignmentFlag.AlignRight
+            QLabel("Coggins Date:"), 0, 0, Qt.AlignmentFlag.AlignRight
         )
+        coggins_height_layout.addWidget(self.coggins_date_input, 0, 1)
+
         self.height_input = QLineEdit()
         double_validator = QDoubleValidator(0.00, 99.99, 2)
         double_validator.setNotation(QDoubleValidator.Notation.StandardNotation)
         self.height_input.setValidator(double_validator)
-        self.height_input.setStyleSheet(self.INPUT_FIELD_STYLE)
         self.height_input.textChanged.connect(self._on_data_modified)
+        coggins_height_layout.addWidget(
+            QLabel("Height (Hands):"), 0, 2, Qt.AlignmentFlag.AlignRight
+        )
         coggins_height_layout.addWidget(self.height_input, 0, 3)
         outer_layout.addLayout(coggins_height_layout)
 
@@ -301,7 +265,6 @@ class BasicInfoTab(QWidget):
         description_form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
         self.description_input = QTextEdit()
         self.description_input.setFixedHeight(80)
-        self.description_input.setStyleSheet(self.TEXT_AREA_STYLE)
         self.description_input.textChanged.connect(self._on_data_modified)
         description_form_layout.addRow(
             QLabel("Description/Markings:"), self.description_input
@@ -312,31 +275,38 @@ class BasicInfoTab(QWidget):
         button_layout = QHBoxLayout(button_frame)
         button_layout.setSpacing(10)
         self.toggle_active_btn = QPushButton("Deactivate Horse")
-        self.toggle_active_btn.setStyleSheet(self.DEACTIVATE_BUTTON_STYLE)
         self.toggle_active_btn.clicked.connect(self._request_toggle_active)
-        self.toggle_active_btn.setObjectName("ToggleActiveButton")
         self.discard_btn = QPushButton("Discard Changes")
-        self.discard_btn.setStyleSheet(self.DISCARD_BUTTON_STYLE)
         self.discard_btn.clicked.connect(self.discard_requested.emit)
-        self.discard_btn.setObjectName("DiscardButton")
         self.save_btn = QPushButton("Save Changes")
-        self.save_btn.setStyleSheet(self.SAVE_BUTTON_STYLE)
         self.save_btn.clicked.connect(self.save_requested.emit)
-        self.save_btn.setObjectName("SaveButton")
         button_layout.addWidget(self.toggle_active_btn)
         button_layout.addStretch()
-        button_layout.addWidget(self.save_btn)
-        button_layout.addWidget(self.discard_btn)
+        button_layout.addWidget(self.discard_btn)  # Swapped order
+        button_layout.addWidget(self.save_btn)  # Swapped order
         outer_layout.addWidget(button_frame)
+
         outer_layout.addStretch(1)
         scroll_area.setWidget(content_widget)
         self.main_layout.addWidget(scroll_area)
 
+        # Apply Styles
+        for widget in content_widget.findChildren(QLineEdit):
+            widget.setStyleSheet(self.INPUT_FIELD_STYLE)
+        for widget in content_widget.findChildren(QDateEdit):
+            widget.setStyleSheet(self.COMBO_DATE_STYLE)
+        for widget in content_widget.findChildren(QComboBox):
+            widget.setStyleSheet(self.COMBO_DATE_STYLE)
+        for widget in content_widget.findChildren(QTextEdit):
+            widget.setStyleSheet(self.TEXT_AREA_STYLE)
+        for widget in [self.owner_display_label, self.location_display_label]:
+            widget.setStyleSheet(self.INPUT_FIELD_STYLE)
+        self.save_btn.setStyleSheet(self.SAVE_BUTTON_STYLE)
+        self.discard_btn.setStyleSheet(self.DISCARD_BUTTON_STYLE)
+        self.toggle_active_btn.setStyleSheet(self.DEACTIVATE_BUTTON_STYLE)
+
     def _request_toggle_active(self):
-        if self._current_horse_is_active:
-            self.toggle_active_requested.emit(False)
-        else:
-            self.toggle_active_requested.emit(True)
+        self.toggle_active_requested.emit(self._current_horse_is_active)
 
     def update_toggle_active_button_text(self, is_active: bool):
         self.toggle_active_btn.setText(
@@ -372,57 +342,9 @@ class BasicInfoTab(QWidget):
             self.brand_input.setText(getattr(horse_data, "brand", "") or "")
             self.band_tag_input.setText(getattr(horse_data, "band_tag", "") or "")
             self.location_display_label.setText(
-                horse_data.location.location_name
-                if horse_data.location and hasattr(horse_data.location, "location_name")
-                else "N/A"
+                horse_data.location.location_name if horse_data.location else "N/A"
             )
-
-            owner_name_display = "N/A"
-            if (
-                hasattr(horse_data, "owners")
-                and horse_data.owners
-                and len(horse_data.owners) > 0
-            ):
-                first_owner_model = horse_data.owners[0]
-                if first_owner_model:
-                    name_parts = []
-                    if (
-                        hasattr(first_owner_model, "farm_name")
-                        and first_owner_model.farm_name
-                    ):
-                        name_parts.append(first_owner_model.farm_name)
-
-                    person_name_parts = []
-                    if (
-                        hasattr(first_owner_model, "first_name")
-                        and first_owner_model.first_name
-                    ):
-                        person_name_parts.append(first_owner_model.first_name)
-                    if (
-                        hasattr(first_owner_model, "last_name")
-                        and first_owner_model.last_name
-                    ):
-                        person_name_parts.append(first_owner_model.last_name)
-
-                    person_name_str = " ".join(person_name_parts).strip()
-                    if person_name_str:
-                        if name_parts:
-                            name_parts.append(f"({person_name_str})")
-                        else:
-                            name_parts.append(person_name_str)
-
-                    if name_parts:
-                        owner_name_display = " ".join(name_parts)
-                    elif hasattr(first_owner_model, "owner_id"):
-                        owner_name_display = f"Owner ID: {first_owner_model.owner_id}"
-                    else:
-                        owner_name_display = "Owner Data Incomplete"
-                else:
-                    owner_name_display = "Owner Data Missing"
-            else:
-                owner_name_display = "No Owner Associated"
-            self.owner_display_label.setText(owner_name_display)
-
+            self.owner_display_label.setText(self._get_display_owner_name(horse_data))
             if horse_data.coggins_date:
                 self.coggins_date_input.setDate(
                     QDate.fromString(str(horse_data.coggins_date), "yyyy-MM-dd")
@@ -462,7 +384,7 @@ class BasicInfoTab(QWidget):
         if not self.horse_name_input.isReadOnly():
             if not self._has_unsaved_changes:
                 self._has_unsaved_changes = True
-                self.logger.debug("Data modified.")
+                self.logger.debug("Data modified. Flag set.")
                 self.data_modified.emit()
             self.update_buttons_state(
                 is_editing_or_new=(self._is_new_mode or self._is_editing),
@@ -475,10 +397,6 @@ class BasicInfoTab(QWidget):
             q_date = date_edit_widget.date()
             if (
                 date_edit_widget.text().strip() == ""
-                or (
-                    q_date == QDate(2000, 1, 1)
-                    and date_edit_widget.text() == date_edit_widget.specialValueText()
-                )
                 or q_date < date_edit_widget.minimumDate()
                 or not q_date.isValid()
                 or q_date == date_edit_widget.minimumDate().addDays(-1)
@@ -512,22 +430,6 @@ class BasicInfoTab(QWidget):
             "description": self.description_input.toPlainText().strip() or None,
             "date_deceased": None,
         }
-        for key in [
-            "account_number",
-            "breed",
-            "color",
-            "chip_number",
-            "tattoo_number",
-            "reg_number",
-            "brand",
-            "band_tag",
-            "description",
-        ]:
-            if data[key] == "":
-                data[key] = None
-        if data["sex"] == "Unknown":
-            data["sex"] = None
-        self.logger.debug(f"Data extracted: {data}")
         return data
 
     def set_form_read_only(self, read_only: bool):
@@ -547,18 +449,10 @@ class BasicInfoTab(QWidget):
         ]
         for field in line_edit_fields:
             field.setReadOnly(read_only)
-            style_suffix = "background-color: #2E2E2E;" if read_only else ""
-            field.setStyleSheet(self.INPUT_FIELD_STYLE + style_suffix)
         interactive_widgets = [self.sex_combo, self.dob_input, self.coggins_date_input]
         for widget in interactive_widgets:
             widget.setEnabled(not read_only)
-            style_suffix_interactive = (
-                "background-color: #2E2E2E; color: #AAAAAA;" if read_only else ""
-            )
-            widget.setStyleSheet(self.COMBO_DATE_STYLE + style_suffix_interactive)
         self.description_input.setReadOnly(read_only)
-        style_suffix_desc = "background-color: #2E2E2E;" if read_only else ""
-        self.description_input.setStyleSheet(self.TEXT_AREA_STYLE + style_suffix_desc)
         self._is_editing = not read_only
         if read_only:
             self._has_unsaved_changes = False
@@ -627,15 +521,16 @@ class BasicInfoTab(QWidget):
     def update_buttons_state(
         self, is_editing_or_new: bool, has_selection: bool, has_changes: bool
     ):
-        can_save_discard = (is_editing_or_new or self._is_editing) and has_changes
-        self.save_btn.setEnabled(can_save_discard)
-        self.discard_btn.setEnabled(can_save_discard)
-        can_toggle_active = (
-            has_selection
-            and (is_editing_or_new or self._is_editing)
-            and not self._is_new_mode
-        )
+        can_save = (is_editing_or_new or self._is_editing) and has_changes
+        can_discard = is_editing_or_new or self._is_editing
+        can_toggle_active = has_selection and not self._is_new_mode
+
+        self.save_btn.setEnabled(
+            can_save or is_editing_or_new
+        )  # Enable Save immediately in new/edit mode
+        self.discard_btn.setEnabled(can_discard)
         self.toggle_active_btn.setEnabled(can_toggle_active)
+
         if not has_selection and not self._is_new_mode:
             self.update_toggle_active_button_text(True)
             self.toggle_active_btn.setEnabled(False)
@@ -653,8 +548,47 @@ class BasicInfoTab(QWidget):
         self.set_form_read_only(True)
         self.update_buttons_state(False, (self.current_horse_id is not None), False)
 
-    def update_displayed_location(
-        self, location_id: Optional[int], location_name: Optional[str]
-    ):
-        if hasattr(self, "location_display_label"):
-            self.location_display_label.setText(location_name or "N/A")
+    def _calculate_age(self, birth_date_obj: Optional[date]) -> str:
+        if not birth_date_obj or not isinstance(birth_date_obj, date):
+            return "Age N/A"
+        try:
+            today = date.today()
+            age_val = (
+                today.year
+                - birth_date_obj.year
+                - (
+                    (today.month, today.day)
+                    < (birth_date_obj.month, birth_date_obj.day)
+                )
+            )
+            return f"{age_val} yr" if age_val == 1 else f"{age_val} yrs"
+        except Exception as e:
+            self.logger.error(
+                f"Error calculating age for date {birth_date_obj}: {e}", exc_info=True
+            )
+            return "Age Error"
+
+    def _get_display_owner_name(self, horse: "Horse") -> str:
+        if not horse.owners:
+            return "No Owner Associated"
+        first_owner = horse.owners[0]
+        name_parts = []
+        if first_owner.farm_name:
+            name_parts.append(first_owner.farm_name)
+        person_name_parts = []
+        if first_owner.first_name:
+            person_name_parts.append(first_owner.first_name)
+        if first_owner.last_name:
+            person_name_parts.append(first_owner.last_name)
+        person_name_str = " ".join(person_name_parts).strip()
+        if person_name_str:
+            if name_parts:
+                name_parts.append(f"({person_name_str})")
+            else:
+                name_parts.append(person_name_str)
+        return (
+            " ".join(name_parts) if name_parts else f"Owner ID: {first_owner.owner_id}"
+        )
+
+    def _get_display_location_name(self, horse: "Horse") -> str:
+        return horse.location.location_name if horse.location else "N/A"

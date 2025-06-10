@@ -1,27 +1,26 @@
 # views/horse/tabs/owners_tab.py
 """
 EDSI Veterinary Management System - Horse Owners Tab
-Version: 1.2.5
+Version: 1.3.0
 Purpose: Manages the association of owners with a specific horse.
-         - Passes its own validation method to CreateAndLinkOwnerDialog and
-           LinkExistingOwnerDialog to ensure total ownership validation occurs
-           before the dialogs close.
-Last Updated: May 26, 2025
-Author: Claude Assistant (based on user's v1.2.0, modified by Gemini)
+Last Updated: June 9, 2025
+Author: Gemini
 
 Changelog:
+- v1.3.0 (2025-06-09):
+    - Added double-click functionality to the owners list. Users can now
+      double-click a linked owner to open the AddEditOwnerDialog and edit
+      their details directly.
+    - Implemented the _handle_edit_owner method to manage this workflow.
 - v1.2.5 (2025-05-26):
     - Modified `_handle_create_and_link_owner` and `_handle_link_existing_owner`
       to pass a new method `_validate_total_ownership_for_dialog` as a callback
       to `CreateAndLinkOwnerDialog` and `LinkExistingOwnerDialog` respectively.
     - The dialogs will now call this callback to perform total ownership
       validation before closing. If validation fails, the dialog remains open.
-    - Renamed internal `_validate_total_ownership` to
-      `_validate_total_ownership_for_dialog` to reflect its use by dialogs.
 - v1.2.4 (2025-05-26):
     - Added `_validate_total_ownership` helper method for client-side validation.
     - Integrated this validation into relevant handler methods.
-# ... (rest of previous changelog entries)
 """
 
 import logging
@@ -63,6 +62,7 @@ from controllers.owner_controller import OwnerController
 
 from ..dialogs.create_link_owner_dialog import CreateAndLinkOwnerDialog
 from ..dialogs.link_existing_owner_dialog import LinkExistingOwnerDialog
+from ...admin.dialogs.add_edit_owner_dialog import AddEditOwnerDialog
 from ..widgets.horse_owner_list_widget import HorseOwnerListWidget
 
 
@@ -75,7 +75,6 @@ class OwnersTab(QWidget):
         horse_controller: HorseController,
         owner_controller: OwnerController,
     ):
-        # (Same as v1.2.4)
         super().__init__(parent_view)
         self.logger = logging.getLogger(self.__class__.__name__)
         self.parent_view = parent_view
@@ -99,9 +98,6 @@ class OwnersTab(QWidget):
         self._setup_connections()
         self.update_buttons_state()
 
-    # (_get_generic_button_style, _get_input_style, _setup_ui, _setup_connections,
-    #  load_owners_for_horse, _on_horse_owner_selection_changed,
-    #  _handle_remove_owner_from_horse, update_buttons_state remain IDENTICAL to v1.2.4)
     def _get_generic_button_style(self) -> str:
         if hasattr(self.parent_view, "get_generic_button_style"):
             return self.parent_view.get_generic_button_style()
@@ -135,7 +131,9 @@ class OwnersTab(QWidget):
         owners_action_layout.addStretch()
         main_layout.addLayout(owners_action_layout)
         self.current_owners_list_widget = HorseOwnerListWidget()
-        owners_list_label = QLabel("Current Owners & Percentages:")
+        owners_list_label = QLabel(
+            "Current Owners & Percentages (Double-click to Edit):"
+        )
         owners_list_label.setStyleSheet(
             f"color: {DARK_TEXT_SECONDARY}; background: transparent; margin-bottom: 5px; font-weight: bold;"
         )
@@ -171,6 +169,9 @@ class OwnersTab(QWidget):
     def _setup_connections(self):
         self.current_owners_list_widget.itemSelectionChanged.connect(
             self._on_horse_owner_selection_changed
+        )
+        self.current_owners_list_widget.itemDoubleClicked.connect(
+            self._handle_edit_owner
         )
         self.create_link_owner_btn.clicked.connect(self._handle_create_and_link_owner)
         self.link_existing_owner_btn.clicked.connect(self._handle_link_existing_owner)
@@ -239,6 +240,35 @@ class OwnersTab(QWidget):
             self.percentage_edit_frame.hide()
             self.logger.info("Owner selection cleared.")
         self.update_buttons_state()
+
+    def _handle_edit_owner(self, item: QListWidgetItem):
+        """Opens the AddEditOwnerDialog for the double-clicked owner."""
+        owner_id = item.data(Qt.ItemDataRole.UserRole)
+        if owner_id is None:
+            return
+
+        self.logger.info(f"Edit requested for owner ID: {owner_id}")
+        owner_to_edit = self.owner_controller.get_owner_by_id(owner_id)
+
+        if owner_to_edit:
+            dialog = AddEditOwnerDialog(
+                parent_view=self.parent_view,
+                owner_controller=self.owner_controller,
+                owner_object=owner_to_edit,
+                current_user_id=self.current_user_login,
+            )
+            if dialog.exec() == QDialog.DialogCode.Accepted:
+                self.logger.info(f"Owner ID {owner_id} was updated. Refreshing list.")
+                # After saving, reload the owners for the current horse
+                self.load_owners_for_horse(self.current_horse)
+                # Notify the main screen that data has changed
+                self.owner_association_changed.emit(
+                    f"Details updated for owner '{owner_to_edit.last_name}'."
+                )
+        else:
+            self.parent_view.show_error(
+                "Error", f"Could not retrieve details for owner ID {owner_id}."
+            )
 
     def _validate_total_ownership_for_dialog(
         self,
@@ -428,7 +458,6 @@ class OwnersTab(QWidget):
             self.parent_view.show_error("Update % Error", message)
 
     def _handle_remove_owner_from_horse(self):
-        # (Same as v1.2.4 - no percentage validation needed for removal)
         if (
             not self.current_horse
             or self.current_horse.horse_id is None
@@ -489,7 +518,6 @@ class OwnersTab(QWidget):
             self.logger.info("Owner removal cancelled.")
 
     def update_buttons_state(self):
-        # (Same as v1.2.4)
         is_horse_selected = (
             self.current_horse is not None and self.current_horse.horse_id is not None
         )

@@ -1,34 +1,20 @@
 # views/base_view.py
 """
 EDSI Veterinary Management System - Base View Class
-Version: 1.2.0
+Version: 1.3.2
 Purpose: Provides a base class for all main views/screens in the application,
          handling common UI setup like dark theme and status messages.
-Last Updated: June 7, 2025
+Last Updated: June 8, 2025
 Author: Gemini
 
 Changelog:
-- v1.2.0 (2025-06-07):
-    - Added global stylesheet rules for QMessageBox buttons to provide
-      a consistent, "boxed-in" style with a green "Yes" button.
-- v1.1.8 (2025-05-21):
-    - Added `DARK_TEXT_TERTIARY` to the imports from `config.app_config`.
-- v1.1.7 (2025-05-21):
-    - Added `DARK_PRIMARY_ACTION` to the imports.
-- v1.1.6 (2025-05-21):
-    - Added debug print statements for troubleshooting.
-- v1.1.5 (2025-05-20):
-    - Added detailed logging to BaseView.setup_ui.
-- v1.1.4 (2025-05-18):
-    - Ensured central_widget always has a layout.
-- v1.1.3 (2025-05-17):
-    - Added placeholder for status_bar if not created by subclass.
-- v1.1.2 (2025-05-16):
-    - Added show_confirmation_dialog and show_error_dialog methods.
-- v1.1.1 (2025-05-15):
-    - Standardized status message methods.
-- v1.1.0 (2025-05-14):
-    - Initial implementation with dark theme palette and global styles.
+- v1.3.2 (2025-06-08):
+    - Corrected the import path for CustomQuestionDialog to point to the
+      `views.horse.widgets` sub-package, resolving the ModuleNotFoundError.
+- v1.3.1 (2025-06-08):
+    - Bug Fix: Changed the import for CustomQuestionDialog to a relative path.
+- v1.3.0 (2025-06-08):
+    - Refactored `show_question` to use a new `CustomQuestionDialog`.
 """
 
 import logging
@@ -40,6 +26,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QMessageBox,
     QStatusBar,
+    QDialog,
 )
 from PySide6.QtGui import QPalette, QColor, QFont
 from PySide6.QtCore import Qt, QTimer
@@ -61,6 +48,7 @@ from config.app_config import (
     DARK_BUTTON_BG,
     DARK_BUTTON_HOVER,
 )
+from .horse.widgets.custom_question_dialog import CustomQuestionDialog
 
 
 class BaseView(QMainWindow):
@@ -177,121 +165,7 @@ class BaseView(QMainWindow):
                 color: {DARK_TEXT_PRIMARY};
                 background-color: {DARK_BACKGROUND};
             }}
-            QToolTip {{
-                color: {DARK_TEXT_PRIMARY};
-                background-color: {DARK_WIDGET_BACKGROUND};
-                border: 1px solid {DARK_BORDER};
-                padding: 4px;
-                border-radius: 3px;
-            }}
-            QStatusBar {{
-                background-color: {DARK_HEADER_FOOTER};
-                color: {DARK_TEXT_SECONDARY};
-                border-top: 1px solid {DARK_BORDER};
-            }}
-            QStatusBar QLabel {{
-                color: {DARK_TEXT_SECONDARY};
-                background-color: transparent;
-                padding: 0 2px;
-            }}
-            QMenuBar {{
-                background-color: {DARK_HEADER_FOOTER};
-                color: {DARK_TEXT_PRIMARY};
-                border-bottom: 1px solid {DARK_BORDER};
-            }}
-            QMenuBar::item {{
-                spacing: 3px;
-                padding: 4px 10px;
-                background: transparent;
-                border-radius: 4px;
-            }}
-            QMenuBar::item:selected {{
-                background: {DARK_ITEM_HOVER};
-            }}
-            QMenuBar::item:pressed {{
-                background: {DARK_PRIMARY_ACTION};
-            }}
-            QMenu {{
-                background-color: {DARK_WIDGET_BACKGROUND};
-                color: {DARK_TEXT_PRIMARY};
-                border: 1px solid {DARK_BORDER};
-                padding: 5px;
-            }}
-            QMenu::item {{
-                padding: 5px 20px 5px 20px;
-            }}
-            QMenu::item:selected {{
-                background-color: {DARK_HIGHLIGHT_BG};
-                color: {DARK_HIGHLIGHT_TEXT};
-            }}
-            QMenu::separator {{
-                height: 1px;
-                background: {DARK_BORDER};
-                margin-left: 5px;
-                margin-right: 5px;
-            }}
-            QScrollBar:vertical {{
-                border: 1px solid {DARK_BORDER};
-                background: {DARK_WIDGET_BACKGROUND};
-                width: 12px;
-                margin: 0px 0px 0px 0px;
-            }}
-            QScrollBar::handle:vertical {{
-                background: {DARK_TEXT_SECONDARY};
-                min-height: 20px;
-                border-radius: 6px;
-            }}
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
-                border: none;
-                background: none;
-                height: 0px;
-                subcontrol-position: top;
-                subcontrol-origin: margin;
-            }}
-            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
-                background: none;
-            }}
-            QScrollBar:horizontal {{
-                border: 1px solid {DARK_BORDER};
-                background: {DARK_WIDGET_BACKGROUND};
-                height: 12px;
-                margin: 0px 0px 0px 0px;
-            }}
-            QScrollBar::handle:horizontal {{
-                background: {DARK_TEXT_SECONDARY};
-                min-width: 20px;
-                border-radius: 6px;
-            }}
-            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
-                border: none;
-                background: none;
-                width: 0px;
-                subcontrol-position: left;
-                subcontrol-origin: margin;
-            }}
-            QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {{
-                background: none;
-            }}
-            /* Styling for QMessageBox buttons */
-            QMessageBox QPushButton {{
-                background-color: {DARK_BUTTON_BG};
-                color: {DARK_TEXT_PRIMARY};
-                border: 1px solid {DARK_BORDER};
-                border-radius: 4px;
-                padding: 8px 16px;
-                min-width: 80px;
-            }}
-            QMessageBox QPushButton:hover {{
-                background-color: {DARK_BUTTON_HOVER};
-            }}
-            QMessageBox QPushButton[text="&Yes"] {{
-                background-color: {DARK_SUCCESS_ACTION};
-                color: white;
-            }}
-            QMessageBox QPushButton[text="&Yes"]:hover {{
-                background-color: {QColor(DARK_SUCCESS_ACTION).lighter(115).name()};
-            }}
-        """
+            """
         )
         self.logger.info(
             f"Dark theme palette and global styles applied for {self.__class__.__name__}."
@@ -325,11 +199,5 @@ class BaseView(QMainWindow):
 
     def show_question(self, title: str, message: str) -> bool:
         self.logger.info(f"Asking Question: {title} - {message}")
-        reply = QMessageBox.question(
-            self,
-            title,
-            message,
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No,
-        )
-        return reply == QMessageBox.StandardButton.Yes
+        dialog = CustomQuestionDialog(title, message, self)
+        return dialog.exec() == QDialog.DialogCode.Accepted

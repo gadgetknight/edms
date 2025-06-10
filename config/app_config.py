@@ -2,13 +2,15 @@
 
 """
 EDSI Veterinary Management System - Application Configuration
-Version: 2.0.1
+Version: 2.1.0
 Purpose: Simplified centralized configuration for application settings, paths, and constants.
-         Added missing logging parameters for file rotation and updated app version.
-Last Updated: May 26, 2025
-Author: Claude Assistant (Modified by Coding partner)
+Last Updated: June 9, 2025
+Author: Claude Assistant (Modified by Gemini)
 
 Changelog:
+- v2.1.0 (2025-06-09):
+    - Added INVOICES_DIR path constant for storing generated invoice PDFs.
+    - Updated ensure_directories() to create the 'invoices' folder on startup.
 - v2.0.1 (2025-05-26):
     - Added LOG_MAX_BYTES and LOG_BACKUP_COUNT constants for log file rotation.
     - Included log_max_bytes and log_backup_count in the get_logging_config() dictionary.
@@ -16,7 +18,6 @@ Changelog:
 - v2.0.0 (2025-05-24):
     - Complete rewrite for Phase 1 (Chunk 1) simplification
     - Consolidated all configuration into single AppConfig class
-    # ... (rest of previous changelog entries assumed present)
 """
 
 import os
@@ -27,10 +28,11 @@ from typing import Dict, Any
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 LOG_DIR = os.path.join(PROJECT_ROOT, "logs")
 ASSETS_DIR = os.path.join(PROJECT_ROOT, "assets")
+INVOICES_DIR = os.path.join(PROJECT_ROOT, "invoices")  # ADDED
 
 # --- Application Information ---
 APP_NAME = "EDSI Veterinary Management System"
-APP_VERSION = "2.0.3"  # <-- Updated Version
+APP_VERSION = "2.0.3"
 APP_AUTHOR = "EDSI"
 
 # --- Database Configuration ---
@@ -38,12 +40,10 @@ DATABASE_URL = f"sqlite:///{os.path.join(PROJECT_ROOT, 'edsi_database.db')}"
 
 # --- Logging Configuration ---
 APP_LOG_FILE = os.path.join(LOG_DIR, "edsi_app.log")
-DB_LOG_FILE = os.path.join(
-    LOG_DIR, "edsi_db.log"
-)  # Retained, though not used by current main.py's app logger
+DB_LOG_FILE = os.path.join(LOG_DIR, "edsi_db.log")
 LOGGING_LEVEL = logging.INFO
-LOG_MAX_BYTES = 1024 * 1024 * 5  # <-- Added: 5 MB
-LOG_BACKUP_COUNT = 5  # <-- Added: 5 backup files
+LOG_MAX_BYTES = 1024 * 1024 * 5
+LOG_BACKUP_COUNT = 5
 
 # --- UI Configuration ---
 DEFAULT_FONT_FAMILY = "Inter"
@@ -55,7 +55,6 @@ MIN_WINDOW_HEIGHT = 700
 # --- Dark Theme Colors (Essential Only) ---
 DARK_BACKGROUND = "#2D3748"
 DARK_WIDGET_BACKGROUND = "#1A202C"
-# ... (all other color constants remain the same)
 DARK_HEADER_FOOTER = "#222B38"
 DARK_BORDER = "#4A5568"
 DARK_TEXT_PRIMARY = "#E2E8F0"
@@ -81,13 +80,14 @@ class AppConfig:
 
     # Application Info
     APP_NAME = APP_NAME
-    APP_VERSION = APP_VERSION  # Will now pick up "2.0.3"
+    APP_VERSION = APP_VERSION
     APP_AUTHOR = APP_AUTHOR
 
     # Paths
     PROJECT_ROOT = PROJECT_ROOT
     LOG_DIR = LOG_DIR
     ASSETS_DIR = ASSETS_DIR
+    INVOICES_DIR = INVOICES_DIR  # ADDED
 
     # Database
     DATABASE_URL = DATABASE_URL
@@ -96,12 +96,11 @@ class AppConfig:
     APP_LOG_FILE = APP_LOG_FILE
     DB_LOG_FILE = DB_LOG_FILE
     LOGGING_LEVEL = LOGGING_LEVEL
-    LOG_MAX_BYTES = LOG_MAX_BYTES  # <-- Added Class Attribute
-    LOG_BACKUP_COUNT = LOG_BACKUP_COUNT  # <-- Added Class Attribute
+    LOG_MAX_BYTES = LOG_MAX_BYTES
+    LOG_BACKUP_COUNT = LOG_BACKUP_COUNT
 
     # UI Settings
     DEFAULT_FONT_FAMILY = DEFAULT_FONT_FAMILY
-    # ... (other UI settings remain the same)
     DEFAULT_FONT_SIZE = DEFAULT_FONT_SIZE
     SMALL_FONT_SIZE = SMALL_FONT_SIZE
     MIN_WINDOW_WIDTH = MIN_WINDOW_WIDTH
@@ -109,7 +108,6 @@ class AppConfig:
 
     # Theme Colors
     DARK_BACKGROUND = DARK_BACKGROUND
-    # ... (all color class attributes remain the same)
     DARK_WIDGET_BACKGROUND = DARK_WIDGET_BACKGROUND
     DARK_HEADER_FOOTER = DARK_HEADER_FOOTER
     DARK_BORDER = DARK_BORDER
@@ -132,12 +130,16 @@ class AppConfig:
         return cls.DATABASE_URL
 
     @classmethod
-    def get_app_dir(cls) -> str:  # This method was duplicated, keeping one
+    def get_app_dir(cls) -> str:
         return cls.PROJECT_ROOT
 
     @classmethod
     def get_assets_dir(cls) -> str:
         return cls.ASSETS_DIR
+
+    @classmethod
+    def get_invoices_dir(cls) -> str:
+        return cls.INVOICES_DIR
 
     @classmethod
     def get_app_info(cls) -> Dict[str, str]:
@@ -153,15 +155,14 @@ class AppConfig:
         return {
             "level": cls.LOGGING_LEVEL,
             "app_log_file": cls.APP_LOG_FILE,
-            "db_log_file": cls.DB_LOG_FILE,  # Retained
+            "db_log_file": cls.DB_LOG_FILE,
             "log_dir": cls.LOG_DIR,
-            "log_max_bytes": cls.LOG_MAX_BYTES,  # <-- Added Key
-            "log_backup_count": cls.LOG_BACKUP_COUNT,  # <-- Added Key
+            "log_max_bytes": cls.LOG_MAX_BYTES,
+            "log_backup_count": cls.LOG_BACKUP_COUNT,
         }
 
     @classmethod
     def get_ui_config(cls) -> Dict[str, Any]:
-        # ... (remains the same)
         return {
             "font_family": cls.DEFAULT_FONT_FAMILY,
             "font_size": cls.DEFAULT_FONT_SIZE,
@@ -172,7 +173,6 @@ class AppConfig:
 
     @classmethod
     def get_theme_colors(cls) -> Dict[str, str]:
-        # ... (remains the same)
         return {
             "background": cls.DARK_BACKGROUND,
             "widget_background": cls.DARK_WIDGET_BACKGROUND,
@@ -196,7 +196,7 @@ class AppConfig:
     @classmethod
     def ensure_directories(cls) -> None:
         """Ensure required directories exist"""
-        directories = [cls.LOG_DIR, cls.ASSETS_DIR]
+        directories = [cls.LOG_DIR, cls.ASSETS_DIR, cls.INVOICES_DIR]  # MODIFIED
 
         for directory in directories:
             if not os.path.exists(directory):

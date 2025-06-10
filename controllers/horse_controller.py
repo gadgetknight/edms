@@ -1,30 +1,23 @@
 # controllers/horse_controller.py
 """
 EDSI Veterinary Management System - Horse Controller
-Version: 1.2.9
+Version: 1.5.0
 Purpose: Handles business logic related to horses.
-         - Modified get_horse_by_id to eagerly load 'owners' and 'location'
-           relationships to prevent DetachedInstanceError in views.
-Last Updated: May 25, 2025
+Last Updated: June 10, 2025
 Author: Gemini
 
 Changelog:
-- v1.2.9 (2025-05-25):
-    - In `get_horse_by_id`, updated SQLAlchemy query options to use
-      `selectinload(Horse.owners)` and `joinedload(Horse.location)`
-      to ensure these related objects are eager-loaded. This is intended
-      to prevent `DetachedInstanceError` when accessing these attributes
-      on a Horse object after the session is closed.
-- v1.2.8 (2025-05-23):
-    - Changed session creation from `Session()` to `db_manager.get_session()`
-      to align with current database configuration.
-    - Removed `get_all_species` method as Species model has been removed.
-    - Removed `Species` import and references in `get_horse_by_id` and `search_horses`.
-- v1.2.7 (2025-05-22):
-    - Updated `create_horse` and `update_horse` to use `modified_by` instead of `updated_by`
-      to align with the user's current `BaseModel` definition.
-- v1.2.6 (2025-05-21 - User Uploaded version):
-    - Initial version with methods for CRUD, search, linking owners, locations.
+- v1.5.0 (2025-06-10):
+    - Fixed a critical bug in `create_horse` that caused a crash when saving a
+      new horse without a location. The creation of a HorseLocation history
+      record is now conditional on a location_id being provided.
+- v1.4.0 (2025-06-09):
+    - Refactored to improve separation of concerns by removing the redundant
+      `get_all_locations` method. This functionality correctly belongs to the
+      LocationController.
+- v1.3.0 (2025-06-09):
+    - Bug Fix: In `get_horse_by_id`, added `selectinload(Horse.owner_associations)`
+      to the query to prevent DetachedInstanceError during invoice generation.
 """
 import logging
 from typing import List, Optional, Dict, Any
@@ -49,27 +42,12 @@ class HorseController:
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
 
-    def get_all_locations(self) -> List[Location]:
-        """Retrieves all locations from the database."""
-        session = db_manager.get_session()
-        try:
-            locations = session.query(Location).order_by(Location.location_name).all()
-            self.logger.info(f"Retrieved {len(locations)} location records.")
-            return locations
-        except SQLAlchemyError as e:
-            self.logger.error(f"Error retrieving locations: {e}", exc_info=True)
-            session.rollback()
-            return []
-        finally:
-            session.close()
-
     def validate_horse_data(
         self,
         data: dict,
         is_new: bool = True,
         horse_id_to_check_for_unique: Optional[int] = None,
     ) -> tuple[bool, list]:
-        # (Method content remains the same as v1.2.8)
         errors = []
         required_fields = ["horse_name"]
 
@@ -77,20 +55,17 @@ class HorseController:
             if not data.get(field) or not str(data[field]).strip():
                 errors.append(f"{field.replace('_', ' ').capitalize()} is required.")
 
-        if data.get(
-            "date_of_birth"
-        ):  # Expects Python date object from BasicInfoTab v1.2.18+
+        if data.get("date_of_birth"):
             try:
                 dob = data["date_of_birth"]
-                if not isinstance(dob, date):  # Should already be a date object
-                    # This case should ideally not happen if BasicInfoTab sends date objects
+                if not isinstance(dob, date):
                     errors.append("Date of Birth was not a valid date object.")
                 elif dob > date.today():
                     errors.append("Date of Birth cannot be in the future.")
-            except Exception:  # Catch any other conversion/type issue if not a date
+            except Exception:
                 errors.append("Invalid Date of Birth provided.")
 
-        if data.get("coggins_date"):  # Expects Python date object
+        if data.get("coggins_date"):
             try:
                 coggins_dt = data["coggins_date"]
                 if not isinstance(coggins_dt, date):
@@ -130,38 +105,31 @@ class HorseController:
     def create_horse(
         self, data: dict, created_by_user: str
     ) -> tuple[bool, str, Optional[Horse]]:
-        # (Method content remains the same as v1.2.8)
         session = db_manager.get_session()
         try:
             data["created_by"] = created_by_user
             data["modified_by"] = created_by_user
-            data.pop("species_id", None)
 
-            # Handle potential unknown attributes by filtering data against Horse model columns
             horse_columns = {col.name for col in Horse.__table__.columns}
             filtered_data = {k: v for k, v in data.items() if k in horse_columns}
 
-            # Warn about fields in data not in Horse model (e.g. reg_number, brand, band_tag if not added to model)
             for key in data:
-                if key not in horse_columns and key not in [
-                    "current_location_id"
-                ]:  # current_location_id handled separately
+                if key not in horse_columns and key not in ["current_location_id"]:
                     self.logger.warning(
-                        f"HorseController.create_horse - Attribute '{key}' present in data but not in Horse model columns. It will be ignored for direct Horse instantiation."
+                        f"HorseController.create_horse - Attribute '{key}' present in data but not in Horse model columns. It will be ignored."
                     )
 
             new_horse = Horse(**filtered_data)
+            session.add(new_horse)
 
-            # Handle current_location_id separately if it's part of the data
-            if (
-                "current_location_id" in data
-                and data["current_location_id"] is not None
-            ):
-                new_horse.current_location_id = data["current_location_id"]
-                # Create a HorseLocation entry if location is being set during creation
+            # MODIFIED: Only create a location assignment if a location is provided.
+            location_id = data.get("current_location_id")
+            if location_id is not None:
+                new_horse.current_location_id = location_id
+
                 new_assignment = HorseLocation(
-                    horse=new_horse,  # Relationship will handle horse_id
-                    location_id=data["current_location_id"],
+                    horse=new_horse,
+                    location_id=location_id,
                     date_arrived=date.today(),
                     is_current_location=True,
                     created_by=created_by_user,
@@ -169,12 +137,8 @@ class HorseController:
                 )
                 session.add(new_assignment)
 
-            session.add(new_horse)
             session.commit()
-            session.refresh(new_horse)  # To get horse_id and other db-generated values
-            # If location was set, refresh new_assignment too if its ID is needed
-            # if 'current_location_id' in data and data['current_location_id'] is not None:
-            # session.refresh(new_assignment)
+            session.refresh(new_horse)
 
             self.logger.info(
                 f"Horse '{new_horse.horse_name}' (ID: {new_horse.horse_id}) created successfully by {created_by_user}."
@@ -222,7 +186,6 @@ class HorseController:
     def update_horse(
         self, horse_id: int, data: dict, modified_by_user: str
     ) -> tuple[bool, str]:
-        # (Method content remains mostly same as v1.2.8, with attribute filtering)
         session = db_manager.get_session()
         try:
             horse = session.query(Horse).filter(Horse.horse_id == horse_id).first()
@@ -230,26 +193,15 @@ class HorseController:
                 return False, "Horse not found."
 
             data["modified_by"] = modified_by_user
-            data.pop("species_id", None)
-
-            self.logger.debug(f"HorseController.update_horse - Data for update: {data}")
-
             horse_columns = {col.name for col in Horse.__table__.columns}
 
             for key, value in data.items():
-                if key == "current_location_id":  # Handled by assign_horse_to_location
+                if key == "current_location_id":
                     if horse.current_location_id != value:
-                        self.logger.info(
-                            f"Location change detected for horse {horse_id} from {horse.current_location_id} to {value}. This should be handled via assign_horse_to_location if it involves history."
-                        )
-                        # Direct update of current_location_id here. assign_horse_to_location manages history.
                         horse.current_location_id = value
-                elif key in horse_columns:  # Check if attribute is a direct column
+                elif key in horse_columns:
                     setattr(horse, key, value)
-                elif hasattr(
-                    horse, key
-                ):  # Check if attribute exists (e.g., a relationship not directly a column)
-                    # This path is less common for direct updates from a flat data dict unless it's a specific non-column attribute
+                elif hasattr(horse, key):
                     self.logger.info(
                         f"Setting attribute '{key}' which is not a direct column but exists on Horse model."
                     )
@@ -281,30 +233,18 @@ class HorseController:
     def get_horse_by_id(self, horse_id: int) -> Optional[Horse]:
         session = db_manager.get_session()
         try:
-            # Eagerly load the 'owners' collection and the current 'location' object.
-            # This assumes 'Horse.owners' is the direct relationship to Owner models (many-to-many)
-            # and 'Horse.location' is the direct relationship to the current Location model.
             horse = (
                 session.query(Horse)
                 .options(
-                    selectinload(
-                        Horse.owners
-                    ),  # Eager load the collection of associated Owner objects
-                    joinedload(
-                        Horse.location
-                    ),  # Eager load the current Location object
-                    # If you also need horse_owner_associations (the join table objects) or location_history:
-                    # selectinload(Horse.owner_associations).selectinload(HorseOwner.owner),
-                    # selectinload(Horse.location_history).selectinload(HorseLocation.location),
+                    selectinload(Horse.owner_associations).joinedload(HorseOwner.owner),
+                    selectinload(Horse.owners),
+                    joinedload(Horse.location),
                 )
                 .filter(Horse.horse_id == horse_id)
                 .first()
             )
             if horse:
                 self.logger.info(f"Retrieved horse ID {horse_id}: {horse.horse_name}")
-                # Accessing relationships here while session is active to confirm loading (optional for debugging)
-                # if horse.owners: self.logger.debug(f"Horse {horse_id} has {len(horse.owners)} owners loaded.")
-                # if horse.location: self.logger.debug(f"Horse {horse_id} location: {horse.location.location_name} loaded.")
             else:
                 self.logger.warning(f"Horse ID {horse_id} not found.")
             return horse
@@ -312,10 +252,9 @@ class HorseController:
             self.logger.error(
                 f"Error retrieving horse ID {horse_id}: {e}", exc_info=True
             )
-            # session.rollback() # No need to rollback on a SELECT query error usually
             return None
         finally:
-            session.close()  # Session is closed here, so eager loading is crucial
+            session.close()
 
     def search_horses(
         self,
@@ -323,16 +262,11 @@ class HorseController:
         status: str = "active",
         owner_name_search: Optional[str] = None,
     ) -> List[Horse]:
-        # (Method content largely same, but ensure options are appropriate)
         session = db_manager.get_session()
         try:
             query = session.query(Horse).options(
-                selectinload(
-                    Horse.owners
-                ),  # Eager load owners for list display if needed
-                joinedload(
-                    Horse.location
-                ),  # Eager load location for list display if needed
+                selectinload(Horse.owners),
+                joinedload(Horse.location),
             )
 
             if search_term:
@@ -349,7 +283,6 @@ class HorseController:
             if owner_name_search:
                 OwnerAlias = aliased(Owner)
                 owner_search_like = f"%{owner_name_search}%"
-                # Assuming Horse.owners is the direct relationship to Owner model
                 query = query.join(Horse.owners.of_type(OwnerAlias)).filter(
                     or_(
                         OwnerAlias.farm_name.ilike(owner_search_like),
@@ -357,7 +290,7 @@ class HorseController:
                         OwnerAlias.last_name.ilike(owner_search_like),
                     )
                 )
-                query = query.distinct()  # Add distinct if join causes duplicates
+                query = query.distinct()
 
             if status == "active":
                 query = query.filter(Horse.is_active == True)
@@ -379,23 +312,19 @@ class HorseController:
     def deactivate_horse(
         self, horse_id: int, modified_by_user: str
     ) -> tuple[bool, str]:
-        # (Method content remains the same as v1.2.8)
         return self._toggle_horse_status(horse_id, False, modified_by_user)
 
     def activate_horse(self, horse_id: int, modified_by_user: str) -> tuple[bool, str]:
-        # (Method content remains the same as v1.2.8)
         return self._toggle_horse_status(horse_id, True, modified_by_user)
 
     def _toggle_horse_status(
         self, horse_id: int, is_active: bool, modified_by_user: str
     ) -> tuple[bool, str]:
-        # (Method content remains the same as v1.2.8)
         session = db_manager.get_session()
         try:
             horse = session.query(Horse).filter(Horse.horse_id == horse_id).first()
             if not horse:
                 return False, "Horse not found."
-
             horse.is_active = is_active
             horse.modified_by = modified_by_user
 
@@ -415,7 +344,6 @@ class HorseController:
             session.close()
 
     def get_horse_owners(self, horse_id: int) -> List[Dict[str, Any]]:
-        # (Method content remains the same as v1.2.8)
         session = db_manager.get_session()
         try:
             associations = (
@@ -470,7 +398,6 @@ class HorseController:
         percentage: Optional[float],
         modified_by_user: str,
     ) -> tuple[bool, str]:
-        # (Method content remains the same as v1.2.8)
         session = db_manager.get_session()
         try:
             existing_assoc = (
@@ -480,7 +407,6 @@ class HorseController:
             )
             if existing_assoc:
                 return False, "Owner is already associated with this horse."
-
             new_association = HorseOwner(
                 horse_id=horse_id, owner_id=owner_id, percentage_ownership=percentage
             )
@@ -504,7 +430,6 @@ class HorseController:
     def update_horse_owner_percentage(
         self, horse_id: int, owner_id: int, percentage: float, modified_by_user: str
     ) -> tuple[bool, str]:
-        # (Method content remains the same as v1.2.8)
         session = db_manager.get_session()
         try:
             association = (
@@ -536,7 +461,6 @@ class HorseController:
     def remove_owner_from_horse(
         self, horse_id: int, owner_id: int, modified_by_user: str
     ) -> tuple[bool, str]:
-        # (Method content remains the same as v1.2.8)
         session = db_manager.get_session()
         try:
             association = (
@@ -570,7 +494,6 @@ class HorseController:
         notes: Optional[str],
         modified_by_user: str,
     ) -> tuple[bool, str]:
-        # (Method content remains the same as v1.2.8)
         session = db_manager.get_session()
         try:
             today = date.today()
@@ -583,16 +506,10 @@ class HorseController:
                 .all()
             )
             for prev_assign in previous_assignments:
-                if (
-                    prev_assign.location_id != location_id
-                ):  # End date only if moving to a NEW location
+                if prev_assign.location_id != location_id:
                     prev_assign.date_departed = today
                     prev_assign.is_current_location = False
                     prev_assign.modified_by = modified_by_user
-
-            # Check if there's an existing assignment for this exact horse and location
-            # to avoid duplicate current assignments if logic allows re-assigning to same current location.
-            # However, typical flow is to end previous *any* current, and start new one.
 
             new_assignment = HorseLocation(
                 horse_id=horse_id,
@@ -624,21 +541,16 @@ class HorseController:
     def remove_horse_from_location(
         self,
         horse_id: int,
-        location_id: Optional[
-            int
-        ] = None,  # If None, removes from *any* current location
+        location_id: Optional[int] = None,
         modified_by_user: str = "system",
     ) -> tuple[bool, str]:
-        # (Method content remains the same as v1.2.8)
         session = db_manager.get_session()
         try:
             query = session.query(HorseLocation).filter(
                 HorseLocation.horse_id == horse_id,
                 HorseLocation.is_current_location == True,
             )
-            if (
-                location_id is not None
-            ):  # If a specific location is targeted for removal
+            if location_id is not None:
                 query = query.filter(HorseLocation.location_id == location_id)
 
             current_assignment = query.first()
@@ -653,7 +565,6 @@ class HorseController:
             current_assignment.modified_by = modified_by_user
 
             horse = session.query(Horse).filter(Horse.horse_id == horse_id).first()
-            # Only nullify current_location_id if we are ending the assignment that matches it
             if horse and horse.current_location_id == current_assignment.location_id:
                 horse.current_location_id = None
                 horse.modified_by = modified_by_user
