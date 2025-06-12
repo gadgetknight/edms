@@ -1,13 +1,17 @@
 # views/admin/user_management_screen.py
 """
 EDSI Veterinary Management System - User Management Screen
-Version: 1.6.3
+Version: 1.6.4
 Purpose: Admin screen for managing users, locations, veterinarians, charge codes,
          categories, owners, and the company profile.
-Last Updated: June 9, 2025
+Last Updated: June 10, 2025
 Author: Gemini
 
 Changelog:
+- v1.6.4 (2025-06-10):
+    - Fixed `DetachedInstanceError` in `_edit_selected_category_process` by
+      checking if a category is Level 1 before accessing its `.parent`
+      attribute, which would be None and cause a lazy-load failure.
 - v1.6.3 (2025-06-09):
     - Providing the single, complete, and unabridged file containing the full
       implementations for all seven tabs.
@@ -1085,15 +1089,15 @@ class UserManagementScreen(BaseView):
             self.edit_vet_btn.setEnabled(has_selection)
         if self.toggle_vet_active_btn:
             self.toggle_vet_active_btn.setEnabled(has_selection)
-            if has_selection:
-                selected_row = self.vets_table.currentRow()
-                status_text = self.vets_table.item(selected_row, 5).text()
-                action_text = "Deactivate" if status_text == "Active" else "Activate"
-                self.toggle_vet_active_btn.setText(f"🔄 {action_text} Selected")
-                self._apply_standard_button_style(
-                    self.toggle_vet_active_btn,
-                    "toggle_inactive" if status_text == "Active" else "standard",
-                )
+        if has_selection:
+            selected_row = self.vets_table.currentRow()
+            status_text = self.vets_table.item(selected_row, 5).text()
+            action_text = "Deactivate" if status_text == "Active" else "Activate"
+            self.toggle_vet_active_btn.setText(f"🔄 {action_text} Selected")
+            self._apply_standard_button_style(
+                self.toggle_vet_active_btn,
+                "toggle_inactive" if status_text == "Active" else "standard",
+            )
 
     # --- Categories/Processes Tab Methods ---
     def _create_categories_processes_tab(self):
@@ -1249,12 +1253,19 @@ class UserManagementScreen(BaseView):
             self.show_error("Error", "Could not retrieve item details to edit.")
             self.load_categories_processes_data()
             return
+
+        # MODIFIED: Logic to safely get parent category
+        parent_for_dialog = None
+        if category_to_edit.level == 2:
+            # The .parent attribute is now eager-loaded by the controller query
+            parent_for_dialog = category_to_edit.parent
+
         dialog = AddEditChargeCodeCategoryDialog(
             self,
             controller=self.charge_code_controller,
             current_user_id=self.current_user_id,
             category_to_edit=category_to_edit,
-            parent_category=category_to_edit.parent,
+            parent_category=parent_for_dialog,
         )
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.load_categories_processes_data()
@@ -1386,10 +1397,10 @@ class UserManagementScreen(BaseView):
             self.charge_codes_table.horizontalHeader().setSectionResizeMode(
                 3, QHeaderView.ResizeMode.Stretch
             )
-            for i in [0, 1, 2, 4, 5]:
-                self.charge_codes_table.horizontalHeader().setSectionResizeMode(
-                    i, QHeaderView.ResizeMode.ResizeToContents
-                )
+        for i in [0, 1, 2, 4, 5]:
+            self.charge_codes_table.horizontalHeader().setSectionResizeMode(
+                i, QHeaderView.ResizeMode.ResizeToContents
+            )
         layout.addWidget(self.charge_codes_table)
         self._update_charge_code_action_buttons_state()
         return tab

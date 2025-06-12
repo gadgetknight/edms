@@ -1,14 +1,18 @@
 # models/reference_models.py
 """
 EDSI Veterinary Management System - Reference Data Models
-Version: 1.1.22
+Version: 1.1.23
 Purpose: Defines SQLAlchemy models for various reference data entities.
          - Removed placeholder Transaction and TransactionDetail models
            to avoid conflict with definitive models in financial_models.py.
-Last Updated: June 4, 2025
+Last Updated: June 10, 2025
 Author: Claude Assistant (Modified by Gemini)
 
 Changelog:
+- v1.1.23 (2025-06-10):
+    - Set `lazy="joined"` on the `ChargeCodeCategory.parent` relationship to
+      prevent `DetachedInstanceError` when accessing the parent of a category
+      that is no longer in a session.
 - v1.1.22 (2025-06-04):
     - Removed placeholder `Transaction` and `TransactionDetail` class definitions
       as these are now fully defined in `models/financial_models.py`.
@@ -43,13 +47,7 @@ from .base_model import (
 )
 
 
-class StateProvince(
-    BaseModel, Base
-):  # BaseModel already inherits Base, so just BaseModel is fine.
-    # Or if Base is intended to be mixed in for some reason, it's okay.
-    # For consistency, let's assume BaseModel is sufficient as it inherits Base.
-    # Will correct to just BaseModel if this is the standard in your other models.
-    # Re-checking your base_model.py: BaseModel(Base). So this is fine.
+class StateProvince(BaseModel, Base):
     __tablename__ = "state_provinces"
     state_province_id = Column(
         Integer, primary_key=True, index=True, autoincrement=True
@@ -96,8 +94,12 @@ class ChargeCodeCategory(BaseModel, Base):
     )
     is_active = Column(Boolean, default=True, nullable=False, index=True)
 
+    # MODIFIED: Added lazy="joined" to prevent DetachedInstanceError
     parent = relationship(
-        "ChargeCodeCategory", remote_side=[category_id], backref=backref("children")
+        "ChargeCodeCategory",
+        remote_side=[category_id],
+        backref=backref("children"),
+        lazy="joined",
     )
 
     charge_codes = relationship("ChargeCode", back_populates="category")
@@ -108,7 +110,6 @@ class ChargeCodeCategory(BaseModel, Base):
 
 class ChargeCode(BaseModel, Base):
     __tablename__ = "charge_codes"
-    # Changed from charge_code_id to id to match financial_models.Transaction.charge_code_id ForeignKey target
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     code = Column(String(20), nullable=False, unique=True, index=True)
     alternate_code = Column(String(50), nullable=True, index=True)
@@ -133,9 +134,7 @@ class ChargeCode(BaseModel, Base):
 
 class Veterinarian(BaseModel, Base):
     __tablename__ = "veterinarians"
-    vet_id = Column(
-        Integer, primary_key=True, index=True, autoincrement=True
-    )  # Consider renaming to 'id' for consistency if preferred
+    vet_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     first_name = Column(String(50), nullable=False)
     last_name = Column(String(50), nullable=False, index=True)
     license_number = Column(String(50), unique=True)
@@ -150,9 +149,7 @@ class Veterinarian(BaseModel, Base):
 
 class Location(BaseModel, Base):
     __tablename__ = "locations"
-    location_id = Column(
-        Integer, primary_key=True, index=True, autoincrement=True
-    )  # Consider renaming to 'id'
+    location_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     location_name = Column(String(100), nullable=False, unique=True, index=True)
     address_line1 = Column(String(100), nullable=True)
     address_line2 = Column(String(100), nullable=True)
@@ -174,19 +171,6 @@ class Location(BaseModel, Base):
         return (
             f"<Location(location_id={self.location_id}, name='{self.location_name}')>"
         )
-
-
-# --- Placeholder models removed ---
-# class Transaction(BaseModel, Base): # REMOVED
-#     __tablename__ = "transactions"
-#     transaction_id = Column(Integer, primary_key=True)
-#     description = Column(String(100))
-
-# class TransactionDetail(BaseModel, Base): # REMOVED
-#     __tablename__ = "transaction_details"
-#     detail_id = Column(Integer, primary_key=True)
-#     transaction_id = Column(Integer, ForeignKey("transactions.transaction_id")) # This would now be an error if Transaction was removed
-#     notes = Column(String(100))
 
 
 class Procedure(BaseModel, Base):

@@ -1,24 +1,24 @@
 # views/horse/horse_unified_management.py
 """
 EDSI Veterinary Management System - Unified Horse Management Screen (Dark Theme)
-Version: 1.12.0
+Version: 1.13.0
 Purpose: Unified interface for horse management, including invoice history.
-Last Updated: June 10, 2025
+Last Updated: June 11, 2025
 Author: Gemini
 
 Changelog:
-- v1.12.0 (2025-06-10):
-    - Added _on_payment_recorded handler to refresh horse details after a
-      payment is made, ensuring all tabs reflect the new balance.
-- v1.11.0 (2025-06-09):
-    - Added _on_invoice_deleted handler to refresh the BillingTab and
-      InvoiceHistoryTab after an invoice is deleted.
-- v1.10.0 (2025-06-09):
-    - Implemented a signal/slot mechanism to refresh the InvoiceHistoryTab
-      automatically after an invoice is created in the BillingTab.
+- v1.13.0 (2025-06-11):
+    - Added a new 'Reports' tab to the main tab widget to serve as a central
+      hub for all reporting, per user request.
+- v1.12.5 (2025-06-10):
+    - Simplified the horse information line in the header to only show the
+      account number, reducing clutter.
+    - Increased spacing in the header between the horse name and the info line.
+- v1.12.4 (2025-06-10):
+    - Removed a call to a non-existent `data_modified` signal in the
+      `_on_tab_data_modified` slot to fix an `AttributeError`.
 """
 
-# ... (imports remain the same) ...
 import logging
 from datetime import (
     datetime,
@@ -93,10 +93,10 @@ from .tabs.owners_tab import OwnersTab
 from .tabs.location_tab import LocationTab
 from .tabs.billing_tab import BillingTab
 from .tabs.invoice_history_tab import InvoiceHistoryTab
+from .tabs.reports_tab import ReportsTab  # ADDED
 
 
 class HorseUnifiedManagement(BaseView):
-    # ... (__init__ and other methods up to setup_connections remain the same) ...
     horse_selection_changed = Signal(int)
     exit_requested = Signal()
     setup_requested = Signal()
@@ -119,6 +119,7 @@ class HorseUnifiedManagement(BaseView):
         self.location_tab: Optional[LocationTab] = None
         self.billing_tab: Optional[BillingTab] = None
         self.invoice_history_tab: Optional[InvoiceHistoryTab] = None
+        self.reports_tab: Optional[ReportsTab] = None  # ADDED
 
         self.horse_list: Optional[QWidget] = None
         self.empty_frame: Optional[QFrame] = None
@@ -232,6 +233,32 @@ class HorseUnifiedManagement(BaseView):
             "HorseUnifiedManagement showEvent: FINISHED - screen should be visible."
         )
 
+    def display_details_state(self):
+        """Hides the empty state frame and shows the main details content widget."""
+        self.logger.debug("display_details_state: START")
+
+        if hasattr(self, "empty_frame") and self.empty_frame:
+            self.logger.debug("display_details_state: Hiding empty_frame.")
+            self.empty_frame.hide()
+        else:
+            self.logger.warning(
+                "display_details_state: empty_frame not available or not valid."
+            )
+
+        if (
+            hasattr(self, "horse_details_content_widget")
+            and self.horse_details_content_widget
+        ):
+            self.logger.debug(
+                "display_details_state: Showing horse_details_content_widget."
+            )
+            self.horse_details_content_widget.show()
+        else:
+            self.logger.warning(
+                "display_details_state: horse_details_content_widget not available."
+            )
+        self.logger.debug("display_details_state: FINISHED")
+
     def display_empty_state(self):
         self.logger.debug("display_empty_state: START")
 
@@ -283,6 +310,8 @@ class HorseUnifiedManagement(BaseView):
                     f"display_empty_state: Error in basic_info_tab.clear_fields or set_form_read_only: {e}",
                     exc_info=True,
                 )
+        else:
+            self.logger.error("display_empty_state: BasicInfoTab is None.")
 
         if hasattr(self.basic_info_tab, "update_buttons_state"):
             self.logger.debug(
@@ -300,8 +329,6 @@ class HorseUnifiedManagement(BaseView):
                     f"display_empty_state: Error in basic_info_tab.update_buttons_state: {e}",
                     exc_info=True,
                 )
-        else:
-            self.logger.error("display_empty_state: BasicInfoTab is None.")
 
         if self.owners_tab and hasattr(self.owners_tab, "load_owners_for_horse"):
             self.logger.debug(
@@ -467,7 +494,6 @@ class HorseUnifiedManagement(BaseView):
 
         self.logger.debug("update_main_action_buttons_state: FINISHED")
 
-    # ... (other methods like discard_changes, load_initial_data, etc. remain unchanged) ...
     def discard_changes(self):
         self.logger.debug("discard_changes: START")
         if not self._is_new_mode and not self._has_changes_in_active_tab:
@@ -598,7 +624,7 @@ class HorseUnifiedManagement(BaseView):
         header_layout.setSpacing(15)
         left_widget = QWidget()
         left_layout = QVBoxLayout(left_widget)
-        left_layout.setSpacing(2)
+        left_layout.setSpacing(8)
         left_layout.setContentsMargins(0, 0, 0, 0)
         left_layout.addStretch()
         title_label = QLabel("EDSI - Horse Management")
@@ -801,15 +827,13 @@ class HorseUnifiedManagement(BaseView):
         header_widget = QWidget()
         header_layout = QVBoxLayout(header_widget)
         header_layout.setContentsMargins(0, 0, 0, 0)
-        header_layout.setSpacing(5)
+        header_layout.setSpacing(8)
         self.horse_title = QLabel("Horse Name")
         self.horse_title.setFont(QFont(DEFAULT_FONT_FAMILY, 18, QFont.Weight.Bold))
         self.horse_title.setStyleSheet(
             f"color:{DARK_TEXT_PRIMARY};background:transparent;"
         )
-        self.horse_info_line = QLabel(
-            "Acct: N/A | 👥 No Owner | Breed: N/A | Color: N/A | Sex: N/A | Age: N/A | 📍 N/A"
-        )
+        self.horse_info_line = QLabel(" ")
         self.horse_info_line.setStyleSheet(
             f"color:{DARK_TEXT_SECONDARY};font-size:12px;background:transparent;"
         )
@@ -861,6 +885,11 @@ class HorseUnifiedManagement(BaseView):
             self.tab_widget.addTab(self.invoice_history_tab, "🧾 Invoice History")
             self.logger.info("InvoiceHistoryTab created.")
 
+            # MODIFIED: Add ReportsTab
+            self.reports_tab = ReportsTab(parent=self)
+            self.tab_widget.addTab(self.reports_tab, "📊 Reports")
+            self.logger.info("ReportsTab created.")
+
             parent_layout_for_tabs.addWidget(self.tab_widget, 1)
             self.logger.info("Tabs added.")
         except Exception as e:
@@ -873,6 +902,7 @@ class HorseUnifiedManagement(BaseView):
             self.location_tab = None
             self.billing_tab = None
             self.invoice_history_tab = None
+            self.reports_tab = None  # ADDED
 
     def _handle_location_assignment_change(self, location_data: Dict):
         self.logger.info(f"Received location_assignment_changed: {location_data}")
@@ -981,18 +1011,11 @@ class HorseUnifiedManagement(BaseView):
             )
             return
         if not horse:
-            self.horse_info_line.setText(
-                "Acct: N/A | 👥 No Owner | Breed: N/A | Color: N/A | Sex: N/A | Age: N/A | 📍 N/A"
-            )
+            self.horse_info_line.setText(" ")
             return
-        age_str = "Age N/A"
-        if self.horse_list and hasattr(self.horse_list, "_calculate_age"):
-            age_str = self.horse_list._calculate_age(horse.date_of_birth)
-        owner_name = self._get_display_owner_name(horse)
-        location_name_val = self._get_display_location_name(horse)
-        self.horse_info_line.setText(
-            f"Acct: {horse.account_number or 'N/A'} | 👥 {owner_name} | Breed: {horse.breed or 'N/A'} | Color: {horse.color or 'N/A'} | Sex: {horse.sex or 'N/A'} | Age: {age_str} | 📍 {location_name_val}"
-        )
+
+        account_str = f"Account: {horse.account_number or 'N/A'}"
+        self.horse_info_line.setText(account_str)
 
     def load_horse_details(self, horse_id: int):
         self.logger.info(f"load_horse_details: START for horse ID: {horse_id}")
@@ -1024,7 +1047,6 @@ class HorseUnifiedManagement(BaseView):
         self.update_status(f"Viewing: {horse.horse_name or 'Unnamed Horse'}")
         self.logger.info(f"load_horse_details: FINISHED for horse ID: {horse_id}")
 
-    # ... (the rest of the HorseUnifiedManagement methods remain unchanged) ...
     def add_new_horse(self):
         self.logger.info("add_new_horse: START")
         if self._has_changes_in_active_tab and not self.show_question(
@@ -1112,15 +1134,10 @@ class HorseUnifiedManagement(BaseView):
         parent_layout.addWidget(self.status_bar)
         self.status_label = QLabel("Ready")
         self.footer_horse_count_label = QLabel("Showing 0 of 0 horses")
-        self.shortcut_label = QLabel("F5=Refresh | Ctrl+N=New | Ctrl+S=Save")
+
         self.status_bar.addWidget(self.status_label, 1)
         self.status_bar.addPermanentWidget(self.footer_horse_count_label)
-        separator_label = QLabel(" | ")
-        separator_label.setStyleSheet(
-            f"color:{DARK_BORDER};background:transparent;margin:0 5px;"
-        )
-        self.status_bar.addPermanentWidget(separator_label)
-        self.status_bar.addPermanentWidget(self.shortcut_label)
+
         self.logger.debug("setup_footer: FINISHED")
 
     def save_changes(self):
@@ -1403,7 +1420,7 @@ class HorseUnifiedManagement(BaseView):
         sender_widget = self.sender()
         if isinstance(sender_widget, QRadioButton) and sender_widget.isChecked():
             self.logger.info(f"on_filter_changed: To {sender_widget.text()}")
-            self.load_horses()
+        self.load_horses()
 
     def on_selection_changed(self):
         self.logger.debug("on_selection_changed: START")

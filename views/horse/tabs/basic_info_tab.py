@@ -1,12 +1,29 @@
 # views/horse/tabs/basic_info_tab.py
 """
 EDSI Veterinary Management System - Horse Basic Info Tab
-Version: 1.4.1
+Version: 1.6.0
 Purpose: UI for displaying and editing basic information of a horse.
-Last Updated: June 9, 2025
+Last Updated: June 10, 2025
 Author: Gemini
 
 Changelog:
+- v1.6.0 (2025-06-10):
+    - Updated all input field and button styles to conform to EDMS_STYLE_GUIDE.MD.
+      This includes the "boxed-in" look with white borders and standard colors
+      for save, discard, and deactivate actions.
+- v1.5.2 (2025-06-10):
+    - Refactored the UI to use a single grid layout for all input fields,
+      which enforces correct vertical alignment for all widgets, including
+      the previously misaligned date fields.
+- v1.5.1 (2025-06-10):
+    - Increased vertical spacing in form layouts to make them less dense.
+    - Set an explicit minimum height on input fields in the stylesheet to
+      prevent text from being clipped, especially in date fields.
+- v1.5.0 (2025-06-10):
+    - Rearranged fields to improve layout and readability.
+- v1.4.2 (2025-06-10):
+    - Adjusted padding in the input field stylesheet to prevent text in
+      QDateEdit widgets from being vertically cut off.
 - v1.4.1 (2025-06-09):
     - Bug Fix: Corrected logic in `update_buttons_state` to enable Save/Discard
       buttons immediately when entering Add or Edit mode.
@@ -55,32 +72,32 @@ class BasicInfoTab(QWidget):
 
     SEX_OPTIONS = ["Unknown", "Stallion", "Mare", "Gelding", "Colt", "Filly"]
 
+    # MODIFIED: Styles updated to conform to EDMS_STYLE_GUIDE.MD
     INPUT_FIELD_STYLE = (
-        "background-color: #3E3E3E; "
+        f"background-color: {AppConfig.DARK_INPUT_FIELD_BACKGROUND}; "
         "color: white; "
-        "border: 1px solid #B0B0B0; "
+        "border: 1px solid white; "
         "border-radius: 3px; "
-        "padding: 5px;"
+        "padding: 6px 5px; "
+        "min-height: 22px;"
     )
     TEXT_AREA_STYLE = INPUT_FIELD_STYLE
     COMBO_DATE_STYLE = INPUT_FIELD_STYLE
     DEACTIVATE_BUTTON_STYLE = (
-        "QPushButton {"
-        "background-color: #FFC107; color: black; border: 1px solid #707070; "
-        "border-radius: 3px; padding: 6px 12px; }"
-        "QPushButton:hover { background-color: #FFD54F; }"
-        "QPushButton:pressed { background-color: #FFA000; }"
+        f"QPushButton {{"
+        f"background-color: {AppConfig.DARK_DANGER_ACTION}; color: white; border: 1px solid white; "
+        f"border-radius: 3px; padding: 6px 12px; }}"
+        f"QPushButton:hover {{ background-color: {QColor(AppConfig.DARK_DANGER_ACTION).lighter(115).name()}; }}"
     )
     DISCARD_BUTTON_STYLE = (
-        "QPushButton {"
-        "background-color: #212121; color: white; border: 1px solid #707070; "
-        "border-radius: 3px; padding: 6px 12px; }"
-        "QPushButton:hover { background-color: #424242; }"
-        "QPushButton:pressed { background-color: #000000; }"
+        f"QPushButton {{"
+        f"background-color: {AppConfig.DARK_BUTTON_BG}; color: {AppConfig.DARK_TEXT_PRIMARY}; border: 1px solid white; "
+        f"border-radius: 3px; padding: 6px 12px; }}"
+        f"QPushButton:hover {{ background-color: {AppConfig.DARK_BUTTON_HOVER}; }}"
     )
     SAVE_BUTTON_STYLE = (
         f"QPushButton {{"
-        f"background-color: {AppConfig.DARK_SUCCESS_ACTION}; color: white; border: 1px solid #707070; "
+        f"background-color: {AppConfig.DARK_SUCCESS_ACTION}; color: white; border: 1px solid white; "
         f"border-radius: 3px; padding: 6px 12px; }}"
         f"QPushButton:hover {{ background-color: {QColor(AppConfig.DARK_SUCCESS_ACTION).lighter(115).name()}; }}"
         f"QPushButton:pressed {{ background-color: {QColor(AppConfig.DARK_SUCCESS_ACTION).darker(110).name()}; }}"
@@ -141,131 +158,110 @@ class BasicInfoTab(QWidget):
         outer_layout = QVBoxLayout(content_widget)
         outer_layout.setContentsMargins(15, 15, 15, 15)
         outer_layout.setSpacing(15)
-        top_grid_layout = QGridLayout()
-        top_grid_layout.setSpacing(10)
-        top_grid_layout.setHorizontalSpacing(20)
-        top_grid_layout.setColumnStretch(1, 1)
-        top_grid_layout.setColumnStretch(3, 1)
 
-        # UI Fields (full implementation)
+        grid_layout = QGridLayout()
+        grid_layout.setVerticalSpacing(12)
+        grid_layout.setHorizontalSpacing(20)
+        grid_layout.setColumnStretch(1, 1)
+        grid_layout.setColumnStretch(3, 1)
+
+        # --- Create Widgets ---
         self.horse_name_input = QLineEdit()
-        self.horse_name_input.textChanged.connect(self._on_data_modified)
-        top_grid_layout.addWidget(QLabel("Name*:"), 0, 0, Qt.AlignmentFlag.AlignRight)
-        top_grid_layout.addWidget(self.horse_name_input, 0, 1)
-
         self.account_number_input = QLineEdit()
-        self.account_number_input.textChanged.connect(self._on_data_modified)
-        top_grid_layout.addWidget(
-            QLabel("Account Number:"), 0, 2, Qt.AlignmentFlag.AlignRight
-        )
-        top_grid_layout.addWidget(self.account_number_input, 0, 3)
-
         self.breed_input = QLineEdit()
-        self.breed_input.textChanged.connect(self._on_data_modified)
-        top_grid_layout.addWidget(QLabel("Breed:"), 1, 0, Qt.AlignmentFlag.AlignRight)
-        top_grid_layout.addWidget(self.breed_input, 1, 1)
-
         self.color_input = QLineEdit()
-        self.color_input.textChanged.connect(self._on_data_modified)
-        top_grid_layout.addWidget(QLabel("Color:"), 1, 2, Qt.AlignmentFlag.AlignRight)
-        top_grid_layout.addWidget(self.color_input, 1, 3)
-
         self.sex_combo = QComboBox()
         self.sex_combo.addItems(self.SEX_OPTIONS)
-        self.sex_combo.currentIndexChanged.connect(self._on_data_modified)
-        top_grid_layout.addWidget(QLabel("Sex:"), 2, 0, Qt.AlignmentFlag.AlignRight)
-        top_grid_layout.addWidget(self.sex_combo, 2, 1)
-
+        self.reg_number_input = QLineEdit()
+        self.microchip_id_input = QLineEdit()
+        self.tattoo_number_input = QLineEdit()
+        self.brand_input = QLineEdit()
+        self.band_tag_input = QLineEdit()
+        self.location_display_label = QLabel("N/A")
+        self.owner_display_label = QLabel("N/A")
+        self.coggins_date_input = QDateEdit()
+        self.coggins_date_input.setCalendarPopup(True)
+        self.coggins_date_input.setDisplayFormat("yyyy-MM-dd")
+        self.coggins_date_input.setDate(QDate(2000, 1, 1))
+        self.coggins_date_input.setSpecialValueText(" ")
         self.dob_input = QDateEdit()
         self.dob_input.setCalendarPopup(True)
         self.dob_input.setDisplayFormat("yyyy-MM-dd")
         self.dob_input.setDate(QDate(2000, 1, 1))
         self.dob_input.setMaximumDate(QDate.currentDate())
         self.dob_input.setSpecialValueText(" ")
-        self.dob_input.dateChanged.connect(self._on_data_modified)
-        top_grid_layout.addWidget(
-            QLabel("Date of Birth:"), 2, 2, Qt.AlignmentFlag.AlignRight
-        )
-        top_grid_layout.addWidget(self.dob_input, 2, 3)
-
-        self.reg_number_input = QLineEdit()
-        self.reg_number_input.textChanged.connect(self._on_data_modified)
-        top_grid_layout.addWidget(
-            QLabel("Reg. Number:"), 3, 0, Qt.AlignmentFlag.AlignRight
-        )
-        top_grid_layout.addWidget(self.reg_number_input, 3, 1)
-
-        self.microchip_id_input = QLineEdit()
-        self.microchip_id_input.textChanged.connect(self._on_data_modified)
-        top_grid_layout.addWidget(
-            QLabel("Microchip ID:"), 3, 2, Qt.AlignmentFlag.AlignRight
-        )
-        top_grid_layout.addWidget(self.microchip_id_input, 3, 3)
-
-        self.tattoo_number_input = QLineEdit()
-        self.tattoo_number_input.textChanged.connect(self._on_data_modified)
-        top_grid_layout.addWidget(QLabel("Tattoo:"), 4, 0, Qt.AlignmentFlag.AlignRight)
-        top_grid_layout.addWidget(self.tattoo_number_input, 4, 1)
-
-        self.brand_input = QLineEdit()
-        self.brand_input.textChanged.connect(self._on_data_modified)
-        top_grid_layout.addWidget(QLabel("Brand:"), 4, 2, Qt.AlignmentFlag.AlignRight)
-        top_grid_layout.addWidget(self.brand_input, 4, 3)
-
-        self.location_display_label = QLabel("N/A")
-        top_grid_layout.addWidget(
-            QLabel("Location:"), 5, 0, Qt.AlignmentFlag.AlignRight
-        )
-        top_grid_layout.addWidget(self.location_display_label, 5, 1)
-
-        self.band_tag_input = QLineEdit()
-        self.band_tag_input.textChanged.connect(self._on_data_modified)
-        top_grid_layout.addWidget(
-            QLabel("Band/Tag:"), 5, 2, Qt.AlignmentFlag.AlignRight
-        )
-        top_grid_layout.addWidget(self.band_tag_input, 5, 3)
-
-        self.owner_display_label = QLabel("N/A")
-        top_grid_layout.addWidget(QLabel("Owner:"), 6, 0, Qt.AlignmentFlag.AlignRight)
-        top_grid_layout.addWidget(self.owner_display_label, 6, 1)
-
-        outer_layout.addLayout(top_grid_layout)
-
-        coggins_height_layout = QGridLayout()
-        coggins_height_layout.setSpacing(10)
-        coggins_height_layout.setHorizontalSpacing(20)
-        coggins_height_layout.setColumnStretch(1, 1)
-        coggins_height_layout.setColumnStretch(3, 1)
-
-        self.coggins_date_input = QDateEdit()
-        self.coggins_date_input.setCalendarPopup(True)
-        self.coggins_date_input.setDisplayFormat("yyyy-MM-dd")
-        self.coggins_date_input.setDate(QDate(2000, 1, 1))
-        self.coggins_date_input.setSpecialValueText(" ")
-        self.coggins_date_input.dateChanged.connect(self._on_data_modified)
-        coggins_height_layout.addWidget(
-            QLabel("Coggins Date:"), 0, 0, Qt.AlignmentFlag.AlignRight
-        )
-        coggins_height_layout.addWidget(self.coggins_date_input, 0, 1)
-
         self.height_input = QLineEdit()
         double_validator = QDoubleValidator(0.00, 99.99, 2)
         double_validator.setNotation(QDoubleValidator.Notation.StandardNotation)
         self.height_input.setValidator(double_validator)
-        self.height_input.textChanged.connect(self._on_data_modified)
-        coggins_height_layout.addWidget(
-            QLabel("Height (Hands):"), 0, 2, Qt.AlignmentFlag.AlignRight
+
+        # --- Add Widgets to Grid ---
+        grid_layout.addWidget(QLabel("Name*:"), 0, 0, Qt.AlignmentFlag.AlignRight)
+        grid_layout.addWidget(self.horse_name_input, 0, 1)
+        grid_layout.addWidget(
+            QLabel("Account Number:"), 0, 2, Qt.AlignmentFlag.AlignRight
         )
-        coggins_height_layout.addWidget(self.height_input, 0, 3)
-        outer_layout.addLayout(coggins_height_layout)
+        grid_layout.addWidget(self.account_number_input, 0, 3)
+
+        grid_layout.addWidget(QLabel("Breed:"), 1, 0, Qt.AlignmentFlag.AlignRight)
+        grid_layout.addWidget(self.breed_input, 1, 1)
+        grid_layout.addWidget(QLabel("Color:"), 1, 2, Qt.AlignmentFlag.AlignRight)
+        grid_layout.addWidget(self.color_input, 1, 3)
+
+        grid_layout.addWidget(QLabel("Sex:"), 2, 0, Qt.AlignmentFlag.AlignRight)
+        grid_layout.addWidget(self.sex_combo, 2, 1)
+        grid_layout.addWidget(QLabel("Reg. Number:"), 2, 2, Qt.AlignmentFlag.AlignRight)
+        grid_layout.addWidget(self.reg_number_input, 2, 3)
+
+        grid_layout.addWidget(
+            QLabel("Microchip ID:"), 3, 0, Qt.AlignmentFlag.AlignRight
+        )
+        grid_layout.addWidget(self.microchip_id_input, 3, 1)
+        grid_layout.addWidget(QLabel("Tattoo:"), 3, 2, Qt.AlignmentFlag.AlignRight)
+        grid_layout.addWidget(self.tattoo_number_input, 3, 3)
+
+        grid_layout.addWidget(QLabel("Brand:"), 4, 0, Qt.AlignmentFlag.AlignRight)
+        grid_layout.addWidget(self.brand_input, 4, 1)
+        grid_layout.addWidget(QLabel("Band/Tag:"), 4, 2, Qt.AlignmentFlag.AlignRight)
+        grid_layout.addWidget(self.band_tag_input, 4, 3)
+
+        grid_layout.addWidget(
+            QLabel("Height (Hands):"), 5, 0, Qt.AlignmentFlag.AlignRight
+        )
+        grid_layout.addWidget(self.height_input, 5, 1)
+
+        grid_layout.addWidget(
+            QLabel("Coggins Date:"),
+            6,
+            0,
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop,
+        )
+        grid_layout.addWidget(self.coggins_date_input, 6, 1)
+        grid_layout.addWidget(
+            QLabel("Date of Birth:"),
+            6,
+            2,
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop,
+        )
+        grid_layout.addWidget(self.dob_input, 6, 3)
+
+        grid_layout.addWidget(QLabel("Location:"), 7, 0, Qt.AlignmentFlag.AlignRight)
+        grid_layout.addWidget(self.location_display_label, 7, 1)
+        grid_layout.addWidget(QLabel("Owner:"), 7, 2, Qt.AlignmentFlag.AlignRight)
+        grid_layout.addWidget(self.owner_display_label, 7, 3)
+
+        outer_layout.addLayout(grid_layout)
+
+        outer_layout.addSpacing(20)
 
         description_form_layout = QFormLayout()
         description_form_layout.setContentsMargins(0, 0, 0, 0)
         description_form_layout.setSpacing(10)
-        description_form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+        description_form_layout.setLabelAlignment(
+            Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight
+        )
         self.description_input = QTextEdit()
         self.description_input.setFixedHeight(80)
-        self.description_input.textChanged.connect(self._on_data_modified)
         description_form_layout.addRow(
             QLabel("Description/Markings:"), self.description_input
         )
@@ -282,8 +278,8 @@ class BasicInfoTab(QWidget):
         self.save_btn.clicked.connect(self.save_requested.emit)
         button_layout.addWidget(self.toggle_active_btn)
         button_layout.addStretch()
-        button_layout.addWidget(self.discard_btn)  # Swapped order
-        button_layout.addWidget(self.save_btn)  # Swapped order
+        button_layout.addWidget(self.discard_btn)
+        button_layout.addWidget(self.save_btn)
         outer_layout.addWidget(button_frame)
 
         outer_layout.addStretch(1)
@@ -293,12 +289,16 @@ class BasicInfoTab(QWidget):
         # Apply Styles
         for widget in content_widget.findChildren(QLineEdit):
             widget.setStyleSheet(self.INPUT_FIELD_STYLE)
+            widget.textChanged.connect(self._on_data_modified)
         for widget in content_widget.findChildren(QDateEdit):
             widget.setStyleSheet(self.COMBO_DATE_STYLE)
+            widget.dateChanged.connect(self._on_data_modified)
         for widget in content_widget.findChildren(QComboBox):
             widget.setStyleSheet(self.COMBO_DATE_STYLE)
+            widget.currentIndexChanged.connect(self._on_data_modified)
         for widget in content_widget.findChildren(QTextEdit):
             widget.setStyleSheet(self.TEXT_AREA_STYLE)
+            widget.textChanged.connect(self._on_data_modified)
         for widget in [self.owner_display_label, self.location_display_label]:
             widget.setStyleSheet(self.INPUT_FIELD_STYLE)
         self.save_btn.setStyleSheet(self.SAVE_BUTTON_STYLE)

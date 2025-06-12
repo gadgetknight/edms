@@ -10,6 +10,7 @@ from .financial_controller import FinancialController
 from .horse_controller import HorseController
 from .company_profile_controller import CompanyProfileController
 from .veterinarian_controller import VeterinarianController
+from .reports_controller import ReportsController
 
 __all__ = [
     "UserController",
@@ -20,4 +21,5 @@ __all__ = [
     "HorseController",
     "CompanyProfileController",
     "VeterinarianController",
+    "ReportsController",
 ]

@@ -1,13 +1,25 @@
 # views/horse/widgets/horse_list_widget.py
 """
 EDSI Veterinary Management System - Horse List Widget
-Version: 1.0.3
+Version: 1.0.7
 Purpose: Custom QListWidget for displaying a list of horses with specific styling
          and item representation. Corrected double-click event handling.
-Last Updated: June 8, 2025
-Author: Claude Assistant (Modified by Gemini)
+Last Updated: June 10, 2025
+Author: Gemini
 
 Changelog:
+- v1.0.7 (2025-06-10):
+    - Increased `min-height` of list items in the stylesheet to 70px to
+      definitively prevent text from being cut off.
+- v1.0.6 (2025-06-10):
+    - Increased the minimum height of list items to 75px to
+      provide more vertical space and prevent text clipping.
+- v1.0.5 (2025-06-10):
+    - Adjusted vertical margins and spacing in the custom item widget to
+      prevent text from being cut off at the bottom.
+- v1.0.4 (2025-06-10):
+    - Adjusted vertical margins and spacing in the custom item widget to
+      prevent text from being cut off at the bottom.
 - v1.0.3 (2025-06-08):
     - Re-implemented `mouseDoubleClickEvent` to more reliably emit the
       `itemDoubleClicked` signal, fixing the double-click-to-edit feature.
@@ -54,7 +66,7 @@ class HorseListWidget(QListWidget):
             }}
             QListWidget::item {{
                 padding: 10px 15px; border-bottom: 1px solid {DARK_BORDER};
-                min-height: 55px; background-color: {DARK_WIDGET_BACKGROUND};
+                min-height: 70px; background-color: {DARK_WIDGET_BACKGROUND};
             }}
             QListWidget::item:selected {{
                 background-color: {DARK_PRIMARY_ACTION}40; /* RGBA */

@@ -1,12 +1,16 @@
 # controllers/financial_controller.py
 """
 EDSI Veterinary Management System - Financial Controller
-Version: 2.3.0
+Version: 2.4.0
 Purpose: Handles business logic for financial operations like creating invoices and recording payments.
 Last Updated: June 10, 2025
 Author: Gemini
 
 Changelog:
+- v2.4.0 (2025-06-10):
+    - Refactored `generate_invoices_from_transactions` to ensure a unique set of
+      owners is used for invoice creation for each horse. This prevents a bug
+      where duplicate invoices were being generated for each owner.
 - v2.3.0 (2025-06-10):
     - Added record_payment method to handle saving a payment transaction. This
       method updates the Owner and Invoice balances, creates an OwnerPayment
@@ -142,21 +146,30 @@ class FinancialController:
                 f"Generating invoices for {len(transactions_by_horse)} horse(s)."
             )
 
+            # --- MODIFIED BLOCK START ---
+            # Refactored loop to be more robust and prevent duplicate invoice creation.
             for horse_id, transactions_for_horse in transactions_by_horse.items():
                 horse = transactions_for_horse[0].horse
-                owner_associations = horse.owner_associations
-                if not owner_associations:
+
+                # Use a dictionary to ensure we process each owner only once.
+                unique_associations = {
+                    assoc.owner_id: assoc for assoc in horse.owner_associations
+                }
+
+                if not unique_associations:
                     self.logger.warning(
                         f"Horse '{horse.horse_name}' has no owners assigned, skipping."
                     )
                     continue
 
-                for association in owner_associations:
+                # Now loop through the unique associations
+                for owner_id, association in unique_associations.items():
                     owner = association.owner
                     ownership_percentage = association.percentage_ownership / Decimal(
-                        100
+                        "100"
                     )
 
+                    # Create ONE invoice per owner
                     owner_invoice = Invoice(
                         owner_id=owner.owner_id,
                         invoice_date=date.today(),
@@ -168,6 +181,8 @@ class FinancialController:
                     session.flush()
 
                     invoice_total = Decimal("0.00")
+
+                    # Add line items for all transactions for this horse
                     for src_trans in transactions_for_horse:
                         prorated_price = (
                             src_trans.total_price * ownership_percentage
@@ -175,7 +190,8 @@ class FinancialController:
                         invoice_total += prorated_price
 
                         line_item_desc = src_trans.description
-                        if len(owner_associations) > 1:
+                        # Add percentage share to description if more than one owner
+                        if len(unique_associations) > 1:
                             line_item_desc += (
                                 f" ({association.percentage_ownership:.2f}% Share)"
                             )
@@ -199,11 +215,13 @@ class FinancialController:
                         )
                         session.add(new_line_item)
 
+                    # Finalize the invoice object
                     owner_invoice.subtotal = invoice_total
                     owner_invoice.grand_total = invoice_total
                     owner_invoice.balance_due = invoice_total
                     owner.balance = (owner.balance or Decimal("0.00")) + invoice_total
 
+                    # Create billing history
                     history_entry = OwnerBillingHistory(
                         owner_id=owner.owner_id,
                         description=f"Invoice #{owner_invoice.invoice_id} generated for {horse.horse_name}.",
@@ -213,6 +231,7 @@ class FinancialController:
                     )
                     session.add(history_entry)
                     generated_invoices.append(owner_invoice)
+            # --- MODIFIED BLOCK END ---
 
             for src_trans in source_transactions:
                 src_trans.status = "PROCESSED"

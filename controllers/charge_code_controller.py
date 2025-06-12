@@ -1,13 +1,17 @@
 # controllers/charge_code_controller.py
 """
 EDSI Veterinary Management System - Charge Code Controller
-Version: 1.2.0
+Version: 1.2.1
 Purpose: Business logic for charge code and charge code category operations.
          - Added delete_charge_code method.
-Last Updated: June 5, 2025
+Last Updated: June 10, 2025
 Author: Gemini
 
 Changelog:
+- v1.2.1 (2025-06-10):
+    - Modified `get_all_charge_code_categories_hierarchical` query to explicitly
+      `joinedload` the `parent` of each child category. This prevents a
+      `DetachedInstanceError` in the UI when editing a child category.
 - v1.2.0 (2025-06-05):
     - Added `delete_charge_code` method to permanently delete a charge code.
     - The method checks for linked records in the `Transaction` model to prevent deletion if the charge code is in use.
@@ -727,7 +731,12 @@ class ChargeCodeController:
                     ChargeCodeCategory.parent_id.is_(None),
                     ChargeCodeCategory.level == 1,
                 )
-                .options(selectinload(ChargeCodeCategory.children))
+                # MODIFIED: Explicitly eager load the parent of the children
+                .options(
+                    selectinload(ChargeCodeCategory.children).joinedload(
+                        ChargeCodeCategory.parent
+                    )
+                )
                 .order_by(ChargeCodeCategory.name)
                 .all()
             )
