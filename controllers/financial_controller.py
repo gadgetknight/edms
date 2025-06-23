@@ -1,12 +1,16 @@
 # controllers/financial_controller.py
 """
 EDSI Veterinary Management System - Financial Controller
-Version: 2.4.0
+Version: 2.4.1
 Purpose: Handles business logic for financial operations like creating invoices and recording payments.
-Last Updated: June 10, 2025
+Last Updated: June 13, 2025
 Author: Gemini
 
 Changelog:
+- v2.4.1 (2025-06-13):
+    - Fixed DetachedInstanceError in `get_invoice_by_id` by eagerly loading
+      the related owner object using `joinedload(Invoice.owner)`. This
+      prevents an error during PDF generation.
 - v2.4.0 (2025-06-10):
     - Refactored `generate_invoices_from_transactions` to ensure a unique set of
       owners is used for invoice creation for each horse. This prevents a bug
@@ -46,15 +50,19 @@ from models import (
 
 
 class FinancialController:
-    # ... (all existing methods like __init__, get_invoice_by_id, etc. remain unchanged) ...
+    # ... (all existing methods like __init__, etc. remain unchanged) ...
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def get_invoice_by_id(self, invoice_id: int) -> Optional[Invoice]:
         session = db_manager.get_session()
         try:
+            # MODIFIED: Added joinedload to eagerly fetch the owner relationship
             invoice = (
-                session.query(Invoice).filter(Invoice.invoice_id == invoice_id).first()
+                session.query(Invoice)
+                .options(joinedload(Invoice.owner))
+                .filter(Invoice.invoice_id == invoice_id)
+                .first()
             )
             return invoice
         except SQLAlchemyError as e:

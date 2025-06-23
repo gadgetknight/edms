@@ -1,13 +1,26 @@
 # views/base_view.py
 """
 EDSI Veterinary Management System - Base View Class
-Version: 1.3.2
+Version: 1.3.5
 Purpose: Provides a base class for all main views/screens in the application,
          handling common UI setup like dark theme and status messages.
-Last Updated: June 8, 2025
+Last Updated: June 14, 2025
 Author: Gemini
 
 Changelog:
+- v1.3.5 (2025-06-14):
+    - Enabled Rich Text formatting in the `show_question` method's QMessageBox
+      to ensure HTML tags like `<b>` are rendered correctly.
+- v1.3.4 (2025-06-13):
+    - Reverted `show_info` and `show_question` to use the standard QMessageBox
+      to fix application instability after closing dialogs.
+    - Implemented direct button styling on QMessageBox to achieve the custom
+      look without needing unstable custom dialog classes.
+    - Removed dependencies on the deleted CustomInfoDialog and
+      CustomQuestionDialog files.
+- v1.3.3 (2025-06-13):
+    - Modified `show_info` to use the new `CustomInfoDialog` for consistently
+      styled dialog boxes, replacing the standard QMessageBox.
 - v1.3.2 (2025-06-08):
     - Corrected the import path for CustomQuestionDialog to point to the
       `views.horse.widgets` sub-package, resolving the ModuleNotFoundError.
@@ -48,7 +61,6 @@ from config.app_config import (
     DARK_BUTTON_BG,
     DARK_BUTTON_HOVER,
 )
-from .horse.widgets.custom_question_dialog import CustomQuestionDialog
 
 
 class BaseView(QMainWindow):
@@ -187,7 +199,22 @@ class BaseView(QMainWindow):
 
     def show_info(self, title: str, message: str):
         self.logger.info(f"Displaying Info: {title} - {message}")
-        QMessageBox.information(self, title, message)
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle(title)
+        msg_box.setText(message)
+        msg_box.setIcon(QMessageBox.Icon.Information)
+        ok_button = msg_box.addButton("OK", QMessageBox.ButtonRole.AcceptRole)
+        ok_button.setStyleSheet(
+            f"""
+            QPushButton {{
+                border: 1px solid white; border-radius: 4px; padding: 8px 16px;
+                min-width: 80px; font-weight: bold;
+                background-color: {DARK_SUCCESS_ACTION}; color: white;
+            }}
+            QPushButton:hover {{ background-color: {QColor(DARK_SUCCESS_ACTION).lighter(115).name()}; }}
+        """
+        )
+        msg_box.exec()
 
     def show_warning(self, title: str, message: str):
         self.logger.warning(f"Displaying Warning: {title} - {message}")
@@ -199,5 +226,36 @@ class BaseView(QMainWindow):
 
     def show_question(self, title: str, message: str) -> bool:
         self.logger.info(f"Asking Question: {title} - {message}")
-        dialog = CustomQuestionDialog(title, message, self)
-        return dialog.exec() == QDialog.DialogCode.Accepted
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle(title)
+        msg_box.setText(message)
+        msg_box.setTextFormat(Qt.RichText)
+        msg_box.setIcon(QMessageBox.Icon.Question)
+
+        yes_button = msg_box.addButton("Yes", QMessageBox.ButtonRole.YesRole)
+        no_button = msg_box.addButton("No", QMessageBox.ButtonRole.NoRole)
+        msg_box.setDefaultButton(no_button)
+
+        yes_button.setStyleSheet(
+            f"""
+            QPushButton {{
+                border: 1px solid white; border-radius: 4px; padding: 8px 16px;
+                min-width: 80px; font-weight: bold;
+                background-color: {DARK_SUCCESS_ACTION}; color: white;
+            }}
+            QPushButton:hover {{ background-color: {QColor(DARK_SUCCESS_ACTION).lighter(115).name()}; }}
+        """
+        )
+        no_button.setStyleSheet(
+            f"""
+            QPushButton {{
+                border: 1px solid white; border-radius: 4px; padding: 8px 16px;
+                min-width: 80px; font-weight: bold;
+                background-color: {DARK_BUTTON_BG}; color: {DARK_TEXT_PRIMARY};
+            }}
+            QPushButton:hover {{ background-color: {DARK_BUTTON_HOVER}; }}
+        """
+        )
+
+        msg_box.exec()
+        return msg_box.clickedButton() == yes_button

@@ -1,18 +1,20 @@
-# controllers/reports_controller.py
 """
 EDSI Veterinary Management System - Reports Controller
-Version: 1.5.1
+Version: 1.7.1
 Purpose: Business logic for generating reports.
-Last Updated: June 11, 2025
+Last Updated: June 12, 2025
 Author: Gemini
 
 Changelog:
-- v1.5.1 (2025-06-11):
-    - Added `get_charge_code_usage_data` to count the usage of each charge
-      code within a specified date range.
-- v1.4.0 (2025-06-11):
-    - Added `get_invoice_register_data` to fetch all invoices within a
-      given date range for the Invoice Register report.
+- v1.7.1 (2025-06-12):
+    - Fixed an AttributeError in `get_charge_code_usage_data` by correcting the
+      SQLAlchemy join condition for ChargeCodeCategory from the incorrect '.id'
+      to the correct '.category_id' primary key.
+- v1.7.0 (2025-06-12):
+    - Upgraded `get_charge_code_usage_data` to be a full-featured method.
+    - It now accepts an `options` dictionary to handle UI-driven sorting and grouping.
+    - The query now calculates total revenue in addition to usage count.
+    - The returned data structure is now richer, including summary, details, and options.
 """
 
 import logging
@@ -32,6 +34,8 @@ from models import (
     Transaction,
     ChargeCode,
     ChargeCodeCategory,
+    Horse,
+    User,
 )
 from controllers.company_profile_controller import CompanyProfileController
 
@@ -44,53 +48,137 @@ class ReportsController:
         self.logger.info("ReportsController initialized.")
         self.company_profile = CompanyProfileController().get_company_profile()
 
-    def get_charge_code_usage_data(
-        self, start_date: date, end_date: date
-    ) -> Dict[str, Any]:
-        """Counts the usage of each charge code within a date range."""
+    def get_charge_code_usage_data(self, options: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Fetches and processes data for the Charge Code Usage report.
+        
+        Args:
+            options: A dictionary of user-selected options from the UI.
+
+        Returns:
+            A dictionary containing the processed data ready for the PDF generator.
+        """
         session = db_manager.get_session()
         try:
-            # Query to count transactions for each charge code
-            usage_query = (
+            start_date = options['start_date']
+            end_date = options['end_date']
+
+            # Base query to get usage count and revenue
+            query = (
                 session.query(
                     ChargeCode.code,
                     ChargeCode.description,
-                    ChargeCodeCategory.name.label("category_name"),
-                    func.count(Transaction.transaction_id).label("usage_count"),
+                    ChargeCodeCategory.name.label('category_name'),
+                    func.count(Transaction.transaction_id).label('usage_count'),
+                    func.sum(Transaction.total_price).label('total_revenue')
                 )
                 .join(ChargeCode, Transaction.charge_code_id == ChargeCode.id)
-                .join(
-                    ChargeCodeCategory,
-                    ChargeCode.category_id == ChargeCodeCategory.category_id,
-                )
-                .filter(Transaction.transaction_date.between(start_date, end_date))
-                .group_by(ChargeCode.id)
-                .order_by(func.count(Transaction.transaction_id).desc())
+                # MODIFIED: Corrected ChargeCodeCategory.id to ChargeCodeCategory.category_id
+                .join(ChargeCodeCategory, ChargeCodeCategory.category_id == ChargeCode.category_id)
+                .filter(and_(
+                    Transaction.transaction_date >= start_date,
+                    Transaction.transaction_date <= end_date
+                ))
+                .group_by(ChargeCode.code, ChargeCode.description, ChargeCodeCategory.name)
             )
+            
+            results = query.all()
+            
+            if not results:
+                return {"details": [], "summary": {}, "options": options}
 
-            results = usage_query.all()
-
-            usage_data = [
+            details = [
                 {
                     "code": r.code,
                     "description": r.description,
-                    "category": r.category_name,
-                    "count": r.usage_count,
+                    "category_name": r.category_name,
+                    "usage_count": r.usage_count,
+                    "total_revenue": float(r.total_revenue) if r.total_revenue else 0.0,
                 }
                 for r in results
             ]
+            
+            # Sorting logic
+            sort_by = options.get('sort_by', 'Usage Count (High to Low)')
+            reverse_sort = True
+            sort_key = 'usage_count'
+            if sort_by == "Total Revenue (High to Low)":
+                sort_key = 'total_revenue'
+            elif sort_by == "Charge Code (A-Z)":
+                sort_key = 'code'
+                reverse_sort = False
+            elif sort_by == "Category (A-Z)":
+                sort_key = 'category_name'
+                reverse_sort = False
+                
+            details.sort(key=lambda x: x[sort_key], reverse=reverse_sort)
+
+            summary = {
+                "unique_codes_used": len(details),
+                "total_usage_count": sum(item['usage_count'] for item in details),
+                "total_revenue": sum(item['total_revenue'] for item in details),
+            }
 
             return {
-                "usage_data": usage_data,
-                "start_date": start_date,
-                "end_date": end_date,
+                "options": options,
+                "summary": summary,
+                "details": details,
             }
 
         except Exception as e:
-            self.logger.error(
-                f"Error generating charge code usage data: {e}", exc_info=True
+            self.logger.error(f"Error fetching charge code usage data: {e}", exc_info=True)
+            return {"error": str(e)}
+        finally:
+            session.close()
+
+    def get_horse_transaction_history_data(
+        self, horse_id: int, start_date: date, end_date: date
+    ) -> Dict[str, Any]:
+        """Fetches all transactions for a single horse within a date range."""
+        session = db_manager.get_session()
+        try:
+            horse = session.query(Horse).filter(Horse.horse_id == horse_id).first()
+            if not horse:
+                return {
+                    "error": "Horse not found",
+                    "horse": None,
+                    "transactions": [],
+                    "start_date": start_date,
+                    "end_date": end_date,
+                }
+
+            transactions = (
+                session.query(Transaction)
+                .filter(
+                    Transaction.horse_id == horse_id,
+                    Transaction.transaction_date.between(start_date, end_date),
+                )
+                .options(
+                    joinedload(Transaction.charge_code),
+                    joinedload(Transaction.administered_by),
+                )
+                .order_by(Transaction.transaction_date.asc())
+                .all()
             )
-            return {"usage_data": [], "start_date": start_date, "end_date": end_date}
+
+            return {
+                "horse": horse,
+                "transactions": transactions,
+                "start_date": start_date,
+                "end_date": end_date,
+            }
+        except Exception as e:
+            self.logger.error(
+                f"Error generating horse transaction history for horse_id {horse_id}: {e}",
+                exc_info=True,
+            )
+            return {
+                "error": str(e),
+                "horse": None,
+                "transactions": [],
+                "start_date": start_date,
+                "end_date": end_date,
+            }
         finally:
             session.close()
 

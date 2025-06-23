@@ -1,17 +1,20 @@
-# views/horse/tabs/reports_tab.py
 """
 EDSI Veterinary Management System - Reports Tab
-Version: 1.6.0
+Version: 1.8.0
 Purpose: A UI tab to serve as a hub for selecting and running reports.
-Last Updated: June 11, 2025
+Last Updated: June 12, 2025
 Author: Gemini
 
 Changelog:
+- v1.8.0 (2025-06-12):
+    - Fully integrated the advanced "Charge Code Usage" report.
+    - Added ChargeCodeUsageOptionsWidget and ChargeCodeUsageGenerator.
+    - Implemented _run_charge_code_usage_report method to connect the UI to
+      the upgraded controller method and the new advanced PDF generator.
+- v1.7.0 (2025-06-12):
+    - Added and integrated the HorseTransactionHistoryOptionsWidget.
 - v1.6.0 (2025-06-11):
-    - Implemented the `_run_payment_history_report` method to connect the UI
-      to the controller and PDF generator.
-- v1.5.1 (2025-06-11):
-    - Added and integrated the PaymentHistoryOptionsWidget.
+    - Implemented the `_run_payment_history_report` method.
 """
 
 import logging
@@ -38,18 +41,22 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 
 from config.app_config import AppConfig
-from controllers import ReportsController
+from controllers import ReportsController, HorseController
 from reports import (
     OwnerStatementGenerator,
     ARAgingGenerator,
     InvoiceRegisterGenerator,
     PaymentHistoryGenerator,
+    HorseTransactionHistoryGenerator,
+    ChargeCodeUsageGenerator,
 )
 from views.reports.options import (
     OwnerStatementOptionsWidget,
     ARAgingOptionsWidget,
     InvoiceRegisterOptionsWidget,
     PaymentHistoryOptionsWidget,
+    HorseTransactionHistoryOptionsWidget,
+    ChargeCodeUsageOptionsWidget,
 )
 from models import Owner
 
@@ -61,6 +68,7 @@ class ReportsTab(QWidget):
         super().__init__(parent)
         self.logger = logging.getLogger(self.__class__.__name__)
         self.reports_controller = ReportsController()
+        self.horse_controller = HorseController()
         self.setup_ui()
         self.setup_connections()
 
@@ -68,33 +76,39 @@ class ReportsTab(QWidget):
         main_layout = QHBoxLayout(self)
         main_layout.setContentsMargins(20, 20, 20, 20)
         main_layout.setSpacing(20)
+
         left_panel = QFrame()
         left_panel.setFixedWidth(300)
         left_layout = QVBoxLayout(left_panel)
         left_layout.setContentsMargins(0, 0, 0, 0)
         left_layout.setSpacing(10)
+
         report_list_label = QLabel("Available Reports")
         report_list_label.setFont(
             QFont(AppConfig.DEFAULT_FONT_FAMILY, 12, QFont.Weight.Bold)
         )
         report_list_label.setStyleSheet(f"color: {AppConfig.DARK_TEXT_SECONDARY};")
+
         self.report_list_widget = QListWidget()
         self.report_list_widget.setStyleSheet(
             f"""
             QListWidget {{ border: 1px solid {AppConfig.DARK_BORDER}; background-color: {AppConfig.DARK_INPUT_FIELD_BACKGROUND}; }}
             QListWidget::item {{ padding: 12px; }}
-            QListWidget::item:selected {{ background-color: {AppConfig.DARK_PRIMARY_ACTION}; color: {AppConfig.DARK_HIGHLIGHT_TEXT}; border: none; }}
+            QListWidget::item:selected {{ background-color: {AppConfig.DARK_PRIMARY_ACTION}; color: {AppConfig.DARK_TEXT_PRIMARY}; border: none; }}
             """
         )
         self.populate_report_list()
         left_layout.addWidget(report_list_label)
         left_layout.addWidget(self.report_list_widget, 1)
+
         right_panel = QFrame()
         right_layout = QVBoxLayout(right_panel)
         right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setSpacing(15)
+
         self.options_stack = QStackedWidget()
         right_layout.addWidget(self.options_stack, 1)
+
         self.placeholder_widget = QLabel(
             "Select a report from the list to configure its options."
         )
@@ -102,15 +116,24 @@ class ReportsTab(QWidget):
         self.placeholder_widget.setStyleSheet(
             f"color: {AppConfig.DARK_TEXT_SECONDARY};"
         )
+
         self.owner_statement_options = OwnerStatementOptionsWidget()
         self.ar_aging_options = ARAgingOptionsWidget()
         self.invoice_register_options = InvoiceRegisterOptionsWidget()
         self.payment_history_options = PaymentHistoryOptionsWidget()
+        self.charge_code_usage_options = ChargeCodeUsageOptionsWidget()
+        self.horse_transaction_history_options = HorseTransactionHistoryOptionsWidget(
+            self.horse_controller
+        )
+
         self.options_stack.addWidget(self.placeholder_widget)
         self.options_stack.addWidget(self.owner_statement_options)
         self.options_stack.addWidget(self.ar_aging_options)
         self.options_stack.addWidget(self.invoice_register_options)
         self.options_stack.addWidget(self.payment_history_options)
+        self.options_stack.addWidget(self.charge_code_usage_options)
+        self.options_stack.addWidget(self.horse_transaction_history_options)
+
         action_layout = QHBoxLayout()
         action_layout.addStretch()
         self.email_report_button = QPushButton("Generate & Email")
@@ -122,6 +145,7 @@ class ReportsTab(QWidget):
         action_layout.addWidget(self.email_report_button)
         action_layout.addWidget(self.run_report_button)
         right_layout.addLayout(action_layout)
+
         main_layout.addWidget(left_panel)
         main_layout.addWidget(right_panel, 1)
         self._apply_button_styles()
@@ -131,14 +155,14 @@ class ReportsTab(QWidget):
             f"""
             QPushButton {{ background-color: {AppConfig.DARK_SUCCESS_ACTION}; color: white; border: none; border-radius: 4px; padding: 8px 24px; font-weight: bold; }}
             QPushButton:disabled {{ background-color: {AppConfig.DARK_HEADER_FOOTER}; color: {AppConfig.DARK_TEXT_TERTIARY}; }}
-        """
+            """
         )
         self.email_report_button.setStyleSheet(
             f"""
             QPushButton {{ background-color: {AppConfig.DARK_BUTTON_BG}; color: {AppConfig.DARK_TEXT_PRIMARY}; border: 1px solid {AppConfig.DARK_PRIMARY_ACTION}; border-radius: 4px; padding: 8px 24px; font-weight: bold; }}
             QPushButton:hover {{ background-color: {AppConfig.DARK_BUTTON_HOVER}; }}
             QPushButton:disabled {{ background-color: {AppConfig.DARK_HEADER_FOOTER}; color: {AppConfig.DARK_TEXT_TERTIARY}; border: 1px solid {AppConfig.DARK_HEADER_FOOTER};}}
-        """
+            """
         )
 
     def setup_connections(self):
@@ -164,31 +188,34 @@ class ReportsTab(QWidget):
         self, current: QListWidgetItem, previous: QListWidgetItem
     ):
         self.run_report_button.setEnabled(bool(current))
-        self.email_report_button.setEnabled(bool(current))
+        self.email_report_button.setEnabled(False)
         if not current:
             self.options_stack.setCurrentWidget(self.placeholder_widget)
             return
+
         report_name = current.text()
         if report_name == "Owner Statement":
             self.options_stack.setCurrentWidget(self.owner_statement_options)
+            self.email_report_button.setEnabled(True)
         elif report_name == "A/R Aging":
             self.options_stack.setCurrentWidget(self.ar_aging_options)
-            self.email_report_button.setEnabled(False)
         elif report_name == "Invoice Register":
             self.options_stack.setCurrentWidget(self.invoice_register_options)
-            self.email_report_button.setEnabled(False)
         elif report_name == "Payment History":
             self.options_stack.setCurrentWidget(self.payment_history_options)
-            self.email_report_button.setEnabled(False)
+        elif report_name == "Charge Code Usage":
+            self.options_stack.setCurrentWidget(self.charge_code_usage_options)
+        elif report_name == "Horse Transaction History":
+            self.options_stack.setCurrentWidget(self.horse_transaction_history_options)
         else:
             self.options_stack.setCurrentWidget(self.placeholder_widget)
             self.run_report_button.setEnabled(False)
-            self.email_report_button.setEnabled(False)
 
     def _on_run_report_clicked(self):
         current_item = self.report_list_widget.currentItem()
         if not current_item:
             return
+
         report_name = current_item.text()
         if report_name == "Owner Statement":
             self._run_owner_statement_report(False)
@@ -198,6 +225,10 @@ class ReportsTab(QWidget):
             self._run_invoice_register_report()
         elif report_name == "Payment History":
             self._run_payment_history_report()
+        elif report_name == "Charge Code Usage":
+            self._run_charge_code_usage_report()
+        elif report_name == "Horse Transaction History":
+            self._run_horse_transaction_history_report()
         else:
             QMessageBox.information(
                 self,
@@ -205,7 +236,53 @@ class ReportsTab(QWidget):
                 f"The '{report_name}' report has not been implemented yet.",
             )
 
+    def _run_charge_code_usage_report(self):
+        """Orchestrates the generation of the Charge Code Usage report."""
+        options = self.charge_code_usage_options.get_options()
+        self.logger.info(f"Generating Charge Code Usage report with options: {options}")
+
+        report_data = self.reports_controller.get_charge_code_usage_data(options)
+
+        if report_data.get("error"):
+            QMessageBox.critical(
+                self,
+                "Data Error",
+                f"Could not retrieve data: {report_data.get('error')}",
+            )
+            return
+
+        if not report_data.get("details"):
+            QMessageBox.information(
+                self, "No Data", "No charge code usage found for the selected criteria."
+            )
+            return
+
+        default_filename = f"Charge_Code_Usage_{date.today()}.pdf"
+        default_path = os.path.join(AppConfig.PROJECT_ROOT, default_filename)
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Save Charge Code Usage Report", default_path, "PDF Files (*.pdf)"
+        )
+
+        if not file_path:
+            return
+
+        try:
+            generator = ChargeCodeUsageGenerator()
+            success, message = generator.generate_pdf(report_data, file_path)
+            if success:
+                QMessageBox.information(
+                    self, "Success", f"Report saved successfully to:\n{file_path}"
+                )
+            else:
+                QMessageBox.critical(self, "PDF Generation Failed", message)
+        except Exception as e:
+            self.logger.error(
+                f"Failed to run Charge Code Usage generator: {e}", exc_info=True
+            )
+            QMessageBox.critical(self, "Error", f"An unexpected error occurred: {e}")
+
     def _on_email_report_clicked(self):
+        # ... existing implementation ...
         current_item = self.report_list_widget.currentItem()
         if not current_item:
             return
@@ -218,8 +295,57 @@ class ReportsTab(QWidget):
                 "Emailing is not available for this report type.",
             )
 
+    def _run_horse_transaction_history_report(self):
+        # ... existing implementation ...
+        options = self.horse_transaction_history_options.get_options()
+        if not options.get("horse_id"):
+            QMessageBox.warning(self, "Selection Required", "Please select a horse.")
+            return
+        self.logger.info(
+            f"Generating Horse Transaction History for horse_id: {options['horse_id']} from {options['start_date']} to {options['end_date']}"
+        )
+        report_data = self.reports_controller.get_horse_transaction_history_data(
+            **options
+        )
+        if report_data.get("error") or not report_data.get("horse"):
+            QMessageBox.information(
+                self,
+                "No Data",
+                f"Could not retrieve data: {report_data.get('error', 'Unknown error')}",
+            )
+            return
+        if not report_data.get("transactions"):
+            QMessageBox.information(
+                self,
+                "No Data",
+                "No transactions found for the selected horse and date range.",
+            )
+            return
+        horse_name = report_data["horse"].horse_name.replace(" ", "_")
+        default_filename = f"Transaction_History_{horse_name}_{date.today()}.pdf"
+        default_path = os.path.join(AppConfig.PROJECT_ROOT, default_filename)
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Save Horse Transaction History", default_path, "PDF Files (*.pdf)"
+        )
+        if not file_path:
+            return
+        try:
+            generator = HorseTransactionHistoryGenerator()
+            success, message = generator.generate_pdf(report_data, file_path)
+            if success:
+                QMessageBox.information(
+                    self, "Success", f"Report saved successfully to:\n{file_path}"
+                )
+            else:
+                QMessageBox.critical(self, "PDF Generation Failed", message)
+        except Exception as e:
+            self.logger.error(
+                f"Failed to run Horse Transaction History generator: {e}", exc_info=True
+            )
+            QMessageBox.critical(self, "Error", f"An unexpected error occurred: {e}")
+
     def _run_payment_history_report(self):
-        """Orchestrates the generation of the Payment History report."""
+        # ... existing implementation ...
         options = self.payment_history_options.get_options()
         self.logger.info(
             f"Generating Payment History from {options['start_date']} to {options['end_date']} for owner: {options['owner_id']}"
@@ -253,6 +379,7 @@ class ReportsTab(QWidget):
             QMessageBox.critical(self, "Error", f"An unexpected error occurred: {e}")
 
     def _run_invoice_register_report(self):
+        # ... existing implementation ...
         options = self.invoice_register_options.get_options()
         self.logger.info(
             f"Generating Invoice Register from {options['start_date']} to {options['end_date']}"
@@ -288,6 +415,7 @@ class ReportsTab(QWidget):
             QMessageBox.critical(self, "Error", f"An unexpected error occurred: {e}")
 
     def _run_ar_aging_report(self):
+        # ... existing implementation ...
         options = self.ar_aging_options.get_options()
         as_of_date = options["as_of_date"]
         self.logger.info(f"Generating A/R Aging report for date: {as_of_date}")
@@ -318,6 +446,7 @@ class ReportsTab(QWidget):
             QMessageBox.critical(self, "Error", f"An unexpected error occurred: {e}")
 
     def _run_owner_statement_report(self, email_after: bool):
+        # ... existing implementation ...
         options = self.owner_statement_options.get_options()
         owner_id = options.get("owner_id")
         if email_after and owner_id == "all":
@@ -335,6 +464,7 @@ class ReportsTab(QWidget):
             QMessageBox.warning(self, "Selection Required", "Please select an owner.")
 
     def _generate_batch_statements(self, start_date: date, end_date: date):
+        # ... existing implementation ...
         self.logger.info(
             f"Generating batch owner statements from {start_date} to {end_date}"
         )
@@ -375,6 +505,7 @@ class ReportsTab(QWidget):
     def _generate_single_statement(
         self, owner_id: int, options: Dict, email_after: bool
     ):
+        # ... existing implementation ...
         self.logger.info(f"Generating owner statement for owner_id: {owner_id}")
         report_data = self.reports_controller.get_owner_statement_data(
             owner_id=owner_id,
@@ -416,6 +547,7 @@ class ReportsTab(QWidget):
             QMessageBox.critical(self, "Error", f"An unexpected error occurred: {e}")
 
     def _dispatch_email(self, owner: Owner, attachment_path: str):
+        # ... existing implementation ...
         if not owner.email:
             QMessageBox.warning(
                 self,
@@ -429,11 +561,7 @@ class ReportsTab(QWidget):
             else "Your Clinic"
         )
         subject = f"Your Statement from {company_name}"
-        body = (
-            f"Dear {owner.first_name or owner.last_name},\n\n"
-            f"Please find your statement attached.\n\n"
-            f"Thank you,\n{company_name}"
-        )
+        body = f"Dear {owner.first_name or owner.last_name},\n\nPlease find your statement attached.\n\nThank you,\n{company_name}"
         mailto_url = f"mailto:{owner.email}?subject={urllib.parse.quote(subject)}&body={urllib.parse.quote(body)}"
         try:
             webbrowser.open(mailto_url)

@@ -1,10 +1,17 @@
 # views/horse/dialogs/record_payment_dialog.py
 """
 EDSI Veterinary Management System - Record Payment Dialog
-Version: 1.0.0
+Version: 1.0.1
 Purpose: Dialog for recording a payment against a specific invoice.
-Last Updated: June 10, 2025
+Last Updated: June 14, 2025
 Author: Gemini
+
+Changelog:
+- v1.0.1 (2025-06-14):
+    - Styled the 'Record Payment' and 'Cancel' buttons to conform to the
+      application's style guide.
+- v1.0.0 (2025-06-10):
+    - Initial creation of the dialog.
 """
 import logging
 from decimal import Decimal
@@ -139,6 +146,34 @@ class RecordPaymentDialog(QDialog):
         self.method_combo.addItems(self.PAYMENT_METHODS)
         self.notes_edit.setFixedHeight(60)
 
+        # MODIFIED: Add button styling
+        ok_button = self.button_box.button(QDialogButtonBox.StandardButton.Ok)
+        cancel_button = self.button_box.button(QDialogButtonBox.StandardButton.Cancel)
+
+        base_button_style = """
+            QPushButton {
+                border: 1px solid white;
+                border-radius: 4px;
+                padding: 8px 16px;
+                min-width: 120px;
+                font-weight: bold;
+            }
+        """
+        ok_button.setStyleSheet(
+            base_button_style
+            + f"""
+            QPushButton {{ background-color: {AppConfig.DARK_SUCCESS_ACTION}; color: white; }}
+            QPushButton:hover {{ background-color: {QColor(AppConfig.DARK_SUCCESS_ACTION).lighter(115).name()}; }}
+            """
+        )
+        cancel_button.setStyleSheet(
+            base_button_style
+            + f"""
+            QPushButton {{ background-color: {AppConfig.DARK_BUTTON_BG}; color: {AppConfig.DARK_TEXT_PRIMARY}; }}
+            QPushButton:hover {{ background-color: {AppConfig.DARK_BUTTON_HOVER}; }}
+            """
+        )
+
     def _populate_form(self):
         owner_name = "N/A"
         if self.invoice.owner:
@@ -154,6 +189,7 @@ class RecordPaymentDialog(QDialog):
         self.date_input.setDate(QDate.currentDate())
 
     def get_data(self) -> Optional[Dict[str, Any]]:
+        """Collects data from the form fields."""
         amount = Decimal(self.amount_input.value())
         if amount <= 0:
             QMessageBox.warning(

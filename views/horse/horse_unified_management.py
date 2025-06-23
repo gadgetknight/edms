@@ -1,12 +1,22 @@
 # views/horse/horse_unified_management.py
 """
 EDSI Veterinary Management System - Unified Horse Management Screen (Dark Theme)
-Version: 1.13.0
+Version: 1.13.3
 Purpose: Unified interface for horse management, including invoice history.
-Last Updated: June 11, 2025
+Last Updated: June 13, 2025
 Author: Gemini
 
 Changelog:
+- v1.13.3 (2025-06-13):
+    - Fixed vertical text cutoff in the horse list by setting an explicit item
+      size hint in the populate_horse_list method, overriding the incorrect
+      default size hint.
+- v1.13.2 (2025-06-13):
+    - Reverted unauthorized simplification of the details header to restore original functionality.
+- v1.13.1 (2025-06-13):
+    - Implemented the previously documented simplification of the horse details header.
+    - Modified _update_horse_info_line to only display the horse's account number.
+    - Increased header spacing for better visual separation.
 - v1.13.0 (2025-06-11):
     - Added a new 'Reports' tab to the main tab widget to serve as a central
       hub for all reporting, per user request.
@@ -45,7 +55,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QStatusBar,
 )
-from PySide6.QtCore import Qt, Signal, QTimer, QDate
+from PySide6.QtCore import Qt, Signal, QTimer, QDate, QSize
 from PySide6.QtGui import (
     QFont,
     QPalette,
@@ -1005,17 +1015,34 @@ class HorseUnifiedManagement(BaseView):
         return location_name_str
 
     def _update_horse_info_line(self, horse: Optional[Horse]):
+        """Restores the detailed info line with icons, per user request."""
         if not hasattr(self, "horse_info_line") or self.horse_info_line is None:
             self.logger.error(
                 "_update_horse_info_line: horse_info_line QLabel is None."
             )
             return
+
         if not horse:
-            self.horse_info_line.setText(" ")
+            self.horse_info_line.setText("Acct: N/A | 🍇 Owner: N/A | 📍 Location: N/A")
             return
 
-        account_str = f"Account: {horse.account_number or 'N/A'}"
-        self.horse_info_line.setText(account_str)
+        age_str = "Age N/A"
+        if hasattr(self.horse_list, "_calculate_age") and self.horse_list:
+            age_str = self.horse_list._calculate_age(horse.date_of_birth)
+
+        owner_name = self._get_display_owner_name(horse)
+        location_name = self._get_display_location_name(horse)
+
+        info_parts = [
+            f"Acct: {horse.account_number or 'N/A'}",
+            f"🍇 {owner_name}",
+            f"Breed: {horse.breed or 'N/A'}",
+            f"Color: {horse.color or 'N/A'}",
+            f"Sex: {horse.sex or 'N/A'}",
+            f"Age: {age_str}",
+            f"📍 {location_name}",
+        ]
+        self.horse_info_line.setText(" | ".join(info_parts))
 
     def load_horse_details(self, horse_id: int):
         self.logger.info(f"load_horse_details: START for horse ID: {horse_id}")
@@ -1285,7 +1312,7 @@ class HorseUnifiedManagement(BaseView):
         for horse_obj in self.horses_list_data:
             item = QListWidgetItem()
             item_widget = self.horse_list.create_horse_list_item_widget(horse_obj)
-            item.setSizeHint(item_widget.sizeHint())
+            item.setSizeHint(QSize(item_widget.sizeHint().width(), 70))
             item.setData(Qt.ItemDataRole.UserRole, horse_obj.horse_id)
             self.horse_list.addItem(item)
             self.horse_list.setItemWidget(item, item_widget)

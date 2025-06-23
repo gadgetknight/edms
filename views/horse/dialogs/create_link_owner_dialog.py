@@ -232,9 +232,7 @@ class CreateAndLinkOwnerDialog(QDialog):
         self.button_box = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
-        self.button_box.button(QDialogButtonBox.StandardButton.Ok).setText(
-            "Create & Link Owner"
-        )
+        self.button_box.button(QDialogButtonBox.StandardButton.Ok).setText("Ok")
         self.button_box.accepted.connect(self.validate_and_accept)
         self.button_box.rejected.connect(self.reject)
         generic_button_style = self._get_dialog_generic_button_style()

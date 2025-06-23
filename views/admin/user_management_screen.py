@@ -1,13 +1,16 @@
 # views/admin/user_management_screen.py
 """
 EDSI Veterinary Management System - User Management Screen
-Version: 1.6.4
+Version: 1.6.5
 Purpose: Admin screen for managing users, locations, veterinarians, charge codes,
          categories, owners, and the company profile.
-Last Updated: June 10, 2025
+Last Updated: June 13, 2025
 Author: Gemini
 
 Changelog:
+- v1.6.5 (2025-06-13):
+    - Removed unused import for the deleted CustomQuestionDialog to fix a
+      ModuleNotFoundError on application startup.
 - v1.6.4 (2025-06-10):
     - Fixed `DetachedInstanceError` in `_edit_selected_category_process` by
       checking if a category is Level 1 before accessing its `.parent`
@@ -77,7 +80,8 @@ from .dialogs.add_edit_charge_code_category_dialog import (
 )
 from .dialogs.add_edit_veterinarian_dialog import AddEditVeterinarianDialog
 from .dialogs.company_profile_dialog import CompanyProfileDialog
-from ..horse.widgets.custom_question_dialog import CustomQuestionDialog
+
+# DELETED: from ..horse.widgets.custom_question_dialog import CustomQuestionDialog
 
 
 class UserManagementScreen(BaseView):

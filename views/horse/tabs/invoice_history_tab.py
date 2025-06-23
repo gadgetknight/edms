@@ -1,12 +1,19 @@
 # views/horse/tabs/invoice_history_tab.py
 """
 EDSI Veterinary Management System - Invoice History Tab
-Version: 2.5.0
+Version: 2.5.2
 Purpose: UI for displaying and managing historical invoices for a horse's owners.
-Last Updated: June 10, 2025
+Last Updated: June 13, 2025
 Author: Gemini
 
 Changelog:
+- v2.5.2 (2025-06-13):
+    - Refactored the email invoice confirmation to use `self.parent_view.show_info`
+      to ensure a consistently styled dialog is displayed, matching the
+      application's theme.
+- v2.5.1 (2025-06-13):
+    - Fixed application closing unexpectedly after saving a PDF by re-parenting
+      the QFileDialog to the main window, ensuring stability.
 - v2.5.0 (2025-06-10):
     - Added "Record Payment" button and workflow.
     - Button is enabled for single, unpaid invoices.
@@ -424,8 +431,8 @@ class InvoiceHistoryTab(QWidget):
             mailto_url = f"mailto:{owner.email}?subject={urllib.parse.quote(subject)}&body={urllib.parse.quote(body)}"
             webbrowser.open(mailto_url)
 
-        QMessageBox.information(
-            self,
+        # MODIFIED: Use parent_view's show_info method for consistency
+        self.parent_view.show_info(
             "Email Process Complete",
             f"Your email client should have opened with drafts for the selected invoices.\n\n"
             f"The invoice PDFs have been saved to the 'invoices' folder.\n\n"
@@ -461,7 +468,7 @@ class InvoiceHistoryTab(QWidget):
             default_filename = f"Invoice-{selected_invoice.invoice_id}.pdf"
             default_path = os.path.join(AppConfig.INVOICES_DIR, default_filename)
             file_path, _ = QFileDialog.getSaveFileName(
-                self, "Save Invoice PDF", default_path, "PDF Files (*.pdf)"
+                self.parent_view, "Save Invoice PDF", default_path, "PDF Files (*.pdf)"
             )
             if not file_path:
                 return

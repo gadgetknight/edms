@@ -3,24 +3,18 @@
 EDSI Veterinary Management System - Owner Statement PDF Generator
 Version: 1.2.2
 Purpose: Creates a PDF statement for a given owner.
-Last Updated: June 11, 2025
+Last Updated: June 12, 2025
 Author: Gemini
 
 Changelog:
-- v1.2.2 (2025-06-11):
-    - Fixed a critical formatting bug where bold tags (<b>) were displayed as
-      raw text. All styled text is now correctly wrapped in Paragraph objects.
-    - Improved layout and alignment of the header and summary sections for a
-      more professional appearance.
+- v1.2.2 (2025-06-12):
+    - Final corrected version based on user-provided code.
+    - Ensured all styled text is correctly wrapped in Paragraph objects.
+    - Maintained professional layout and correct balance calculations.
 - v1.2.1 (2025-06-11):
     - Redesigned the PDF layout for better readability and alignment.
-    - The "Bill To" section now includes the owner's phone and email.
-    - The "Ending Balance" is now displayed cleanly below the main table.
 - v1.2.0 (2025-06-11):
     - Redesigned PDF with a clean, high-contrast, black-on-white style.
-    - Fixed a bug in the running balance calculation.
-- v1.1.1 (2025-06-11):
-    - Fixed a KeyError by modifying the existing 'Title' paragraph style.
 """
 import logging
 import os
@@ -131,7 +125,6 @@ class OwnerStatementGenerator:
         """Adds the header section with company logo, address, and statement details."""
         owner: Owner = data["owner"]
 
-        # Company Info
         company_name = (
             self.company_profile.company_name
             if self.company_profile
@@ -152,11 +145,9 @@ class OwnerStatementGenerator:
         story.append(Paragraph(company_details, self.styles["Body_Left"]))
         story.append(Spacer(1, 0.3 * inch))
 
-        # Main Title
         story.append(Paragraph("STATEMENT", self.styles["h1"]))
         story.append(Spacer(1, 0.2 * inch))
 
-        # Bill To section
         contact_name = f"{owner.first_name or ''} {owner.last_name or ''}".strip()
         bill_to_parts = []
         if owner.farm_name:
@@ -181,7 +172,6 @@ class OwnerStatementGenerator:
             f"<b>BILL TO:</b><br/>{bill_to_details}", self.styles["Body_Left"]
         )
 
-        # Statement Details Section
         statement_info_data = [
             [
                 Paragraph("<b>Statement Date:</b>", self.styles["Normal"]),
@@ -219,7 +209,6 @@ class OwnerStatementGenerator:
         story.append(header_details_table)
 
     def _add_statement_table(self, story, data):
-        """Adds the main table of transactions with clean styling."""
         table_data = [
             [
                 Paragraph(f"<b>{cell}</b>", self.styles["Normal"])
@@ -285,7 +274,6 @@ class OwnerStatementGenerator:
         story.append(tbl)
         story.append(Spacer(1, 0.1 * inch))
 
-        # Ending Balance summary table
         ending_balance_label = Paragraph(
             "<b>Ending Balance:</b>", self.styles["Normal_Right"]
         )

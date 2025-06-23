@@ -1,13 +1,29 @@
 # views/horse/widgets/horse_list_widget.py
 """
 EDSI Veterinary Management System - Horse List Widget
-Version: 1.0.7
+Version: 1.1.2
 Purpose: Custom QListWidget for displaying a list of horses with specific styling
-         and item representation. Corrected double-click event handling.
-Last Updated: June 10, 2025
+         and item representation. Corrected vertical text cutoff.
+Last Updated: June 13, 2025
 Author: Gemini
 
 Changelog:
+- v1.1.2 (2025-06-13):
+    - Increased the minimum height of list items to 70px to provide more vertical padding and improve visual balance.
+- v1.1.1 (2025-06-13):
+    - Correctly fixed vertical text cutoff by setting the minimum height on the
+      custom item widget directly, as the stylesheet height is ignored when
+      using setItemWidget.
+    - Removed ineffective min-height style from QListWidget::item stylesheet.
+- v1.1.0 (2025-06-13):
+    - Increased list item min-height to 80px to fix vertical text cutoff after content simplification.
+- v1.0.9 (2025-06-13):
+    - Fixed vertical text cutoff by increasing the min-height of list items in the stylesheet to 70px.
+- v1.0.8 (2025-06-13):
+    - Simplified the list item to display only the horse's name and account number.
+    - Removed breed, color, sex, age, and location from the list item display.
+    - Set word wrap on the horse name to prevent it from being cut off.
+    - Reduced the minimum height of list items to 55px to better fit the reduced content.
 - v1.0.7 (2025-06-10):
     - Increased `min-height` of list items in the stylesheet to 70px to
       definitively prevent text from being cut off.
@@ -66,7 +82,7 @@ class HorseListWidget(QListWidget):
             }}
             QListWidget::item {{
                 padding: 10px 15px; border-bottom: 1px solid {DARK_BORDER};
-                min-height: 70px; background-color: {DARK_WIDGET_BACKGROUND};
+                background-color: {DARK_WIDGET_BACKGROUND};
             }}
             QListWidget::item:selected {{
                 background-color: {DARK_PRIMARY_ACTION}40; /* RGBA */
@@ -100,6 +116,7 @@ class HorseListWidget(QListWidget):
             QWidget: The custom widget for the list item.
         """
         widget = QWidget()
+        widget.setMinimumHeight(70)  # Set height on the widget itself
         widget.setStyleSheet(
             f"background-color: transparent; border: none; color: {DARK_TEXT_PRIMARY};"
         )
@@ -112,29 +129,16 @@ class HorseListWidget(QListWidget):
         name_label.setStyleSheet(
             f"color: {DARK_TEXT_PRIMARY}; background: transparent;"
         )
+        name_label.setWordWrap(True)
 
-        info_text = f"Acct: {horse.account_number or 'N/A'} | {horse.breed or 'N/A'}"
+        info_text = f"Acct: {horse.account_number or 'N/A'}"
         info_label = QLabel(info_text)
         info_label.setStyleSheet(
             f"color: {DARK_TEXT_SECONDARY}; font-size: 10px; background: transparent;"
         )
 
-        details_text = f"{horse.color or '?'} | {horse.sex or '?'} | {self._calculate_age(horse.date_of_birth)}"
-        details_label = QLabel(details_text)
-        details_label.setStyleSheet(
-            f"color: {DARK_TEXT_SECONDARY}; font-size: 10px; background: transparent;"
-        )
-
-        location_text = horse.location.location_name if horse.location else "N/A"
-        location_label = QLabel(f"📍 {location_text}")
-        location_label.setStyleSheet(
-            f"color: {DARK_TEXT_TERTIARY}; font-size: 10px; background: transparent;"
-        )
-
         layout.addWidget(name_label)
         layout.addWidget(info_label)
-        layout.addWidget(details_label)
-        layout.addWidget(location_label)
         layout.addStretch()
         return widget
 
