@@ -31,8 +31,7 @@ class VeterinarianController:
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def get_all_veterinarians(self, status_filter: str = "all") -> List[Veterinarian]:
-        """Retrieves all veterinarians, optionally filtered by active status."""
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             query = session.query(Veterinarian)
             if status_filter == "active":
@@ -46,11 +45,10 @@ class VeterinarianController:
             self.logger.error(f"Error fetching all veterinarians: {e}", exc_info=True)
             return []
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def get_veterinarian_by_id(self, vet_id: int) -> Optional[Veterinarian]:
-        """Retrieves a single veterinarian by their primary key."""
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             return (
                 session.query(Veterinarian)
@@ -63,7 +61,7 @@ class VeterinarianController:
             )
             return None
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def validate_veterinarian_data(
         self,
@@ -81,7 +79,7 @@ class VeterinarianController:
         license_number = vet_data.get("license_number", "").strip()
         email = vet_data.get("email", "").strip()
 
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             # Check license number uniqueness
             if license_number:
@@ -110,7 +108,7 @@ class VeterinarianController:
                     if query.first():
                         errors.append(f"Email '{email}' is already in use.")
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
         return not errors, errors
 
@@ -122,7 +120,7 @@ class VeterinarianController:
         if not is_valid:
             return False, "Validation failed: " + "; ".join(errors), None
 
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             new_vet = Veterinarian(
                 first_name=vet_data["first_name"],
@@ -151,7 +149,7 @@ class VeterinarianController:
             self.logger.error(f"Error creating veterinarian: {e}", exc_info=True)
             return False, f"Failed to create veterinarian: {e}", None
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def update_veterinarian(
         self, vet_id: int, vet_data: Dict[str, Any], current_user_id: str
@@ -163,7 +161,7 @@ class VeterinarianController:
         if not is_valid:
             return False, "Validation failed: " + "; ".join(errors)
 
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             vet = (
                 session.query(Veterinarian)
@@ -188,13 +186,13 @@ class VeterinarianController:
             )
             return False, f"Failed to update veterinarian: {e}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def toggle_veterinarian_status(
         self, vet_id: int, current_user_id: str
     ) -> Tuple[bool, str]:
         """Toggles the active status of a veterinarian."""
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             vet = (
                 session.query(Veterinarian)
@@ -219,4 +217,4 @@ class VeterinarianController:
             )
             return False, f"Failed to toggle status: {e}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line

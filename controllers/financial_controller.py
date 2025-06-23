@@ -55,7 +55,7 @@ class FinancialController:
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def get_invoice_by_id(self, invoice_id: int) -> Optional[Invoice]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             # MODIFIED: Added joinedload to eagerly fetch the owner relationship
             invoice = (
@@ -71,10 +71,10 @@ class FinancialController:
             )
             return None
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def get_invoices_for_owner(self, owner_id: int) -> List[Invoice]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             invoices = (
                 session.query(Invoice)
@@ -92,10 +92,10 @@ class FinancialController:
             )
             return []
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def get_transactions_for_invoice(self, invoice_id: int) -> List[Transaction]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             transactions = (
                 session.query(Transaction)
@@ -112,7 +112,7 @@ class FinancialController:
             )
             return []
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def generate_invoices_from_transactions(
         self, source_transaction_ids: List[int], current_user_id: str
@@ -120,7 +120,7 @@ class FinancialController:
         self.logger.info(
             f"--- Starting Invoice Generation for transaction IDs: {source_transaction_ids} ---"
         )
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             if not source_transaction_ids:
                 return False, "No charges were selected to be invoiced.", []
@@ -264,11 +264,11 @@ class FinancialController:
             )
             return False, f"A database error occurred: {e}", []
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def record_payment(self, payment_data: Dict[str, Any]) -> Tuple[bool, str]:
         """Records a payment against an invoice and updates balances."""
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             invoice_id = payment_data.get("invoice_id")
             amount = payment_data.get("amount")
@@ -337,11 +337,10 @@ class FinancialController:
             )
             return False, "A database error occurred while recording the payment."
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def get_transactions_for_horse(self, horse_id: int) -> List[Transaction]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             transactions = (
                 session.query(Transaction)
@@ -366,8 +365,7 @@ class FinancialController:
             )
             return []
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def add_charge_batch_to_horse(
         self,
@@ -377,7 +375,7 @@ class FinancialController:
         batch_transaction_date: date,
         administered_by_user_id: str,
     ) -> Tuple[bool, str, Optional[List[Transaction]]]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         new_transactions = []
         try:
             for item in charge_items:
@@ -427,13 +425,12 @@ class FinancialController:
             )
             return False, f"An unexpected error occurred: {e}", None
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def update_charge_transaction(
         self, transaction_id: int, data: Dict[str, Any], current_user_id: str
     ) -> Tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             transaction = (
                 session.query(Transaction)
@@ -465,11 +462,10 @@ class FinancialController:
             )
             return False, f"A database error occurred: {e}"
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def delete_charge_transaction(self, transaction_id: int) -> Tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             transaction_to_delete = (
                 session.query(Transaction)
@@ -498,11 +494,10 @@ class FinancialController:
             )
             return False, f"A database error occurred while deleting the charge: {e}"
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def get_transaction_by_id(self, transaction_id: int) -> Optional[Transaction]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             transaction = (
                 session.query(Transaction)
@@ -523,15 +518,14 @@ class FinancialController:
             )
             return None
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def delete_invoice(self, invoice_id: int, current_user_id: str) -> Tuple[bool, str]:
         """
         Deletes an invoice and reverses the owner's balance.
         NOTE: This does NOT make the original charges billable again.
         """
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             invoice_to_delete = (
                 session.query(Invoice)
@@ -583,5 +577,4 @@ class FinancialController:
             )
             return False, f"A database error occurred during deletion: {e}"
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line

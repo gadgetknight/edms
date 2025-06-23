@@ -26,8 +26,7 @@ Changelog:
 - v1.3.1 (2025-05-17):
     - Removed phone number requirement from `validate_owner_data`.
     - Added `mobile_phone` handling.
-- v1.2.1 (2025-05-15): Removed credit_rating.
-- v1.2.0 (2025-05-15): Added delete_master_owner method.
+- v1.2.1 (2025-05-15): Removed credit_rating. - v1.2.0 (2025-05-15): Added delete_master_owner method.
 """
 
 import logging
@@ -53,7 +52,7 @@ class OwnerController:
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def get_all_master_owners(self, status_filter: str = "all") -> List[Owner]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             query = session.query(Owner).options(joinedload(Owner.state))
 
@@ -73,11 +72,11 @@ class OwnerController:
             self.logger.error(f"Error fetching all master owners: {e}", exc_info=True)
             return []
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def get_all_owners_for_lookup(self, search_term: str = "") -> List[Dict[str, Any]]:
         # ... (implementation unchanged) ...
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             query = session.query(
                 Owner.owner_id,
@@ -129,11 +128,11 @@ class OwnerController:
             self.logger.error(f"Error fetching owners for lookup: {e}", exc_info=True)
             return []
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def get_owner_by_id(self, owner_id: int) -> Optional[Owner]:
         # ... (implementation unchanged) ...
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             owner = (
                 session.query(Owner)
@@ -148,7 +147,7 @@ class OwnerController:
             )
             return None
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def validate_owner_data(
         self,
@@ -202,7 +201,7 @@ class OwnerController:
                 errors.append("Invalid email format.")
 
         if account_number_val and account_number_val.strip():
-            session = db_manager.get_session()
+            session = db_manager().get_session()  # Corrected line
             try:
                 query = session.query(Owner).filter(
                     Owner.account_number.collate("NOCASE") == account_number_val.strip()
@@ -221,7 +220,7 @@ class OwnerController:
                 )
                 errors.append("Error validating account number uniqueness.")
             finally:
-                session.close()
+                db_manager().close()  # Corrected line
 
         credit_limit_str = owner_data.get("credit_limit")
         if credit_limit_str is not None and str(credit_limit_str).strip() != "":
@@ -242,7 +241,7 @@ class OwnerController:
         if not is_valid:
             return False, "Validation failed: " + "; ".join(errors), None
 
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             new_owner_params = {}
             allowed_keys = [
@@ -355,13 +354,13 @@ class OwnerController:
             self.logger.error(f"Error creating master owner: {e}", exc_info=True)
             return False, f"Failed to create owner: {e}", None
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def update_master_owner(
         self, owner_id: int, owner_data: dict, current_user: str
     ) -> Tuple[bool, str]:
         # ... (implementation unchanged) ...
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             owner = session.query(Owner).filter(Owner.owner_id == owner_id).first()
             if not owner:
@@ -476,13 +475,13 @@ class OwnerController:
             )
             return False, f"Failed to update owner: {e}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def delete_master_owner(
         self, owner_id_to_delete: int, current_admin_id: str
     ) -> Tuple[bool, str]:
         # ... (implementation unchanged) ...
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             owner = (
                 session.query(Owner)
@@ -534,11 +533,11 @@ class OwnerController:
                 )
             return False, f"Failed to delete owner due to a database error: {e}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def get_owner_form_reference_data(self) -> Dict[str, List[Dict[str, Any]]]:
         # ... (implementation unchanged) ...
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             states_query = (
                 session.query(
@@ -574,13 +573,13 @@ class OwnerController:
             )
             return {"states": [], "billing_terms": []}
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def toggle_owner_active_status(
         self, owner_id: int, current_user_id: str
     ) -> Tuple[bool, str]:
         # ... (implementation unchanged) ...
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             owner = session.query(Owner).filter(Owner.owner_id == owner_id).first()
             if not owner:
@@ -599,4 +598,4 @@ class OwnerController:
             )
             return False, f"Failed to toggle owner status: {e}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line

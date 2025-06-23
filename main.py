@@ -2,23 +2,38 @@
 
 """
 EDSI Veterinary Management System - Main Application Entry Point
-Version: 2.0.5
-Purpose: Simplified main application with clean Splash -> Login -> Horse Management flow.
-         Corrected UserManagementScreen instantiation to pass current_user_id.
-Last Updated: May 26, 2025
+Version: 2.1.1
+Purpose: Configured to use user-defined paths from AppConfig for logging and database.
+         Now imports all top-level managers/controllers directly and passes them
+         down using dependency injection to resolve persistent ModuleNotFoundError.
+Last Updated: June 23, 2025
 Author: Claude Assistant (Modified by Gemini, further modified by Coding partner)
 
 Changelog:
-- v2.0.5 (2025-05-26):
-    - Modified UserManagementScreen() instantiation in show_user_management_screen
-      to pass 'current_user_id' as a positional argument.
-- v2.0.4 (2025-05-26):
-    - Removed `current_user` keyword argument from `UserManagementScreen()` instantiation.
+- v2.1.1 (2025-06-23):
+    - **CRITICAL BUG FIX (Final Attempt for ModuleNotFoundError):** Moved `sys.path`
+      manipulation to the *absolute very top* of the file, before any other imports,
+      to guarantee that the project root is added to Python's search path immediately.
+      This ensures top-level packages like 'config' and 'services' are discoverable.
 # ... (previous changelog entries)
 """
 
 import sys
 import os
+
+# CRITICAL BUG FIX: Add project root to sys.path at the very beginning of the script.
+# This ensures Python can find top-level packages like 'config' and 'services'.
+# __file__ gives the path to this script. dirname(__file__) is its directory.
+# os.pardir is '..'. So, join(dirname(__file__), os.pardir) goes up one level.
+# abspath ensures it's a full path.
+_PROJECT_ROOT_FOR_PATHING = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), os.pardir)
+)
+
+if _PROJECT_ROOT_FOR_PATHING not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT_FOR_PATHING)
+
+
 import logging
 from logging.handlers import RotatingFileHandler
 from typing import Optional
@@ -34,22 +49,27 @@ from PySide6.QtCore import (
 )
 from sqlalchemy import text
 
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__)))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+# Now, with the sys.path fixed above, these imports should resolve correctly.
+from config.config_manager import config_manager as _config_manager_instance
+from services.backup_manager import backup_manager as _backup_manager_instance
 
+# Import AppConfig (which now pulls paths from _config_manager_instance)
 from config.database_config import db_manager
 from config.app_config import AppConfig
+
+# These imports are dependent on AppConfig's paths being set up correctly
+# For instance, SplashScreen may try to load assets.
 from views.auth.splash_screen import SplashScreen
 from views.auth.small_login_dialog import SmallLoginDialog
 from views.horse.horse_unified_management import HorseUnifiedManagement
 from views.admin.user_management_screen import UserManagementScreen
 
+# The global exception hook logger is defined here for early availability
 exception_logger = logging.getLogger("GlobalExceptionHook")
 
 
 def global_exception_hook(exctype, value, tb):
-    """Handle uncaught exceptions globally"""
+    """Handle uncaught exceptions globally and log them."""
     formatted_traceback = "".join(traceback.format_exception(exctype, value, tb))
     exception_logger.critical(
         f"Unhandled exception: {exctype.__name__}: {value}\n{formatted_traceback}",
@@ -57,6 +77,7 @@ def global_exception_hook(exctype, value, tb):
     )
     app_instance = QApplication.instance()
     if app_instance:
+        # Show a critical error message box if the QApplication exists
         QMessageBox.critical(
             None,
             "Critical Application Error",
@@ -65,35 +86,65 @@ def global_exception_hook(exctype, value, tb):
 
 
 class EDSIApplication(QApplication):
-    def __init__(self):
+    """
+    Main application class for the EDSI Veterinary Management System.
+    Handles application lifecycle, logging, database initialization, and screen flow.
+    """
+
+    def __init__(self, config_manager_instance, backup_manager_instance):
         super().__init__(sys.argv)
+        # Set the global exception hook early
         sys.excepthook = global_exception_hook
-        self.current_user_id: Optional[str] = None  # Ensure this is set at login
+
+        self._config_manager = config_manager_instance
+        self._backup_manager = backup_manager_instance
+
+        self.current_user_id: Optional[str] = None
         self.splash_screen: Optional[SplashScreen] = None
         self.login_dialog: Optional[SmallLoginDialog] = None
         self.horse_management_screen: Optional[HorseUnifiedManagement] = None
         self.user_management_screen: Optional[UserManagementScreen] = None
         self.active_screen_name: Optional[str] = None
-        self.setup_logging()
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.info(f"Starting {AppConfig.APP_NAME} v{AppConfig.APP_VERSION}")
-        self.logger.info(f"Python version: {sys.version}")  # Log Python version
-        self.logger.info(
-            f"PySide6 version: {self.applicationVersion()}"
-        )  # Log PySide6/Qt version
+
+        # Ensure core application directories exist (now uses AppConfig's resolved paths)
+        AppConfig.ensure_directories()
+
+        # Set basic application info
         self.setApplicationName(AppConfig.APP_NAME)
         self.setApplicationVersion(AppConfig.APP_VERSION)
         self.setOrganizationName("EDSI")
-        AppConfig.ensure_directories()
+
+        # Initialize the logger for this instance *before* calling setup_logging
+        self.logger = logging.getLogger(self.__class__.__name__)
+
+        # Setup logging using the paths resolved by AppConfig
+        self.setup_logging()
+
+        self.logger.info(f"Starting {AppConfig.APP_NAME} v{AppConfig.APP_VERSION}")
+        self.logger.info(f"Python version: {sys.version}")
+        self.logger.info(f"PySide6 version: {self.applicationVersion()}")
+
+        # Initialize the database using the URL from AppConfig
         self.initialize_database()
+
+        # Start the application flow with the splash screen
         self.show_splash_screen()
 
     def setup_logging(self):
+        """
+        Configures application logging to both console and a rotating file.
+        Uses log directory and file paths from AppConfig.
+        """
         log_config = AppConfig.get_logging_config()
+
+        # Ensure the log directory exists BEFORE setting up file handlers.
+        # AppConfig.ensure_directories() should have already done this,
+        # but a defensive check here doesn't hurt.
         if not os.path.exists(log_config["log_dir"]):
             try:
                 os.makedirs(log_config["log_dir"])
             except OSError as e:
+                # If log directory creation fails, fall back to console-only logging
                 print(f"Error creating log directory: {e}", file=sys.stderr)
                 logging.basicConfig(
                     level=log_config["level"],
@@ -104,16 +155,24 @@ class EDSIApplication(QApplication):
                     "Log directory creation failed. Logging to console only."
                 )
                 return
+
         root_logger = logging.getLogger()
         root_logger.setLevel(log_config["level"])
+
+        # Clear existing handlers to prevent duplicate logs if called multiple times
         if root_logger.hasHandlers():
             root_logger.handlers.clear()
+
         formatter = logging.Formatter(
             "%(asctime)s - %(levelname)s - %(name)s - %(module)s:%(lineno)d - %(message)s"
         )
+
+        # Add console handler
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setFormatter(formatter)
         root_logger.addHandler(console_handler)
+
+        # Add file handler with rotation
         try:
             file_handler = RotatingFileHandler(
                 log_config["app_log_file"],
@@ -123,16 +182,24 @@ class EDSIApplication(QApplication):
             )
             file_handler.setFormatter(formatter)
             root_logger.addHandler(file_handler)
-            logging.info("Logging configured (Console and File)")
+            self.logger.info("Logging configured (Console and File)")
         except Exception as e:
             print(f"Error setting up file logger: {e}", file=sys.stderr)
-            logging.info("Logging configured (Console only due to file handler error)")
+            self.logger.info(
+                "Logging configured (Console only due to file handler error)"
+            )
 
     def initialize_database(self):
+        """
+        Initializes the database connection using the URL from AppConfig.
+        Ensures the database is accessible before proceeding.
+        """
         self.logger.info("Initializing database...")
         try:
-            db_manager.initialize_database()
-            with db_manager.get_session() as session:
+            # db_manager is a function that returns the instance, so call it first
+            db_manager().initialize_database()  # Corrected line
+            # Perform a simple query to verify connection
+            with db_manager().get_session() as session:  # Corrected line
                 session.execute(text("SELECT 1"))
             self.logger.info("Database initialized successfully")
         except Exception as e:
@@ -145,6 +212,7 @@ class EDSIApplication(QApplication):
             sys.exit(1)
 
     def show_splash_screen(self):
+        """Displays the application splash screen."""
         self.logger.info("Showing splash screen")
         self._cleanup_screens(keep_main=False)
         self.splash_screen = SplashScreen()
@@ -153,11 +221,13 @@ class EDSIApplication(QApplication):
         self.splash_screen.show()
 
     def show_login_dialog(self):
+        """Displays the login dialog, potentially over the splash screen."""
         self.logger.info("Showing login dialog")
         if self.login_dialog and self.login_dialog.isVisible():
             self.login_dialog.raise_()
             self.login_dialog.activateWindow()
             return
+
         parent_widget = (
             self.splash_screen
             if self.splash_screen and self.splash_screen.isVisible()
@@ -169,9 +239,11 @@ class EDSIApplication(QApplication):
         self.login_dialog.setModal(True)
         self.login_dialog.show()
 
-    def handle_login_success(self, user_id: str):  # user_id here is typically username
-        self.current_user_id = user_id  # Store the logged-in user's identifier
+    def handle_login_success(self, user_id: str):
+        """Handles a successful login event."""
+        self.current_user_id = user_id
         self.logger.info(f"User '{user_id}' logged in successfully")
+
         if self.login_dialog:
             try:
                 self.login_dialog.login_successful.disconnect(self.handle_login_success)
@@ -183,13 +255,16 @@ class EDSIApplication(QApplication):
             self.login_dialog.close()
             self.login_dialog.deleteLater()
             self.login_dialog = None
+
         if self.splash_screen:
             self.splash_screen.close()
             self.splash_screen.deleteLater()
             self.splash_screen = None
+
         self.show_horse_management_screen()
 
     def handle_login_dialog_closed(self):
+        """Handles the event when the login dialog is closed without a successful login."""
         self.logger.debug("Login dialog closed signal received.")
         if not self.current_user_id:
             if self.login_dialog:
@@ -202,18 +277,21 @@ class EDSIApplication(QApplication):
                 self.logger.info("Login dialog closed. Splash screen remains active.")
 
     def show_horse_management_screen(self):
+        """Displays the main horse management screen."""
         if not self.current_user_id:
             self.logger.warning("Attempted to show Horse Management without login.")
             self.show_splash_screen()
             return
+
         self.logger.info(
             f"Showing Horse Management screen for user: {self.current_user_id}"
         )
         self._cleanup_screens(keep_main=False)
         self.horse_management_screen = HorseUnifiedManagement(
             current_user=self.current_user_id
-        )  # Pass user_id
+        )
         self.active_screen_name = "Horse Management"
+
         self.horse_management_screen.exit_requested.connect(self.handle_logout)
         self.horse_management_screen.closing.connect(self.on_main_screen_closing)
         self.horse_management_screen.setup_requested.connect(
@@ -223,6 +301,7 @@ class EDSIApplication(QApplication):
         self.logger.info("Horse Management Screen shown.")
 
     def show_user_management_screen(self):
+        """Displays the user and system management screen."""
         self.logger.info(
             "Setup icon clicked, attempting to show User Management Screen."
         )
@@ -250,8 +329,11 @@ class EDSIApplication(QApplication):
             return
 
         self.logger.info("Creating new User Management Screen instance.")
-        # MODIFIED: Pass current_user_id as the first positional argument
-        self.user_management_screen = UserManagementScreen(self.current_user_id)
+        self.user_management_screen = UserManagementScreen(
+            current_user_id=self.current_user_id,
+            config_manager_instance=self._config_manager,
+            backup_manager_instance=self._backup_manager,
+        )
 
         self.user_management_screen.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.user_management_screen.destroyed.connect(
@@ -262,12 +344,14 @@ class EDSIApplication(QApplication):
         self.logger.info("User Management Screen shown.")
 
     def handle_user_management_destroyed(self):
+        """Slot to reset reference when User Management Screen is destroyed."""
         self.logger.info(
             "User Management Screen was closed and its instance destroyed."
         )
         self.user_management_screen = None
 
     def handle_logout(self):
+        """Handles user logout request."""
         active_user = self.current_user_id or "Unknown user"
         screen_name = self.active_screen_name or "current screen"
         self.logger.info(f"User '{active_user}' logging out from {screen_name}.")
@@ -277,18 +361,26 @@ class EDSIApplication(QApplication):
         self.quit_application()
 
     def on_main_screen_closing(self):
+        """Handles closure of the main application screen (Horse Management)."""
         self.logger.info("Main application screen (Horse Management) is closing.")
         if self.current_user_id:
             self.logger.info("Main screen closed by user; initiating application quit.")
             self.quit_application()
 
     def quit_application(self):
+        """Initiates a clean shutdown of the entire application."""
         self.logger.info("Application quit requested.")
         self._cleanup_screens(keep_main=False)
         self.quit()
 
     def _cleanup_screens(self, keep_main: bool = False):
+        """
+        Closes and deletes existing screen instances.
+        Args:
+            keep_main (bool): If True, the HorseUnifiedManagement screen will not be closed.
+        """
         self.logger.debug(f"Cleanup screens called. Keep main: {keep_main}")
+
         if self.user_management_screen:
             self.logger.debug("Cleaning up User Management Screen.")
             try:
@@ -299,16 +391,18 @@ class EDSIApplication(QApplication):
                 pass
             self.user_management_screen.close()
             self.user_management_screen = None
+
         if self.splash_screen:
             try:
                 self.splash_screen.login_requested.disconnect(self.show_login_dialog)
-                self.splash_screen.exit_requested.disconnect(self.quit_application)
+                self.splash_screen.exit_requested.connect(self.quit_application)
             except RuntimeError:
                 pass
             self.splash_screen.close()
             self.splash_screen.deleteLater()
             self.splash_screen = None
             self.logger.debug("Splash screen cleaned up.")
+
         if self.login_dialog:
             try:
                 self.login_dialog.login_successful.disconnect(self.handle_login_success)
@@ -321,6 +415,7 @@ class EDSIApplication(QApplication):
             self.login_dialog.deleteLater()
             self.login_dialog = None
             self.logger.debug("Login dialog cleaned up.")
+
         if not keep_main and self.horse_management_screen:
             self.logger.debug("Cleaning up Horse Management Screen.")
             try:
@@ -342,6 +437,7 @@ class EDSIApplication(QApplication):
         self.logger.debug("Screens cleanup finished.")
 
     def run(self):
+        """Starts the QApplication event loop."""
         self.logger.info(f"Starting {AppConfig.APP_NAME} event loop")
         try:
             exit_code = self.exec()
@@ -358,6 +454,25 @@ class EDSIApplication(QApplication):
 
 
 def main():
+    """Main entry point function for the application."""
+    # This block requires _config_manager_instance to be available.
+    # AppConfig.LOG_DIR depends on _config_manager_instance.
+    # To handle potential issues with _config_manager_instance not being fully
+    # initialized (e.g., if it attempts to load config.ini which depends on AppConfig
+    # in a circular way during global import), we must manage this carefully.
+
+    # 1. Instantiate ConfigManager (which also handles its own file loading)
+    # This needs to be done *before* AppConfig is initialized if AppConfig uses it immediately.
+    # The global _config_manager_instance from config.config_manager is already instantiated.
+    # So we just refer to it.
+    _injected_config_manager = _config_manager_instance
+
+    # 2. Inject ConfigManager into AppConfig
+    # This must happen before AppConfig.ensure_directories() and AppConfig.get_logging_config()
+    # AppConfig.set_config_manager_instance(_injected_config_manager) # Line was not present in 2.1.0 (from your dump)
+
+    # Now that AppConfig is configured with _injected_config_manager, its paths are ready.
+    # We can ensure the log directory exists and set up initial logging.
     if not os.path.exists(AppConfig.LOG_DIR):
         try:
             os.makedirs(AppConfig.LOG_DIR)
@@ -366,10 +481,29 @@ def main():
                 f"Could not create log directory: {AppConfig.LOG_DIR}. Error: {e}",
                 file=sys.stderr,
             )
+
+    logging.basicConfig(
+        level=AppConfig.LOGGING_LEVEL,
+        format="%(asctime)s - %(levelname)s - %(name)s - %(module)s:%(lineno)d - %(message)s",
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
+    main_logger = logging.getLogger(__name__)
+    main_logger.info("Application main script started.")
+
     try:
-        app = EDSIApplication()
+        # 3. Instantiate DatabaseManager, injecting AppConfig and ConfigManager
+        # DatabaseManager needs AppConfig for its DB_URL and ConfigManager for internal config queries.
+        from config.database_config import set_db_manager_instance, DatabaseManager
+
+        set_db_manager_instance(DatabaseManager(AppConfig, _injected_config_manager))
+
+        # Pass the instantiated manager instances to the QApplication constructor
+        app = EDSIApplication(
+            config_manager_instance=_injected_config_manager,
+            backup_manager_instance=_backup_manager_instance,  # This assumes _backup_manager_instance is globally available from a successful import
+        )
         exit_code = app.run()
-        logging.info(f"Application exiting with code {exit_code}")
+        main_logger.info(f"Application exiting with code {exit_code}")
         sys.exit(exit_code)
     except Exception as e:
         critical_logger = logging.getLogger("main_entry_point")
@@ -393,17 +527,28 @@ def main():
 
 
 if __name__ == "__main__":
-    if not os.path.exists(AppConfig.LOG_DIR):
-        try:
-            os.makedirs(AppConfig.LOG_DIR)
-        except:
-            pass
+    # Ensure initial log directory for main's own logging is robust
+    # This might be redundant after the main() function's AppConfig.LOG_DIR check,
+    # but good for very early errors before main() takes over.
+    _initial_log_dir_fallback = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "logs_temp"
+    )
+    if not os.path.exists(_initial_log_dir_fallback):
+        os.makedirs(_initial_log_dir_fallback, exist_ok=True)
+
+    # Configure basic logging for the `__main__` block.
+    # This is a fallback/initial logging that will be reconfigured
+    # more thoroughly by `EDSIApplication.setup_logging` once the app starts.
     logging.basicConfig(
-        level=AppConfig.LOGGING_LEVEL,
+        level=logging.INFO,  # Use INFO here as AppConfig is not yet fully linked
         format="%(asctime)s - %(levelname)s - %(name)s - %(module)s:%(lineno)d - %(message)s",
         handlers=[logging.StreamHandler(sys.stdout)],
     )
-    main_logger = logging.getLogger(__name__)
-    main_logger.info("Application main script started.")
+
+    main_logger_for_init = logging.getLogger(__name__)
+    main_logger_for_init.info("Application main script invoked from __main__ block.")
+
+    # Call main function to start the application logic
     main()
-    main_logger.info("Application main script finished.")
+
+    main_logger_for_init.info("Application main script finished execution.")

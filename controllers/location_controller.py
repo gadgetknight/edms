@@ -34,7 +34,7 @@ class LocationController:
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def get_all_locations(self, status_filter: str = "all") -> List[Location]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             query = session.query(Location).options(joinedload(Location.state))
             if status_filter == "active":
@@ -47,10 +47,10 @@ class LocationController:
             self.logger.error(f"Error fetching all locations: {e}", exc_info=True)
             return []
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def get_location_by_id(self, location_id: int) -> Optional[Location]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             return (
                 session.query(Location)
@@ -64,7 +64,7 @@ class LocationController:
             )
             return None
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def validate_location_data(
         self,
@@ -80,7 +80,7 @@ class LocationController:
         elif len(name) > 100:
             errors.append("Location Name cannot exceed 100 characters.")
         else:
-            session = db_manager.get_session()
+            session = db_manager().get_session()  # Corrected line
             try:
                 query = session.query(Location.location_id).filter(
                     Location.location_name.collate("NOCASE") == name
@@ -92,7 +92,7 @@ class LocationController:
                 if query.first():
                     errors.append(f"Location Name '{name}' already exists.")
             finally:
-                session.close()
+                db_manager().close()  # Corrected line
         return not errors, errors
 
     def create_location(
@@ -102,7 +102,7 @@ class LocationController:
         if not is_valid:
             return False, "Validation failed: " + "; ".join(errors), None
 
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
 
             def process_string(value: Any) -> Optional[str]:
@@ -138,7 +138,7 @@ class LocationController:
             self.logger.error(f"Error creating location: {e}", exc_info=True)
             return False, f"Failed to create location: {e}", None
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def update_location(
         self, location_id: int, location_data: dict, current_user_id: str
@@ -149,7 +149,7 @@ class LocationController:
         if not is_valid:
             return False, "Validation failed: " + "; ".join(errors)
 
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             location = (
                 session.query(Location)
@@ -177,12 +177,12 @@ class LocationController:
             )
             return False, f"Failed to update location: {e}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def toggle_location_active_status(
         self, location_id: int, current_user_id: Optional[str] = None
     ) -> Tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             location = (
                 session.query(Location)
@@ -214,13 +214,12 @@ class LocationController:
             )
             return False, "A database error occurred while toggling location status."
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def delete_location(
         self, location_id: int, current_user_id: str
     ) -> Tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             linked_horses_count = (
                 session.query(HorseLocation)
@@ -256,4 +255,4 @@ class LocationController:
             )
             return False, f"A database error occurred: {e}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line

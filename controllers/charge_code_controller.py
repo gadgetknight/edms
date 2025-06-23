@@ -72,7 +72,7 @@ class ChargeCodeController:
 
         # Validate code uniqueness
         if code:  # Only check if code is provided
-            session = db_manager.get_session()
+            session = db_manager().get_session()  # Corrected line
             try:
                 query = session.query(ChargeCode).filter(
                     ChargeCode.code.collate("NOCASE") == code.upper()
@@ -82,8 +82,7 @@ class ChargeCodeController:
                 if query.first():
                     errors.append(f"Charge Code '{code.upper()}' already exists.")
             finally:
-                if session:
-                    session.close()
+                db_manager().close()  # Corrected line
 
         if not description:
             errors.append("Description is required.")
@@ -111,7 +110,7 @@ class ChargeCodeController:
 
         category_id = charge_data.get("category_id")
         if category_id is not None:
-            session = db_manager.get_session()
+            session = db_manager().get_session()  # Corrected line
             try:
                 category_exists = (
                     session.query(ChargeCodeCategory)
@@ -128,8 +127,7 @@ class ChargeCodeController:
                 )
                 errors.append("Database error validating category.")
             finally:
-                if session:
-                    session.close()
+                db_manager().close()  # Corrected line
         elif "category_id" not in charge_data:
             errors.append("Category selection is required.")
 
@@ -144,7 +142,7 @@ class ChargeCodeController:
         if not is_valid:
             return False, "Validation failed: " + "; ".join(errors), None
 
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             new_charge_code = ChargeCode(
                 code=charge_data["code"].strip().upper(),
@@ -185,11 +183,10 @@ class ChargeCodeController:
             self.logger.error(f"Error creating charge code: {e}", exc_info=True)
             return False, f"Failed to create charge code: {str(e)}", None
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def get_charge_code_by_id(self, charge_code_pk_value: int) -> Optional[ChargeCode]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             return (
                 session.query(ChargeCode)
@@ -204,11 +201,10 @@ class ChargeCodeController:
             )
             return None
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def get_charge_code_by_code(self, code: str) -> Optional[ChargeCode]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             return (
                 session.query(ChargeCode)
@@ -222,13 +218,12 @@ class ChargeCodeController:
             )
             return None
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def get_all_charge_codes(
         self, search_term: str = "", status_filter: str = "all"
     ) -> List[ChargeCode]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             category_alias = aliased(ChargeCodeCategory)
             query = session.query(ChargeCode).options(joinedload(ChargeCode.category))
@@ -258,8 +253,7 @@ class ChargeCodeController:
             self.logger.error(f"Error fetching all charge codes: {e}", exc_info=True)
             return []
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def update_charge_code(
         self,
@@ -267,7 +261,7 @@ class ChargeCodeController:
         charge_data: dict,
         current_user_id: Optional[str] = None,
     ) -> Tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             charge_code_to_update = (
                 session.query(ChargeCode)
@@ -342,15 +336,14 @@ class ChargeCodeController:
             )
             return False, f"Failed to update charge code: {str(e)}"
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def toggle_charge_code_status(
         self,
         charge_code_pk_value: int,
         current_user_id: Optional[str] = None,
     ) -> Tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             charge_code = (
                 session.query(ChargeCode)
@@ -376,14 +369,13 @@ class ChargeCodeController:
             )
             return False, f"Failed to toggle charge code status: {str(e)}"
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def delete_charge_code(
         self, charge_code_id: int, current_user_id: str
     ) -> Tuple[bool, str]:
         """Permanently deletes a charge code after checking for dependencies."""
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             # Check for linked transactions before deleting
             linked_transactions_count = (
@@ -424,12 +416,12 @@ class ChargeCodeController:
             )
             return False, f"A database error occurred: {e}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     # --- ChargeCodeCategory Management Methods ---
 
     def get_category_by_id(self, category_id: int) -> Optional[ChargeCodeCategory]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             category = (
                 session.query(ChargeCodeCategory)
@@ -444,8 +436,7 @@ class ChargeCodeController:
             )
             return None
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def validate_charge_code_category_data(
         self,
@@ -472,7 +463,7 @@ class ChargeCodeController:
             errors.append("A Level 2 Process must have a parent Category.")
 
         if name and level is not None:
-            session = db_manager.get_session()
+            session = db_manager().get_session()  # Corrected line
             try:
                 query = session.query(ChargeCodeCategory.category_id).filter(
                     ChargeCodeCategory.name.collate("NOCASE") == name,
@@ -500,8 +491,7 @@ class ChargeCodeController:
                 )
                 errors.append("Database error during name validation.")
             finally:
-                if session:
-                    session.close()
+                db_manager().close()  # Corrected line
         return not errors, errors
 
     def create_charge_code_category(
@@ -513,7 +503,7 @@ class ChargeCodeController:
         if not is_valid:
             return False, "Validation failed: " + "; ".join(errors), None
 
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             new_category = ChargeCodeCategory(
                 name=category_data["name"].strip(),
@@ -545,13 +535,12 @@ class ChargeCodeController:
             )
             return False, f"Failed to create category/process: {str(e)}", None
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def update_charge_code_category(
         self, category_id: int, category_data: Dict[str, Any], current_user_id: str
     ) -> Tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             category_to_update = (
                 session.query(ChargeCodeCategory)
@@ -608,13 +597,12 @@ class ChargeCodeController:
             )
             return False, f"Failed to update category/process: {str(e)}"
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def toggle_charge_code_category_status(
         self, category_id: int, current_user_id: Optional[str] = None
     ) -> Tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         category = None
         try:
             category = (
@@ -651,13 +639,12 @@ class ChargeCodeController:
             )
             return False, f"Failed to toggle {err_item_type} status: {str(e)}"
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def delete_charge_code_category(
         self, category_id: int, current_user_id: str
     ) -> Tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         category_to_delete = None
         try:
             category_to_delete = (
@@ -716,14 +703,13 @@ class ChargeCodeController:
                 f"Failed to delete category/process due to a database error: {str(e)}",
             )
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def get_all_charge_code_categories_hierarchical(
         self,
     ) -> List[ChargeCodeCategory]:
         """Fetches all Level 1 categories, with their Level 2 children (processes) eager-loaded."""
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             level1_categories = (
                 session.query(ChargeCodeCategory)
@@ -748,8 +734,7 @@ class ChargeCodeController:
             )
             return []
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def get_charge_code_categories(
         self,
@@ -757,7 +742,7 @@ class ChargeCodeController:
         level: Optional[int] = None,
         active_only: bool = True,
     ) -> List[ChargeCodeCategory]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             query = session.query(ChargeCodeCategory)
             if active_only:
@@ -782,8 +767,7 @@ class ChargeCodeController:
             )
             return []
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def get_category_path(self, category_id: Optional[int]) -> List[Dict[str, Any]]:
         """
@@ -795,7 +779,7 @@ class ChargeCodeController:
             return path_for_display
 
         current_cat_id = category_id
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             while current_cat_id is not None:
                 category = (
@@ -821,5 +805,4 @@ class ChargeCodeController:
             )
             return []
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line

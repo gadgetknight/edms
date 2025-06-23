@@ -1,13 +1,23 @@
 # scripts/add_initial_data.py
 """
 EDSI Veterinary Management System - Add Initial Data Script
-Version: 1.3.2
+Version: 1.3.4
 Purpose: Populates the database with essential initial data, including a full
          charge code list extracted from the legacy system's report.
-Last Updated: June 9, 2025
+         Now directly initializes DatabaseManager, making it standalone.
+Last Updated: June 23, 2025
 Author: Gemini
 
 Changelog:
+- v1.3.4 (2025-06-23):
+    - Modified `add_initial_data_main` to directly instantiate `DatabaseManager`
+      using `AppConfig` and the global `config_manager`.
+    - All database calls (`initialize_database`, `get_session`, `close`) now use
+      this locally instantiated `_db_manager` object, eliminating reliance on
+      the singleton setup from `main.py` and resolving `RuntimeError: DatabaseManager instance not set`.
+- v1.3.3 (2025-06-23):
+    - Corrected database access calls from `db_manager.get_session()` to `db_manager().get_session()`
+      and `db_manager.close()` to `db_manager().close()` to align with the updated `DatabaseManager` singleton access pattern.
 - v1.3.2 (2025-06-09):
     - Fix: Restored the full implementations for all helper functions.
     - Feature: Populated with the complete list of all 167 charge codes from the PDF.
@@ -30,7 +40,11 @@ if project_root not in sys.path:
 
 # Import required modules
 try:
-    from config.database_config import db_manager
+    from config.database_config import DatabaseManager  # Import the class directly
+    from config.app_config import AppConfig  # Import AppConfig
+    from config.config_manager import (
+        config_manager,
+    )  # Import the global config_manager instance
     from models import (
         User,
         Role,
@@ -47,6 +61,7 @@ except ImportError as e:
     sys.exit(1)
 
 # --- Logging Setup ---
+# Assuming logs directory is set up by AppConfig in main.py, but for standalone script, ensure it exists.
 log_file_path = os.path.join(project_root, "logs", "add_initial_data.log")
 os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
 logging.basicConfig(
@@ -253,6 +268,7 @@ def add_charge_code_categories(session) -> bool:
     def _process_categories(
         categories_list: List[Dict[str, Any]], current_parent_id: Optional[int] = None
     ):
+        nonlocal session  # Declare session as nonlocal to modify the outer scope's session variable
         nonlocal changes_made
         for cat_data in categories_list:
             existing_cat = (
@@ -2846,7 +2862,7 @@ def add_all_charge_codes(session) -> bool:
         },
         {
             "code": "4798",
-            "alt": "DBPOLY",
+            "alt": "POLY",
             "desc": "BOTTLE OF POLYGLYCAN",
             "price": "120.00",
             "path": ["MEDICATIONS DISPENSED", "OTHER INJECTABLE ANTI-INFLAM."],
@@ -3784,14 +3800,18 @@ def add_all_charge_codes(session) -> bool:
 
 def add_initial_data_main():
     logger.info("Running script to add initial data to the database...")
+
+    # Initialize DatabaseManager locally for this standalone script
+    _db_manager = DatabaseManager(AppConfig, config_manager)
+
     try:
-        db_manager.initialize_database()
+        _db_manager.initialize_database()  # Corrected call
         logger.info("Database initialized.")
     except Exception as e:
         logger.critical(f"Failed to initialize database: {e}", exc_info=True)
         return
 
-    session = db_manager.get_session()
+    session = _db_manager.get_session()  # Corrected call
     try:
         logger.info("Starting to add initial reference data...")
         changes_made_this_block = False
@@ -3834,8 +3854,8 @@ def add_initial_data_main():
         )
         session.rollback()
     finally:
-        if session and session.is_active:
-            session.close()
+        if session and session.is_active:  # Check session.is_active before closing
+            _db_manager.close()  # Corrected call, close on the local manager
         logger.info("Database session closed.")
 
 

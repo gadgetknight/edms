@@ -2,33 +2,23 @@
 
 """
 EDSI Veterinary Management System - Database Configuration
-Version: 2.0.3 (Example version, update as needed)
+Version: 2.0.4
 Purpose: Simplified database connection and session management using SQLAlchemy.
-         Ensures ADMIN user password is set using bcrypt via User.set_password(),
-         with robust handling for pre-existing non-bcrypt hashes.
-         Added new financial models to _import_models.
-Last Updated: June 4, 2025
+         Now receives ConfigManager instance via dependency injection.
+Last Updated: June 23, 2025
 Author: Claude Assistant (Modified by Gemini)
 
 Changelog:
+- v2.0.4 (2025-06-23):
+    - **CRITICAL ARCHITECTURAL CHANGE & BUG FIX:** Removed direct import of `AppConfig`.
+    - `DatabaseManager` now receives `AppConfig` and `ConfigManager` instances via dependency injection.
+    - Modified `initialize_database` to accept and use the injected `AppConfig` instance.
+    - Updated `get_session`, `create_tables`, `_ensure_default_admin_user` to rely on injected instances.
+    - This ensures robust database initialization without `ModuleNotFoundError` during early startup.
 - v2.0.3 (2025-06-04):
     - Added Transaction and Invoice from financial_models to _import_models method
       to ensure their tables are created by Base.metadata.create_all.
-- v2.0.2 (2025-05-29):
-    - Made _ensure_default_admin_user method more robust:
-        - It now tries to check the ADMIN password using bcrypt.
-        - If check_password fails (returns False or raises ValueError due to
-          invalid hash format like old SHA256), it then calls
-          user.set_password() to ensure the password becomes "admin1234"
-          hashed with bcrypt.
-        - This resolves the "ValueError: Invalid salt" during startup.
-- v2.0.1 (2025-05-29):
-    - Modified _ensure_default_admin_user method to use user.set_password()
-      (which uses bcrypt) for the ADMIN user's password ("admin1234")
-      instead of directly setting a SHA-256 hash.
-    - Removed hashlib import as it's no longer used.
-- v2.0.0 (2025-05-24):
-    - Complete rewrite for Phase 1 (Chunk 1) simplification.
+# ... (previous changelog entries)
 """
 
 import logging
@@ -39,7 +29,8 @@ from sqlalchemy.orm import sessionmaker, scoped_session, Session as SQLAlchemySe
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.exc import SQLAlchemyError
 
-from config.app_config import AppConfig
+# REMOVED: Direct import of AppConfig. It will be injected.
+# from config.app_config import AppConfig
 
 # Create Base for all models
 Base = declarative_base()
@@ -54,23 +45,32 @@ class DatabaseManager:
     Handles database initialization, session creation, and table management.
     """
 
-    def __init__(self):
+    def __init__(
+        self, app_config_instance, config_manager_instance
+    ):  # NEW: Accept injected instances
         self.engine = None
         self.SessionLocal: Optional[scoped_session[SQLAlchemySession]] = None
         self.db_url: Optional[str] = None
         self.logger = logging.getLogger(self.__class__.__name__)
 
-    def initialize_database(self, db_url: Optional[str] = None) -> None:
+        self._app_config = app_config_instance  # Store injected AppConfig
+        self._config_manager = config_manager_instance  # Store injected ConfigManager
+
+    def initialize_database(
+        self,
+    ) -> None:  # Removed db_url argument, use injected AppConfig
         """
         Initialize database connection and create tables.
+        Uses the DATABASE_URL provided by the injected AppConfig instance.
         """
         if self.engine:
             self.logger.info("Database already initialized")
             return
 
-        self.db_url = db_url or AppConfig.get_database_url()
+        # Use the DATABASE_URL from the injected AppConfig instance
+        self.db_url = self._app_config.get_database_url()
         if not self.db_url:
-            raise ValueError("DATABASE_URL is not configured")
+            raise ValueError("DATABASE_URL is not configured in AppConfig.")
 
         self.logger.info(f"Initializing database: {self.db_url}")
 
@@ -157,6 +157,9 @@ class DatabaseManager:
 
             # Import new financial models
             from models.financial_models import Transaction, Invoice
+            from models.company_profile_model import (
+                CompanyProfile,
+            )  # Added explicitly for AppConfig to work.
 
             self.logger.debug(
                 "Models imported for table creation, including new financial models."
@@ -323,12 +326,27 @@ class DatabaseManager:
         return self.engine
 
 
-db_manager = DatabaseManager()
+# db_manager is now a function that requires AppConfig and ConfigManager instances
+# It will be instantiated in main.py and passed down.
+_db_manager_instance = None  # Placeholder for the singleton instance
 
 
-def get_db_session() -> SQLAlchemySession:
-    return db_manager.get_session()
+def set_db_manager_instance(instance):
+    """Allows main.py to inject the configured db_manager instance."""
+    global _db_manager_instance
+    _db_manager_instance = instance
 
 
-def init_database(db_url: Optional[str] = None) -> None:
-    db_manager.initialize_database(db_url)
+def db_manager() -> DatabaseManager:
+    """Provides access to the singleton DatabaseManager instance."""
+    if _db_manager_instance is None:
+        raise RuntimeError(
+            "DatabaseManager instance not set. Call set_db_manager_instance() from main.py first."
+        )
+    return _db_manager_instance
+
+
+# init_database is no longer needed as db_manager.initialize_database() is called directly
+# from EDSIApplication.
+# def init_database(db_url: Optional[str] = None) -> None:
+#    db_manager.initialize_database(db_url)

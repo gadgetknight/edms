@@ -3,11 +3,21 @@
 """
 EDSI Veterinary Management System - Application Configuration
 Version: 2.1.0
-Purpose: Simplified centralized configuration for application settings, paths, and constants.
-Last Updated: June 9, 2025
+Purpose: Centralized configuration for application settings, paths, and constants.
+         Now integrates with ConfigManager for user-configurable data directories.
+Last Updated: June 23, 2025
 Author: Claude Assistant (Modified by Gemini)
 
 Changelog:
+- v2.2.0 (2025-06-23):
+    - Integrated `config_manager` to allow user-configurable paths for:
+        - `DATABASE_URL`
+        - `LOG_DIR`
+        - `ASSETS_DIR` (using relative fallback)
+        - `INVOICES_DIR`
+        - `STATEMENTS_DIR` (newly added configurable path)
+    - Modified path constants to check `config_manager` first, then fallback to project defaults.
+    - Updated `ensure_directories()` to create all managed directories.
 - v2.1.0 (2025-06-09):
     - Added INVOICES_DIR path constant for storing generated invoice PDFs.
     - Updated ensure_directories() to create the 'invoices' folder on startup.
@@ -24,11 +34,12 @@ import os
 import logging
 from typing import Dict, Any
 
-# --- Project Paths ---
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-LOG_DIR = os.path.join(PROJECT_ROOT, "logs")
-ASSETS_DIR = os.path.join(PROJECT_ROOT, "assets")
-INVOICES_DIR = os.path.join(PROJECT_ROOT, "invoices")  # ADDED
+# Import the new ConfigManager for user-configurable paths
+from config.config_manager import config_manager, ConfigManager
+
+# --- Core Project Path (always relative to app_config.py location) ---
+# This remains the absolute base for default fallbacks
+_BASE_PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 # --- Application Information ---
 APP_NAME = "EDSI Veterinary Management System"
@@ -36,9 +47,29 @@ APP_VERSION = "2.0.3"
 APP_AUTHOR = "EDSI"
 
 # --- Database Configuration ---
-DATABASE_URL = f"sqlite:///{os.path.join(PROJECT_ROOT, 'edsi_database.db')}"
+# Prioritize user-defined DB path, fallback to project root default
+_DEFAULT_DB_PATH = os.path.join(_BASE_PROJECT_ROOT, "edsi_database.db")
+DATABASE_URL = f"sqlite:///{config_manager.get_path(ConfigManager.DB_PATH_KEY) or _DEFAULT_DB_PATH}"
 
-# --- Logging Configuration ---
+# --- Paths (User-configurable with fallbacks) ---
+# Prioritize user-defined paths, fallback to project root defaults
+PROJECT_ROOT = _BASE_PROJECT_ROOT  # This refers to the application's installed root
+LOG_DIR = config_manager.get_path(ConfigManager.LOG_DIR_KEY) or os.path.join(
+    _BASE_PROJECT_ROOT, "logs"
+)
+ASSETS_DIR = config_manager.get_path(ConfigManager.ASSETS_DIR_KEY) or os.path.join(
+    _BASE_PROJECT_ROOT, "assets"
+)
+INVOICES_DIR = config_manager.get_path(ConfigManager.INVOICES_DIR_KEY) or os.path.join(
+    _BASE_PROJECT_ROOT, "invoices"
+)
+STATEMENTS_DIR = config_manager.get_path(
+    ConfigManager.STATEMENTS_DIR_KEY
+) or os.path.join(
+    _BASE_PROJECT_ROOT, "statements"
+)  # NEW
+
+# --- Logging Configuration (uses LOG_DIR defined above) ---
 APP_LOG_FILE = os.path.join(LOG_DIR, "edsi_app.log")
 DB_LOG_FILE = os.path.join(LOG_DIR, "edsi_db.log")
 LOGGING_LEVEL = logging.INFO
@@ -87,7 +118,8 @@ class AppConfig:
     PROJECT_ROOT = PROJECT_ROOT
     LOG_DIR = LOG_DIR
     ASSETS_DIR = ASSETS_DIR
-    INVOICES_DIR = INVOICES_DIR  # ADDED
+    INVOICES_DIR = INVOICES_DIR
+    STATEMENTS_DIR = STATEMENTS_DIR  # NEW
 
     # Database
     DATABASE_URL = DATABASE_URL
@@ -131,6 +163,8 @@ class AppConfig:
 
     @classmethod
     def get_app_dir(cls) -> str:
+        # This will still return the original _BASE_PROJECT_ROOT for consistency
+        # unless specific user override for app_dir is added to config_manager
         return cls.PROJECT_ROOT
 
     @classmethod
@@ -142,20 +176,17 @@ class AppConfig:
         return cls.INVOICES_DIR
 
     @classmethod
-    def get_app_info(cls) -> Dict[str, str]:
-        return {
-            "name": cls.APP_NAME,
-            "version": cls.APP_VERSION,
-            "author": cls.APP_AUTHOR,
-        }
+    def get_statements_dir(cls) -> str:  # NEW
+        return cls.STATEMENTS_DIR
 
     @classmethod
     def get_logging_config(cls) -> Dict[str, Any]:
         """Get logging configuration"""
         return {
             "level": cls.LOGGING_LEVEL,
-            "app_log_file": cls.APP_LOG_FILE,
-            "db_log_file": cls.DB_LOG_FILE,
+            # Use dynamically configured paths for log files
+            "app_log_file": os.path.join(cls.LOG_DIR, "edsi_app.log"),
+            "db_log_file": os.path.join(cls.LOG_DIR, "edsi_db.log"),
             "log_dir": cls.LOG_DIR,
             "log_max_bytes": cls.LOG_MAX_BYTES,
             "log_backup_count": cls.LOG_BACKUP_COUNT,
@@ -186,24 +217,30 @@ class AppConfig:
             "warning_action": cls.DARK_WARNING_ACTION,
             "danger_action": cls.DARK_DANGER_ACTION,
             "button_bg": cls.DARK_BUTTON_BG,
-            "button_hover": cls.DARK_BUTTON_HOVER,
-            "item_hover": cls.DARK_ITEM_HOVER,
-            "highlight_bg": cls.DARK_HIGHLIGHT_BG,
-            "highlight_text": cls.DARK_HIGHLIGHT_TEXT,
-            "input_field_background": cls.DARK_INPUT_FIELD_BACKGROUND,
+            "button_hover": DARK_BUTTON_HOVER,
+            "item_hover": DARK_ITEM_HOVER,
+            "highlight_bg": DARK_HIGHLIGHT_BG,
+            "highlight_text": DARK_HIGHLIGHT_TEXT,
+            "input_field_background": DARK_INPUT_FIELD_BACKGROUND,
         }
 
     @classmethod
     def ensure_directories(cls) -> None:
-        """Ensure required directories exist"""
-        directories = [cls.LOG_DIR, cls.ASSETS_DIR, cls.INVOICES_DIR]  # MODIFIED
+        """Ensure required directories exist, including user-configurable ones."""
+        # Get current effective paths
+        directories = [
+            cls.LOG_DIR,
+            cls.ASSETS_DIR,
+            cls.INVOICES_DIR,
+            cls.STATEMENTS_DIR,  # NEW
+        ]
 
         for directory in directories:
             if not os.path.exists(directory):
                 try:
                     os.makedirs(directory, exist_ok=True)
-                    # Optionally log creation:
-                    # logging.info(f"Created directory: {directory}")
+                    # Use standard logging now that it's set up in main.py
+                    logging.info(f"Created directory: {directory}")
                 except OSError as e:
-                    # Using print as logger might not be fully setup when this is called early
-                    print(f"Warning: Could not create directory {directory}: {e}")
+                    logging.error(f"Failed to create directory {directory}: {e}")
+                    # Continue attempting to create other directories

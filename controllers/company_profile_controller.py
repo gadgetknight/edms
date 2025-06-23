@@ -24,7 +24,7 @@ class CompanyProfileController:
         """
         Retrieves the company profile. Assumes a single profile with id=1.
         """
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             profile = (
                 session.query(CompanyProfile).filter(CompanyProfile.id == 1).first()
@@ -34,7 +34,7 @@ class CompanyProfileController:
             self.logger.error(f"Error retrieving company profile: {e}", exc_info=True)
             return None
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def update_company_profile(
         self, data: Dict[str, Any], current_user_id: str
@@ -42,7 +42,7 @@ class CompanyProfileController:
         """
         Creates or updates the company profile. Assumes a single profile with id=1.
         """
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             profile = (
                 session.query(CompanyProfile).filter(CompanyProfile.id == 1).first()
@@ -69,4 +69,4 @@ class CompanyProfileController:
             )
             return False, f"A database error occurred: {e}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line

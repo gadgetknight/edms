@@ -1,28 +1,31 @@
 # views/admin/user_management_screen.py
 """
 EDSI Veterinary Management System - User Management Screen
-Version: 1.6.5
+Version: 1.8.0
 Purpose: Admin screen for managing users, locations, veterinarians, charge codes,
-         categories, owners, and the company profile.
-Last Updated: June 13, 2025
+         categories, owners, company profile, configurable application paths,
+         and now backup/restore operations.
+Last Updated: June 23, 2025
 Author: Gemini
 
 Changelog:
+- v1.8.0 (2025-06-23):
+    - Added a new tab: "Backup and Restore" (`BackupRestoreTab`).
+    - Defined `BACKUP_RESTORE_TAB_INDEX` constant.
+    - Imported `BackupRestoreTab` from `views.admin.tabs`.
+    - Instantiated `BackupRestoreTab` and added it to the `QTabWidget`.
+    - Updated `_on_tab_changed` and `_refresh_current_tab_data` to handle the new tab.
+    - Connected `BackupRestoreTab.operation_completed` signal to `_on_backup_restore_completed` slot.
+- v1.7.0 (2025-06-23):
+    - Added a new tab: "Application Paths" (`ApplicationPathsTab`).
+    - Defined `APP_PATHS_TAB_INDEX` constant.
+    - Imported `ApplicationPathsTab` from `views.admin.tabs`.
+    - Instantiated `ApplicationPathsTab` and added it to the `QTabWidget`.
+    - Updated `_on_tab_changed` and `_refresh_current_tab_data` to handle the new tab.
 - v1.6.5 (2025-06-13):
     - Removed unused import for the deleted CustomQuestionDialog to fix a
       ModuleNotFoundError on application startup.
-- v1.6.4 (2025-06-10):
-    - Fixed `DetachedInstanceError` in `_edit_selected_category_process` by
-      checking if a category is Level 1 before accessing its `.parent`
-      attribute, which would be None and cause a lazy-load failure.
-- v1.6.3 (2025-06-09):
-    - Providing the single, complete, and unabridged file containing the full
-      implementations for all seven tabs.
-- v1.6.2 (2025-06-09):
-    - Bug Fix: Removed redundant message helper methods.
-- v1.6.1 (2025-06-09):
-    - Bug Fix: Restored the full implementations for all original tab methods.
-    - Feature: Correctly integrated the new "Manage Veterinarians" and "Company Profile" tabs.
+# ... (previous changelog entries)
 """
 
 import logging
@@ -71,6 +74,7 @@ from models import (
     Veterinarian,
 )
 
+# Import dialogs and other tabs
 from .dialogs.add_edit_user_dialog import AddEditUserDialog
 from .dialogs.add_edit_location_dialog import AddEditLocationDialog
 from .dialogs.add_edit_charge_code_dialog import AddEditChargeCodeDialog
@@ -81,13 +85,16 @@ from .dialogs.add_edit_charge_code_category_dialog import (
 from .dialogs.add_edit_veterinarian_dialog import AddEditVeterinarianDialog
 from .dialogs.company_profile_dialog import CompanyProfileDialog
 
-# DELETED: from ..horse.widgets.custom_question_dialog import CustomQuestionDialog
+# Import custom tabs
+from .tabs.application_paths_tab import ApplicationPathsTab
+from .tabs.backup_restore_tab import BackupRestoreTab  # NEW: Import BackupRestoreTab
 
 
 class UserManagementScreen(BaseView):
     back_to_main_menu = Signal()
     entity_updated = Signal(str)
 
+    # Tab Indices
     USER_TAB_INDEX = 0
     LOCATION_TAB_INDEX = 1
     VETERINARIAN_TAB_INDEX = 2
@@ -95,8 +102,16 @@ class UserManagementScreen(BaseView):
     CHARGE_CODE_TAB_INDEX = 4
     OWNER_TAB_INDEX = 5
     PROFILE_TAB_INDEX = 6
+    APP_PATHS_TAB_INDEX = 7
+    BACKUP_RESTORE_TAB_INDEX = 8  # NEW: Index for the Backup/Restore tab
 
-    def __init__(self, current_user_id: str, parent: Optional[QWidget] = None):
+    def __init__(
+        self,
+        current_user_id: str,
+        parent: Optional[QWidget] = None,
+        config_manager_instance=None,
+        backup_manager_instance=None,
+    ):  # MODIFIED: Added config_manager_instance and backup_manager_instance
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.info(
             f"UserManagementScreen __init__ called for user: {current_user_id}"
@@ -108,6 +123,9 @@ class UserManagementScreen(BaseView):
                 "UserManagementScreen initialized without a current_user_id!"
             )
 
+        self._config_manager = config_manager_instance  # Store the injected instance
+        self._backup_manager = backup_manager_instance  # Store the injected instance
+
         self.user_controller = UserController()
         self.location_controller = LocationController()
         self.veterinarian_controller = VeterinarianController()
@@ -115,7 +133,7 @@ class UserManagementScreen(BaseView):
         self.owner_controller = OwnerController()
         self.company_profile_controller = CompanyProfileController()
 
-        # Widget Attributes
+        # Widget Attributes (existing tabs)
         self.users_table: Optional[QTableWidget] = None
         self.add_user_btn: Optional[QPushButton] = None
         self.edit_user_btn: Optional[QPushButton] = None
@@ -159,6 +177,13 @@ class UserManagementScreen(BaseView):
         self.owner_status_filter_combo: Optional[QComboBox] = None
 
         self.edit_profile_btn: Optional[QPushButton] = None
+
+        # Tab instances
+        self.app_paths_tab: Optional[ApplicationPathsTab] = None
+        self.backup_restore_tab: Optional[BackupRestoreTab] = (
+            None  # NEW: BackupRestoreTab instance
+        )
+
         self.tab_widget: Optional[QTabWidget] = None
 
         self._active_filters: Dict[int, str] = {
@@ -168,6 +193,7 @@ class UserManagementScreen(BaseView):
             self.CATEGORY_PROCESS_TAB_INDEX: "active",
             self.CHARGE_CODE_TAB_INDEX: "active",
             self.OWNER_TAB_INDEX: "active",
+            # No filter needed for PROFILE, APP_PATHS, or BACKUP_RESTORE tabs initially
         }
 
         super().__init__(parent)
@@ -190,6 +216,7 @@ class UserManagementScreen(BaseView):
         self.tab_widget = QTabWidget()
         self.tab_widget.setStyleSheet(self._get_tab_widget_style())
 
+        # Existing tabs
         users_tab_widget = self._create_users_tab()
         locations_tab_widget = self._create_locations_tab()
         veterinarians_tab_widget = self._create_veterinarians_tab()
@@ -197,6 +224,15 @@ class UserManagementScreen(BaseView):
         charge_codes_tab_widget = self._create_charge_codes_tab()
         owners_tab_widget = self._create_owners_tab()
         company_profile_tab_widget = self._create_company_profile_tab()
+
+        # Custom tabs created in separate files
+        self.app_paths_tab = ApplicationPathsTab(
+            parent_view=self, config_manager_instance=self._config_manager
+        )  # Pass config_manager_instance
+        self.backup_restore_tab = BackupRestoreTab(
+            parent_view=self,
+            backup_manager_instance=self._backup_manager,  # Pass backup_manager_instance
+        )  # NEW: Instantiate BackupRestoreTab
 
         self.tab_widget.addTab(users_tab_widget, "👤 Manage Users")
         self.tab_widget.addTab(locations_tab_widget, "📍 Manage Locations")
@@ -207,13 +243,17 @@ class UserManagementScreen(BaseView):
         self.tab_widget.addTab(charge_codes_tab_widget, "💲 Manage Charge Codes")
         self.tab_widget.addTab(owners_tab_widget, "🤝 Manage Master Owners")
         self.tab_widget.addTab(company_profile_tab_widget, "🏢 Company Profile")
+        self.tab_widget.addTab(self.app_paths_tab, "📁 Application Paths")
+        self.tab_widget.addTab(
+            self.backup_restore_tab, "💾 Backup / Restore"
+        )  # NEW: Add Backup/Restore tab
 
         main_layout.addWidget(self.tab_widget)
 
         self._setup_connections()
         if self.tab_widget:
-            self.tab_widget.setCurrentIndex(0)
-            self._refresh_current_tab_data()
+            self.tab_widget.setCurrentIndex(0)  # Default to first tab
+            self._refresh_current_tab_data()  # Load data for the first tab
 
         self.logger.info("UserManagementScreen UI setup complete.")
 
@@ -223,7 +263,7 @@ class UserManagementScreen(BaseView):
                 border: 1px solid {AppConfig.DARK_BORDER};
                 background-color: {AppConfig.DARK_WIDGET_BACKGROUND};
                 border-radius: 6px;
-                margin-top: -1px; 
+                margin-top: -1px;
             }}
             QTabBar::tab {{
                 padding: 10px 20px;
@@ -231,18 +271,17 @@ class UserManagementScreen(BaseView):
                 background-color: {AppConfig.DARK_BUTTON_BG};
                 color: {AppConfig.DARK_TEXT_SECONDARY};
                 border: 1px solid {AppConfig.DARK_BORDER};
-                border-bottom: none; 
+                border-bottom: none;
                 border-top-left-radius: 5px;
                 border-top-right-radius: 5px;
-                min-width: 120px; 
-                font-size: 13px;
-                font-weight: 500;
+                min-width: 120px;
+                font-size: 13px; font-weight: 500;
             }}
             QTabBar::tab:selected {{
                 background-color: {AppConfig.DARK_WIDGET_BACKGROUND};
                 color: {AppConfig.DARK_TEXT_PRIMARY};
                 border-color: {AppConfig.DARK_BORDER};
-                border-bottom-color: {AppConfig.DARK_WIDGET_BACKGROUND}; 
+                border-bottom-color: {AppConfig.DARK_WIDGET_BACKGROUND};
             }}
             QTabBar::tab:!selected:hover {{
                 background-color: {AppConfig.DARK_BUTTON_HOVER};
@@ -250,9 +289,9 @@ class UserManagementScreen(BaseView):
             }}
             QTabWidget::tab-bar {{
                 alignment: left;
-                border: none; 
-                background-color: transparent; 
-                margin-bottom: 0px; 
+                border: none;
+                background-color: transparent;
+                margin-bottom: 0px;
             }}
         """
 
@@ -462,6 +501,16 @@ class UserManagementScreen(BaseView):
 
         if self.edit_profile_btn:
             self.edit_profile_btn.clicked.connect(self._launch_company_profile_dialog)
+
+        if self.app_paths_tab:
+            self.app_paths_tab.paths_saved.connect(self._on_app_paths_saved)
+
+        # NEW: Connect the operation_completed signal from the BackupRestoreTab
+        if self.backup_restore_tab:
+            self.backup_restore_tab.operation_completed.connect(
+                self._on_backup_restore_completed
+            )
+
         self.logger.debug("Connections setup complete.")
 
     def _on_tab_changed(self, index: int):
@@ -490,7 +539,17 @@ class UserManagementScreen(BaseView):
         elif current_index == self.OWNER_TAB_INDEX:
             self.load_owners_data()
         elif current_index == self.PROFILE_TAB_INDEX:
-            pass
+            pass  # No direct data load needed for this tab (dialog-driven)
+        elif current_index == self.APP_PATHS_TAB_INDEX:
+            if self.app_paths_tab:
+                self.app_paths_tab._load_current_paths()
+            else:
+                self.logger.warning("Application Paths tab is not initialized.")
+        elif current_index == self.BACKUP_RESTORE_TAB_INDEX:  # NEW: Handle the new tab
+            if self.backup_restore_tab:
+                self.backup_restore_tab.update_button_states()  # Ensure buttons are in correct state
+            else:
+                self.logger.warning("Backup/Restore tab is not initialized.")
         else:
             self.logger.warning(
                 f"No data loading action defined for tab index {current_index}"
@@ -518,7 +577,7 @@ class UserManagementScreen(BaseView):
                 background-color: {AppConfig.DARK_HEADER_FOOTER};
                 color: {AppConfig.DARK_TEXT_SECONDARY};
                 padding: 5px;
-                border: none; 
+                border: none;
                 border-bottom: 1px solid {AppConfig.DARK_BORDER};
                 font-weight: 500;
             }}
@@ -1854,3 +1913,19 @@ class UserManagementScreen(BaseView):
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.entity_updated.emit("company_profile")
             self.show_info("Success", "Company profile has been updated.")
+
+    def _on_app_paths_saved(self):
+        self.logger.info(
+            "Application paths saved successfully. Emitting entity_updated signal."
+        )
+        self.entity_updated.emit("app_paths")
+
+    # NEW: Slot to handle operation_completed signal from BackupRestoreTab
+    def _on_backup_restore_completed(self, operation_status: str):
+        self.logger.info(
+            f"Backup/Restore operation completed with status: {operation_status}"
+        )
+        # This signal could trigger a general refresh or a specific status bar update
+        self.entity_updated.emit(
+            operation_status
+        )  # e.g., "backup_success", "restore_success"

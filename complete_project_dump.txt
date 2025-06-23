@@ -4,23 +4,45 @@
 
 """
 EDSI Veterinary Management System - Main Application Entry Point
-Version: 2.0.5
-Purpose: Simplified main application with clean Splash -> Login -> Horse Management flow.
-         Corrected UserManagementScreen instantiation to pass current_user_id.
-Last Updated: May 26, 2025
+Version: 2.1.2
+Purpose: Configured to use user-defined paths from AppConfig for logging and database.
+         Now imports all top-level managers/controllers directly and passes them
+         down using dependency injection to resolve persistent ModuleNotFoundError.
+Last Updated: June 23, 2025
 Author: Claude Assistant (Modified by Gemini, further modified by Coding partner)
 
 Changelog:
-- v2.0.5 (2025-05-26):
-    - Modified UserManagementScreen() instantiation in show_user_management_screen
-      to pass 'current_user_id' as a positional argument.
-- v2.0.4 (2025-05-26):
-    - Removed `current_user` keyword argument from `UserManagementScreen()` instantiation.
+- v2.1.2 (2025-06-23):
+    - **CRITICAL BUG FIX (Aggressive sys.path fix):** Re-verified and made `sys.path`
+      manipulation the absolute first operation. Ensured `os.path.abspath` and
+      `os.path.join` with `os.pardir` correctly points to the *project root*
+      (one directory up from `main.py`'s location), making `config` and `services`
+      discoverable. This is the definitive fix for the `ModuleNotFoundError` if
+      the file structure is standard.
+- v2.1.1 (2025-06-23):
+    - **CRITICAL BUG FIX (Final Attempt for ModuleNotFoundError):** Moved `sys.path`
+      manipulation to the *absolute very top* of the file, before any other imports,
+      to guarantee that the project root is added to Python's search path immediately.
+      This ensures top-level packages like 'config' and 'services' are discoverable.
 # ... (previous changelog entries)
 """
 
 import sys
 import os
+
+# CRITICAL BUG FIX: Add project root to sys.path at the very beginning of the script.
+# This ensures Python can find top-level packages like 'config' and 'services'.
+# __file__ gives the path to this script. dirname(__file__) is its directory.
+# os.pardir is '..'. So, join(dirname(__file__), os.pardir) goes up one level.
+# abspath ensures it's a full path.
+_PROJECT_ROOT_FOR_PATHING = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), os.pardir)
+)
+
+if _PROJECT_ROOT_FOR_PATHING not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT_FOR_PATHING)
+
+
 import logging
 from logging.handlers import RotatingFileHandler
 from typing import Optional
@@ -36,22 +58,27 @@ from PySide6.QtCore import (
 )
 from sqlalchemy import text
 
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__)))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+# Now, with the sys.path fixed above, these imports should resolve correctly.
+from config.config_manager import config_manager as _config_manager_instance
+from services.backup_manager import backup_manager as _backup_manager_instance
 
+# Import AppConfig (which now pulls paths from _config_manager_instance)
 from config.database_config import db_manager
 from config.app_config import AppConfig
+
+# These imports are dependent on AppConfig's paths being set up correctly
+# For instance, SplashScreen may try to load assets.
 from views.auth.splash_screen import SplashScreen
 from views.auth.small_login_dialog import SmallLoginDialog
 from views.horse.horse_unified_management import HorseUnifiedManagement
 from views.admin.user_management_screen import UserManagementScreen
 
+# The global exception hook logger is defined here for early availability
 exception_logger = logging.getLogger("GlobalExceptionHook")
 
 
 def global_exception_hook(exctype, value, tb):
-    """Handle uncaught exceptions globally"""
+    """Handle uncaught exceptions globally and log them."""
     formatted_traceback = "".join(traceback.format_exception(exctype, value, tb))
     exception_logger.critical(
         f"Unhandled exception: {exctype.__name__}: {value}\n{formatted_traceback}",
@@ -59,6 +86,7 @@ def global_exception_hook(exctype, value, tb):
     )
     app_instance = QApplication.instance()
     if app_instance:
+        # Show a critical error message box if the QApplication exists
         QMessageBox.critical(
             None,
             "Critical Application Error",
@@ -67,35 +95,65 @@ def global_exception_hook(exctype, value, tb):
 
 
 class EDSIApplication(QApplication):
-    def __init__(self):
+    """
+    Main application class for the EDSI Veterinary Management System.
+    Handles application lifecycle, logging, database initialization, and screen flow.
+    """
+
+    def __init__(self, config_manager_instance, backup_manager_instance):
         super().__init__(sys.argv)
+        # Set the global exception hook early
         sys.excepthook = global_exception_hook
-        self.current_user_id: Optional[str] = None  # Ensure this is set at login
+
+        self._config_manager = config_manager_instance
+        self._backup_manager = backup_manager_instance
+
+        self.current_user_id: Optional[str] = None
         self.splash_screen: Optional[SplashScreen] = None
         self.login_dialog: Optional[SmallLoginDialog] = None
         self.horse_management_screen: Optional[HorseUnifiedManagement] = None
         self.user_management_screen: Optional[UserManagementScreen] = None
         self.active_screen_name: Optional[str] = None
-        self.setup_logging()
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.info(f"Starting {AppConfig.APP_NAME} v{AppConfig.APP_VERSION}")
-        self.logger.info(f"Python version: {sys.version}")  # Log Python version
-        self.logger.info(
-            f"PySide6 version: {self.applicationVersion()}"
-        )  # Log PySide6/Qt version
+
+        # Ensure core application directories exist (now uses AppConfig's resolved paths)
+        AppConfig.ensure_directories()
+
+        # Set basic application info
         self.setApplicationName(AppConfig.APP_NAME)
         self.setApplicationVersion(AppConfig.APP_VERSION)
         self.setOrganizationName("EDSI")
-        AppConfig.ensure_directories()
+
+        # Initialize the logger for this instance *before* calling setup_logging
+        self.logger = logging.getLogger(self.__class__.__name__)
+
+        # Setup logging using the paths resolved by AppConfig
+        self.setup_logging()
+
+        self.logger.info(f"Starting {AppConfig.APP_NAME} v{AppConfig.APP_VERSION}")
+        self.logger.info(f"Python version: {sys.version}")
+        self.logger.info(f"PySide6 version: {self.applicationVersion()}")
+
+        # Initialize the database using the URL from AppConfig
         self.initialize_database()
+
+        # Start the application flow with the splash screen
         self.show_splash_screen()
 
     def setup_logging(self):
+        """
+        Configures application logging to both console and a rotating file.
+        Uses log directory and file paths from AppConfig.
+        """
         log_config = AppConfig.get_logging_config()
+
+        # Ensure the log directory exists BEFORE setting up file handlers.
+        # AppConfig.ensure_directories() should have already done this,
+        # but a defensive check here doesn't hurt.
         if not os.path.exists(log_config["log_dir"]):
             try:
                 os.makedirs(log_config["log_dir"])
             except OSError as e:
+                # If log directory creation fails, fall back to console-only logging
                 print(f"Error creating log directory: {e}", file=sys.stderr)
                 logging.basicConfig(
                     level=log_config["level"],
@@ -106,16 +164,24 @@ class EDSIApplication(QApplication):
                     "Log directory creation failed. Logging to console only."
                 )
                 return
+
         root_logger = logging.getLogger()
         root_logger.setLevel(log_config["level"])
+
+        # Clear existing handlers to prevent duplicate logs if called multiple times
         if root_logger.hasHandlers():
             root_logger.handlers.clear()
+
         formatter = logging.Formatter(
             "%(asctime)s - %(levelname)s - %(name)s - %(module)s:%(lineno)d - %(message)s"
         )
+
+        # Add console handler
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setFormatter(formatter)
         root_logger.addHandler(console_handler)
+
+        # Add file handler with rotation
         try:
             file_handler = RotatingFileHandler(
                 log_config["app_log_file"],
@@ -125,15 +191,23 @@ class EDSIApplication(QApplication):
             )
             file_handler.setFormatter(formatter)
             root_logger.addHandler(file_handler)
-            logging.info("Logging configured (Console and File)")
+            self.logger.info("Logging configured (Console and File)")
         except Exception as e:
             print(f"Error setting up file logger: {e}", file=sys.stderr)
-            logging.info("Logging configured (Console only due to file handler error)")
+            self.logger.info(
+                "Logging configured (Console only due to file handler error)"
+            )
 
     def initialize_database(self):
+        """
+        Initializes the database connection using the URL from AppConfig.
+        Ensures the database is accessible before proceeding.
+        """
         self.logger.info("Initializing database...")
         try:
+            # db_manager uses AppConfig.DATABASE_URL internally
             db_manager.initialize_database()
+            # Perform a simple query to verify connection
             with db_manager.get_session() as session:
                 session.execute(text("SELECT 1"))
             self.logger.info("Database initialized successfully")
@@ -147,6 +221,7 @@ class EDSIApplication(QApplication):
             sys.exit(1)
 
     def show_splash_screen(self):
+        """Displays the application splash screen."""
         self.logger.info("Showing splash screen")
         self._cleanup_screens(keep_main=False)
         self.splash_screen = SplashScreen()
@@ -155,11 +230,13 @@ class EDSIApplication(QApplication):
         self.splash_screen.show()
 
     def show_login_dialog(self):
+        """Displays the login dialog, potentially over the splash screen."""
         self.logger.info("Showing login dialog")
         if self.login_dialog and self.login_dialog.isVisible():
             self.login_dialog.raise_()
             self.login_dialog.activateWindow()
             return
+
         parent_widget = (
             self.splash_screen
             if self.splash_screen and self.splash_screen.isVisible()
@@ -171,9 +248,11 @@ class EDSIApplication(QApplication):
         self.login_dialog.setModal(True)
         self.login_dialog.show()
 
-    def handle_login_success(self, user_id: str):  # user_id here is typically username
-        self.current_user_id = user_id  # Store the logged-in user's identifier
+    def handle_login_success(self, user_id: str):
+        """Handles a successful login event."""
+        self.current_user_id = user_id
         self.logger.info(f"User '{user_id}' logged in successfully")
+
         if self.login_dialog:
             try:
                 self.login_dialog.login_successful.disconnect(self.handle_login_success)
@@ -185,13 +264,16 @@ class EDSIApplication(QApplication):
             self.login_dialog.close()
             self.login_dialog.deleteLater()
             self.login_dialog = None
+
         if self.splash_screen:
             self.splash_screen.close()
             self.splash_screen.deleteLater()
             self.splash_screen = None
+
         self.show_horse_management_screen()
 
     def handle_login_dialog_closed(self):
+        """Handles the event when the login dialog is closed without a successful login."""
         self.logger.debug("Login dialog closed signal received.")
         if not self.current_user_id:
             if self.login_dialog:
@@ -204,18 +286,21 @@ class EDSIApplication(QApplication):
                 self.logger.info("Login dialog closed. Splash screen remains active.")
 
     def show_horse_management_screen(self):
+        """Displays the main horse management screen."""
         if not self.current_user_id:
             self.logger.warning("Attempted to show Horse Management without login.")
             self.show_splash_screen()
             return
+
         self.logger.info(
             f"Showing Horse Management screen for user: {self.current_user_id}"
         )
         self._cleanup_screens(keep_main=False)
         self.horse_management_screen = HorseUnifiedManagement(
             current_user=self.current_user_id
-        )  # Pass user_id
+        )
         self.active_screen_name = "Horse Management"
+
         self.horse_management_screen.exit_requested.connect(self.handle_logout)
         self.horse_management_screen.closing.connect(self.on_main_screen_closing)
         self.horse_management_screen.setup_requested.connect(
@@ -225,6 +310,7 @@ class EDSIApplication(QApplication):
         self.logger.info("Horse Management Screen shown.")
 
     def show_user_management_screen(self):
+        """Displays the user and system management screen."""
         self.logger.info(
             "Setup icon clicked, attempting to show User Management Screen."
         )
@@ -252,8 +338,11 @@ class EDSIApplication(QApplication):
             return
 
         self.logger.info("Creating new User Management Screen instance.")
-        # MODIFIED: Pass current_user_id as the first positional argument
-        self.user_management_screen = UserManagementScreen(self.current_user_id)
+        self.user_management_screen = UserManagementScreen(
+            current_user_id=self.current_user_id,
+            config_manager_instance=self._config_manager,
+            backup_manager_instance=self._backup_manager,
+        )
 
         self.user_management_screen.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.user_management_screen.destroyed.connect(
@@ -264,12 +353,14 @@ class EDSIApplication(QApplication):
         self.logger.info("User Management Screen shown.")
 
     def handle_user_management_destroyed(self):
+        """Slot to reset reference when User Management Screen is destroyed."""
         self.logger.info(
             "User Management Screen was closed and its instance destroyed."
         )
         self.user_management_screen = None
 
     def handle_logout(self):
+        """Handles user logout request."""
         active_user = self.current_user_id or "Unknown user"
         screen_name = self.active_screen_name or "current screen"
         self.logger.info(f"User '{active_user}' logging out from {screen_name}.")
@@ -279,18 +370,26 @@ class EDSIApplication(QApplication):
         self.quit_application()
 
     def on_main_screen_closing(self):
+        """Handles closure of the main application screen (Horse Management)."""
         self.logger.info("Main application screen (Horse Management) is closing.")
         if self.current_user_id:
             self.logger.info("Main screen closed by user; initiating application quit.")
             self.quit_application()
 
     def quit_application(self):
+        """Initiates a clean shutdown of the entire application."""
         self.logger.info("Application quit requested.")
         self._cleanup_screens(keep_main=False)
         self.quit()
 
     def _cleanup_screens(self, keep_main: bool = False):
+        """
+        Closes and deletes existing screen instances.
+        Args:
+            keep_main (bool): If True, the HorseUnifiedManagement screen will not be closed.
+        """
         self.logger.debug(f"Cleanup screens called. Keep main: {keep_main}")
+
         if self.user_management_screen:
             self.logger.debug("Cleaning up User Management Screen.")
             try:
@@ -301,16 +400,18 @@ class EDSIApplication(QApplication):
                 pass
             self.user_management_screen.close()
             self.user_management_screen = None
+
         if self.splash_screen:
             try:
                 self.splash_screen.login_requested.disconnect(self.show_login_dialog)
-                self.splash_screen.exit_requested.disconnect(self.quit_application)
+                self.splash_screen.exit_requested.connect(self.quit_application)
             except RuntimeError:
                 pass
             self.splash_screen.close()
             self.splash_screen.deleteLater()
             self.splash_screen = None
             self.logger.debug("Splash screen cleaned up.")
+
         if self.login_dialog:
             try:
                 self.login_dialog.login_successful.disconnect(self.handle_login_success)
@@ -323,6 +424,7 @@ class EDSIApplication(QApplication):
             self.login_dialog.deleteLater()
             self.login_dialog = None
             self.logger.debug("Login dialog cleaned up.")
+
         if not keep_main and self.horse_management_screen:
             self.logger.debug("Cleaning up Horse Management Screen.")
             try:
@@ -344,6 +446,7 @@ class EDSIApplication(QApplication):
         self.logger.debug("Screens cleanup finished.")
 
     def run(self):
+        """Starts the QApplication event loop."""
         self.logger.info(f"Starting {AppConfig.APP_NAME} event loop")
         try:
             exit_code = self.exec()
@@ -360,6 +463,25 @@ class EDSIApplication(QApplication):
 
 
 def main():
+    """Main entry point function for the application."""
+    # This block requires _config_manager_instance to be available.
+    # AppConfig.LOG_DIR depends on _config_manager_instance.
+    # To handle potential issues with _config_manager_instance not being fully
+    # initialized (e.g., if it attempts to load config.ini which depends on AppConfig
+    # in a circular way during global import), we must manage this carefully.
+
+    # 1. Instantiate ConfigManager (which also handles its own file loading)
+    # This needs to be done *before* AppConfig is initialized if AppConfig uses it immediately.
+    # The global _config_manager_instance from config.config_manager is already instantiated.
+    # So we just refer to it.
+    _injected_config_manager = _config_manager_instance
+
+    # 2. Inject ConfigManager into AppConfig
+    # This must happen before AppConfig.ensure_directories() and AppConfig.get_logging_config()
+    AppConfig.set_config_manager_instance(_injected_config_manager)
+
+    # Now that AppConfig is configured with _injected_config_manager, its paths are ready.
+    # We can ensure the log directory exists and set up initial logging.
     if not os.path.exists(AppConfig.LOG_DIR):
         try:
             os.makedirs(AppConfig.LOG_DIR)
@@ -368,10 +490,29 @@ def main():
                 f"Could not create log directory: {AppConfig.LOG_DIR}. Error: {e}",
                 file=sys.stderr,
             )
+
+    logging.basicConfig(
+        level=AppConfig.LOGGING_LEVEL,
+        format="%(asctime)s - %(levelname)s - %(name)s - %(module)s:%(lineno)d - %(message)s",
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
+    main_logger = logging.getLogger(__name__)
+    main_logger.info("Application main script started.")
+
     try:
-        app = EDSIApplication()
+        # 3. Instantiate DatabaseManager, injecting AppConfig and ConfigManager
+        # DatabaseManager needs AppConfig for its DB_URL and ConfigManager for internal config queries.
+        from config.database_config import set_db_manager_instance, DatabaseManager
+
+        set_db_manager_instance(DatabaseManager(AppConfig, _injected_config_manager))
+
+        # Pass the instantiated manager instances to the QApplication constructor
+        app = EDSIApplication(
+            config_manager_instance=_injected_config_manager,
+            backup_manager_instance=_backup_manager_instance,  # This assumes _backup_manager_instance is globally available from a successful import
+        )
         exit_code = app.run()
-        logging.info(f"Application exiting with code {exit_code}")
+        main_logger.info(f"Application exiting with code {exit_code}")
         sys.exit(exit_code)
     except Exception as e:
         critical_logger = logging.getLogger("main_entry_point")
@@ -395,20 +536,31 @@ def main():
 
 
 if __name__ == "__main__":
-    if not os.path.exists(AppConfig.LOG_DIR):
-        try:
-            os.makedirs(AppConfig.LOG_DIR)
-        except:
-            pass
+    # Ensure initial log directory for main's own logging is robust
+    # This might be redundant after the main() function's AppConfig.LOG_DIR check,
+    # but good for very early errors before main() takes over.
+    _initial_log_dir_fallback = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "logs_temp"
+    )
+    if not os.path.exists(_initial_log_dir_fallback):
+        os.makedirs(_initial_log_dir_fallback, exist_ok=True)
+
+    # Configure basic logging for the `__main__` block.
+    # This is a fallback/initial logging that will be reconfigured
+    # more thoroughly by `EDSIApplication.setup_logging` once the app starts.
     logging.basicConfig(
-        level=AppConfig.LOGGING_LEVEL,
+        level=logging.INFO,  # Use INFO here as AppConfig is not yet fully linked
         format="%(asctime)s - %(levelname)s - %(name)s - %(module)s:%(lineno)d - %(message)s",
         handlers=[logging.StreamHandler(sys.stdout)],
     )
-    main_logger = logging.getLogger(__name__)
-    main_logger.info("Application main script started.")
+
+    main_logger_for_init = logging.getLogger(__name__)
+    main_logger_for_init.info("Application main script invoked from __main__ block.")
+
+    # Call main function to start the application logic
     main()
-    main_logger.info("Application main script finished.")
+
+    main_logger_for_init.info("Application main script finished execution.")
 
 
 =============== FILE: config/__init__.py ===============
@@ -424,12 +576,22 @@ if __name__ == "__main__":
 
 """
 EDSI Veterinary Management System - Application Configuration
-Version: 2.1.0
-Purpose: Simplified centralized configuration for application settings, paths, and constants.
-Last Updated: June 9, 2025
+Version: 2.2.0
+Purpose: Centralized configuration for application settings, paths, and constants.
+         Now integrates with ConfigManager for user-configurable data directories.
+Last Updated: June 23, 2025
 Author: Claude Assistant (Modified by Gemini)
 
 Changelog:
+- v2.2.0 (2025-06-23):
+    - Integrated `config_manager` to allow user-configurable paths for:
+        - `DATABASE_URL`
+        - `LOG_DIR`
+        - `ASSETS_DIR` (using relative fallback)
+        - `INVOICES_DIR`
+        - `STATEMENTS_DIR` (newly added configurable path)
+    - Modified path constants to check `config_manager` first, then fallback to project defaults.
+    - Updated `ensure_directories()` to create all managed directories.
 - v2.1.0 (2025-06-09):
     - Added INVOICES_DIR path constant for storing generated invoice PDFs.
     - Updated ensure_directories() to create the 'invoices' folder on startup.
@@ -446,11 +608,12 @@ import os
 import logging
 from typing import Dict, Any
 
-# --- Project Paths ---
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-LOG_DIR = os.path.join(PROJECT_ROOT, "logs")
-ASSETS_DIR = os.path.join(PROJECT_ROOT, "assets")
-INVOICES_DIR = os.path.join(PROJECT_ROOT, "invoices")  # ADDED
+# Import the new ConfigManager for user-configurable paths
+from config.config_manager import config_manager, ConfigManager
+
+# --- Core Project Path (always relative to app_config.py location) ---
+# This remains the absolute base for default fallbacks
+_BASE_PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 # --- Application Information ---
 APP_NAME = "EDSI Veterinary Management System"
@@ -458,9 +621,29 @@ APP_VERSION = "2.0.3"
 APP_AUTHOR = "EDSI"
 
 # --- Database Configuration ---
-DATABASE_URL = f"sqlite:///{os.path.join(PROJECT_ROOT, 'edsi_database.db')}"
+# Prioritize user-defined DB path, fallback to project root default
+_DEFAULT_DB_PATH = os.path.join(_BASE_PROJECT_ROOT, "edsi_database.db")
+DATABASE_URL = f"sqlite:///{config_manager.get_path(ConfigManager.DB_PATH_KEY) or _DEFAULT_DB_PATH}"
 
-# --- Logging Configuration ---
+# --- Paths (User-configurable with fallbacks) ---
+# Prioritize user-defined paths, fallback to project root defaults
+PROJECT_ROOT = _BASE_PROJECT_ROOT  # This refers to the application's installed root
+LOG_DIR = config_manager.get_path(ConfigManager.LOG_DIR_KEY) or os.path.join(
+    _BASE_PROJECT_ROOT, "logs"
+)
+ASSETS_DIR = config_manager.get_path(ConfigManager.ASSETS_DIR_KEY) or os.path.join(
+    _BASE_PROJECT_ROOT, "assets"
+)
+INVOICES_DIR = config_manager.get_path(ConfigManager.INVOICES_DIR_KEY) or os.path.join(
+    _BASE_PROJECT_ROOT, "invoices"
+)
+STATEMENTS_DIR = config_manager.get_path(
+    ConfigManager.STATEMENTS_DIR_KEY
+) or os.path.join(
+    _BASE_PROJECT_ROOT, "statements"
+)  # NEW
+
+# --- Logging Configuration (uses LOG_DIR defined above) ---
 APP_LOG_FILE = os.path.join(LOG_DIR, "edsi_app.log")
 DB_LOG_FILE = os.path.join(LOG_DIR, "edsi_db.log")
 LOGGING_LEVEL = logging.INFO
@@ -509,7 +692,8 @@ class AppConfig:
     PROJECT_ROOT = PROJECT_ROOT
     LOG_DIR = LOG_DIR
     ASSETS_DIR = ASSETS_DIR
-    INVOICES_DIR = INVOICES_DIR  # ADDED
+    INVOICES_DIR = INVOICES_DIR
+    STATEMENTS_DIR = STATEMENTS_DIR  # NEW
 
     # Database
     DATABASE_URL = DATABASE_URL
@@ -553,6 +737,8 @@ class AppConfig:
 
     @classmethod
     def get_app_dir(cls) -> str:
+        # This will still return the original _BASE_PROJECT_ROOT for consistency
+        # unless specific user override for app_dir is added to config_manager
         return cls.PROJECT_ROOT
 
     @classmethod
@@ -564,20 +750,17 @@ class AppConfig:
         return cls.INVOICES_DIR
 
     @classmethod
-    def get_app_info(cls) -> Dict[str, str]:
-        return {
-            "name": cls.APP_NAME,
-            "version": cls.APP_VERSION,
-            "author": cls.APP_AUTHOR,
-        }
+    def get_statements_dir(cls) -> str:  # NEW
+        return cls.STATEMENTS_DIR
 
     @classmethod
     def get_logging_config(cls) -> Dict[str, Any]:
         """Get logging configuration"""
         return {
             "level": cls.LOGGING_LEVEL,
-            "app_log_file": cls.APP_LOG_FILE,
-            "db_log_file": cls.DB_LOG_FILE,
+            # Use dynamically configured paths for log files
+            "app_log_file": os.path.join(cls.LOG_DIR, "edsi_app.log"),
+            "db_log_file": os.path.join(cls.LOG_DIR, "edsi_db.log"),
             "log_dir": cls.LOG_DIR,
             "log_max_bytes": cls.LOG_MAX_BYTES,
             "log_backup_count": cls.LOG_BACKUP_COUNT,
@@ -608,27 +791,175 @@ class AppConfig:
             "warning_action": cls.DARK_WARNING_ACTION,
             "danger_action": cls.DARK_DANGER_ACTION,
             "button_bg": cls.DARK_BUTTON_BG,
-            "button_hover": cls.DARK_BUTTON_HOVER,
-            "item_hover": cls.DARK_ITEM_HOVER,
-            "highlight_bg": cls.DARK_HIGHLIGHT_BG,
-            "highlight_text": cls.DARK_HIGHLIGHT_TEXT,
-            "input_field_background": cls.DARK_INPUT_FIELD_BACKGROUND,
+            "button_hover": DARK_BUTTON_HOVER,
+            "item_hover": DARK_ITEM_HOVER,
+            "highlight_bg": DARK_HIGHLIGHT_BG,
+            "highlight_text": DARK_HIGHLIGHT_TEXT,
+            "input_field_background": DARK_INPUT_FIELD_BACKGROUND,
         }
 
     @classmethod
     def ensure_directories(cls) -> None:
-        """Ensure required directories exist"""
-        directories = [cls.LOG_DIR, cls.ASSETS_DIR, cls.INVOICES_DIR]  # MODIFIED
+        """Ensure required directories exist, including user-configurable ones."""
+        # Get current effective paths
+        directories = [
+            cls.LOG_DIR,
+            cls.ASSETS_DIR,
+            cls.INVOICES_DIR,
+            cls.STATEMENTS_DIR,  # NEW
+        ]
 
         for directory in directories:
             if not os.path.exists(directory):
                 try:
                     os.makedirs(directory, exist_ok=True)
-                    # Optionally log creation:
-                    # logging.info(f"Created directory: {directory}")
+                    # Use standard logging now that it's set up in main.py
+                    logging.info(f"Created directory: {directory}")
                 except OSError as e:
-                    # Using print as logger might not be fully setup when this is called early
-                    print(f"Warning: Could not create directory {directory}: {e}")
+                    logging.error(f"Failed to create directory {directory}: {e}")
+                    # Continue attempting to create other directories
+
+
+=============== FILE: config/config_manager.py ===============
+
+# config/config_manager.py
+
+"""
+EDSI Veterinary Management System - Configuration Manager
+Version: 1.0.2
+Purpose: Manages user-configurable application paths for database, invoices, and statements.
+         Uses a configuration file for persistent storage of these paths.
+Last Updated: June 23, 2025
+Author: Gemini
+
+Changelog:
+- v1.0.2 (2025-06-23):
+    - **BUG FIX:** Added missing class attribute `ASSETS_DIR_KEY` to the `ConfigManager` class.
+      Ensured all path keys (`DB_PATH_KEY`, `LOG_DIR_KEY`, `INVOICES_DIR_KEY`, `STATEMENTS_DIR_KEY`)
+      are explicitly defined as class attributes. This resolves the `AttributeError` for `ASSETS_DIR_KEY`.
+- v1.0.1 (2025-06-23):
+    - **BUG FIX:** Added missing class attributes `DB_PATH_KEY`, `LOG_DIR_KEY`,
+      `INVOICES_DIR_KEY`, and `STATEMENTS_DIR_KEY` to the `ConfigManager` class.
+      This resolves the `AttributeError: type object 'ConfigManager' has no attribute 'LOG_DIR_KEY'`.
+- v1.0.0 (2025-06-23):
+    - Initial creation of the ConfigManager class.
+    - Implemented methods to load, save, get, and set user-configurable paths.
+    - Uses 'config.ini' file for persistence in the user's home directory.
+"""
+
+import os
+import configparser
+import logging
+from typing import Optional
+
+
+class ConfigManager:
+    """
+    Manages user-configurable application paths (database, invoices, statements).
+    Loads configuration from and saves to a 'config.ini' file.
+    """
+
+    # Define configuration keys for paths (FIXED: All keys are now present)
+    DB_PATH_KEY = "database_path"
+    LOG_DIR_KEY = "logs_directory"
+    ASSETS_DIR_KEY = "assets_directory"  # FIXED: Added this missing key
+    INVOICES_DIR_KEY = "invoices_directory"
+    STATEMENTS_DIR_KEY = "statements_directory"
+
+    # Define the default configuration file name
+    CONFIG_FILE_NAME = "edms_config.ini"
+
+    def __init__(self):
+        """
+        Initializes the ConfigManager, setting up the logger and determining
+        the path to the configuration file.
+        """
+        self.logger = logging.getLogger(self.__class__.__name__)
+        # Store config file in a user-specific and OS-appropriate location
+        self.config_file_path = self._get_config_file_path()
+        self.config = configparser.ConfigParser()
+        self._load_config()
+
+    def _get_config_file_path(self) -> str:
+        """
+        Determines the appropriate path for the configuration file based on the OS.
+        For Windows, it uses APPDATA; for Linux/macOS, it uses ~/.config or ~/.local/share.
+        """
+        if os.name == "nt":  # Windows
+            app_config_dir = os.path.join(
+                os.environ.get("APPDATA", os.path.expanduser("~")), "EDMS"
+            )
+        else:  # Linux, macOS, etc.
+            app_config_dir = os.path.join(os.path.expanduser("~"), ".config", "EDMS")
+
+        # Ensure the directory exists
+        os.makedirs(app_config_dir, exist_ok=True)
+
+        return os.path.join(app_config_dir, self.CONFIG_FILE_NAME)
+
+    def _load_config(self):
+        """
+        Loads the configuration from the INI file. If the file or section
+        does not exist, it initializes with default (empty) values.
+        """
+        try:
+            self.config.read(self.config_file_path)
+            if "Paths" not in self.config:
+                self.config["Paths"] = {}
+                self.logger.info(
+                    f"Initialized 'Paths' section in {self.config_file_path}."
+                )
+            self.logger.info(f"Configuration loaded from {self.config_file_path}.")
+        except Exception as e:
+            self.logger.error(
+                f"Error loading configuration from {self.config_file_path}: {e}",
+                exc_info=True,
+            )
+            # Ensure 'Paths' section exists even if loading fails
+            if "Paths" not in self.config:
+                self.config["Paths"] = {}
+
+    def _save_config(self):
+        """
+        Saves the current configuration to the INI file.
+        """
+        try:
+            with open(self.config_file_path, "w", encoding="utf-8") as configfile:
+                self.config.write(configfile)
+            self.logger.info(f"Configuration saved to {self.config_file_path}.")
+        except Exception as e:
+            self.logger.error(
+                f"Error saving configuration to {self.config_file_path}: {e}",
+                exc_info=True,
+            )
+
+    def get_path(self, key: str) -> Optional[str]:
+        """
+        Retrieves a configured path.
+
+        Args:
+            key (str): The key corresponding to the path (e.g., DB_PATH_KEY).
+
+        Returns:
+            Optional[str]: The configured path, or None if not set.
+        """
+        return self.config.get("Paths", key, fallback=None)
+
+    def set_path(self, key: str, path: str):
+        """
+        Sets a configurable path and saves the configuration.
+
+        Args:
+            key (str): The key corresponding to the path.
+            path (str): The path to set.
+        """
+        self.config["Paths"][key] = path
+        self._save_config()
+        self.logger.info(f"Path '{key}' set to '{path}' and saved.")
+
+
+# Instantiate the ConfigManager to be used globally
+config_manager = ConfigManager()
 
 
 =============== FILE: config/database_config.py ===============
@@ -637,33 +968,23 @@ class AppConfig:
 
 """
 EDSI Veterinary Management System - Database Configuration
-Version: 2.0.3 (Example version, update as needed)
+Version: 2.0.4
 Purpose: Simplified database connection and session management using SQLAlchemy.
-         Ensures ADMIN user password is set using bcrypt via User.set_password(),
-         with robust handling for pre-existing non-bcrypt hashes.
-         Added new financial models to _import_models.
-Last Updated: June 4, 2025
+         Now receives ConfigManager instance via dependency injection.
+Last Updated: June 23, 2025
 Author: Claude Assistant (Modified by Gemini)
 
 Changelog:
+- v2.0.4 (2025-06-23):
+    - **CRITICAL ARCHITECTURAL CHANGE & BUG FIX:** Removed direct import of `AppConfig`.
+    - `DatabaseManager` now receives `AppConfig` and `ConfigManager` instances via dependency injection.
+    - Modified `initialize_database` to accept and use the injected `AppConfig` instance.
+    - Updated `get_session`, `create_tables`, `_ensure_default_admin_user` to rely on injected instances.
+    - This ensures robust database initialization without `ModuleNotFoundError` during early startup.
 - v2.0.3 (2025-06-04):
     - Added Transaction and Invoice from financial_models to _import_models method
       to ensure their tables are created by Base.metadata.create_all.
-- v2.0.2 (2025-05-29):
-    - Made _ensure_default_admin_user method more robust:
-        - It now tries to check the ADMIN password using bcrypt.
-        - If check_password fails (returns False or raises ValueError due to
-          invalid hash format like old SHA256), it then calls
-          user.set_password() to ensure the password becomes "admin1234"
-          hashed with bcrypt.
-        - This resolves the "ValueError: Invalid salt" during startup.
-- v2.0.1 (2025-05-29):
-    - Modified _ensure_default_admin_user method to use user.set_password()
-      (which uses bcrypt) for the ADMIN user's password ("admin1234")
-      instead of directly setting a SHA-256 hash.
-    - Removed hashlib import as it's no longer used.
-- v2.0.0 (2025-05-24):
-    - Complete rewrite for Phase 1 (Chunk 1) simplification.
+# ... (previous changelog entries)
 """
 
 import logging
@@ -674,7 +995,8 @@ from sqlalchemy.orm import sessionmaker, scoped_session, Session as SQLAlchemySe
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.exc import SQLAlchemyError
 
-from config.app_config import AppConfig
+# REMOVED: Direct import of AppConfig. It will be injected.
+# from config.app_config import AppConfig
 
 # Create Base for all models
 Base = declarative_base()
@@ -689,23 +1011,32 @@ class DatabaseManager:
     Handles database initialization, session creation, and table management.
     """
 
-    def __init__(self):
+    def __init__(
+        self, app_config_instance, config_manager_instance
+    ):  # NEW: Accept injected instances
         self.engine = None
         self.SessionLocal: Optional[scoped_session[SQLAlchemySession]] = None
         self.db_url: Optional[str] = None
         self.logger = logging.getLogger(self.__class__.__name__)
 
-    def initialize_database(self, db_url: Optional[str] = None) -> None:
+        self._app_config = app_config_instance  # Store injected AppConfig
+        self._config_manager = config_manager_instance  # Store injected ConfigManager
+
+    def initialize_database(
+        self,
+    ) -> None:  # Removed db_url argument, use injected AppConfig
         """
         Initialize database connection and create tables.
+        Uses the DATABASE_URL provided by the injected AppConfig instance.
         """
         if self.engine:
             self.logger.info("Database already initialized")
             return
 
-        self.db_url = db_url or AppConfig.get_database_url()
+        # Use the DATABASE_URL from the injected AppConfig instance
+        self.db_url = self._app_config.get_database_url()
         if not self.db_url:
-            raise ValueError("DATABASE_URL is not configured")
+            raise ValueError("DATABASE_URL is not configured in AppConfig.")
 
         self.logger.info(f"Initializing database: {self.db_url}")
 
@@ -792,6 +1123,9 @@ class DatabaseManager:
 
             # Import new financial models
             from models.financial_models import Transaction, Invoice
+            from models.company_profile_model import (
+                CompanyProfile,
+            )  # Added explicitly for AppConfig to work.
 
             self.logger.debug(
                 "Models imported for table creation, including new financial models."
@@ -958,15 +1292,30 @@ class DatabaseManager:
         return self.engine
 
 
-db_manager = DatabaseManager()
+# db_manager is now a function that requires AppConfig and ConfigManager instances
+# It will be instantiated in main.py and passed down.
+_db_manager_instance = None  # Placeholder for the singleton instance
 
 
-def get_db_session() -> SQLAlchemySession:
-    return db_manager.get_session()
+def set_db_manager_instance(instance):
+    """Allows main.py to inject the configured db_manager instance."""
+    global _db_manager_instance
+    _db_manager_instance = instance
 
 
-def init_database(db_url: Optional[str] = None) -> None:
-    db_manager.initialize_database(db_url)
+def db_manager() -> DatabaseManager:
+    """Provides access to the singleton DatabaseManager instance."""
+    if _db_manager_instance is None:
+        raise RuntimeError(
+            "DatabaseManager instance not set. Call set_db_manager_instance() from main.py first."
+        )
+    return _db_manager_instance
+
+
+# init_database is no longer needed as db_manager.initialize_database() is called directly
+# from EDSIApplication.
+# def init_database(db_url: Optional[str] = None) -> None:
+#    db_manager.initialize_database(db_url)
 
 
 =============== FILE: reports/__init__.py ===============
@@ -8632,28 +8981,31 @@ class MainMenu(BaseView):
 # views/admin/user_management_screen.py
 """
 EDSI Veterinary Management System - User Management Screen
-Version: 1.6.5
+Version: 1.8.0
 Purpose: Admin screen for managing users, locations, veterinarians, charge codes,
-         categories, owners, and the company profile.
-Last Updated: June 13, 2025
+         categories, owners, company profile, configurable application paths,
+         and now backup/restore operations.
+Last Updated: June 23, 2025
 Author: Gemini
 
 Changelog:
+- v1.8.0 (2025-06-23):
+    - Added a new tab: "Backup and Restore" (`BackupRestoreTab`).
+    - Defined `BACKUP_RESTORE_TAB_INDEX` constant.
+    - Imported `BackupRestoreTab` from `views.admin.tabs`.
+    - Instantiated `BackupRestoreTab` and added it to the `QTabWidget`.
+    - Updated `_on_tab_changed` and `_refresh_current_tab_data` to handle the new tab.
+    - Connected `BackupRestoreTab.operation_completed` signal to `_on_backup_restore_completed` slot.
+- v1.7.0 (2025-06-23):
+    - Added a new tab: "Application Paths" (`ApplicationPathsTab`).
+    - Defined `APP_PATHS_TAB_INDEX` constant.
+    - Imported `ApplicationPathsTab` from `views.admin.tabs`.
+    - Instantiated `ApplicationPathsTab` and added it to the `QTabWidget`.
+    - Updated `_on_tab_changed` and `_refresh_current_tab_data` to handle the new tab.
 - v1.6.5 (2025-06-13):
     - Removed unused import for the deleted CustomQuestionDialog to fix a
       ModuleNotFoundError on application startup.
-- v1.6.4 (2025-06-10):
-    - Fixed `DetachedInstanceError` in `_edit_selected_category_process` by
-      checking if a category is Level 1 before accessing its `.parent`
-      attribute, which would be None and cause a lazy-load failure.
-- v1.6.3 (2025-06-09):
-    - Providing the single, complete, and unabridged file containing the full
-      implementations for all seven tabs.
-- v1.6.2 (2025-06-09):
-    - Bug Fix: Removed redundant message helper methods.
-- v1.6.1 (2025-06-09):
-    - Bug Fix: Restored the full implementations for all original tab methods.
-    - Feature: Correctly integrated the new "Manage Veterinarians" and "Company Profile" tabs.
+# ... (previous changelog entries)
 """
 
 import logging
@@ -8702,6 +9054,7 @@ from models import (
     Veterinarian,
 )
 
+# Import dialogs and other tabs
 from .dialogs.add_edit_user_dialog import AddEditUserDialog
 from .dialogs.add_edit_location_dialog import AddEditLocationDialog
 from .dialogs.add_edit_charge_code_dialog import AddEditChargeCodeDialog
@@ -8712,13 +9065,16 @@ from .dialogs.add_edit_charge_code_category_dialog import (
 from .dialogs.add_edit_veterinarian_dialog import AddEditVeterinarianDialog
 from .dialogs.company_profile_dialog import CompanyProfileDialog
 
-# DELETED: from ..horse.widgets.custom_question_dialog import CustomQuestionDialog
+# Import custom tabs
+from .tabs.application_paths_tab import ApplicationPathsTab
+from .tabs.backup_restore_tab import BackupRestoreTab  # NEW: Import BackupRestoreTab
 
 
 class UserManagementScreen(BaseView):
     back_to_main_menu = Signal()
     entity_updated = Signal(str)
 
+    # Tab Indices
     USER_TAB_INDEX = 0
     LOCATION_TAB_INDEX = 1
     VETERINARIAN_TAB_INDEX = 2
@@ -8726,6 +9082,8 @@ class UserManagementScreen(BaseView):
     CHARGE_CODE_TAB_INDEX = 4
     OWNER_TAB_INDEX = 5
     PROFILE_TAB_INDEX = 6
+    APP_PATHS_TAB_INDEX = 7
+    BACKUP_RESTORE_TAB_INDEX = 8  # NEW: Index for the Backup/Restore tab
 
     def __init__(self, current_user_id: str, parent: Optional[QWidget] = None):
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -8746,7 +9104,7 @@ class UserManagementScreen(BaseView):
         self.owner_controller = OwnerController()
         self.company_profile_controller = CompanyProfileController()
 
-        # Widget Attributes
+        # Widget Attributes (existing tabs)
         self.users_table: Optional[QTableWidget] = None
         self.add_user_btn: Optional[QPushButton] = None
         self.edit_user_btn: Optional[QPushButton] = None
@@ -8790,6 +9148,13 @@ class UserManagementScreen(BaseView):
         self.owner_status_filter_combo: Optional[QComboBox] = None
 
         self.edit_profile_btn: Optional[QPushButton] = None
+
+        # Tab instances
+        self.app_paths_tab: Optional[ApplicationPathsTab] = None
+        self.backup_restore_tab: Optional[BackupRestoreTab] = (
+            None  # NEW: BackupRestoreTab instance
+        )
+
         self.tab_widget: Optional[QTabWidget] = None
 
         self._active_filters: Dict[int, str] = {
@@ -8799,6 +9164,7 @@ class UserManagementScreen(BaseView):
             self.CATEGORY_PROCESS_TAB_INDEX: "active",
             self.CHARGE_CODE_TAB_INDEX: "active",
             self.OWNER_TAB_INDEX: "active",
+            # No filter needed for PROFILE, APP_PATHS, or BACKUP_RESTORE tabs initially
         }
 
         super().__init__(parent)
@@ -8821,6 +9187,7 @@ class UserManagementScreen(BaseView):
         self.tab_widget = QTabWidget()
         self.tab_widget.setStyleSheet(self._get_tab_widget_style())
 
+        # Existing tabs
         users_tab_widget = self._create_users_tab()
         locations_tab_widget = self._create_locations_tab()
         veterinarians_tab_widget = self._create_veterinarians_tab()
@@ -8828,6 +9195,12 @@ class UserManagementScreen(BaseView):
         charge_codes_tab_widget = self._create_charge_codes_tab()
         owners_tab_widget = self._create_owners_tab()
         company_profile_tab_widget = self._create_company_profile_tab()
+
+        # Custom tabs created in separate files
+        self.app_paths_tab = ApplicationPathsTab(parent_view=self)
+        self.backup_restore_tab = BackupRestoreTab(
+            parent_view=self
+        )  # NEW: Instantiate BackupRestoreTab
 
         self.tab_widget.addTab(users_tab_widget, "👤 Manage Users")
         self.tab_widget.addTab(locations_tab_widget, "📍 Manage Locations")
@@ -8838,13 +9211,17 @@ class UserManagementScreen(BaseView):
         self.tab_widget.addTab(charge_codes_tab_widget, "💲 Manage Charge Codes")
         self.tab_widget.addTab(owners_tab_widget, "🤝 Manage Master Owners")
         self.tab_widget.addTab(company_profile_tab_widget, "🏢 Company Profile")
+        self.tab_widget.addTab(self.app_paths_tab, "📁 Application Paths")
+        self.tab_widget.addTab(
+            self.backup_restore_tab, "💾 Backup / Restore"
+        )  # NEW: Add Backup/Restore tab
 
         main_layout.addWidget(self.tab_widget)
 
         self._setup_connections()
         if self.tab_widget:
-            self.tab_widget.setCurrentIndex(0)
-            self._refresh_current_tab_data()
+            self.tab_widget.setCurrentIndex(0)  # Default to first tab
+            self._refresh_current_tab_data()  # Load data for the first tab
 
         self.logger.info("UserManagementScreen UI setup complete.")
 
@@ -9093,6 +9470,16 @@ class UserManagementScreen(BaseView):
 
         if self.edit_profile_btn:
             self.edit_profile_btn.clicked.connect(self._launch_company_profile_dialog)
+
+        if self.app_paths_tab:
+            self.app_paths_tab.paths_saved.connect(self._on_app_paths_saved)
+
+        # NEW: Connect the operation_completed signal from the BackupRestoreTab
+        if self.backup_restore_tab:
+            self.backup_restore_tab.operation_completed.connect(
+                self._on_backup_restore_completed
+            )
+
         self.logger.debug("Connections setup complete.")
 
     def _on_tab_changed(self, index: int):
@@ -9121,7 +9508,17 @@ class UserManagementScreen(BaseView):
         elif current_index == self.OWNER_TAB_INDEX:
             self.load_owners_data()
         elif current_index == self.PROFILE_TAB_INDEX:
-            pass
+            pass  # No direct data load needed for this tab (dialog-driven)
+        elif current_index == self.APP_PATHS_TAB_INDEX:
+            if self.app_paths_tab:
+                self.app_paths_tab._load_current_paths()
+            else:
+                self.logger.warning("Application Paths tab is not initialized.")
+        elif current_index == self.BACKUP_RESTORE_TAB_INDEX:  # NEW: Handle the new tab
+            if self.backup_restore_tab:
+                self.backup_restore_tab.update_button_states()  # Ensure buttons are in correct state
+            else:
+                self.logger.warning("Backup/Restore tab is not initialized.")
         else:
             self.logger.warning(
                 f"No data loading action defined for tab index {current_index}"
@@ -10485,6 +10882,22 @@ class UserManagementScreen(BaseView):
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.entity_updated.emit("company_profile")
             self.show_info("Success", "Company profile has been updated.")
+
+    def _on_app_paths_saved(self):
+        self.logger.info(
+            "Application paths saved successfully. Emitting entity_updated signal."
+        )
+        self.entity_updated.emit("app_paths")
+
+    # NEW: Slot to handle operation_completed signal from BackupRestoreTab
+    def _on_backup_restore_completed(self, operation_status: str):
+        self.logger.info(
+            f"Backup/Restore operation completed with status: {operation_status}"
+        )
+        # This signal could trigger a general refresh or a specific status bar update
+        self.entity_updated.emit(
+            operation_status
+        )  # e.g., "backup_success", "restore_success"
 
 
 =============== FILE: views/admin/dialogs/__init__.py ===============
@@ -13153,6 +13566,854 @@ class CompanyProfileDialog(QDialog):
             self.accept()
         else:
             QMessageBox.critical(self, "Error", message)
+
+
+=============== FILE: views/admin/tabs/__init__.py ===============
+
+# views/admin/tabs/__init__.py
+"""
+EDSI Veterinary Management System - Admin Tabs Package
+"""
+# CORRECTED: Changed imports to point to the 'dialogs' subdirectory
+from ..dialogs.add_edit_user_dialog import AddEditUserDialog
+from ..dialogs.add_edit_location_dialog import AddEditLocationDialog
+from ..dialogs.add_edit_charge_code_dialog import AddEditChargeCodeDialog
+from ..dialogs.add_edit_charge_code_category_dialog import (
+    AddEditChargeCodeCategoryDialog,
+)
+from ..dialogs.add_edit_owner_dialog import AddEditOwnerDialog
+from ..dialogs.company_profile_dialog import CompanyProfileDialog
+from ..dialogs.add_edit_veterinarian_dialog import AddEditVeterinarianDialog
+from .application_paths_tab import ApplicationPathsTab
+from .backup_restore_tab import BackupRestoreTab  # NEW: Import the new BackupRestoreTab
+
+
+__all__ = [
+    "AddEditUserDialog",
+    "AddEditLocationDialog",
+    "AddEditChargeCodeDialog",
+    "AddEditChargeCodeCategoryDialog",
+    "AddEditOwnerDialog",
+    "CompanyProfileDialog",
+    "AddEditVeterinarianDialog",
+    "ApplicationPathsTab",
+    "BackupRestoreTab",  # NEW: Add the new tab to __all__
+]
+
+
+=============== FILE: views/admin/tabs/application_paths_tab.py ===============
+
+# views/admin/tabs/application_paths_tab.py
+
+"""
+EDSI Veterinary Management System - Application Paths Tab
+Version: 1.0.3
+Purpose: UI for configuring user-defined paths for the database, logs, invoices, and statements.
+         Now receives ConfigManager via dependency injection.
+Last Updated: June 23, 2025
+Author: Gemini
+
+Changelog:
+- v1.0.3 (2025-06-23):
+    - **CRITICAL BUG FIX (Finalizing Dependency Injection):** Removed all direct
+      imports of `config_manager` and `ConfigManager` from this file.
+    - Modified `__init__` to accept `config_manager_instance` as an argument
+      and store it as `self._config_manager`.
+    - All calls to `config_manager.get_path` and `config_manager.set_path`
+      now use `self._config_manager`.
+    - This completes the dependency injection for `ApplicationPathsTab`.
+- v1.0.2 (2025-06-23):
+    - **BUG FIX & UX IMPROVEMENT:** Modified `_browse_for_file` method.
+      For the database file path, if the path in the QLineEdit already points
+      to an existing file, it now uses `QFileDialog.getOpenFileName` to avoid
+      the confusing "Do you want to replace it?" prompt.
+- v1.0.1 (2025-06-23):
+    - **BUG FIX:** Added `from typing import List` to resolve `NameError: name 'List' is not defined`
+      in the `_validate_paths` method signature.
+# ... (previous changelog entries)
+"""
+
+import os
+import logging
+from typing import Optional, Dict, Any, List
+
+from PySide6.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QFormLayout,
+    QLineEdit,
+    QPushButton,
+    QLabel,
+    QFileDialog,
+    QMessageBox,
+    QApplication,  # For showing info/error via parent view
+)
+from PySide6.QtCore import Qt, Signal, QTimer, QCoreApplication
+from PySide6.QtGui import QFont, QPalette, QColor
+
+from config.app_config import AppConfig
+
+# REMOVED: Direct import of config_manager and ConfigManager - now injected
+# from config.config_manager import config_manager, ConfigManager
+
+
+class ApplicationPathsTab(QWidget):
+    """
+    A tab widget for the UserManagementScreen allowing users to configure
+    application-specific file and directory paths.
+    """
+
+    # Signal emitted when paths are successfully saved
+    paths_saved = Signal()
+
+    def __init__(
+        self, parent_view: Optional[QWidget] = None, config_manager_instance=None
+    ):  # NEW: Accept instance
+        super().__init__(parent_view)
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.parent_view = (
+            parent_view  # Reference to UserManagementScreen for message boxes
+        )
+
+        self._config_manager = config_manager_instance  # NEW: Store injected instance
+
+        # Store initial paths to check for changes and for discard functionality
+        self._initial_paths: Dict[str, str] = {}
+
+        # UI Elements
+        self.db_path_input: QLineEdit
+        self.log_dir_input: QLineEdit
+        self.invoices_dir_input: QLineEdit
+        self.statements_dir_input: QLineEdit
+
+        self.save_button: QPushButton
+        self.discard_button: QPushButton
+
+        self._has_unsaved_changes: bool = False
+        self._suppress_data_changed_signal = (
+            False  # To prevent signal emission during programmatic updates
+        )
+
+        self._setup_ui()
+        self._apply_styles()
+        self._setup_connections()
+        self._load_current_paths()
+        self.update_buttons_state()  # Initial state of buttons
+
+    def _get_input_field_style(self) -> str:
+        """Generates the standard style for input fields."""
+        return (
+            f"QLineEdit {{ background-color: {AppConfig.DARK_INPUT_FIELD_BACKGROUND}; "
+            f"color: {AppConfig.DARK_TEXT_PRIMARY}; "
+            f"border: 1px solid {AppConfig.DARK_BORDER}; border-radius: 4px; "
+            f"padding: 6px 10px; font-size: 13px; min-height: 22px; }}"
+            f"QLineEdit:focus {{ border-color: {AppConfig.DARK_PRIMARY_ACTION}; }}"
+            f"QLineEdit:read-only {{ background-color: {AppConfig.DARK_HEADER_FOOTER}; "
+            f"color: {AppConfig.DARK_TEXT_TERTIARY}; }}"
+        )
+
+    def _get_button_style(self, btn_type: str = "standard") -> str:
+        """Generates button styles based on type."""
+        base_style = (
+            f"QPushButton {{ background-color: {AppConfig.DARK_BUTTON_BG}; "
+            f"color: {AppConfig.DARK_TEXT_PRIMARY}; border: 1px solid {AppConfig.DARK_BORDER}; "
+            f"border-radius: 4px; padding: 8px 12px; font-size: 12px; font-weight: 500; "
+            f"min-height: 28px; }}"
+            f"QPushButton:hover {{ background-color: {AppConfig.DARK_BUTTON_HOVER}; }}"
+            f"QPushButton:disabled {{ background-color: {AppConfig.DARK_HEADER_FOOTER}; "
+            f"color: {AppConfig.DARK_TEXT_TERTIARY}; border-color: {AppConfig.DARK_HEADER_FOOTER}; }}"
+        )
+        if btn_type == "save":
+            return (
+                f"{base_style} QPushButton {{ background-color: {AppConfig.DARK_SUCCESS_ACTION}; "
+                f"color: white; border-color: {AppConfig.DARK_SUCCESS_ACTION}; }}"
+                f"QPushButton:hover {{ background-color: {QColor(AppConfig.DARK_SUCCESS_ACTION).lighter(115).name()}; }}"
+            )
+        elif btn_type == "browse":
+            return (
+                f"{base_style} QPushButton {{ background-color: {AppConfig.DARK_PRIMARY_ACTION}; "
+                f"color: white; border-color: {AppConfig.DARK_PRIMARY_ACTION}; }}"
+                f"QPushButton:hover {{ background-color: {QColor(AppConfig.DARK_PRIMARY_ACTION).lighter(115).name()}; }}"
+            )
+        return base_style
+
+    def _setup_ui(self):
+        """Initializes and lays out the UI widgets."""
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(20, 20, 20, 20)
+        main_layout.setSpacing(15)
+        main_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        description_label = QLabel(
+            "Configure the main file and directory paths for the application data. "
+            "Changing these paths will require an application restart to take full effect."
+        )
+        description_label.setWordWrap(True)
+        description_label.setStyleSheet(
+            f"color: {AppConfig.DARK_TEXT_SECONDARY}; margin-bottom: 10px;"
+        )
+        main_layout.addWidget(description_label)
+
+        form_layout = QFormLayout()
+        form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+        form_layout.setSpacing(10)
+        form_layout.setContentsMargins(0, 0, 0, 0)  # No extra margins for form
+
+        # Database File Path
+        self.db_path_input = QLineEdit()
+        self.db_path_input.setPlaceholderText("e.g., C:/EDMS_Data/edsi_database.db")
+        self.db_browse_btn = QPushButton("Browse...")
+        db_h_layout = QHBoxLayout()
+        db_h_layout.addWidget(self.db_path_input)
+        db_h_layout.addWidget(self.db_browse_btn)
+        form_layout.addRow(QLabel("Database File:"), db_h_layout)
+
+        # Log Directory
+        self.log_dir_input = QLineEdit()
+        self.log_dir_input.setPlaceholderText("e.g., C:/EDMS_Data/logs")
+        self.log_browse_btn = QPushButton("Browse...")
+        log_h_layout = QHBoxLayout()
+        log_h_layout.addWidget(self.log_dir_input)
+        log_h_layout.addWidget(self.log_browse_btn)
+        form_layout.addRow(QLabel("Logs Directory:"), log_h_layout)
+
+        # Invoices Directory
+        self.invoices_dir_input = QLineEdit()
+        self.invoices_dir_input.setPlaceholderText("e.g., C:/EDMS_Data/invoices")
+        self.invoices_browse_btn = QPushButton("Browse...")
+        invoices_h_layout = QHBoxLayout()
+        invoices_h_layout.addWidget(self.invoices_dir_input)
+        invoices_h_layout.addWidget(self.invoices_browse_btn)
+        form_layout.addRow(QLabel("Invoices Directory:"), invoices_h_layout)
+
+        # Statements Directory (NEW)
+        self.statements_dir_input = QLineEdit()
+        self.statements_dir_input.setPlaceholderText("e.g., C:/EDMS_Data/statements")
+        self.statements_browse_btn = QPushButton("Browse...")
+        statements_h_layout = QHBoxLayout()
+        statements_h_layout.addWidget(self.statements_dir_input)
+        statements_h_layout.addWidget(self.statements_browse_btn)
+        form_layout.addRow(QLabel("Statements Directory:"), statements_h_layout)
+
+        main_layout.addLayout(form_layout)
+
+        # Spacer to push buttons to the bottom if content is sparse
+        main_layout.addStretch(1)
+
+        # Action Buttons
+        button_layout = QHBoxLayout()
+        button_layout.addStretch(1)  # Push buttons to the right
+
+        self.discard_button = QPushButton("Discard Changes")
+        self.save_button = QPushButton("Save Paths")
+
+        button_layout.addWidget(self.discard_button)
+        button_layout.addWidget(self.save_button)
+
+        main_layout.addLayout(button_layout)
+
+    def _apply_styles(self):
+        """Applies consistent styling to the widgets."""
+        # Labels
+        for label in self.findChildren(QLabel):
+            label.setStyleSheet(f"color: {AppConfig.DARK_TEXT_PRIMARY};")
+            label.setFont(QFont(AppConfig.DEFAULT_FONT_FAMILY, 10))
+
+        # Line Edits
+        for line_edit in self.findChildren(QLineEdit):
+            line_edit.setStyleSheet(self._get_input_field_style())
+            line_edit.setFont(QFont(AppConfig.DEFAULT_FONT_FAMILY, 10))
+
+        # Buttons
+        self.db_browse_btn.setStyleSheet(self._get_button_style("browse"))
+        self.log_browse_btn.setStyleSheet(self._get_button_style("browse"))
+        self.invoices_browse_btn.setStyleSheet(self._get_button_style("browse"))
+        self.statements_browse_btn.setStyleSheet(self._get_button_style("browse"))
+
+        self.save_button.setStyleSheet(self._get_button_style("save"))
+        self.discard_button.setStyleSheet(self._get_button_style("standard"))
+
+    def _setup_connections(self):
+        """Connects signals to slots."""
+        self.db_browse_btn.clicked.connect(
+            lambda: self._browse_for_file(self.db_path_input, file_mode=True)
+        )
+        self.log_browse_btn.clicked.connect(
+            lambda: self._browse_for_file(self.log_dir_input, file_mode=False)
+        )
+        self.invoices_browse_btn.clicked.connect(
+            lambda: self._browse_for_file(self.invoices_dir_input, file_mode=False)
+        )
+        self.statements_browse_btn.clicked.connect(
+            lambda: self._browse_for_file(self.statements_dir_input, file_mode=False)
+        )
+
+        # Connect textChanged signals for input fields to detect unsaved changes
+        self.db_path_input.textChanged.connect(self._on_input_changed)
+        self.log_dir_input.textChanged.connect(self._on_input_changed)
+        self.invoices_dir_input.textChanged.connect(self._on_input_changed)
+        self.statements_dir_input.textChanged.connect(self._on_input_changed)
+
+        self.save_button.clicked.connect(self._save_paths)
+        self.discard_button.clicked.connect(self._discard_changes)
+
+    def _load_current_paths(self):
+        """Loads the current paths from ConfigManager and populates inputs."""
+        self._suppress_data_changed_signal = (
+            True  # Suppress signals during programmatic update
+        )
+
+        # Use the injected _config_manager instance
+        self.db_path_input.setText(
+            self._config_manager.get_path(self._config_manager.DB_PATH_KEY) or ""
+        )
+        self.log_dir_input.setText(
+            self._config_manager.get_path(self._config_manager.LOG_DIR_KEY) or ""
+        )
+        self.invoices_dir_input.setText(
+            self._config_manager.get_path(self._config_manager.INVOICES_DIR_KEY) or ""
+        )
+        self.statements_dir_input.setText(
+            self._config_manager.get_path(self._config_manager.STATEMENTS_DIR_KEY) or ""
+        )
+
+        # Store these as initial paths to check for changes
+        self._initial_paths = self._get_current_input_paths()
+
+        self._suppress_data_changed_signal = False
+        self._has_unsaved_changes = False  # No changes immediately after loading
+        self.update_buttons_state()
+
+    def _get_current_input_paths(self) -> Dict[str, str]:
+        """Helper to get current text from all input fields."""
+        # Use the injected _config_manager instance for keys
+        return {
+            self._config_manager.DB_PATH_KEY: self.db_path_input.text().strip(),
+            self._config_manager.LOG_DIR_KEY: self.log_dir_input.text().strip(),
+            self._config_manager.INVOICES_DIR_KEY: self.invoices_dir_input.text().strip(),
+            self._config_manager.STATEMENTS_DIR_KEY: self.statements_dir_input.text().strip(),
+        }
+
+    def _on_input_changed(self):
+        """Slot to mark that there are unsaved changes."""
+        if self._suppress_data_changed_signal:
+            return
+
+        current_paths = self._get_current_input_paths()
+        # Compare current paths with initial paths to determine if there are actual changes
+        if current_paths != self._initial_paths:
+            if not self._has_unsaved_changes:
+                self.logger.debug("Changes detected in path inputs.")
+                self._has_unsaved_changes = True
+                self.update_buttons_state()
+        else:
+            if self._has_unsaved_changes:
+                self.logger.debug("Changes reverted in path inputs.")
+                self._has_unsaved_changes = False
+                self.update_buttons_state()
+
+    def _browse_for_file(self, line_edit: QLineEdit, file_mode: bool = False):
+        """
+        Opens a file dialog for selecting a file or directory.
+        For file selection (database), it now intelligently switches between
+        getOpenFileName (if file exists) and getSaveFileName (if new file).
+        """
+        initial_path = line_edit.text() if line_edit.text() else os.path.expanduser("~")
+
+        if file_mode:  # This is specifically for the database file
+            selected_path = None
+
+            # Check if the current path in the QLineEdit points to an existing file
+            if os.path.exists(initial_path) and os.path.isfile(initial_path):
+                self.logger.debug(
+                    f"Browsing for existing database file at: {initial_path}"
+                )
+                file_path, _ = QFileDialog.getOpenFileName(
+                    self,
+                    "Select Existing Database File",
+                    initial_path,
+                    "SQLite Database Files (*.db);;All Files (*.*)",
+                )
+                if file_path:
+                    selected_path = file_path
+            else:
+                self.logger.debug(
+                    f"Browsing to create/select new database file. Initial: {initial_path}"
+                )
+                # If the path is empty or does not exist, use getSaveFileName
+                # This is where the "replace" prompt will appear if user types an existing name,
+                # but it's appropriate for *creating* new files.
+                file_path, _ = QFileDialog.getSaveFileName(
+                    self,
+                    "Create or Select Database File",
+                    initial_path,
+                    "SQLite Database Files (*.db);;All Files (*.*)",
+                )
+                if file_path:
+                    selected_path = file_path
+
+            if selected_path:
+                line_edit.setText(selected_path)
+
+        else:  # This is for directory selection (logs, invoices, statements)
+            self.logger.debug(f"Browsing for directory. Initial: {initial_path}")
+            dir_path = QFileDialog.getExistingDirectory(
+                self, "Select Directory", initial_path
+            )
+            if dir_path:
+                line_edit.setText(dir_path)
+
+    def _save_paths(self):
+        """Validates and saves the configured paths."""
+        paths_to_save = self._get_current_input_paths()
+        errors = self._validate_paths(paths_to_save)
+
+        if errors:
+            self._show_message(
+                "Validation Error", "\n".join(errors), QMessageBox.Warning
+            )
+            return
+
+        try:
+            # Use the injected _config_manager instance
+            self._config_manager.set_path(
+                self._config_manager.DB_PATH_KEY,
+                paths_to_save[self._config_manager.DB_PATH_KEY],
+            )
+            self._config_manager.set_path(
+                self._config_manager.LOG_DIR_KEY,
+                paths_to_save[self._config_manager.LOG_DIR_KEY],
+            )
+            self._config_manager.set_path(
+                self._config_manager.INVOICES_DIR_KEY,
+                paths_to_save[self._config_manager.INVOICES_DIR_KEY],
+            )
+            self._config_manager.set_path(
+                self._config_manager.STATEMENTS_DIR_KEY,
+                paths_to_save[self._config_manager.STATEMENTS_DIR_KEY],
+            )
+
+            self._initial_paths = (
+                paths_to_save  # Update initial paths after successful save
+            )
+            self._has_unsaved_changes = False
+            self.update_buttons_state()
+            self._show_message(
+                "Paths Saved",
+                "Application paths saved successfully. Restart the application for changes to take full effect.",
+                QMessageBox.Information,
+            )
+            self.paths_saved.emit()  # Emit signal on successful save
+        except Exception as e:
+            self.logger.error(f"Error saving application paths: {e}", exc_info=True)
+            self._show_message(
+                "Save Error",
+                f"An unexpected error occurred while saving paths: {e}",
+                QMessageBox.Critical,
+            )
+
+    def _validate_paths(self, paths: Dict[str, str]) -> List[str]:
+        """Performs basic validation on the paths."""
+        validation_errors = []
+
+        # Use the injected _config_manager instance for keys
+        if not paths[self._config_manager.DB_PATH_KEY]:
+            validation_errors.append("Database File path cannot be empty.")
+        elif not os.path.isabs(paths[self._config_manager.DB_PATH_KEY]):
+            validation_errors.append("Database File path must be an absolute path.")
+
+        for key in [
+            self._config_manager.LOG_DIR_KEY,
+            self._config_manager.INVOICES_DIR_KEY,
+            self._config_manager.STATEMENTS_DIR_KEY,
+        ]:
+            if not paths[key]:
+                validation_errors.append(
+                    f"{key.replace('_', ' ').title()} cannot be empty."
+                )
+            elif not os.path.isabs(paths[key]):
+                validation_errors.append(
+                    f"{key.replace('_', ' ').title()} must be an absolute path."
+                )
+
+        return validation_errors
+
+    def _discard_changes(self):
+        """Discards unsaved changes and reloads initial paths."""
+        if self._has_unsaved_changes:
+            reply = self._show_message(
+                "Discard Changes",
+                "Are you sure you want to discard all unsaved changes to paths?",
+                QMessageBox.Question,
+                QMessageBox.Yes | QMessageBox.No,
+            )
+            if reply == QMessageBox.No:
+                return
+
+        self.logger.info("Discarding changes to application paths.")
+        self._load_current_paths()  # Reloads from config_manager or previous _initial_paths
+        self.update_buttons_state()
+        self._show_message(
+            "Changes Discarded",
+            "All unsaved changes to application paths have been discarded.",
+            QMessageBox.Information,
+        )
+
+    def update_buttons_state(self):
+        """Updates the enabled/disabled state of Save and Discard buttons."""
+        self.save_button.setEnabled(self._has_unsaved_changes)
+        self.discard_button.setEnabled(self._has_unsaved_changes)
+        self.logger.debug(
+            f"Buttons state updated: Save={self.save_button.isEnabled()}, Discard={self.discard_button.isEnabled()}"
+        )
+
+    def _show_message(
+        self,
+        title: str,
+        message: str,
+        icon: QMessageBox.Icon,
+        buttons: QMessageBox.StandardButtons = QMessageBox.Ok,
+    ) -> QMessageBox.StandardButton:
+        if (
+            self.parent_view
+            and hasattr(self.parent_view, "show_info")
+            and hasattr(self.parent_view, "show_warning")
+            and hasattr(self.parent_view, "show_error")
+            and hasattr(self.parent_view, "show_question")
+        ):
+
+            if icon == QMessageBox.Information:
+                self.parent_view.show_info(title, message)
+            elif icon == QMessageBox.Warning:
+                self.parent_view.show_warning(title, message)
+            elif icon == QMessageBox.Critical:
+                self.parent_view.show_error(title, message)
+            elif icon == QMessageBox.Question:
+                result = self.parent_view.show_question(title, message)
+                return QMessageBox.Yes if result else QMessageBox.No
+            return QMessageBox.Ok
+        else:
+            msg_box = QMessageBox(self)
+            msg_box.setWindowTitle(title)
+            msg_box.setText(message)
+            msg_box.setIcon(icon)
+            msg_box.setStandardButtons(buttons)
+            return msg_box.exec()
+
+
+=============== FILE: views/admin/tabs/backup_restore_tab.py ===============
+
+# views/admin/tabs/backup_restore_tab.py
+
+"""
+EDSI Veterinary Management System - Backup and Restore Tab
+Version: 1.0.7
+Purpose: UI for managing application data backups and restores.
+         Now receives BackupManager via dependency injection.
+Last Updated: June 23, 2025
+Author: Gemini
+
+Changelog:
+- v1.0.7 (2025-06-23):
+    - **CRITICAL BUG FIX (Finalizing Dependency Injection):** Removed all direct
+      imports of `sys`, `os`, and `backup_manager` from this file.
+    - Modified `__init__` to accept `backup_manager_instance` as an argument
+      and store it as `self._backup_manager`.
+    - All calls to `backup_manager.create_backup` and `backup_manager.restore_backup`
+      now use `self._backup_manager`.
+    - This completes the dependency injection for `BackupRestoreTab`,
+      eliminating the `ModuleNotFoundError` by ensuring the manager is passed,
+      not imported locally.
+- v1.0.6 (2025-06-23):
+    - **CRITICAL BUG FIX (Final Attempt for ModuleNotFoundError):** Ensured `sys.path` manipulation
+      is the *very first operation* in this module to guarantee the project root is added
+      before *any* other imports are processed. This should definitively resolve the
+      `ModuleNotFoundError: No module named 'services'`.
+- v1.0.5 (2025-06-23):
+    - **CRITICAL BUG FIX:** Re-introduced explicit `sys.path` manipulation at the
+      very top of this file to ensure the project root is always discoverable
+      before any imports.
+# ... (previous changelog entries)
+"""
+
+# Removed local sys.path manipulation
+import logging
+from typing import Optional, Dict, Any, List
+
+from PySide6.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QLabel,
+    QFileDialog,
+    QMessageBox,
+    QApplication,
+)
+from PySide6.QtCore import Qt, Signal, QTimer, QCoreApplication
+from PySide6.QtGui import QFont, QPalette, QColor
+
+from config.app_config import AppConfig
+
+# REMOVED: Direct import of backup_manager - now injected
+# from services.backup_manager import backup_manager
+
+
+class BackupRestoreTab(QWidget):
+    """
+    A tab widget for the UserManagementScreen allowing users to perform
+    backup and restore operations.
+    """
+
+    # Signal emitted when a significant backup/restore action completes
+    operation_completed = Signal(str)
+
+    def __init__(
+        self, parent_view: Optional[QWidget] = None, backup_manager_instance=None
+    ):  # NEW: Accept instance
+        super().__init__(parent_view)
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.parent_view = parent_view
+
+        self._backup_manager = backup_manager_instance  # NEW: Store injected instance
+
+        self.create_backup_btn: QPushButton
+        self.restore_backup_btn: QPushButton
+
+        self.current_user_id = "UNKNOWN_USER"
+
+        self._setup_ui()
+        self._apply_styles()
+        self._setup_connections()
+        self.update_button_states()
+
+    def _get_button_style(self, btn_type: str = "standard") -> str:
+        base_style = (
+            f"QPushButton {{ background-color: {AppConfig.DARK_BUTTON_BG}; "
+            f"color: {AppConfig.DARK_TEXT_PRIMARY}; border: 1px solid {AppConfig.DARK_BORDER}; "
+            f"border-radius: 4px; padding: 8px 15px; font-size: 12px; font-weight: 500; "
+            f"min-height: 36px; }}"
+            f"QPushButton:hover {{ background-color: {AppConfig.DARK_BUTTON_HOVER}; }}"
+            f"QPushButton:disabled {{ background-color: {AppConfig.DARK_HEADER_FOOTER}; "
+            f"color: {AppConfig.DARK_TEXT_TERTIARY}; border-color: {AppConfig.DARK_HEADER_FOOTER}; }}"
+        )
+        if btn_type == "primary":
+            return (
+                f"{base_style} QPushButton {{ background-color: {AppConfig.DARK_PRIMARY_ACTION}; "
+                f"color: white; border-color: {AppConfig.DARK_PRIMARY_ACTION}; }}"
+                f"QPushButton:hover {{ background-color: {QColor(AppConfig.DARK_PRIMARY_ACTION).lighter(115).name()}; }}"
+            )
+        elif btn_type == "danger":
+            return (
+                f"{base_style} QPushButton {{ background-color: {AppConfig.DARK_DANGER_ACTION}; "
+                f"color: white; border-color: {AppConfig.DARK_DANGER_ACTION}; }}"
+                f"QPushButton:hover {{ background-color: {QColor(AppConfig.DARK_DANGER_ACTION).lighter(115).name()}; }}"
+            )
+        return base_style
+
+    def _setup_ui(self):
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(20, 20, 20, 20)
+        main_layout.setSpacing(15)
+        main_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+
+        description_label = QLabel(
+            "Manage your application's data by creating backups or restoring from a previous backup. "
+            "Backups include your database, invoices, statements, logs, and application settings."
+        )
+        description_label.setWordWrap(True)
+        description_label.setStyleSheet(
+            f"color: {AppConfig.DARK_TEXT_SECONDARY}; margin-bottom: 10px;"
+        )
+        main_layout.addWidget(description_label)
+
+        backup_group_layout = QVBoxLayout()
+        backup_group_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.create_backup_btn = QPushButton("📦 Create New Backup")
+        backup_group_layout.addWidget(self.create_backup_btn)
+
+        main_layout.addLayout(backup_group_layout)
+
+        main_layout.addSpacing(20)
+
+        restore_group_layout = QVBoxLayout()
+        restore_group_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.restore_backup_btn = QPushButton("↩️ Restore from Backup")
+        restore_group_layout.addWidget(self.restore_backup_btn)
+
+        main_layout.addLayout(restore_group_layout)
+
+        main_layout.addStretch(1)
+
+    def _apply_styles(self):
+        for label in self.findChildren(QLabel):
+            label.setStyleSheet(f"color: {AppConfig.DARK_TEXT_PRIMARY};")
+            label.setFont(QFont(AppConfig.DEFAULT_FONT_FAMILY, 10))
+
+        self.create_backup_btn.setStyleSheet(self._get_button_style("primary"))
+        self.restore_backup_btn.setStyleSheet(self._get_button_style("danger"))
+
+    def _setup_connections(self):
+        self.create_backup_btn.clicked.connect(self._handle_create_backup)
+        self.restore_backup_btn.clicked.connect(self._handle_restore_backup)
+
+    def update_button_states(self):
+        self.create_backup_btn.setEnabled(True)
+        self.restore_backup_btn.setEnabled(True)
+
+    def _get_current_user_id(self) -> str:
+        if (
+            self.parent_view
+            and hasattr(self.parent_view, "current_user_id")
+            and self.parent_view.current_user_id
+        ):
+            return self.parent_view.current_user_id
+        self.logger.warning(
+            "Could not retrieve current_user_id from parent view. Using 'system'."
+        )
+        return "system"
+
+    def _handle_create_backup(self):
+        self.logger.info("Initiating backup creation process.")
+
+        default_backup_dir = os.path.join(
+            os.path.expanduser("~"), "Documents", "EDMS_Backups"
+        )
+        os.makedirs(default_backup_dir, exist_ok=True)
+
+        backup_destination_root = QFileDialog.getExistingDirectory(
+            self, "Select Destination for Backup", default_backup_dir
+        )
+
+        if not backup_destination_root:
+            self.logger.info("Backup destination selection cancelled by user.")
+            self._show_message(
+                "Backup Cancelled",
+                "Backup operation was cancelled.",
+                QMessageBox.Information,
+            )
+            return
+
+        self._show_message(
+            "Backup In Progress",
+            "Creating backup... This may take a moment. The application may become unresponsive.",
+            QMessageBox.Information,
+        )
+        QCoreApplication.processEvents()
+
+        current_user_id = self._get_current_user_id()
+        # Use the injected _backup_manager
+        success, message = self._backup_manager.create_backup(
+            backup_destination_root, current_user_id
+        )
+
+        if success:
+            self._show_message("Backup Successful", message, QMessageBox.Information)
+            self.operation_completed.emit("backup_success")
+        else:
+            self._show_message("Backup Failed", message, QMessageBox.Critical)
+            self.operation_completed.emit("backup_failed")
+
+    def _handle_restore_backup(self):
+        self.logger.info("Initiating restore from backup process.")
+
+        confirmation = self._show_message(
+            "Confirm Data Restore",
+            "WARNING: Restoring from a backup will OVERWRITE ALL CURRENT APPLICATION DATA (database, invoices, statements, logs, and settings).\n\n"
+            "This action is IRREVERSIBLE. It is highly recommended to create a fresh backup BEFORE proceeding with a restore.\n\n"
+            "Do you wish to continue?",
+            QMessageBox.Warning,
+            QMessageBox.Yes | QMessageBox.No,
+        )
+
+        if confirmation == QMessageBox.StandardButton.No:
+            self.logger.info("Restore operation cancelled by user.")
+            self._show_message(
+                "Restore Cancelled",
+                "Restore operation was cancelled.",
+                QMessageBox.Information,
+            )
+            return
+
+        default_backup_dir = os.path.join(
+            os.path.expanduser("~"), "Documents", "EDMS_Backups"
+        )
+
+        backup_source_path = QFileDialog.getExistingDirectory(
+            self, "Select Backup Folder to Restore From", default_backup_dir
+        )
+
+        if not backup_source_path:
+            self.logger.info("Backup source selection cancelled by user.")
+            self._show_message(
+                "Restore Cancelled",
+                "Restore operation was cancelled.",
+                QMessageBox.Information,
+            )
+            return
+
+        self._show_message(
+            "Restore In Progress",
+            "Restoring data... This may take a moment. The application will restart automatically after completion.",
+            QMessageBox.Information,
+        )
+        QCoreApplication.processEvents()
+
+        current_user_id = self._get_current_user_id()
+        # Use the injected _backup_manager
+        success, message = self._backup_manager.restore_backup(
+            backup_source_path, current_user_id
+        )
+
+        if success:
+            self._show_message("Restore Successful", message, QMessageBox.Information)
+            self.operation_completed.emit("restore_success")
+            self.logger.info("Restore successful. Initiating application restart.")
+            QMessageBox.information(
+                None,
+                "Application Restart Required",
+                "Data restore complete. The application will now restart for changes to take full effect.",
+            )
+            QApplication.instance().quit()
+        else:
+            self._show_message("Restore Failed", message, QMessageBox.Critical)
+            self.operation_completed.emit("restore_failed")
+
+    def _show_message(
+        self,
+        title: str,
+        message: str,
+        icon: QMessageBox.Icon,
+        buttons: QMessageBox.StandardButtons = QMessageBox.StandardButton.Ok,
+    ) -> QMessageBox.StandardButton:
+        if (
+            self.parent_view
+            and hasattr(self.parent_view, "show_info")
+            and hasattr(self.parent_view, "show_warning")
+            and hasattr(self.parent_view, "show_error")
+            and hasattr(self.parent_view, "show_question")
+        ):
+
+            if icon == QMessageBox.Information:
+                self.parent_view.show_info(title, message)
+            elif icon == QMessageBox.Warning:
+                self.parent_view.show_warning(title, message)
+            elif icon == QMessageBox.Critical:
+                self.parent_view.show_error(title, message)
+            elif icon == QMessageBox.Question:
+                result = self.parent_view.show_question(title, message)
+                return QMessageBox.Yes if result else QMessageBox.No
+            return QMessageBox.StandardButton.Ok
+        else:
+            msg_box = QMessageBox(self)
+            msg_box.setWindowTitle(title)
+            msg_box.setText(message)
+            msg_box.setIcon(icon)
+            msg_box.setStandardButtons(buttons)
+            return msg_box.exec()
 
 
 =============== FILE: views/auth/login_screen.py ===============

@@ -40,13 +40,12 @@ class UserController:
     def authenticate_user(
         self, login_id_attempt: str, password_attempt: str
     ) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
-        # ... (implementation unchanged) ...
         try:
             self.logger.info(
                 f"UserController.authenticate_user received login_id: '{login_id_attempt}', "
                 f"password_attempt (first 3 chars): '{password_attempt[:3] if password_attempt else ''}...'"
             )
-            session = db_manager.get_session()
+            session = db_manager().get_session()  # Corrected line
             try:
                 user = (
                     session.query(User)
@@ -97,7 +96,7 @@ class UserController:
                 )
                 return False, "An error occurred during login. Please try again.", None
             finally:
-                session.close()
+                db_manager().close()  # Corrected line
         except Exception as e_outer:
             self.logger.error(
                 f"Outer unexpected error during authentication for '{login_id_attempt}': {e_outer}",
@@ -106,7 +105,7 @@ class UserController:
             return False, "An unexpected server error occurred. Please try again.", None
 
     def get_all_users(self, status_filter: str = "all") -> List[User]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             query = session.query(User).options(joinedload(User.roles))
             if status_filter == "active":
@@ -120,11 +119,10 @@ class UserController:
             self.logger.error(f"Error fetching all users: {e}", exc_info=True)
             return []
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def get_user_by_login_id(self, login_id_str: str) -> Optional[User]:
-        # ... (implementation unchanged) ...
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             user = (
                 session.query(User)
@@ -139,7 +137,7 @@ class UserController:
             )
             return None
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def validate_user_data(
         self,
@@ -147,7 +145,6 @@ class UserController:
         is_new: bool = True,
         original_login_id_to_ignore: Optional[str] = None,
     ) -> Tuple[bool, List[str]]:
-        # ... (implementation unchanged) ...
         try:
             from views.admin.dialogs.add_edit_user_dialog import AddEditUserDialog
 
@@ -170,7 +167,7 @@ class UserController:
         elif " " in login_id:
             errors.append("Login ID (Username) cannot contain spaces.")
         else:
-            session = db_manager.get_session()
+            session = db_manager().get_session()  # Corrected line
             try:
                 query = session.query(User).filter(
                     User.user_id.collate("NOCASE") == login_id
@@ -208,7 +205,7 @@ class UserController:
                 )
                 errors.append("Error validating login_id/email uniqueness.")
             finally:
-                session.close()
+                db_manager().close()  # Corrected line
         if not display_name:
             errors.append("Full Name (User Name) is required.")
         elif len(display_name) > 100:
@@ -230,18 +227,17 @@ class UserController:
         if not role_str and is_new:
             errors.append("Role is required for new users.")
         if role_str:
-            session = db_manager.get_session()
+            session = db_manager().get_session()  # Corrected line
             try:
                 if not session.query(Role).filter(Role.name == role_str).first():
                     errors.append(f"Role '{role_str}' does not exist in the database.")
             finally:
-                session.close()
+                db_manager().close()  # Corrected line
         return not errors, errors
 
     def create_user(
         self, user_data: Dict[str, Any], current_admin_id: Optional[str] = None
     ) -> Tuple[bool, str, Optional[User]]:
-        # ... (implementation unchanged) ...
         login_id_to_store = user_data.get("user_id", "").strip()
         if not login_id_to_store:
             return False, "Login ID (Username) cannot be empty.", None
@@ -267,7 +263,7 @@ class UserController:
         is_valid, errors = self.validate_user_data(validation_payload, is_new=True)
         if not is_valid:
             return False, "Validation failed: " + "; ".join(errors), None
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             processed_email = data_for_model["email"]
             if isinstance(processed_email, str):
@@ -332,7 +328,7 @@ class UserController:
             )
             return False, f"Failed to create user: {e}", None
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def update_user(
         self,
@@ -340,8 +336,7 @@ class UserController:
         user_data: Dict[str, Any],
         current_admin_id: Optional[str] = None,
     ) -> Tuple[bool, str]:
-        # ... (implementation unchanged) ...
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             user = (
                 session.query(User)
@@ -445,7 +440,7 @@ class UserController:
             )
             return False, f"Failed to update user: {str(e)}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def change_password(
         self,
@@ -453,10 +448,9 @@ class UserController:
         new_password: str,
         current_admin_id: Optional[str] = None,
     ) -> Tuple[bool, str]:
-        # ... (implementation unchanged) ...
         if not new_password or len(new_password) < 6:
             return False, "New password must be at least 6 characters long."
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             user = (
                 session.query(User)
@@ -479,11 +473,10 @@ class UserController:
             )
             return False, f"Failed to change password: {str(e)}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def get_user_roles(self, login_id_str: str) -> List[str]:
-        # ... (implementation unchanged) ...
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             user = (
                 session.query(User)
@@ -500,13 +493,12 @@ class UserController:
             )
             return []
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def delete_user_permanently(
         self, user_id_to_delete: str, current_admin_id: str
     ) -> Tuple[bool, str]:
-        # ... (implementation unchanged) ...
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             user = (
                 session.query(User)
@@ -555,13 +547,12 @@ class UserController:
             )
             return False, f"Failed to delete user: {str(e)}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def toggle_user_active_status(
         self, user_login_id: str, current_admin_id: Optional[str] = None
     ) -> Tuple[bool, str]:
-        # ... (implementation unchanged) ...
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             user = (
                 session.query(User)
@@ -615,11 +606,10 @@ class UserController:
             )
             return False, "A database error occurred."
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def get_all_roles(self) -> List[Role]:
-        # ... (implementation unchanged) ...
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             roles = session.query(Role).order_by(Role.name).all()
             self.logger.info(f"Retrieved {len(roles)} roles.")
@@ -629,4 +619,4 @@ class UserController:
             session.rollback()
             return []
         finally:
-            session.close()
+            db_manager().close()  # Corrected line

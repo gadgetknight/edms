@@ -77,7 +77,7 @@ class HorseController:
 
         chip_number = data.get("chip_number")
         if chip_number and str(chip_number).strip():
-            session = db_manager.get_session()
+            session = db_manager().get_session()  # Corrected line
             try:
                 query = session.query(Horse).filter(Horse.chip_number == chip_number)
                 if not is_new and horse_id_to_check_for_unique:
@@ -85,11 +85,11 @@ class HorseController:
                 if query.first():
                     errors.append(f"Chip number '{chip_number}' already exists.")
             finally:
-                session.close()
+                db_manager().close()  # Corrected line
 
         tattoo_number = data.get("tattoo_number")
         if tattoo_number and str(tattoo_number).strip():
-            session = db_manager.get_session()
+            session = db_manager().get_session()  # Corrected line
             try:
                 query = session.query(Horse).filter(
                     Horse.tattoo_number == tattoo_number
@@ -99,13 +99,13 @@ class HorseController:
                 if query.first():
                     errors.append(f"Tattoo number '{tattoo_number}' already exists.")
             finally:
-                session.close()
+                db_manager().close()  # Corrected line
         return not errors, errors
 
     def create_horse(
         self, data: dict, created_by_user: str
     ) -> tuple[bool, str, Optional[Horse]]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             data["created_by"] = created_by_user
             data["modified_by"] = created_by_user
@@ -181,12 +181,12 @@ class HorseController:
                 None,
             )
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def update_horse(
         self, horse_id: int, data: dict, modified_by_user: str
     ) -> tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             horse = session.query(Horse).filter(Horse.horse_id == horse_id).first()
             if not horse:
@@ -228,10 +228,10 @@ class HorseController:
             session.rollback()
             return False, f"An unexpected error occurred while updating the horse: {e}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def get_horse_by_id(self, horse_id: int) -> Optional[Horse]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             horse = (
                 session.query(Horse)
@@ -254,7 +254,7 @@ class HorseController:
             )
             return None
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def search_horses(
         self,
@@ -262,7 +262,7 @@ class HorseController:
         status: str = "active",
         owner_name_search: Optional[str] = None,
     ) -> List[Horse]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             query = session.query(Horse).options(
                 selectinload(Horse.owners),
@@ -307,7 +307,7 @@ class HorseController:
             session.rollback()
             return []
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def deactivate_horse(
         self, horse_id: int, modified_by_user: str
@@ -320,7 +320,7 @@ class HorseController:
     def _toggle_horse_status(
         self, horse_id: int, is_active: bool, modified_by_user: str
     ) -> tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             horse = session.query(Horse).filter(Horse.horse_id == horse_id).first()
             if not horse:
@@ -339,12 +339,12 @@ class HorseController:
                 f"Error toggling horse status for ID {horse_id}: {e}", exc_info=True
             )
             session.rollback()
-            return False, f"Database error: Could not change horse status."
+            return False, "Database error: Could not change horse status."
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def get_horse_owners(self, horse_id: int) -> List[Dict[str, Any]]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             associations = (
                 session.query(HorseOwner)
@@ -389,7 +389,7 @@ class HorseController:
             session.rollback()
             return []
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def add_owner_to_horse(
         self,
@@ -398,7 +398,7 @@ class HorseController:
         percentage: Optional[float],
         modified_by_user: str,
     ) -> tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             existing_assoc = (
                 session.query(HorseOwner)
@@ -425,12 +425,12 @@ class HorseController:
             session.rollback()
             return False, "Database error: Could not add owner."
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def update_horse_owner_percentage(
         self, horse_id: int, owner_id: int, percentage: float, modified_by_user: str
     ) -> tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             association = (
                 session.query(HorseOwner)
@@ -456,12 +456,12 @@ class HorseController:
             session.rollback()
             return False, "Database error: Could not update ownership."
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def remove_owner_from_horse(
         self, horse_id: int, owner_id: int, modified_by_user: str
     ) -> tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             association = (
                 session.query(HorseOwner)
@@ -485,7 +485,7 @@ class HorseController:
             session.rollback()
             return False, "Database error: Could not remove owner."
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def assign_horse_to_location(
         self,
@@ -494,7 +494,7 @@ class HorseController:
         notes: Optional[str],
         modified_by_user: str,
     ) -> tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             today = date.today()
             previous_assignments = (
@@ -536,7 +536,7 @@ class HorseController:
             session.rollback()
             return False, "Database error: Could not assign location."
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def remove_horse_from_location(
         self,
@@ -544,7 +544,7 @@ class HorseController:
         location_id: Optional[int] = None,
         modified_by_user: str = "system",
     ) -> tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             query = session.query(HorseLocation).filter(
                 HorseLocation.horse_id == horse_id,
@@ -578,4 +578,4 @@ class HorseController:
             session.rollback()
             return False, "Database error: Could not remove horse from location."
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
