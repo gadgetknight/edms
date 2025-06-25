@@ -1,0 +1,33 @@
+2025-06-24 13:20:42,145 - INFO - local_webhook_listener.py:171 - Starting local Stripe Webhook Listener...
+2025-06-24 13:20:42,145 - INFO - local_webhook_listener.py:172 - This listener is intended for development and local testing with tools like ngrok.
+2025-06-24 13:20:42,147 - INFO - local_webhook_listener.py:175 - Listening on http://127.0.0.1:5000/stripe-webhook
+2025-06-24 13:20:42,147 - INFO - local_webhook_listener.py:176 - Make sure to replace 'whsec_cwRR66sGhaSEJ8AQpoZXUfI1nf8Zm0YZ
+2025-06-24 13:20:42,156 - INFO - _internal.py:97 - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-06-24 13:20:42,158 - INFO - _internal.py:97 - [33mPress CTRL+C to quit[0m
+2025-06-24 14:06:19,531 - INFO - local_webhook_listener.py:171 - Starting local Stripe Webhook Listener...
+2025-06-24 14:06:19,531 - INFO - local_webhook_listener.py:172 - This listener is intended for development and local testing with tools like ngrok.
+2025-06-24 14:06:19,531 - INFO - local_webhook_listener.py:175 - Listening on http://127.0.0.1:5000/stripe-webhook
+2025-06-24 14:06:19,531 - INFO - local_webhook_listener.py:176 - Make sure to replace 'whsec_cwRR66sGhaSEJ8AQpoZXUfI1nf8Zm0YZ
+2025-06-24 14:06:19,538 - INFO - _internal.py:97 - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-06-24 14:06:19,539 - INFO - _internal.py:97 - [33mPress CTRL+C to quit[0m
+2025-06-24 14:12:58,410 - INFO - local_webhook_listener.py:171 - Starting local Stripe Webhook Listener...
+2025-06-24 14:12:58,410 - INFO - local_webhook_listener.py:172 - This listener is intended for development and local testing with tools like ngrok.
+2025-06-24 14:12:58,410 - INFO - local_webhook_listener.py:175 - Listening on http://127.0.0.1:5000/stripe-webhook
+2025-06-24 14:12:58,411 - INFO - local_webhook_listener.py:176 - Make sure to replace 'whsec_cwRR66sGhaSEJ8AQpoZXUfI1nf8Zm0YZ
+2025-06-24 14:12:58,418 - INFO - _internal.py:97 - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-06-24 14:12:58,418 - INFO - _internal.py:97 - [33mPress CTRL+C to quit[0m
+2025-06-24 14:42:29,786 - ERROR - local_webhook_listener.py:82 - Invalid signature: No signatures found matching the expected signature for payload
+2025-06-24 14:42:29,786 - INFO - _internal.py:97 - 127.0.0.1 - - [24/Jun/2025 14:42:29] "[31m[1mPOST /stripe-webhook HTTP/1.1[0m" 400 -
+2025-06-24 14:42:30,025 - ERROR - local_webhook_listener.py:82 - Invalid signature: No signatures found matching the expected signature for payload
+2025-06-24 14:42:30,025 - INFO - _internal.py:97 - 127.0.0.1 - - [24/Jun/2025 14:42:30] "[31m[1mPOST /stripe-webhook HTTP/1.1[0m" 400 -
+2025-06-24 14:42:44,482 - ERROR - local_webhook_listener.py:82 - Invalid signature: No signatures found matching the expected signature for payload
+2025-06-24 14:42:44,482 - INFO - _internal.py:97 - 127.0.0.1 - - [24/Jun/2025 14:42:44] "[31m[1mPOST /stripe-webhook HTTP/1.1[0m" 400 -
+2025-06-24 14:42:46,210 - ERROR - local_webhook_listener.py:82 - Invalid signature: No signatures found matching the expected signature for payload
+2025-06-24 14:42:46,211 - INFO - _internal.py:97 - 127.0.0.1 - - [24/Jun/2025 14:42:46] "[31m[1mPOST /stripe-webhook HTTP/1.1[0m" 400 -
+2025-06-24 14:51:02,783 - ERROR - local_webhook_listener.py:82 - Invalid signature: No signatures found matching the expected signature for payload
+2025-06-24 14:51:02,784 - INFO - _internal.py:97 - 127.0.0.1 - - [24/Jun/2025 14:51:02] "[31m[1mPOST /stripe-webhook HTTP/1.1[0m" 400 -
+2025-06-24 14:51:02,931 - ERROR - local_webhook_listener.py:82 - Invalid signature: No signatures found matching the expected signature for payload
+2025-06-24 14:51:02,931 - INFO - _internal.py:97 - 127.0.0.1 - - [24/Jun/2025 14:51:02] "[31m[1mPOST /stripe-webhook HTTP/1.1[0m" 400 -

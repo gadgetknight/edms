@@ -1,12 +1,17 @@
 # reports/invoice_generator.py
 """
 EDSI Veterinary Management System - Invoice PDF Generator
-Version: 1.2.4
+Version: 1.2.5
 Purpose: Generates a professional, print-friendly PDF for a single invoice.
-Last Updated: June 13, 2025
+         Now includes an optional payment link URL embedded directly into the invoice.
+Last Updated: June 25, 2025
 Author: Gemini
 
 Changelog:
+- v1.2.5 (2025-06-25):
+    - Modified `generate_invoice_pdf` method to accept an optional `payment_link_url` parameter.
+    - Implemented `_create_payment_link_section` to display the payment link prominently on the invoice.
+    - Added the payment link section to the PDF story, making it visible for customers.
 - v1.2.4 (2025-06-13):
     - Fixed KeyError by correcting style name from 'Center' to 'Normal_Center'
       in the footer creation.
@@ -31,7 +36,7 @@ Changelog:
     - Initial creation of the invoice PDF generator.
 """
 import logging
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Optional  # ADDED: Optional
 from decimal import Decimal
 
 from reportlab.platypus import (
@@ -60,6 +65,9 @@ class InvoiceGenerator:
         self.logger = logging.getLogger(self.__class__.__name__)
         self.styles = getSampleStyleSheet()
         self.company_profile_controller = CompanyProfileController()
+        # NOTE: FinancialController is not needed here as it's passed data,
+        # but keep it if other methods rely on it for something else.
+        # For generate_invoice_pdf, data is fetched by caller.
         self.financial_controller = FinancialController()
         self._setup_styles()
 
@@ -99,11 +107,16 @@ class InvoiceGenerator:
         )
         canvas.restoreState()
 
-    def generate_invoice_pdf(self, invoice_id: int, file_path: str) -> Tuple[bool, str]:
+    def generate_invoice_pdf(
+        self, invoice_id: int, file_path: str, payment_link_url: Optional[str] = None
+    ) -> Tuple[bool, str]:  # MODIFIED: Added payment_link_url
         """
         Fetches all data for an invoice and generates a PDF at the specified path.
         """
         try:
+            # Re-fetch invoice details to ensure owner and transactions are loaded,
+            # especially if this function is called directly without a fully loaded object.
+            # This logic remains in InvoiceGenerator for now as it's self-contained.
             invoice = self.financial_controller.get_invoice_by_id(invoice_id)
             if not invoice:
                 return False, f"Invoice ID {invoice_id} not found."
@@ -138,6 +151,12 @@ class InvoiceGenerator:
             story.append(Spacer(1, 0.2 * inch))
             story.append(self._create_summary_table(invoice))
             story.append(Spacer(1, 0.4 * inch))
+
+            # NEW: Add payment link section if URL is provided
+            if payment_link_url:
+                story.append(self._create_payment_link_section(payment_link_url))
+                story.append(Spacer(1, 0.2 * inch))  # Add some space after the link
+
             story.append(self._create_footer_notes())
 
             doc.build(
@@ -269,6 +288,20 @@ class InvoiceGenerator:
         container_table = Table([[None, summary_table]], colWidths=container_col_widths)
         container_table.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
         return container_table
+
+    def _create_payment_link_section(
+        self, payment_link_url: str
+    ) -> Paragraph:  # NEW METHOD
+        link_text = f"""
+            <b>To pay this invoice online, please visit:</b><br/>
+            <font color='blue'><a href="{payment_link_url}">{payment_link_url}</a></font><br/>
+            Thank you for your prompt payment!
+        """
+        # Using a fixed-size font for the URL to prevent excessive wrapping on one line if possible
+        # Or, just allow ReportLab to wrap automatically
+        return Paragraph(
+            link_text, self.styles["Normal_Center"]
+        )  # You can create a specific style for this if needed
 
     def _create_footer_notes(self) -> Paragraph:
         text = """

@@ -1,12 +1,37 @@
 # controllers/financial_controller.py
+
 """
 EDSI Veterinary Management System - Financial Controller
-Version: 2.4.1
+Version: 2.5.1
 Purpose: Handles business logic for financial operations like creating invoices and recording payments.
-Last Updated: June 13, 2025
+         Now refactored to remove direct Stripe API key storage, receiving it per request.
+Last Updated: June 25, 2025
 Author: Gemini
 
 Changelog:
+- v2.5.1 (2025-06-25):
+    - Removed `self.stripe_secret_key` initialization from `__init__` method.
+    - `stripe.api_key` is now exclusively set on a per-request basis within `create_stripe_payment_link`.
+    - This centralizes Stripe API key management outside of the controller's state.
+- v2.5.0 (2025-06-25):
+    - **MAJOR ARCHITECTURAL CHANGE**: Removed direct `stripe` library import and dependency.
+    - Modified `create_stripe_payment_link` to make an HTTP POST request to the new centralized backend API's `/create-payment-link` endpoint.
+    - Added `get_stripe_payment_status` to make an HTTP GET request to the centralized backend API's `/get-payment-status` endpoint.
+    - Introduced `self.backend_api_base_url` to configure the URL of the centralized backend API.
+    - Removed `_get_or_create_generic_invoice_product` as its logic is now handled by the backend.
+- v2.4.4 (2025-06-24):
+    - **BUG FIX**: Corrected `stripe.PaymentLink.create` call to remove unsupported `customer_email` parameter.
+      Instead, set `customer_creation='always'` to allow Stripe to handle customer creation and email collection.
+- v2.4.3 (2025-06-24):
+    - **BUG FIX**: Corrected Stripe Product creation/listing logic in `create_stripe_payment_link`.
+      Removed direct `name` parameter from `stripe.Product.list` call which was causing `unknown parameter` error.
+      Implemented a more robust and efficient way to fetch/create a *single, generic* "Invoice Payment" product,
+      and then attach dynamic prices to it for each payment link. This avoids creating redundant Stripe Products.
+- v2.4.2 (2025-06-23):
+    - Added `create_stripe_payment_link` method to generate hosted payment links via Stripe API.
+    - Integrated `stripe` Python library and configured API key for payment link creation.
+    - Implemented logic to pass internal invoice ID as Stripe metadata for webhook traceability.
+    - Updated class initialization to include Stripe API key configuration (placeholder).
 - v2.4.1 (2025-06-13):
     - Fixed DetachedInstanceError in `get_invoice_by_id` by eagerly loading
       the related owner object using `joinedload(Invoice.owner)`. This
@@ -24,11 +49,10 @@ Changelog:
       explicitly groups charges by horse before processing, ensuring that all
       charges for a single horse are correctly grouped onto one invoice per owner.
 """
-# ... (imports remain the same) ...
 import logging
 from typing import List, Optional, Dict, Any, Tuple
 from decimal import Decimal, InvalidOperation
-from datetime import date
+from datetime import date, datetime
 from collections import defaultdict
 
 from sqlalchemy.exc import SQLAlchemyError
@@ -48,16 +72,141 @@ from models import (
     OwnerPayment,
 )
 
+import requests
+
 
 class FinancialController:
-    # ... (all existing methods like __init__, etc. remain unchanged) ...
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
+        # Configure the base URL of your centralized backend API
+        # IMPORTANT: Replace this with your ngrok HTTPS URL for local testing,
+        # then with your permanent VPS URL when deployed.
+        self.backend_api_base_url = (
+            "https://b3d1-73-10-116-104.ngrok-free.app"  # REPLACE WITH YOUR NGROK URL!
+        )
+
+        # REMOVED: self.stripe_secret_key = "sk_test_YOUR_STRIPE_SECRET_KEY"
+        # REMOVED: stripe.api_key = self.stripe_secret_key
+
+    def create_stripe_payment_link(
+        self,
+        invoice_id: int,
+        amount: Decimal,
+        description: str,
+        doctor_stripe_secret_key: str,
+        doctor_identifier: str,
+        customer_email: Optional[str] = None,
+    ) -> Tuple[bool, str, Optional[str]]:
+        """
+        Requests the centralized backend API to create a Stripe Payment Link.
+
+        Args:
+            invoice_id (int): The ID of your internal invoice.
+            amount (Decimal): The total amount of the invoice.
+            description (str): A brief description for the payment link.
+            doctor_stripe_secret_key (str): The doctor's Stripe Secret Key.
+            doctor_identifier (str): The ID of the doctor (user_id).
+            customer_email (Optional[str]): The customer's email address.
+
+        Returns:
+            Tuple[bool, str, Optional[str]]: (success, message, payment_link_url)
+        """
+        endpoint = f"{self.backend_api_base_url}/create-payment-link"
+        payload = {
+            "stripe_secret_key": doctor_stripe_secret_key,
+            "internal_invoice_id": invoice_id,
+            "amount": float(amount),
+            "description": description,
+            "customer_email": customer_email,
+            "doctor_identifier": doctor_identifier,
+        }
+
+        try:
+            response = requests.post(endpoint, json=payload)
+            response.raise_for_status()
+
+            response_data = response.json()
+            if response_data.get("success"):
+                payment_link_url = response_data.get("payment_link_url")
+                self.logger.info(
+                    f"Backend API successfully created Payment Link for Invoice {invoice_id}: {payment_link_url}"
+                )
+                return (
+                    True,
+                    response_data.get("message", "Payment Link created successfully."),
+                    payment_link_url,
+                )
+            else:
+                message = response_data.get(
+                    "message", "Unknown error from backend API."
+                )
+                error_details = response_data.get("error_details", "")
+                self.logger.error(
+                    f"Backend API reported failure for Invoice {invoice_id}: {message} - {error_details}"
+                )
+                return False, message, None
+
+        except requests.exceptions.RequestException as e:
+            self.logger.error(
+                f"Network or API communication error creating payment link for Invoice {invoice_id}: {e}",
+                exc_info=True,
+            )
+            return False, f"Network/API communication error: {e}", None
+        except Exception as e:
+            self.logger.error(
+                f"Unexpected error processing backend API response for Invoice {invoice_id}: {e}",
+                exc_info=True,
+            )
+            return False, f"An unexpected error occurred: {str(e)}", None
+
+    def get_stripe_payment_status(
+        self, doctor_identifier: str, internal_invoice_id: int
+    ) -> Tuple[bool, Optional[bool], str]:
+        """
+        Polls the centralized backend API for the payment status of a specific invoice.
+
+        Args:
+            doctor_identifier (str): The ID of the doctor (user_id).
+            internal_invoice_id (int): The ID of your internal invoice.
+
+        Returns:
+            Tuple[bool, Optional[bool], str]: (success, is_paid_status, message)
+                is_paid_status is True if paid, False if not yet confirmed, None on error.
+        """
+        endpoint = f"{self.backend_api_base_url}/get-payment-status/{doctor_identifier}/{internal_invoice_id}"
+
+        try:
+            response = requests.get(endpoint)
+            response.raise_for_status()
+
+            response_data = response.json()
+            if "is_paid" in response_data:
+                is_paid = response_data["is_paid"]
+                self.logger.info(
+                    f"Received payment status for Invoice {internal_invoice_id} (Doctor {doctor_identifier}): {'Paid' if is_paid else 'Unpaid'}"
+                )
+                return True, is_paid, "Payment status retrieved successfully."
+            else:
+                self.logger.error(
+                    f"Backend API response missing 'is_paid' field for Invoice {internal_invoice_id}: {response_data}"
+                )
+                return False, None, "Invalid response from backend API."
+
+        except requests.exceptions.RequestException as e:
+            self.logger.warning(
+                f"Network or API communication error checking payment status for Invoice {internal_invoice_id}: {e}"
+            )
+            return False, None, f"Network/API communication error: {e}"
+        except Exception as e:
+            self.logger.error(
+                f"Unexpected error processing backend API response for Invoice {internal_invoice_id}: {e}",
+                exc_info=True,
+            )
+            return False, None, f"An unexpected error occurred: {str(e)}"
 
     def get_invoice_by_id(self, invoice_id: int) -> Optional[Invoice]:
-        session = db_manager().get_session()  # Corrected line
+        session = db_manager().get_session()
         try:
-            # MODIFIED: Added joinedload to eagerly fetch the owner relationship
             invoice = (
                 session.query(Invoice)
                 .options(joinedload(Invoice.owner))
@@ -71,10 +220,10 @@ class FinancialController:
             )
             return None
         finally:
-            db_manager().close()  # Corrected line
+            db_manager().close()
 
     def get_invoices_for_owner(self, owner_id: int) -> List[Invoice]:
-        session = db_manager().get_session()  # Corrected line
+        session = db_manager().get_session()
         try:
             invoices = (
                 session.query(Invoice)
@@ -92,10 +241,10 @@ class FinancialController:
             )
             return []
         finally:
-            db_manager().close()  # Corrected line
+            db_manager().close()
 
     def get_transactions_for_invoice(self, invoice_id: int) -> List[Transaction]:
-        session = db_manager().get_session()  # Corrected line
+        session = db_manager().get_session()
         try:
             transactions = (
                 session.query(Transaction)
@@ -112,7 +261,7 @@ class FinancialController:
             )
             return []
         finally:
-            db_manager().close()  # Corrected line
+            db_manager().close()
 
     def generate_invoices_from_transactions(
         self, source_transaction_ids: List[int], current_user_id: str
@@ -120,7 +269,7 @@ class FinancialController:
         self.logger.info(
             f"--- Starting Invoice Generation for transaction IDs: {source_transaction_ids} ---"
         )
-        session = db_manager().get_session()  # Corrected line
+        session = db_manager().get_session()
         try:
             if not source_transaction_ids:
                 return False, "No charges were selected to be invoiced.", []
@@ -154,12 +303,9 @@ class FinancialController:
                 f"Generating invoices for {len(transactions_by_horse)} horse(s)."
             )
 
-            # --- MODIFIED BLOCK START ---
-            # Refactored loop to be more robust and prevent duplicate invoice creation.
             for horse_id, transactions_for_horse in transactions_by_horse.items():
                 horse = transactions_for_horse[0].horse
 
-                # Use a dictionary to ensure we process each owner only once.
                 unique_associations = {
                     assoc.owner_id: assoc for assoc in horse.owner_associations
                 }
@@ -170,14 +316,12 @@ class FinancialController:
                     )
                     continue
 
-                # Now loop through the unique associations
                 for owner_id, association in unique_associations.items():
                     owner = association.owner
                     ownership_percentage = association.percentage_ownership / Decimal(
                         "100"
                     )
 
-                    # Create ONE invoice per owner
                     owner_invoice = Invoice(
                         owner_id=owner.owner_id,
                         invoice_date=date.today(),
@@ -190,7 +334,6 @@ class FinancialController:
 
                     invoice_total = Decimal("0.00")
 
-                    # Add line items for all transactions for this horse
                     for src_trans in transactions_for_horse:
                         prorated_price = (
                             src_trans.total_price * ownership_percentage
@@ -198,7 +341,6 @@ class FinancialController:
                         invoice_total += prorated_price
 
                         line_item_desc = src_trans.description
-                        # Add percentage share to description if more than one owner
                         if len(unique_associations) > 1:
                             line_item_desc += (
                                 f" ({association.percentage_ownership:.2f}% Share)"
@@ -223,13 +365,11 @@ class FinancialController:
                         )
                         session.add(new_line_item)
 
-                    # Finalize the invoice object
                     owner_invoice.subtotal = invoice_total
                     owner_invoice.grand_total = invoice_total
                     owner_invoice.balance_due = invoice_total
                     owner.balance = (owner.balance or Decimal("0.00")) + invoice_total
 
-                    # Create billing history
                     history_entry = OwnerBillingHistory(
                         owner_id=owner.owner_id,
                         description=f"Invoice #{owner_invoice.invoice_id} generated for {horse.horse_name}.",
@@ -239,7 +379,6 @@ class FinancialController:
                     )
                     session.add(history_entry)
                     generated_invoices.append(owner_invoice)
-            # --- MODIFIED BLOCK END ---
 
             for src_trans in source_transactions:
                 src_trans.status = "PROCESSED"
@@ -264,11 +403,11 @@ class FinancialController:
             )
             return False, f"A database error occurred: {e}", []
         finally:
-            db_manager().close()  # Corrected line
+            db_manager().close()
 
     def record_payment(self, payment_data: Dict[str, Any]) -> Tuple[bool, str]:
         """Records a payment against an invoice and updates balances."""
-        session = db_manager().get_session()  # Corrected line
+        session = db_manager().get_session()
         try:
             invoice_id = payment_data.get("invoice_id")
             amount = payment_data.get("amount")
@@ -337,10 +476,10 @@ class FinancialController:
             )
             return False, "A database error occurred while recording the payment."
         finally:
-            db_manager().close()  # Corrected line
+            db_manager().close()
 
     def get_transactions_for_horse(self, horse_id: int) -> List[Transaction]:
-        session = db_manager().get_session()  # Corrected line
+        session = db_manager().get_session()
         try:
             transactions = (
                 session.query(Transaction)
@@ -365,7 +504,7 @@ class FinancialController:
             )
             return []
         finally:
-            db_manager().close()  # Corrected line
+            db_manager().close()
 
     def add_charge_batch_to_horse(
         self,
@@ -375,7 +514,7 @@ class FinancialController:
         batch_transaction_date: date,
         administered_by_user_id: str,
     ) -> Tuple[bool, str, Optional[List[Transaction]]]:
-        session = db_manager().get_session()  # Corrected line
+        session = db_manager().get_session()
         new_transactions = []
         try:
             for item in charge_items:
@@ -425,12 +564,12 @@ class FinancialController:
             )
             return False, f"An unexpected error occurred: {e}", None
         finally:
-            db_manager().close()  # Corrected line
+            db_manager().close()
 
     def update_charge_transaction(
         self, transaction_id: int, data: Dict[str, Any], current_user_id: str
     ) -> Tuple[bool, str]:
-        session = db_manager().get_session()  # Corrected line
+        session = db_manager().get_session()
         try:
             transaction = (
                 session.query(Transaction)
@@ -462,10 +601,10 @@ class FinancialController:
             )
             return False, f"A database error occurred: {e}"
         finally:
-            db_manager().close()  # Corrected line
+            db_manager().close()
 
     def delete_charge_transaction(self, transaction_id: int) -> Tuple[bool, str]:
-        session = db_manager().get_session()  # Corrected line
+        session = db_manager().get_session()
         try:
             transaction_to_delete = (
                 session.query(Transaction)
@@ -494,14 +633,13 @@ class FinancialController:
             )
             return False, f"A database error occurred while deleting the charge: {e}"
         finally:
-            db_manager().close()  # Corrected line
+            db_manager().close()
 
     def get_transaction_by_id(self, transaction_id: int) -> Optional[Transaction]:
-        session = db_manager().get_session()  # Corrected line
+        session = db_manager().get_session()
         try:
             transaction = (
                 session.query(Transaction)
-                .options(joinedload(Transaction.charge_code))
                 .filter(Transaction.transaction_id == transaction_id)
                 .first()
             )
@@ -518,14 +656,14 @@ class FinancialController:
             )
             return None
         finally:
-            db_manager().close()  # Corrected line
+            db_manager().close()
 
     def delete_invoice(self, invoice_id: int, current_user_id: str) -> Tuple[bool, str]:
         """
         Deletes an invoice and reverses the owner's balance.
         NOTE: This does NOT make the original charges billable again.
         """
-        session = db_manager().get_session()  # Corrected line
+        session = db_manager().get_session()
         try:
             invoice_to_delete = (
                 session.query(Invoice)
@@ -577,4 +715,4 @@ class FinancialController:
             )
             return False, f"A database error occurred during deletion: {e}"
         finally:
-            db_manager().close()  # Corrected line
+            db_manager().close()

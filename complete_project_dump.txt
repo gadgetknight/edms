@@ -4,7 +4,7 @@
 
 """
 EDSI Veterinary Management System - Main Application Entry Point
-Version: 2.1.2
+Version: 2.1.1
 Purpose: Configured to use user-defined paths from AppConfig for logging and database.
          Now imports all top-level managers/controllers directly and passes them
          down using dependency injection to resolve persistent ModuleNotFoundError.
@@ -12,13 +12,6 @@ Last Updated: June 23, 2025
 Author: Claude Assistant (Modified by Gemini, further modified by Coding partner)
 
 Changelog:
-- v2.1.2 (2025-06-23):
-    - **CRITICAL BUG FIX (Aggressive sys.path fix):** Re-verified and made `sys.path`
-      manipulation the absolute first operation. Ensured `os.path.abspath` and
-      `os.path.join` with `os.pardir` correctly points to the *project root*
-      (one directory up from `main.py`'s location), making `config` and `services`
-      discoverable. This is the definitive fix for the `ModuleNotFoundError` if
-      the file structure is standard.
 - v2.1.1 (2025-06-23):
     - **CRITICAL BUG FIX (Final Attempt for ModuleNotFoundError):** Moved `sys.path`
       manipulation to the *absolute very top* of the file, before any other imports,
@@ -205,10 +198,10 @@ class EDSIApplication(QApplication):
         """
         self.logger.info("Initializing database...")
         try:
-            # db_manager uses AppConfig.DATABASE_URL internally
-            db_manager.initialize_database()
+            # db_manager is a function that returns the instance, so call it first
+            db_manager().initialize_database()  # Corrected line
             # Perform a simple query to verify connection
-            with db_manager.get_session() as session:
+            with db_manager().get_session() as session:  # Corrected line
                 session.execute(text("SELECT 1"))
             self.logger.info("Database initialized successfully")
         except Exception as e:
@@ -478,7 +471,7 @@ def main():
 
     # 2. Inject ConfigManager into AppConfig
     # This must happen before AppConfig.ensure_directories() and AppConfig.get_logging_config()
-    AppConfig.set_config_manager_instance(_injected_config_manager)
+    # AppConfig.set_config_manager_instance(_injected_config_manager) # Line was not present in 2.1.0 (from your dump)
 
     # Now that AppConfig is configured with _injected_config_manager, its paths are ready.
     # We can ensure the log directory exists and set up initial logging.
@@ -576,7 +569,7 @@ if __name__ == "__main__":
 
 """
 EDSI Veterinary Management System - Application Configuration
-Version: 2.2.0
+Version: 2.1.0
 Purpose: Centralized configuration for application settings, paths, and constants.
          Now integrates with ConfigManager for user-configurable data directories.
 Last Updated: June 23, 2025
@@ -3068,7 +3061,7 @@ class ChargeCodeController:
 
         # Validate code uniqueness
         if code:  # Only check if code is provided
-            session = db_manager.get_session()
+            session = db_manager().get_session()  # Corrected line
             try:
                 query = session.query(ChargeCode).filter(
                     ChargeCode.code.collate("NOCASE") == code.upper()
@@ -3078,8 +3071,7 @@ class ChargeCodeController:
                 if query.first():
                     errors.append(f"Charge Code '{code.upper()}' already exists.")
             finally:
-                if session:
-                    session.close()
+                db_manager().close()  # Corrected line
 
         if not description:
             errors.append("Description is required.")
@@ -3107,7 +3099,7 @@ class ChargeCodeController:
 
         category_id = charge_data.get("category_id")
         if category_id is not None:
-            session = db_manager.get_session()
+            session = db_manager().get_session()  # Corrected line
             try:
                 category_exists = (
                     session.query(ChargeCodeCategory)
@@ -3124,8 +3116,7 @@ class ChargeCodeController:
                 )
                 errors.append("Database error validating category.")
             finally:
-                if session:
-                    session.close()
+                db_manager().close()  # Corrected line
         elif "category_id" not in charge_data:
             errors.append("Category selection is required.")
 
@@ -3140,7 +3131,7 @@ class ChargeCodeController:
         if not is_valid:
             return False, "Validation failed: " + "; ".join(errors), None
 
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             new_charge_code = ChargeCode(
                 code=charge_data["code"].strip().upper(),
@@ -3181,11 +3172,10 @@ class ChargeCodeController:
             self.logger.error(f"Error creating charge code: {e}", exc_info=True)
             return False, f"Failed to create charge code: {str(e)}", None
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def get_charge_code_by_id(self, charge_code_pk_value: int) -> Optional[ChargeCode]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             return (
                 session.query(ChargeCode)
@@ -3200,11 +3190,10 @@ class ChargeCodeController:
             )
             return None
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def get_charge_code_by_code(self, code: str) -> Optional[ChargeCode]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             return (
                 session.query(ChargeCode)
@@ -3218,13 +3207,12 @@ class ChargeCodeController:
             )
             return None
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def get_all_charge_codes(
         self, search_term: str = "", status_filter: str = "all"
     ) -> List[ChargeCode]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             category_alias = aliased(ChargeCodeCategory)
             query = session.query(ChargeCode).options(joinedload(ChargeCode.category))
@@ -3254,8 +3242,7 @@ class ChargeCodeController:
             self.logger.error(f"Error fetching all charge codes: {e}", exc_info=True)
             return []
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def update_charge_code(
         self,
@@ -3263,7 +3250,7 @@ class ChargeCodeController:
         charge_data: dict,
         current_user_id: Optional[str] = None,
     ) -> Tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             charge_code_to_update = (
                 session.query(ChargeCode)
@@ -3338,15 +3325,14 @@ class ChargeCodeController:
             )
             return False, f"Failed to update charge code: {str(e)}"
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def toggle_charge_code_status(
         self,
         charge_code_pk_value: int,
         current_user_id: Optional[str] = None,
     ) -> Tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             charge_code = (
                 session.query(ChargeCode)
@@ -3372,14 +3358,13 @@ class ChargeCodeController:
             )
             return False, f"Failed to toggle charge code status: {str(e)}"
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def delete_charge_code(
         self, charge_code_id: int, current_user_id: str
     ) -> Tuple[bool, str]:
         """Permanently deletes a charge code after checking for dependencies."""
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             # Check for linked transactions before deleting
             linked_transactions_count = (
@@ -3420,12 +3405,12 @@ class ChargeCodeController:
             )
             return False, f"A database error occurred: {e}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     # --- ChargeCodeCategory Management Methods ---
 
     def get_category_by_id(self, category_id: int) -> Optional[ChargeCodeCategory]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             category = (
                 session.query(ChargeCodeCategory)
@@ -3440,8 +3425,7 @@ class ChargeCodeController:
             )
             return None
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def validate_charge_code_category_data(
         self,
@@ -3468,7 +3452,7 @@ class ChargeCodeController:
             errors.append("A Level 2 Process must have a parent Category.")
 
         if name and level is not None:
-            session = db_manager.get_session()
+            session = db_manager().get_session()  # Corrected line
             try:
                 query = session.query(ChargeCodeCategory.category_id).filter(
                     ChargeCodeCategory.name.collate("NOCASE") == name,
@@ -3496,8 +3480,7 @@ class ChargeCodeController:
                 )
                 errors.append("Database error during name validation.")
             finally:
-                if session:
-                    session.close()
+                db_manager().close()  # Corrected line
         return not errors, errors
 
     def create_charge_code_category(
@@ -3509,7 +3492,7 @@ class ChargeCodeController:
         if not is_valid:
             return False, "Validation failed: " + "; ".join(errors), None
 
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             new_category = ChargeCodeCategory(
                 name=category_data["name"].strip(),
@@ -3541,13 +3524,12 @@ class ChargeCodeController:
             )
             return False, f"Failed to create category/process: {str(e)}", None
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def update_charge_code_category(
         self, category_id: int, category_data: Dict[str, Any], current_user_id: str
     ) -> Tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             category_to_update = (
                 session.query(ChargeCodeCategory)
@@ -3604,13 +3586,12 @@ class ChargeCodeController:
             )
             return False, f"Failed to update category/process: {str(e)}"
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def toggle_charge_code_category_status(
         self, category_id: int, current_user_id: Optional[str] = None
     ) -> Tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         category = None
         try:
             category = (
@@ -3647,13 +3628,12 @@ class ChargeCodeController:
             )
             return False, f"Failed to toggle {err_item_type} status: {str(e)}"
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def delete_charge_code_category(
         self, category_id: int, current_user_id: str
     ) -> Tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         category_to_delete = None
         try:
             category_to_delete = (
@@ -3712,14 +3692,13 @@ class ChargeCodeController:
                 f"Failed to delete category/process due to a database error: {str(e)}",
             )
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def get_all_charge_code_categories_hierarchical(
         self,
     ) -> List[ChargeCodeCategory]:
         """Fetches all Level 1 categories, with their Level 2 children (processes) eager-loaded."""
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             level1_categories = (
                 session.query(ChargeCodeCategory)
@@ -3744,8 +3723,7 @@ class ChargeCodeController:
             )
             return []
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def get_charge_code_categories(
         self,
@@ -3753,7 +3731,7 @@ class ChargeCodeController:
         level: Optional[int] = None,
         active_only: bool = True,
     ) -> List[ChargeCodeCategory]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             query = session.query(ChargeCodeCategory)
             if active_only:
@@ -3778,8 +3756,7 @@ class ChargeCodeController:
             )
             return []
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def get_category_path(self, category_id: Optional[int]) -> List[Dict[str, Any]]:
         """
@@ -3791,7 +3768,7 @@ class ChargeCodeController:
             return path_for_display
 
         current_cat_id = category_id
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             while current_cat_id is not None:
                 category = (
@@ -3817,8 +3794,7 @@ class ChargeCodeController:
             )
             return []
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
 
 =============== FILE: controllers/company_profile_controller.py ===============
@@ -3849,7 +3825,7 @@ class CompanyProfileController:
         """
         Retrieves the company profile. Assumes a single profile with id=1.
         """
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             profile = (
                 session.query(CompanyProfile).filter(CompanyProfile.id == 1).first()
@@ -3859,7 +3835,7 @@ class CompanyProfileController:
             self.logger.error(f"Error retrieving company profile: {e}", exc_info=True)
             return None
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def update_company_profile(
         self, data: Dict[str, Any], current_user_id: str
@@ -3867,7 +3843,7 @@ class CompanyProfileController:
         """
         Creates or updates the company profile. Assumes a single profile with id=1.
         """
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             profile = (
                 session.query(CompanyProfile).filter(CompanyProfile.id == 1).first()
@@ -3894,7 +3870,7 @@ class CompanyProfileController:
             )
             return False, f"A database error occurred: {e}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
 
 =============== FILE: controllers/financial_controller.py ===============
@@ -3956,7 +3932,7 @@ class FinancialController:
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def get_invoice_by_id(self, invoice_id: int) -> Optional[Invoice]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             # MODIFIED: Added joinedload to eagerly fetch the owner relationship
             invoice = (
@@ -3972,10 +3948,10 @@ class FinancialController:
             )
             return None
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def get_invoices_for_owner(self, owner_id: int) -> List[Invoice]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             invoices = (
                 session.query(Invoice)
@@ -3993,10 +3969,10 @@ class FinancialController:
             )
             return []
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def get_transactions_for_invoice(self, invoice_id: int) -> List[Transaction]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             transactions = (
                 session.query(Transaction)
@@ -4013,7 +3989,7 @@ class FinancialController:
             )
             return []
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def generate_invoices_from_transactions(
         self, source_transaction_ids: List[int], current_user_id: str
@@ -4021,7 +3997,7 @@ class FinancialController:
         self.logger.info(
             f"--- Starting Invoice Generation for transaction IDs: {source_transaction_ids} ---"
         )
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             if not source_transaction_ids:
                 return False, "No charges were selected to be invoiced.", []
@@ -4165,11 +4141,11 @@ class FinancialController:
             )
             return False, f"A database error occurred: {e}", []
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def record_payment(self, payment_data: Dict[str, Any]) -> Tuple[bool, str]:
         """Records a payment against an invoice and updates balances."""
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             invoice_id = payment_data.get("invoice_id")
             amount = payment_data.get("amount")
@@ -4238,11 +4214,10 @@ class FinancialController:
             )
             return False, "A database error occurred while recording the payment."
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def get_transactions_for_horse(self, horse_id: int) -> List[Transaction]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             transactions = (
                 session.query(Transaction)
@@ -4267,8 +4242,7 @@ class FinancialController:
             )
             return []
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def add_charge_batch_to_horse(
         self,
@@ -4278,7 +4252,7 @@ class FinancialController:
         batch_transaction_date: date,
         administered_by_user_id: str,
     ) -> Tuple[bool, str, Optional[List[Transaction]]]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         new_transactions = []
         try:
             for item in charge_items:
@@ -4328,13 +4302,12 @@ class FinancialController:
             )
             return False, f"An unexpected error occurred: {e}", None
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def update_charge_transaction(
         self, transaction_id: int, data: Dict[str, Any], current_user_id: str
     ) -> Tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             transaction = (
                 session.query(Transaction)
@@ -4366,11 +4339,10 @@ class FinancialController:
             )
             return False, f"A database error occurred: {e}"
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def delete_charge_transaction(self, transaction_id: int) -> Tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             transaction_to_delete = (
                 session.query(Transaction)
@@ -4399,11 +4371,10 @@ class FinancialController:
             )
             return False, f"A database error occurred while deleting the charge: {e}"
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def get_transaction_by_id(self, transaction_id: int) -> Optional[Transaction]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             transaction = (
                 session.query(Transaction)
@@ -4424,15 +4395,14 @@ class FinancialController:
             )
             return None
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def delete_invoice(self, invoice_id: int, current_user_id: str) -> Tuple[bool, str]:
         """
         Deletes an invoice and reverses the owner's balance.
         NOTE: This does NOT make the original charges billable again.
         """
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             invoice_to_delete = (
                 session.query(Invoice)
@@ -4484,8 +4454,7 @@ class FinancialController:
             )
             return False, f"A database error occurred during deletion: {e}"
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
 
 =============== FILE: controllers/horse_controller.py ===============
@@ -4569,7 +4538,7 @@ class HorseController:
 
         chip_number = data.get("chip_number")
         if chip_number and str(chip_number).strip():
-            session = db_manager.get_session()
+            session = db_manager().get_session()  # Corrected line
             try:
                 query = session.query(Horse).filter(Horse.chip_number == chip_number)
                 if not is_new and horse_id_to_check_for_unique:
@@ -4577,11 +4546,11 @@ class HorseController:
                 if query.first():
                     errors.append(f"Chip number '{chip_number}' already exists.")
             finally:
-                session.close()
+                db_manager().close()  # Corrected line
 
         tattoo_number = data.get("tattoo_number")
         if tattoo_number and str(tattoo_number).strip():
-            session = db_manager.get_session()
+            session = db_manager().get_session()  # Corrected line
             try:
                 query = session.query(Horse).filter(
                     Horse.tattoo_number == tattoo_number
@@ -4591,13 +4560,13 @@ class HorseController:
                 if query.first():
                     errors.append(f"Tattoo number '{tattoo_number}' already exists.")
             finally:
-                session.close()
+                db_manager().close()  # Corrected line
         return not errors, errors
 
     def create_horse(
         self, data: dict, created_by_user: str
     ) -> tuple[bool, str, Optional[Horse]]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             data["created_by"] = created_by_user
             data["modified_by"] = created_by_user
@@ -4673,12 +4642,12 @@ class HorseController:
                 None,
             )
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def update_horse(
         self, horse_id: int, data: dict, modified_by_user: str
     ) -> tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             horse = session.query(Horse).filter(Horse.horse_id == horse_id).first()
             if not horse:
@@ -4720,10 +4689,10 @@ class HorseController:
             session.rollback()
             return False, f"An unexpected error occurred while updating the horse: {e}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def get_horse_by_id(self, horse_id: int) -> Optional[Horse]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             horse = (
                 session.query(Horse)
@@ -4746,7 +4715,7 @@ class HorseController:
             )
             return None
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def search_horses(
         self,
@@ -4754,7 +4723,7 @@ class HorseController:
         status: str = "active",
         owner_name_search: Optional[str] = None,
     ) -> List[Horse]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             query = session.query(Horse).options(
                 selectinload(Horse.owners),
@@ -4799,7 +4768,7 @@ class HorseController:
             session.rollback()
             return []
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def deactivate_horse(
         self, horse_id: int, modified_by_user: str
@@ -4812,7 +4781,7 @@ class HorseController:
     def _toggle_horse_status(
         self, horse_id: int, is_active: bool, modified_by_user: str
     ) -> tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             horse = session.query(Horse).filter(Horse.horse_id == horse_id).first()
             if not horse:
@@ -4831,12 +4800,12 @@ class HorseController:
                 f"Error toggling horse status for ID {horse_id}: {e}", exc_info=True
             )
             session.rollback()
-            return False, f"Database error: Could not change horse status."
+            return False, "Database error: Could not change horse status."
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def get_horse_owners(self, horse_id: int) -> List[Dict[str, Any]]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             associations = (
                 session.query(HorseOwner)
@@ -4881,7 +4850,7 @@ class HorseController:
             session.rollback()
             return []
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def add_owner_to_horse(
         self,
@@ -4890,7 +4859,7 @@ class HorseController:
         percentage: Optional[float],
         modified_by_user: str,
     ) -> tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             existing_assoc = (
                 session.query(HorseOwner)
@@ -4917,12 +4886,12 @@ class HorseController:
             session.rollback()
             return False, "Database error: Could not add owner."
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def update_horse_owner_percentage(
         self, horse_id: int, owner_id: int, percentage: float, modified_by_user: str
     ) -> tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             association = (
                 session.query(HorseOwner)
@@ -4948,12 +4917,12 @@ class HorseController:
             session.rollback()
             return False, "Database error: Could not update ownership."
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def remove_owner_from_horse(
         self, horse_id: int, owner_id: int, modified_by_user: str
     ) -> tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             association = (
                 session.query(HorseOwner)
@@ -4977,7 +4946,7 @@ class HorseController:
             session.rollback()
             return False, "Database error: Could not remove owner."
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def assign_horse_to_location(
         self,
@@ -4986,7 +4955,7 @@ class HorseController:
         notes: Optional[str],
         modified_by_user: str,
     ) -> tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             today = date.today()
             previous_assignments = (
@@ -5028,7 +4997,7 @@ class HorseController:
             session.rollback()
             return False, "Database error: Could not assign location."
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def remove_horse_from_location(
         self,
@@ -5036,7 +5005,7 @@ class HorseController:
         location_id: Optional[int] = None,
         modified_by_user: str = "system",
     ) -> tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             query = session.query(HorseLocation).filter(
                 HorseLocation.horse_id == horse_id,
@@ -5070,7 +5039,7 @@ class HorseController:
             session.rollback()
             return False, "Database error: Could not remove horse from location."
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
 
 =============== FILE: controllers/location_controller.py ===============
@@ -5111,7 +5080,7 @@ class LocationController:
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def get_all_locations(self, status_filter: str = "all") -> List[Location]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             query = session.query(Location).options(joinedload(Location.state))
             if status_filter == "active":
@@ -5124,10 +5093,10 @@ class LocationController:
             self.logger.error(f"Error fetching all locations: {e}", exc_info=True)
             return []
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def get_location_by_id(self, location_id: int) -> Optional[Location]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             return (
                 session.query(Location)
@@ -5141,7 +5110,7 @@ class LocationController:
             )
             return None
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def validate_location_data(
         self,
@@ -5157,7 +5126,7 @@ class LocationController:
         elif len(name) > 100:
             errors.append("Location Name cannot exceed 100 characters.")
         else:
-            session = db_manager.get_session()
+            session = db_manager().get_session()  # Corrected line
             try:
                 query = session.query(Location.location_id).filter(
                     Location.location_name.collate("NOCASE") == name
@@ -5169,7 +5138,7 @@ class LocationController:
                 if query.first():
                     errors.append(f"Location Name '{name}' already exists.")
             finally:
-                session.close()
+                db_manager().close()  # Corrected line
         return not errors, errors
 
     def create_location(
@@ -5179,7 +5148,7 @@ class LocationController:
         if not is_valid:
             return False, "Validation failed: " + "; ".join(errors), None
 
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
 
             def process_string(value: Any) -> Optional[str]:
@@ -5215,7 +5184,7 @@ class LocationController:
             self.logger.error(f"Error creating location: {e}", exc_info=True)
             return False, f"Failed to create location: {e}", None
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def update_location(
         self, location_id: int, location_data: dict, current_user_id: str
@@ -5226,7 +5195,7 @@ class LocationController:
         if not is_valid:
             return False, "Validation failed: " + "; ".join(errors)
 
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             location = (
                 session.query(Location)
@@ -5254,12 +5223,12 @@ class LocationController:
             )
             return False, f"Failed to update location: {e}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def toggle_location_active_status(
         self, location_id: int, current_user_id: Optional[str] = None
     ) -> Tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             location = (
                 session.query(Location)
@@ -5291,13 +5260,12 @@ class LocationController:
             )
             return False, "A database error occurred while toggling location status."
         finally:
-            if session:
-                session.close()
+            db_manager().close()  # Corrected line
 
     def delete_location(
         self, location_id: int, current_user_id: str
     ) -> Tuple[bool, str]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             linked_horses_count = (
                 session.query(HorseLocation)
@@ -5333,7 +5301,7 @@ class LocationController:
             )
             return False, f"A database error occurred: {e}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
 
 =============== FILE: controllers/owner_controller.py ===============
@@ -5366,8 +5334,7 @@ Changelog:
 - v1.3.1 (2025-05-17):
     - Removed phone number requirement from `validate_owner_data`.
     - Added `mobile_phone` handling.
-- v1.2.1 (2025-05-15): Removed credit_rating.
-- v1.2.0 (2025-05-15): Added delete_master_owner method.
+- v1.2.1 (2025-05-15): Removed credit_rating. - v1.2.0 (2025-05-15): Added delete_master_owner method.
 """
 
 import logging
@@ -5393,7 +5360,7 @@ class OwnerController:
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def get_all_master_owners(self, status_filter: str = "all") -> List[Owner]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             query = session.query(Owner).options(joinedload(Owner.state))
 
@@ -5413,11 +5380,11 @@ class OwnerController:
             self.logger.error(f"Error fetching all master owners: {e}", exc_info=True)
             return []
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def get_all_owners_for_lookup(self, search_term: str = "") -> List[Dict[str, Any]]:
         # ... (implementation unchanged) ...
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             query = session.query(
                 Owner.owner_id,
@@ -5469,11 +5436,11 @@ class OwnerController:
             self.logger.error(f"Error fetching owners for lookup: {e}", exc_info=True)
             return []
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def get_owner_by_id(self, owner_id: int) -> Optional[Owner]:
         # ... (implementation unchanged) ...
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             owner = (
                 session.query(Owner)
@@ -5488,7 +5455,7 @@ class OwnerController:
             )
             return None
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def validate_owner_data(
         self,
@@ -5542,7 +5509,7 @@ class OwnerController:
                 errors.append("Invalid email format.")
 
         if account_number_val and account_number_val.strip():
-            session = db_manager.get_session()
+            session = db_manager().get_session()  # Corrected line
             try:
                 query = session.query(Owner).filter(
                     Owner.account_number.collate("NOCASE") == account_number_val.strip()
@@ -5561,7 +5528,7 @@ class OwnerController:
                 )
                 errors.append("Error validating account number uniqueness.")
             finally:
-                session.close()
+                db_manager().close()  # Corrected line
 
         credit_limit_str = owner_data.get("credit_limit")
         if credit_limit_str is not None and str(credit_limit_str).strip() != "":
@@ -5582,7 +5549,7 @@ class OwnerController:
         if not is_valid:
             return False, "Validation failed: " + "; ".join(errors), None
 
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             new_owner_params = {}
             allowed_keys = [
@@ -5695,13 +5662,13 @@ class OwnerController:
             self.logger.error(f"Error creating master owner: {e}", exc_info=True)
             return False, f"Failed to create owner: {e}", None
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def update_master_owner(
         self, owner_id: int, owner_data: dict, current_user: str
     ) -> Tuple[bool, str]:
         # ... (implementation unchanged) ...
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             owner = session.query(Owner).filter(Owner.owner_id == owner_id).first()
             if not owner:
@@ -5816,13 +5783,13 @@ class OwnerController:
             )
             return False, f"Failed to update owner: {e}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def delete_master_owner(
         self, owner_id_to_delete: int, current_admin_id: str
     ) -> Tuple[bool, str]:
         # ... (implementation unchanged) ...
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             owner = (
                 session.query(Owner)
@@ -5874,11 +5841,11 @@ class OwnerController:
                 )
             return False, f"Failed to delete owner due to a database error: {e}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def get_owner_form_reference_data(self) -> Dict[str, List[Dict[str, Any]]]:
         # ... (implementation unchanged) ...
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             states_query = (
                 session.query(
@@ -5914,13 +5881,13 @@ class OwnerController:
             )
             return {"states": [], "billing_terms": []}
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def toggle_owner_active_status(
         self, owner_id: int, current_user_id: str
     ) -> Tuple[bool, str]:
         # ... (implementation unchanged) ...
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             owner = session.query(Owner).filter(Owner.owner_id == owner_id).first()
             if not owner:
@@ -5939,7 +5906,7 @@ class OwnerController:
             )
             return False, f"Failed to toggle owner status: {e}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
 
 =============== FILE: controllers/reports_controller.py ===============
@@ -6551,13 +6518,12 @@ class UserController:
     def authenticate_user(
         self, login_id_attempt: str, password_attempt: str
     ) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
-        # ... (implementation unchanged) ...
         try:
             self.logger.info(
                 f"UserController.authenticate_user received login_id: '{login_id_attempt}', "
                 f"password_attempt (first 3 chars): '{password_attempt[:3] if password_attempt else ''}...'"
             )
-            session = db_manager.get_session()
+            session = db_manager().get_session()  # Corrected line
             try:
                 user = (
                     session.query(User)
@@ -6608,7 +6574,7 @@ class UserController:
                 )
                 return False, "An error occurred during login. Please try again.", None
             finally:
-                session.close()
+                db_manager().close()  # Corrected line
         except Exception as e_outer:
             self.logger.error(
                 f"Outer unexpected error during authentication for '{login_id_attempt}': {e_outer}",
@@ -6617,7 +6583,7 @@ class UserController:
             return False, "An unexpected server error occurred. Please try again.", None
 
     def get_all_users(self, status_filter: str = "all") -> List[User]:
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             query = session.query(User).options(joinedload(User.roles))
             if status_filter == "active":
@@ -6631,11 +6597,10 @@ class UserController:
             self.logger.error(f"Error fetching all users: {e}", exc_info=True)
             return []
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def get_user_by_login_id(self, login_id_str: str) -> Optional[User]:
-        # ... (implementation unchanged) ...
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             user = (
                 session.query(User)
@@ -6650,7 +6615,7 @@ class UserController:
             )
             return None
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def validate_user_data(
         self,
@@ -6658,7 +6623,6 @@ class UserController:
         is_new: bool = True,
         original_login_id_to_ignore: Optional[str] = None,
     ) -> Tuple[bool, List[str]]:
-        # ... (implementation unchanged) ...
         try:
             from views.admin.dialogs.add_edit_user_dialog import AddEditUserDialog
 
@@ -6681,7 +6645,7 @@ class UserController:
         elif " " in login_id:
             errors.append("Login ID (Username) cannot contain spaces.")
         else:
-            session = db_manager.get_session()
+            session = db_manager().get_session()  # Corrected line
             try:
                 query = session.query(User).filter(
                     User.user_id.collate("NOCASE") == login_id
@@ -6719,7 +6683,7 @@ class UserController:
                 )
                 errors.append("Error validating login_id/email uniqueness.")
             finally:
-                session.close()
+                db_manager().close()  # Corrected line
         if not display_name:
             errors.append("Full Name (User Name) is required.")
         elif len(display_name) > 100:
@@ -6741,18 +6705,17 @@ class UserController:
         if not role_str and is_new:
             errors.append("Role is required for new users.")
         if role_str:
-            session = db_manager.get_session()
+            session = db_manager().get_session()  # Corrected line
             try:
                 if not session.query(Role).filter(Role.name == role_str).first():
                     errors.append(f"Role '{role_str}' does not exist in the database.")
             finally:
-                session.close()
+                db_manager().close()  # Corrected line
         return not errors, errors
 
     def create_user(
         self, user_data: Dict[str, Any], current_admin_id: Optional[str] = None
     ) -> Tuple[bool, str, Optional[User]]:
-        # ... (implementation unchanged) ...
         login_id_to_store = user_data.get("user_id", "").strip()
         if not login_id_to_store:
             return False, "Login ID (Username) cannot be empty.", None
@@ -6778,7 +6741,7 @@ class UserController:
         is_valid, errors = self.validate_user_data(validation_payload, is_new=True)
         if not is_valid:
             return False, "Validation failed: " + "; ".join(errors), None
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             processed_email = data_for_model["email"]
             if isinstance(processed_email, str):
@@ -6843,7 +6806,7 @@ class UserController:
             )
             return False, f"Failed to create user: {e}", None
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def update_user(
         self,
@@ -6851,8 +6814,7 @@ class UserController:
         user_data: Dict[str, Any],
         current_admin_id: Optional[str] = None,
     ) -> Tuple[bool, str]:
-        # ... (implementation unchanged) ...
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             user = (
                 session.query(User)
@@ -6956,7 +6918,7 @@ class UserController:
             )
             return False, f"Failed to update user: {str(e)}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def change_password(
         self,
@@ -6964,10 +6926,9 @@ class UserController:
         new_password: str,
         current_admin_id: Optional[str] = None,
     ) -> Tuple[bool, str]:
-        # ... (implementation unchanged) ...
         if not new_password or len(new_password) < 6:
             return False, "New password must be at least 6 characters long."
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             user = (
                 session.query(User)
@@ -6990,11 +6951,10 @@ class UserController:
             )
             return False, f"Failed to change password: {str(e)}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def get_user_roles(self, login_id_str: str) -> List[str]:
-        # ... (implementation unchanged) ...
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             user = (
                 session.query(User)
@@ -7011,13 +6971,12 @@ class UserController:
             )
             return []
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def delete_user_permanently(
         self, user_id_to_delete: str, current_admin_id: str
     ) -> Tuple[bool, str]:
-        # ... (implementation unchanged) ...
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             user = (
                 session.query(User)
@@ -7066,13 +7025,12 @@ class UserController:
             )
             return False, f"Failed to delete user: {str(e)}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def toggle_user_active_status(
         self, user_login_id: str, current_admin_id: Optional[str] = None
     ) -> Tuple[bool, str]:
-        # ... (implementation unchanged) ...
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             user = (
                 session.query(User)
@@ -7126,11 +7084,10 @@ class UserController:
             )
             return False, "A database error occurred."
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def get_all_roles(self) -> List[Role]:
-        # ... (implementation unchanged) ...
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             roles = session.query(Role).order_by(Role.name).all()
             self.logger.info(f"Retrieved {len(roles)} roles.")
@@ -7140,7 +7097,7 @@ class UserController:
             session.rollback()
             return []
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
 
 =============== FILE: controllers/veterinarian_controller.py ===============
@@ -7178,8 +7135,7 @@ class VeterinarianController:
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def get_all_veterinarians(self, status_filter: str = "all") -> List[Veterinarian]:
-        """Retrieves all veterinarians, optionally filtered by active status."""
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             query = session.query(Veterinarian)
             if status_filter == "active":
@@ -7193,11 +7149,10 @@ class VeterinarianController:
             self.logger.error(f"Error fetching all veterinarians: {e}", exc_info=True)
             return []
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def get_veterinarian_by_id(self, vet_id: int) -> Optional[Veterinarian]:
-        """Retrieves a single veterinarian by their primary key."""
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             return (
                 session.query(Veterinarian)
@@ -7210,7 +7165,7 @@ class VeterinarianController:
             )
             return None
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def validate_veterinarian_data(
         self,
@@ -7228,7 +7183,7 @@ class VeterinarianController:
         license_number = vet_data.get("license_number", "").strip()
         email = vet_data.get("email", "").strip()
 
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             # Check license number uniqueness
             if license_number:
@@ -7257,7 +7212,7 @@ class VeterinarianController:
                     if query.first():
                         errors.append(f"Email '{email}' is already in use.")
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
         return not errors, errors
 
@@ -7269,7 +7224,7 @@ class VeterinarianController:
         if not is_valid:
             return False, "Validation failed: " + "; ".join(errors), None
 
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             new_vet = Veterinarian(
                 first_name=vet_data["first_name"],
@@ -7298,7 +7253,7 @@ class VeterinarianController:
             self.logger.error(f"Error creating veterinarian: {e}", exc_info=True)
             return False, f"Failed to create veterinarian: {e}", None
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def update_veterinarian(
         self, vet_id: int, vet_data: Dict[str, Any], current_user_id: str
@@ -7310,7 +7265,7 @@ class VeterinarianController:
         if not is_valid:
             return False, "Validation failed: " + "; ".join(errors)
 
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             vet = (
                 session.query(Veterinarian)
@@ -7335,13 +7290,13 @@ class VeterinarianController:
             )
             return False, f"Failed to update veterinarian: {e}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
     def toggle_veterinarian_status(
         self, vet_id: int, current_user_id: str
     ) -> Tuple[bool, str]:
         """Toggles the active status of a veterinarian."""
-        session = db_manager.get_session()
+        session = db_manager().get_session()  # Corrected line
         try:
             vet = (
                 session.query(Veterinarian)
@@ -7366,7 +7321,7 @@ class VeterinarianController:
             )
             return False, f"Failed to toggle status: {e}"
         finally:
-            session.close()
+            db_manager().close()  # Corrected line
 
 
 =============== FILE: models/__init__.py ===============
@@ -9085,7 +9040,13 @@ class UserManagementScreen(BaseView):
     APP_PATHS_TAB_INDEX = 7
     BACKUP_RESTORE_TAB_INDEX = 8  # NEW: Index for the Backup/Restore tab
 
-    def __init__(self, current_user_id: str, parent: Optional[QWidget] = None):
+    def __init__(
+        self,
+        current_user_id: str,
+        parent: Optional[QWidget] = None,
+        config_manager_instance=None,
+        backup_manager_instance=None,
+    ):  # MODIFIED: Added config_manager_instance and backup_manager_instance
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.info(
             f"UserManagementScreen __init__ called for user: {current_user_id}"
@@ -9096,6 +9057,9 @@ class UserManagementScreen(BaseView):
             self.logger.error(
                 "UserManagementScreen initialized without a current_user_id!"
             )
+
+        self._config_manager = config_manager_instance  # Store the injected instance
+        self._backup_manager = backup_manager_instance  # Store the injected instance
 
         self.user_controller = UserController()
         self.location_controller = LocationController()
@@ -9197,9 +9161,12 @@ class UserManagementScreen(BaseView):
         company_profile_tab_widget = self._create_company_profile_tab()
 
         # Custom tabs created in separate files
-        self.app_paths_tab = ApplicationPathsTab(parent_view=self)
+        self.app_paths_tab = ApplicationPathsTab(
+            parent_view=self, config_manager_instance=self._config_manager
+        )  # Pass config_manager_instance
         self.backup_restore_tab = BackupRestoreTab(
-            parent_view=self
+            parent_view=self,
+            backup_manager_instance=self._backup_manager,  # Pass backup_manager_instance
         )  # NEW: Instantiate BackupRestoreTab
 
         self.tab_widget.addTab(users_tab_widget, "👤 Manage Users")
@@ -9231,7 +9198,7 @@ class UserManagementScreen(BaseView):
                 border: 1px solid {AppConfig.DARK_BORDER};
                 background-color: {AppConfig.DARK_WIDGET_BACKGROUND};
                 border-radius: 6px;
-                margin-top: -1px; 
+                margin-top: -1px;
             }}
             QTabBar::tab {{
                 padding: 10px 20px;
@@ -9239,18 +9206,17 @@ class UserManagementScreen(BaseView):
                 background-color: {AppConfig.DARK_BUTTON_BG};
                 color: {AppConfig.DARK_TEXT_SECONDARY};
                 border: 1px solid {AppConfig.DARK_BORDER};
-                border-bottom: none; 
+                border-bottom: none;
                 border-top-left-radius: 5px;
                 border-top-right-radius: 5px;
-                min-width: 120px; 
-                font-size: 13px;
-                font-weight: 500;
+                min-width: 120px;
+                font-size: 13px; font-weight: 500;
             }}
             QTabBar::tab:selected {{
                 background-color: {AppConfig.DARK_WIDGET_BACKGROUND};
                 color: {AppConfig.DARK_TEXT_PRIMARY};
                 border-color: {AppConfig.DARK_BORDER};
-                border-bottom-color: {AppConfig.DARK_WIDGET_BACKGROUND}; 
+                border-bottom-color: {AppConfig.DARK_WIDGET_BACKGROUND};
             }}
             QTabBar::tab:!selected:hover {{
                 background-color: {AppConfig.DARK_BUTTON_HOVER};
@@ -9258,9 +9224,9 @@ class UserManagementScreen(BaseView):
             }}
             QTabWidget::tab-bar {{
                 alignment: left;
-                border: none; 
-                background-color: transparent; 
-                margin-bottom: 0px; 
+                border: none;
+                background-color: transparent;
+                margin-bottom: 0px;
             }}
         """
 
@@ -9546,7 +9512,7 @@ class UserManagementScreen(BaseView):
                 background-color: {AppConfig.DARK_HEADER_FOOTER};
                 color: {AppConfig.DARK_TEXT_SECONDARY};
                 padding: 5px;
-                border: none; 
+                border: none;
                 border-bottom: 1px solid {AppConfig.DARK_BORDER};
                 font-weight: 500;
             }}
@@ -14139,6 +14105,7 @@ Changelog:
 
 # Removed local sys.path manipulation
 import logging
+import os  # Added import for 'os'
 from typing import Optional, Dict, Any, List
 
 from PySide6.QtWidgets import (
@@ -14279,7 +14246,7 @@ class BackupRestoreTab(QWidget):
     def _handle_create_backup(self):
         self.logger.info("Initiating backup creation process.")
 
-        default_backup_dir = os.path.join(
+        default_backup_dir = os.path.join(  # `os` is now imported
             os.path.expanduser("~"), "Documents", "EDMS_Backups"
         )
         os.makedirs(default_backup_dir, exist_ok=True)
@@ -24188,13 +24155,23 @@ class PaymentHistoryOptionsWidget(QWidget):
 # scripts/add_initial_data.py
 """
 EDSI Veterinary Management System - Add Initial Data Script
-Version: 1.3.2
+Version: 1.3.4
 Purpose: Populates the database with essential initial data, including a full
          charge code list extracted from the legacy system's report.
-Last Updated: June 9, 2025
+         Now directly initializes DatabaseManager, making it standalone.
+Last Updated: June 23, 2025
 Author: Gemini
 
 Changelog:
+- v1.3.4 (2025-06-23):
+    - Modified `add_initial_data_main` to directly instantiate `DatabaseManager`
+      using `AppConfig` and the global `config_manager`.
+    - All database calls (`initialize_database`, `get_session`, `close`) now use
+      this locally instantiated `_db_manager` object, eliminating reliance on
+      the singleton setup from `main.py` and resolving `RuntimeError: DatabaseManager instance not set`.
+- v1.3.3 (2025-06-23):
+    - Corrected database access calls from `db_manager.get_session()` to `db_manager().get_session()`
+      and `db_manager.close()` to `db_manager().close()` to align with the updated `DatabaseManager` singleton access pattern.
 - v1.3.2 (2025-06-09):
     - Fix: Restored the full implementations for all helper functions.
     - Feature: Populated with the complete list of all 167 charge codes from the PDF.
@@ -24217,7 +24194,11 @@ if project_root not in sys.path:
 
 # Import required modules
 try:
-    from config.database_config import db_manager
+    from config.database_config import DatabaseManager  # Import the class directly
+    from config.app_config import AppConfig  # Import AppConfig
+    from config.config_manager import (
+        config_manager,
+    )  # Import the global config_manager instance
     from models import (
         User,
         Role,
@@ -24234,6 +24215,7 @@ except ImportError as e:
     sys.exit(1)
 
 # --- Logging Setup ---
+# Assuming logs directory is set up by AppConfig in main.py, but for standalone script, ensure it exists.
 log_file_path = os.path.join(project_root, "logs", "add_initial_data.log")
 os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
 logging.basicConfig(
@@ -24440,6 +24422,7 @@ def add_charge_code_categories(session) -> bool:
     def _process_categories(
         categories_list: List[Dict[str, Any]], current_parent_id: Optional[int] = None
     ):
+        nonlocal session  # Declare session as nonlocal to modify the outer scope's session variable
         nonlocal changes_made
         for cat_data in categories_list:
             existing_cat = (
@@ -27033,7 +27016,7 @@ def add_all_charge_codes(session) -> bool:
         },
         {
             "code": "4798",
-            "alt": "DBPOLY",
+            "alt": "POLY",
             "desc": "BOTTLE OF POLYGLYCAN",
             "price": "120.00",
             "path": ["MEDICATIONS DISPENSED", "OTHER INJECTABLE ANTI-INFLAM."],
@@ -27971,14 +27954,18 @@ def add_all_charge_codes(session) -> bool:
 
 def add_initial_data_main():
     logger.info("Running script to add initial data to the database...")
+
+    # Initialize DatabaseManager locally for this standalone script
+    _db_manager = DatabaseManager(AppConfig, config_manager)
+
     try:
-        db_manager.initialize_database()
+        _db_manager.initialize_database()  # Corrected call
         logger.info("Database initialized.")
     except Exception as e:
         logger.critical(f"Failed to initialize database: {e}", exc_info=True)
         return
 
-    session = db_manager.get_session()
+    session = _db_manager.get_session()  # Corrected call
     try:
         logger.info("Starting to add initial reference data...")
         changes_made_this_block = False
@@ -28021,8 +28008,8 @@ def add_initial_data_main():
         )
         session.rollback()
     finally:
-        if session and session.is_active:
-            session.close()
+        if session and session.is_active:  # Check session.is_active before closing
+            _db_manager.close()  # Corrected call, close on the local manager
         logger.info("Database session closed.")
 
 

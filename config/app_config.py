@@ -2,13 +2,16 @@
 
 """
 EDSI Veterinary Management System - Application Configuration
-Version: 2.1.0
+Version: 2.2.1
 Purpose: Centralized configuration for application settings, paths, and constants.
-         Now integrates with ConfigManager for user-configurable data directories.
-Last Updated: June 23, 2025
+         Now includes placeholders for Stripe API keys for doctor's payment settings.
+Last Updated: June 25, 2025
 Author: Claude Assistant (Modified by Gemini)
 
 Changelog:
+- v2.2.1 (2025-06-25):
+    - Added new constants: `DOCTOR_STRIPE_PUBLISHABLE_KEY` and `DOCTOR_STRIPE_SECRET_KEY`
+      as placeholders for the doctor's Stripe API keys, for use in payment integration.
 - v2.2.0 (2025-06-23):
     - Integrated `config_manager` to allow user-configurable paths for:
         - `DATABASE_URL`
@@ -65,9 +68,7 @@ INVOICES_DIR = config_manager.get_path(ConfigManager.INVOICES_DIR_KEY) or os.pat
 )
 STATEMENTS_DIR = config_manager.get_path(
     ConfigManager.STATEMENTS_DIR_KEY
-) or os.path.join(
-    _BASE_PROJECT_ROOT, "statements"
-)  # NEW
+) or os.path.join(_BASE_PROJECT_ROOT, "statements")
 
 # --- Logging Configuration (uses LOG_DIR defined above) ---
 APP_LOG_FILE = os.path.join(LOG_DIR, "edsi_app.log")
@@ -102,6 +103,15 @@ DARK_HIGHLIGHT_BG = "#3182CE"
 DARK_HIGHLIGHT_TEXT = "#FFFFFF"
 DARK_INPUT_FIELD_BACKGROUND = "#222B38"
 
+# --- NEW: Stripe API Keys for Doctor's Payments (PLACEHOLDERS) ---
+# These keys are specific to the doctor's Stripe account (your end-user).
+# They will be read by the desktop application and sent to your centralized backend API.
+# REPLACE THESE WITH YOUR ACTUAL TEST KEYS FOR TESTING,
+# but in a production environment, these should be securely configurable by the user (doctor)
+# within the app's settings, and persisted (e.g., in the database for their user account).
+DOCTOR_STRIPE_PUBLISHABLE_KEY = "pk_test_51Rc7TLBAHovgkmZiZaCPLCiludBNc4NI8ZmQqlEpyeXNgJ0Vndnla7mXcie7HLxeEyrmBRz4CrjiUcXYlFuFOLDR00k4nIZjGr"  # REPLACE THIS!
+DOCTOR_STRIPE_SECRET_KEY = "sk_test_51Rc7TLBAHovgkmZipgbbrO3O8xg1HwhIxzNSmhlH8tP76L04TTBv4JURXf5jyJceNQGrtSz88zzeafwnmzdW04Jr000oPQqWuc"  # REPLACE THIS!
+
 
 class AppConfig:
     """
@@ -119,7 +129,7 @@ class AppConfig:
     LOG_DIR = LOG_DIR
     ASSETS_DIR = ASSETS_DIR
     INVOICES_DIR = INVOICES_DIR
-    STATEMENTS_DIR = STATEMENTS_DIR  # NEW
+    STATEMENTS_DIR = STATEMENTS_DIR
 
     # Database
     DATABASE_URL = DATABASE_URL
@@ -157,14 +167,16 @@ class AppConfig:
     DARK_HIGHLIGHT_TEXT = DARK_HIGHLIGHT_TEXT
     DARK_INPUT_FIELD_BACKGROUND = DARK_INPUT_FIELD_BACKGROUND
 
+    # NEW: Doctor's Stripe API Keys
+    DOCTOR_STRIPE_PUBLISHABLE_KEY = DOCTOR_STRIPE_PUBLISHABLE_KEY
+    DOCTOR_STRIPE_SECRET_KEY = DOCTOR_STRIPE_SECRET_KEY
+
     @classmethod
     def get_database_url(cls) -> str:
         return cls.DATABASE_URL
 
     @classmethod
     def get_app_dir(cls) -> str:
-        # This will still return the original _BASE_PROJECT_ROOT for consistency
-        # unless specific user override for app_dir is added to config_manager
         return cls.PROJECT_ROOT
 
     @classmethod
@@ -176,7 +188,7 @@ class AppConfig:
         return cls.INVOICES_DIR
 
     @classmethod
-    def get_statements_dir(cls) -> str:  # NEW
+    def get_statements_dir(cls) -> str:
         return cls.STATEMENTS_DIR
 
     @classmethod
@@ -184,7 +196,6 @@ class AppConfig:
         """Get logging configuration"""
         return {
             "level": cls.LOGGING_LEVEL,
-            # Use dynamically configured paths for log files
             "app_log_file": os.path.join(cls.LOG_DIR, "edsi_app.log"),
             "db_log_file": os.path.join(cls.LOG_DIR, "edsi_db.log"),
             "log_dir": cls.LOG_DIR,
@@ -227,20 +238,17 @@ class AppConfig:
     @classmethod
     def ensure_directories(cls) -> None:
         """Ensure required directories exist, including user-configurable ones."""
-        # Get current effective paths
         directories = [
             cls.LOG_DIR,
             cls.ASSETS_DIR,
             cls.INVOICES_DIR,
-            cls.STATEMENTS_DIR,  # NEW
+            cls.STATEMENTS_DIR,
         ]
 
         for directory in directories:
             if not os.path.exists(directory):
                 try:
                     os.makedirs(directory, exist_ok=True)
-                    # Use standard logging now that it's set up in main.py
                     logging.info(f"Created directory: {directory}")
                 except OSError as e:
                     logging.error(f"Failed to create directory {directory}: {e}")
-                    # Continue attempting to create other directories

@@ -1,12 +1,44 @@
 # views/horse/tabs/invoice_history_tab.py
 """
 EDSI Veterinary Management System - Invoice History Tab
-Version: 2.5.2
+Version: 2.7.1
 Purpose: UI for displaying and managing historical invoices for a horse's owners.
-Last Updated: June 13, 2025
+         Now correctly implements 'Sync Payments' with all necessary imports.
+Last Updated: June 25, 2025
 Author: Gemini
 
 Changelog:
+- v2.7.1 (2025-06-25):
+    - **BUG FIX**: Added missing `from datetime import datetime` import statement to resolve `NameError` for `datetime` in `_sync_payment_statuses`.
+- v2.7.0 (2025-06-25):
+    - Added 'Sync Payments' button to action layout.
+    - Implemented `_sync_payment_statuses` method to:
+        - Iterate through displayed unpaid invoices.
+        - Call `financial_controller.get_stripe_payment_status` for each.
+        - Log the status retrieved from the backend API (local DB update to follow).
+    - Updated `update_buttons_state` to enable the 'Sync Payments' button.
+- v2.6.2 (2025-06-25):
+    - Removed hardcoded `doctor_stripe_secret_key` from `_get_payment_link_for_invoice`.
+    - Modified `_get_payment_link_for_invoice` to retrieve `DOCTOR_STRIPE_SECRET_KEY` from `AppConfig`.
+- v2.6.1 (2025-06-25):
+    - **BUG FIX**: Added missing `from typing import Tuple` import statement to resolve `NameError` for `Tuple` type hint.
+- v2.6.0 (2025-06-25):
+    - **MAJOR REFACTOR (Payment Link Workflow)**:
+        - Removed the standalone 'Generate Payment Link' button from the UI.
+        - Integrated Stripe Payment Link generation directly into `_email_selected_invoice` and `_print_selected_invoice` methods.
+        - If a single, unpaid invoice is selected, the system now automatically generates a payment link.
+        - This generated payment link URL is then passed to `InvoiceGenerator.generate_invoice_pdf` for embedding.
+        - This streamlines the process, ensuring the link is on the invoice without user intervention.
+    - Updated `update_buttons_state` to reflect the new workflow and button removals.
+- v2.5.4 (2025-06-25):
+    - **BUG FIX**: Updated `_generate_payment_link` to pass `doctor_stripe_secret_key` and `doctor_identifier`
+      arguments to `financial_controller.create_stripe_payment_link`, resolving `TypeError`.
+    - Added a placeholder for `doctor_stripe_secret_key` and used `self.parent_view.current_user` as `doctor_identifier`.
+- v2.5.3 (2025-06-23):
+    - Added 'Generate Payment Link' button to action layout.
+    - Implemented `_generate_payment_link` method to call `financial_controller.create_stripe_payment_link`.
+    - Added logic to enable/disable the 'Generate Payment Link' button based on invoice selection and status.
+    - Included a mechanism to display the generated payment link to the user.
 - v2.5.2 (2025-06-13):
     - Refactored the email invoice confirmation to use `self.parent_view.show_info`
       to ensure a consistently styled dialog is displayed, matching the
@@ -34,7 +66,9 @@ import logging
 import os
 import webbrowser
 import urllib.parse
-from typing import Optional, List
+from typing import Optional, List, Tuple
+from decimal import Decimal
+from datetime import datetime  # ADDED: Missing import for datetime
 
 from PySide6.QtWidgets import (
     QWidget,
@@ -49,6 +83,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QMessageBox,
     QDialog,
+    QApplication,
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont, QColor
@@ -146,9 +181,16 @@ class InvoiceHistoryTab(QWidget):
         self.delete_invoice_btn = self._create_action_button(
             "Delete Selected Invoice(s)", "🗑️", AppConfig.DARK_DANGER_ACTION
         )
+        self.sync_payments_btn = self._create_action_button(
+            "Sync Payments",
+            "🔄",
+            AppConfig.DARK_BUTTON_BG,
+            AppConfig.DARK_TEXT_SECONDARY,
+        )
 
         action_layout.addWidget(self.record_payment_btn)
         action_layout.addStretch()
+        action_layout.addWidget(self.sync_payments_btn)
         action_layout.addWidget(self.email_invoice_btn)
         action_layout.addWidget(self.print_invoice_btn)
         action_layout.addWidget(self.delete_invoice_btn)
@@ -227,6 +269,7 @@ class InvoiceHistoryTab(QWidget):
         self.email_invoice_btn.clicked.connect(self._email_selected_invoice)
         self.delete_invoice_btn.clicked.connect(self._delete_selected_invoice)
         self.record_payment_btn.clicked.connect(self._launch_record_payment_dialog)
+        self.sync_payments_btn.clicked.connect(self._sync_payment_statuses)
 
     def set_current_horse(self, horse: Optional[Horse]):
         self.current_horse = horse
@@ -371,8 +414,190 @@ class InvoiceHistoryTab(QWidget):
             )
             self.payment_recorded.emit()
 
+    def _get_payment_link_for_invoice(self, invoice: Invoice) -> Optional[str]:
+        """
+        Helper to generate a Stripe Payment Link for a single, unpaid invoice.
+        Retrieves the doctor's secret key from AppConfig.
+        Returns the URL or None if generation fails or not applicable.
+        """
+        if invoice.balance_due <= 0:
+            return None
+
+        self.status_message.emit(
+            f"Generating payment link for Invoice #{invoice.invoice_id}..."
+        )
+
+        doctor_stripe_secret_key = AppConfig.DOCTOR_STRIPE_SECRET_KEY
+        if (
+            not doctor_stripe_secret_key
+            or doctor_stripe_secret_key == "sk_test_YOUR_DOCTOR_SECRET_KEY"
+        ):
+            self.parent_view.show_warning(
+                "Stripe Configuration Missing",
+                "Doctor's Stripe Secret Key is not configured in settings. Cannot generate payment link.",
+            )
+            self.logger.warning(
+                "Attempted to generate payment link, but doctor's Stripe Secret Key is missing or placeholder."
+            )
+            return None
+
+        doctor_identifier = (
+            self.parent_view.current_user
+            if hasattr(self.parent_view, "current_user")
+            else "UNKNOWN_DOCTOR"
+        )
+
+        owner_email = (
+            invoice.owner.email if invoice.owner and invoice.owner.email else None
+        )
+        owner_name = (
+            invoice.owner.farm_name
+            or f"{invoice.owner.first_name} {invoice.owner.last_name}"
+            if invoice.owner
+            else "N/A"
+        )
+
+        success, message, payment_link_url = (
+            self.financial_controller.create_stripe_payment_link(
+                invoice_id=invoice.invoice_id,
+                amount=invoice.balance_due,
+                description=f"Payment for Invoice #{invoice.invoice_id} for {owner_name}",
+                doctor_stripe_secret_key=doctor_stripe_secret_key,
+                doctor_identifier=doctor_identifier,
+                customer_email=owner_email,
+            )
+        )
+        if success and payment_link_url:
+            self.status_message.emit(
+                f"Payment link generated for Invoice #{invoice.invoice_id}."
+            )
+            return payment_link_url
+        else:
+            self.parent_view.show_warning(
+                "Payment Link Generation Failed",
+                f"Could not generate payment link for Invoice #{invoice.invoice_id}: {message}. PDF will be generated without link.",
+            )
+            return None
+
+    def _sync_payment_statuses(self):
+        """
+        Polls the backend API for payment statuses of all unpaid invoices and
+        updates local records if payments are confirmed.
+        """
+        unpaid_invoices = [
+            inv
+            for inv in self.invoices
+            if inv.status == "Unpaid" and inv.balance_due > 0
+        ]
+
+        if not unpaid_invoices:
+            self.status_message.emit("No unpaid invoices to sync.")
+            return
+
+        self.status_message.emit(
+            f"Checking payment status for {len(unpaid_invoices)} unpaid invoices..."
+        )
+
+        doctor_identifier = (
+            self.parent_view.current_user
+            if hasattr(self.parent_view, "current_user")
+            else "UNKNOWN_DOCTOR"
+        )
+
+        if (
+            not AppConfig.DOCTOR_STRIPE_SECRET_KEY
+            or AppConfig.DOCTOR_STRIPE_SECRET_KEY == "sk_test_YOUR_DOCTOR_SECRET_KEY"
+        ):
+            self.parent_view.show_warning(
+                "Stripe Configuration Missing",
+                "Doctor's Stripe Secret Key is not configured in settings. Cannot sync payments.",
+            )
+            self.logger.warning(
+                "Attempted to sync payments, but doctor's Stripe Secret Key is missing or placeholder."
+            )
+            return
+
+        sync_count = 0
+        for invoice in unpaid_invoices:
+            success, is_paid, message = (
+                self.financial_controller.get_stripe_payment_status(
+                    doctor_identifier=doctor_identifier,
+                    internal_invoice_id=invoice.invoice_id,
+                )
+            )
+
+            if success:
+                if is_paid:
+                    # Update local database: mark as paid, record OwnerPayment, OwnerBillingHistory
+                    self.logger.info(
+                        f"Invoice #{invoice.invoice_id} confirmed paid by backend. Updating local DB."
+                    )
+
+                    # Get the actual invoice object again from DB to ensure it's "fresh" and session-attached for updates
+                    # This is important before attempting to modify its status and recording payment details.
+                    # We need the full invoice object, not just the one from self.invoices list
+                    # as it might be detached from session
+                    invoice_to_update = self.financial_controller.get_invoice_by_id(
+                        invoice.invoice_id
+                    )
+
+                    if invoice_to_update:
+                        payment_data = {
+                            "invoice_id": invoice_to_update.invoice_id,
+                            "amount": invoice_to_update.balance_due,  # Use the balance due as the amount paid for full payment
+                            "payment_date": datetime.now().date(),  # Use current date as confirmation date
+                            "payment_method": "Stripe (Webhook Confirmed)",
+                            "reference_number": f"WEBHOOK_INV{invoice_to_update.invoice_id}",  # Reference from webhook
+                            "notes": "Automatically confirmed via Stripe webhook.",
+                            "user_id": "SYSTEM_SYNC",  # User ID for system-confirmed payments
+                        }
+
+                        record_success, record_msg = (
+                            self.financial_controller.record_payment(payment_data)
+                        )
+                        if record_success:
+                            sync_count += 1
+                            self.status_message.emit(
+                                f"Invoice #{invoice.invoice_id} marked as Paid in local DB."
+                            )
+                            self.payment_recorded.emit()  # Signal parent to refresh invoices/UI
+                        else:
+                            self.logger.error(
+                                f"Failed to update local DB for Invoice #{invoice.invoice_id} after backend confirmation: {record_msg}"
+                            )
+                            self.parent_view.show_error(
+                                "Local DB Update Failed",
+                                f"Invoice #{invoice.invoice_id} confirmed paid, but failed to update local records: {record_msg}",
+                            )
+                    else:
+                        self.logger.error(
+                            f"Could not retrieve Invoice #{invoice.invoice_id} from DB for update after backend confirmation."
+                        )
+                        self.parent_view.show_error(
+                            "Local DB Error",
+                            f"Failed to retrieve Invoice #{invoice.invoice_id} for update.",
+                        )
+                else:
+                    self.logger.info(
+                        f"Invoice #{invoice.invoice_id} still unpaid according to backend."
+                    )
+            else:
+                self.logger.error(
+                    f"Failed to get status for Invoice #{invoice.invoice_id} from backend: {message}"
+                )
+                self.status_message.emit(
+                    f"Error syncing Invoice #{invoice.invoice_id}: {message}"
+                )
+
+        if sync_count > 0:
+            self.status_message.emit(
+                f"Sync complete. {sync_count} invoice(s) marked as paid."
+            )
+            self.load_invoices()  # Reload table to show updated statuses
+        else:
+            self.status_message.emit("Sync complete. No new payments found.")
+
     def _email_selected_invoice(self):
-        """Generates a PDF of the invoice and opens the user's mail client."""
         selected_invoices = self._get_selected_invoices()
         if not selected_invoices:
             self.status_message.emit("Please select one or more invoices to email.")
@@ -402,12 +627,17 @@ class InvoiceHistoryTab(QWidget):
                 )
                 continue
 
+            # Generate payment link for single unpaid invoice IF applicable
+            payment_link_url = None
+            if len(selected_invoices) == 1 and inv.balance_due > 0:
+                payment_link_url = self._get_payment_link_for_invoice(inv)
+
             pdf_filename = f"Invoice-{inv.invoice_id} for {owner.last_name}.pdf"
             file_path = os.path.join(invoices_dir, pdf_filename)
 
             try:
                 success, message = generator.generate_invoice_pdf(
-                    inv.invoice_id, file_path
+                    inv.invoice_id, file_path, payment_link_url
                 )
                 if not success:
                     self.parent_view.show_error(
@@ -428,10 +658,12 @@ class InvoiceHistoryTab(QWidget):
 
             subject = f"Invoice from {company_name}"
             body = f"Dear {owner.first_name or owner.last_name},\n\nPlease find your invoice attached.\n\nThank you,\n{company_name}"
+            if payment_link_url:
+                body += f"\n\nTo pay online, please visit: {payment_link_url}"
+
             mailto_url = f"mailto:{owner.email}?subject={urllib.parse.quote(subject)}&body={urllib.parse.quote(body)}"
             webbrowser.open(mailto_url)
 
-        # MODIFIED: Use parent_view's show_info method for consistency
         self.parent_view.show_info(
             "Email Process Complete",
             f"Your email client should have opened with drafts for the selected invoices.\n\n"
@@ -455,16 +687,34 @@ class InvoiceHistoryTab(QWidget):
 
             generator = InvoiceGenerator()
             for inv in selected_invoices:
-                file_path = os.path.join(folder_path, f"Invoice-{inv.invoice_id}.pdf")
-                generator.generate_invoice_pdf(inv.invoice_id, file_path)
+                payment_link_url = None
 
-            QMessageBox.information(
-                self,
-                "Success",
+                file_path = os.path.join(folder_path, f"Invoice-{inv.invoice_id}.pdf")
+                success, message = generator.generate_invoice_pdf(
+                    inv.invoice_id, file_path, payment_link_url
+                )
+                if success:
+                    self.status_message.emit(
+                        f"Invoice {inv.invoice_id} successfully saved to:\n{file_path}"
+                    )
+                else:
+                    self.parent_view.show_error(
+                        "Error",
+                        f"Failed to generate PDF for Invoice {inv.invoice_id}:\n{message}",
+                    )
+
+            self.parent_view.show_info(
+                "Batch Print Complete",
                 f"{len(selected_invoices)} invoices successfully saved to:\n{folder_path}",
             )
-        else:
+
+        else:  # Single invoice selected for print
             selected_invoice = selected_invoices[0]
+
+            payment_link_url = None
+            if selected_invoice.balance_due > 0:
+                payment_link_url = self._get_payment_link_for_invoice(selected_invoice)
+
             default_filename = f"Invoice-{selected_invoice.invoice_id}.pdf"
             default_path = os.path.join(AppConfig.INVOICES_DIR, default_filename)
             file_path, _ = QFileDialog.getSaveFileName(
@@ -476,7 +726,7 @@ class InvoiceHistoryTab(QWidget):
             try:
                 generator = InvoiceGenerator()
                 success, message = generator.generate_invoice_pdf(
-                    selected_invoice.invoice_id, file_path
+                    selected_invoice.invoice_id, file_path, payment_link_url
                 )
                 if success:
                     self.parent_view.show_info(
@@ -541,6 +791,11 @@ class InvoiceHistoryTab(QWidget):
         self.print_invoice_btn.setEnabled(selection_count > 0)
         self.email_invoice_btn.setEnabled(selection_count > 0)
         self.delete_invoice_btn.setEnabled(selection_count > 0)
+
+        has_unpaid_invoices_in_list = any(
+            inv.status == "Unpaid" and inv.balance_due > 0 for inv in self.invoices
+        )
+        self.sync_payments_btn.setEnabled(has_unpaid_invoices_in_list)
 
         has_single_unpaid_selection = False
         if selection_count == 1:
