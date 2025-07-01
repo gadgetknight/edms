@@ -2,14 +2,30 @@
 
 """
 EDSI Veterinary Management System - Main Application Entry Point
-Version: 2.1.1
+Version: 2.1.4
 Purpose: Configured to use user-defined paths from AppConfig for logging and database.
          Now imports all top-level managers/controllers directly and passes them
          down using dependency injection to resolve persistent ModuleNotFoundError.
-Last Updated: June 23, 2025
+Last Updated: June 30, 2025
 Author: Claude Assistant (Modified by Gemini, further modified by Coding partner)
 
 Changelog:
+- v2.1.4 (2025-06-30):
+    - **BUG FIX**: Corrected typo `_PROJECT_ROOT_FOR_PATHing` to `_PROJECT_ROOT_FOR_PATHING`
+      at line 46 to resolve `NameError`.
+    - Ensured `_initial_log_dir_fallback` robustly uses `tempfile.gettempdir()`
+      for early logging to prevent `PermissionError` when run from protected directories.
+- v2.1.3 (2025-06-30):
+    - Modified `show_horse_management_screen` and `show_user_management_screen` to
+      call `.showMaximized()` on the respective window instances, ensuring these
+      screens open in a full-screen (maximized) state by default.
+- v2.1.2 (2025-06-30):
+    - **CRITICAL BUG FIX (PermissionError on startup from Program Files):** Modified the
+      `_initial_log_dir_fallback` in the `if __name__ == "__main__"` block
+      to use `tempfile.gettempdir()` for early logging. This ensures that even
+      before AppConfig is fully initialized, any initial logs are written to a
+      user-writable temporary directory, preventing `PermissionError: Access is denied`
+      when the application is installed in protected directories like `Program Files`.
 - v2.1.1 (2025-06-23):
     - **CRITICAL BUG FIX (Final Attempt for ModuleNotFoundError):** Moved `sys.path`
       manipulation to the *absolute very top* of the file, before any other imports,
@@ -20,17 +36,20 @@ Changelog:
 
 import sys
 import os
+import tempfile
 
 # CRITICAL BUG FIX: Add project root to sys.path at the very beginning of the script.
 # This ensures Python can find top-level packages like 'config' and 'services'.
 # __file__ gives the path to this script. dirname(__file__) is its directory.
 # os.pardir is '..'. So, join(dirname(__file__), os.pardir) goes up one level.
 # abspath ensures it's a full path.
-_PROJECT_ROOT_FOR_PATHING = os.path.abspath(
+_PROJECT_ROOT_FOR_PATHING = os.path.abspath(  # Variable definition with uppercase G
     os.path.join(os.path.dirname(__file__), os.pardir)
 )
 
-if _PROJECT_ROOT_FOR_PATHING not in sys.path:
+if (
+    _PROJECT_ROOT_FOR_PATHING not in sys.path
+):  # Corrected variable usage with uppercase G
     sys.path.insert(0, _PROJECT_ROOT_FOR_PATHING)
 
 
@@ -197,9 +216,9 @@ class EDSIApplication(QApplication):
         self.logger.info("Initializing database...")
         try:
             # db_manager is a function that returns the instance, so call it first
-            db_manager().initialize_database()  # Corrected line
+            db_manager().initialize_database()
             # Perform a simple query to verify connection
-            with db_manager().get_session() as session:  # Corrected line
+            with db_manager().get_session() as session:
                 session.execute(text("SELECT 1"))
             self.logger.info("Database initialized successfully")
         except Exception as e:
@@ -297,7 +316,7 @@ class EDSIApplication(QApplication):
         self.horse_management_screen.setup_requested.connect(
             self.show_user_management_screen
         )
-        self.horse_management_screen.show()
+        self.horse_management_screen.showMaximized()
         self.logger.info("Horse Management Screen shown.")
 
     def show_user_management_screen(self):
@@ -340,7 +359,7 @@ class EDSIApplication(QApplication):
             self.handle_user_management_destroyed
         )
 
-        self.user_management_screen.show()
+        self.user_management_screen.showMaximized()
         self.logger.info("User Management Screen shown.")
 
     def handle_user_management_destroyed(self):
@@ -528,25 +547,29 @@ def main():
 
 if __name__ == "__main__":
     # Ensure initial log directory for main's own logging is robust
-    # This might be redundant after the main() function's AppConfig.LOG_DIR check,
-    # but good for very early errors before main() takes over.
-    _initial_log_dir_fallback = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "logs_temp"
-    )
-    if not os.path.exists(_initial_log_dir_fallback):
-        os.makedirs(_initial_log_dir_fallback, exist_ok=True)
+    # Using a platform-appropriate temporary directory for early logging
+    _initial_log_dir_fallback = os.path.join(tempfile.gettempdir(), "EDMS_temp_logs")
+    os.makedirs(_initial_log_dir_fallback, exist_ok=True)
 
     # Configure basic logging for the `__main__` block.
     # This is a fallback/initial logging that will be reconfigured
     # more thoroughly by `EDSIApplication.setup_logging` once the app starts.
     logging.basicConfig(
-        level=logging.INFO,  # Use INFO here as AppConfig is not yet fully linked
+        level=logging.INFO,
         format="%(asctime)s - %(levelname)s - %(name)s - %(module)s:%(lineno)d - %(message)s",
-        handlers=[logging.StreamHandler(sys.stdout)],
+        handlers=[
+            logging.StreamHandler(sys.stdout),
+            # Also add a file handler for this very early fallback, in case of critical startup errors
+            logging.FileHandler(
+                os.path.join(_initial_log_dir_fallback, "edms_startup_fallback.log"),
+                mode="a",
+            ),
+        ],
     )
 
     main_logger_for_init = logging.getLogger(__name__)
     main_logger_for_init.info("Application main script invoked from __main__ block.")
+    main_logger_for_init.info(f"Early logging fallback to: {_initial_log_dir_fallback}")
 
     # Call main function to start the application logic
     main()

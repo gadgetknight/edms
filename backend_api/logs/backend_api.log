@@ -197,3 +197,54 @@
 2025-06-24 20:24:52,219 - INFO - _util.py:128 - message='Stripe API response' path=https://api.stripe.com/v1/payment_links response_code=200
 2025-06-24 20:24:52,220 - INFO - app.py:251 - Stripe Payment Link created for Invoice 1 by ADMIN: https://buy.stripe.com/test_6oU9ASbpx8YvbCectC3cc0h
 2025-06-24 20:24:52,220 - INFO - _internal.py:97 - 127.0.0.1 - - [24/Jun/2025 20:24:52] "POST /create-payment-link HTTP/1.1" 200 -
+2025-06-24 20:47:39,181 - INFO - app.py:96 - Backend database initialized at C:\Projects\EDMS\backend_api\data\backend_api.db
+2025-06-24 20:47:39,192 - INFO - _internal.py:97 - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-06-24 20:47:39,193 - INFO - _internal.py:97 - [33mPress CTRL+C to quit[0m
+2025-06-24 20:59:29,515 - INFO - app.py:381 - PaymentIntent pi_3Rder2BAHovgkmZi0LrIKAp0 succeeded (Doctor: None).
+2025-06-24 20:59:29,519 - INFO - app.py:129 - Logged webhook event evt_3Rder2BAHovgkmZi0I24n4Ia (payment_intent.succeeded) with status: processed_succeeded
+2025-06-24 20:59:29,519 - INFO - _internal.py:97 - 127.0.0.1 - - [24/Jun/2025 20:59:29] "POST /stripe-webhook HTTP/1.1" 200 -
+2025-06-24 20:59:52,765 - INFO - app.py:350 - Received checkout.session.completed event for session ID: cs_test_a1TxYGkjPebCQgPMhrx43682mtAIJcxCCZHT4LvRMp0RjtpgIrNbPX27yx
+2025-06-24 20:59:52,765 - INFO - app.py:355 - Payment confirmed for internal invoice ID: 1 (Doctor: ADMIN). Session ID: cs_test_a1TxYGkjPebCQgPMhrx43682mtAIJcxCCZHT4LvRMp0RjtpgIrNbPX27yx
+2025-06-24 20:59:52,769 - INFO - app.py:129 - Logged webhook event evt_1Rder4BAHovgkmZi3eUqkWh7 (checkout.session.completed) with status: processed_paid
+2025-06-24 20:59:52,770 - INFO - _internal.py:97 - 127.0.0.1 - - [24/Jun/2025 20:59:52] "POST /stripe-webhook HTTP/1.1" 200 -
+2025-06-24 21:00:20,327 - INFO - _internal.py:97 - 127.0.0.1 - - [24/Jun/2025 21:00:20] "[31m[1mGET /create-payment-link HTTP/1.1[0m" 405 -
+2025-06-24 21:00:20,538 - INFO - _internal.py:97 - 127.0.0.1 - - [24/Jun/2025 21:00:20] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2025-06-24 21:00:45,268 - INFO - _internal.py:97 - 127.0.0.1 - - [24/Jun/2025 21:00:45] "[31m[1mGET /create-payment-link HTTP/1.1[0m" 405 -
+2025-06-24 21:03:31,274 - INFO - _util.py:128 - message='Request to Stripe api' method=get url=https://api.stripe.com/v1/products?limit=100
+2025-06-24 21:03:31,511 - INFO - _util.py:128 - message='Stripe API response' path=https://api.stripe.com/v1/products?limit=100 response_code=200
+2025-06-24 21:03:31,511 - INFO - app.py:214 - Using Stripe Product ID: prod_SYj1Thsdggn2jg for invoice payments.
+2025-06-24 21:03:31,511 - INFO - _util.py:128 - message='Request to Stripe api' method=post url=https://api.stripe.com/v1/prices
+2025-06-24 21:03:31,732 - INFO - _util.py:128 - message='Stripe API response' path=https://api.stripe.com/v1/prices response_code=200
+2025-06-24 21:03:31,733 - INFO - _util.py:128 - message='Request to Stripe api' method=post url=https://api.stripe.com/v1/payment_links
+2025-06-24 21:03:32,179 - INFO - _util.py:128 - message='Stripe API response' path=https://api.stripe.com/v1/payment_links response_code=200
+2025-06-24 21:03:32,179 - INFO - app.py:251 - Stripe Payment Link created for Invoice 1 by ADMIN: https://buy.stripe.com/test_9B614m79ha2z8q2dxG3cc0i
+2025-06-24 21:03:32,180 - INFO - _internal.py:97 - 127.0.0.1 - - [24/Jun/2025 21:03:32] "POST /create-payment-link HTTP/1.1" 200 -
+2025-06-25 12:43:25,646 - INFO - _util.py:128 - message='Request to Stripe api' method=post url=https://api.stripe.com/v1/prices
+2025-06-25 12:43:26,065 - INFO - _util.py:128 - message='Stripe API response' path=https://api.stripe.com/v1/prices response_code=200
+2025-06-25 12:43:26,065 - INFO - _util.py:128 - message='Request to Stripe api' method=post url=https://api.stripe.com/v1/payment_links
+2025-06-25 12:43:26,500 - INFO - _util.py:128 - message='Stripe API response' path=https://api.stripe.com/v1/payment_links response_code=200
+2025-06-25 12:43:26,500 - INFO - app.py:251 - Stripe Payment Link created for Invoice 1 by ADMIN: https://buy.stripe.com/test_5kQ14m0KTfmTbCectC3cc0j
+2025-06-25 12:43:26,501 - INFO - _internal.py:97 - 127.0.0.1 - - [25/Jun/2025 12:43:26] "POST /create-payment-link HTTP/1.1" 200 -
+2025-06-25 12:46:02,784 - INFO - app.py:381 - PaymentIntent pi_3RdwSTBAHovgkmZi10lhdkSO succeeded (Doctor: None).
+2025-06-25 12:46:02,787 - INFO - app.py:129 - Logged webhook event evt_3RdwSTBAHovgkmZi196ZvDaQ (payment_intent.succeeded) with status: processed_succeeded
+2025-06-25 12:46:02,788 - INFO - _internal.py:97 - 127.0.0.1 - - [25/Jun/2025 12:46:02] "POST /stripe-webhook HTTP/1.1" 200 -
+2025-06-25 12:46:03,166 - INFO - app.py:350 - Received checkout.session.completed event for session ID: cs_test_a1vdP0ywnR3eXYqSgkafRcjpMu70SLVokMo1jNvdkKl8k7DUFFn32ZcTjY
+2025-06-25 12:46:03,166 - INFO - app.py:355 - Payment confirmed for internal invoice ID: 1 (Doctor: ADMIN). Session ID: cs_test_a1vdP0ywnR3eXYqSgkafRcjpMu70SLVokMo1jNvdkKl8k7DUFFn32ZcTjY
+2025-06-25 12:46:03,170 - INFO - app.py:129 - Logged webhook event evt_1RdwSVBAHovgkmZiwLZmHPko (checkout.session.completed) with status: processed_paid
+2025-06-25 12:46:03,170 - INFO - _internal.py:97 - 127.0.0.1 - - [25/Jun/2025 12:46:03] "POST /stripe-webhook HTTP/1.1" 200 -
+2025-06-25 12:46:10,973 - INFO - _internal.py:97 - 127.0.0.1 - - [25/Jun/2025 12:46:10] "GET /get-payment-status/ADMIN/1 HTTP/1.1" 200 -
+2025-06-25 12:54:30,419 - INFO - _util.py:128 - message='Request to Stripe api' method=post url=https://api.stripe.com/v1/prices
+2025-06-25 12:54:30,735 - INFO - _util.py:128 - message='Stripe API response' path=https://api.stripe.com/v1/prices response_code=200
+2025-06-25 12:54:30,735 - INFO - _util.py:128 - message='Request to Stripe api' method=post url=https://api.stripe.com/v1/payment_links
+2025-06-25 12:54:31,120 - INFO - _util.py:128 - message='Stripe API response' path=https://api.stripe.com/v1/payment_links response_code=200
+2025-06-25 12:54:31,121 - INFO - app.py:251 - Stripe Payment Link created for Invoice 1 by ADMIN: https://buy.stripe.com/test_dRm14mfFN0rZeOqeBK3cc0k
+2025-06-25 12:54:31,121 - INFO - _internal.py:97 - 127.0.0.1 - - [25/Jun/2025 12:54:31] "POST /create-payment-link HTTP/1.1" 200 -
+2025-06-25 12:56:02,598 - INFO - app.py:381 - PaymentIntent pi_3Rdwc9BAHovgkmZi0j95mh5O succeeded (Doctor: None).
+2025-06-25 12:56:02,602 - INFO - app.py:129 - Logged webhook event evt_3Rdwc9BAHovgkmZi0bRSIi0D (payment_intent.succeeded) with status: processed_succeeded
+2025-06-25 12:56:02,603 - INFO - _internal.py:97 - 127.0.0.1 - - [25/Jun/2025 12:56:02] "POST /stripe-webhook HTTP/1.1" 200 -
+2025-06-25 12:56:02,811 - INFO - app.py:350 - Received checkout.session.completed event for session ID: cs_test_a1QAk7iblMFI3uV3bgvxuetDcEdhJCClnQ0HFef3UkmekE88olnVD55zzv
+2025-06-25 12:56:02,812 - INFO - app.py:355 - Payment confirmed for internal invoice ID: 1 (Doctor: ADMIN). Session ID: cs_test_a1QAk7iblMFI3uV3bgvxuetDcEdhJCClnQ0HFef3UkmekE88olnVD55zzv
+2025-06-25 12:56:02,816 - INFO - app.py:129 - Logged webhook event evt_1RdwcABAHovgkmZi4Qq1piw3 (checkout.session.completed) with status: processed_paid
+2025-06-25 12:56:02,817 - INFO - _internal.py:97 - 127.0.0.1 - - [25/Jun/2025 12:56:02] "POST /stripe-webhook HTTP/1.1" 200 -
+2025-06-25 12:56:26,885 - INFO - _internal.py:97 - 127.0.0.1 - - [25/Jun/2025 12:56:26] "GET /get-payment-status/ADMIN/1 HTTP/1.1" 200 -
