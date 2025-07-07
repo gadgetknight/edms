@@ -2,14 +2,20 @@
 
 """
 EDSI Veterinary Management System - Image-Based Splash Screen with Interactive Areas
-Version: 1.3.2
-Purpose: Displays an image-based splash screen with clickable login/exit areas.
-         Corrected signal names to match usage in main.py.
-         Updated AppConfig usage for asset path.
-Last Updated: May 24, 2025
+Version: 1.3.4
+Purpose: Displays an image-based splash screen with clickable login/exit areas, and now includes application version and copyright display.
+Last Updated: July 1, 2025
 Author: Claude Assistant (Correcting user's v1.3.0, further modified by Gemini)
 
 Changelog:
+- v1.3.4 (2025-07-01):
+    - Added a QLabel to the splash screen to display a copyright notice (e.g., "© 2025 EDSI. All rights reserved.").
+    - Positioned the copyright label near the bottom-center of the splash image.
+    - Styled the copyright label for visibility and theme consistency.
+- v1.3.3 (2025-07-01):
+    - Added a QLabel to the splash screen to display `AppConfig.APP_VERSION`.
+    - Positioned the version label in the bottom-right corner of the splash image.
+    - Styled the version label for visibility and theme consistency.
 - v1.3.2 (2025-05-24):
     - Changed image_path construction in setup_splash_ui to use AppConfig.ASSETS_DIR
       resolving AttributeError for AppConfig.get_app_dir().
@@ -38,7 +44,8 @@ from PySide6.QtCore import (
     QRect,
     QTimer,
 )
-from PySide6.QtGui import QPixmap, QPalette, QColor
+from PySide6.QtGui import QPixmap, QPalette, QColor, QFont
+
 
 from config.app_config import AppConfig
 
@@ -63,6 +70,8 @@ class SplashScreen(QWidget):
         self.image_label: Optional[QLabel] = None
         self.login_button_overlay: Optional[QPushButton] = None
         self.exit_button_overlay: Optional[QPushButton] = None
+        self.version_label: Optional[QLabel] = None
+        self.copyright_label: Optional[QLabel] = None  # NEW: Declare copyright label
 
         self.setup_splash_ui()
 
@@ -97,6 +106,54 @@ class SplashScreen(QWidget):
                 0, 0, self.pixmap.width(), self.pixmap.height()
             )
             self.image_label.setScaledContents(True)
+
+            # Add version label
+            self.version_label = QLabel(
+                f"Version {AppConfig.APP_VERSION}", self.image_label
+            )
+            self.version_label.setFont(QFont(AppConfig.DEFAULT_FONT_FAMILY, 9))
+            self.version_label.setStyleSheet("color: white; background: rgba(0,0,0,0);")
+
+            version_label_padding_x = 10
+            version_label_padding_y = 10
+            version_label_width = 100
+            version_label_height = 20
+
+            self.version_label.setGeometry(
+                self.pixmap.width() - version_label_width - version_label_padding_x,
+                self.pixmap.height() - version_label_height - version_label_padding_y,
+                version_label_width,
+                version_label_height,
+            )
+            self.version_label.setAlignment(
+                Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom
+            )
+
+            # NEW: Add copyright label
+            self.copyright_label = QLabel(
+                "© 2025 EDSI. All rights reserved.", self.image_label
+            )
+            self.copyright_label.setFont(
+                QFont(AppConfig.DEFAULT_FONT_FAMILY, 8)
+            )  # Smaller font for copyright
+            self.copyright_label.setStyleSheet(
+                "color: lightgray; background: rgba(0,0,0,0);"
+            )  # Lighter gray text
+
+            # Position the copyright label (e.g., bottom-center)
+            copyright_label_height = 15
+            copyright_label_y_offset = 5  # Offset from bottom
+            self.copyright_label.setGeometry(
+                0,  # X position starts from left
+                self.pixmap.height()
+                - copyright_label_height
+                - copyright_label_y_offset,
+                self.pixmap.width(),  # Full width to center text
+                copyright_label_height,
+            )
+            self.copyright_label.setAlignment(
+                Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignBottom
+            )
 
             login_coords = QRect(280, 340, 95, 35)
             exit_coords = QRect(380, 340, 95, 35)
@@ -144,6 +201,12 @@ class SplashScreen(QWidget):
         if self.exit_button_overlay:
             self.exit_button_overlay.deleteLater()
             self.exit_button_overlay = None
+        if self.version_label:
+            self.version_label.deleteLater()
+            self.version_label = None
+        if self.copyright_label:  # NEW: Clean up copyright label too
+            self.copyright_label.deleteLater()
+            self.copyright_label = None
 
         current_layout = self.layout()
         if current_layout is not None:

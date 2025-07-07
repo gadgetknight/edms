@@ -2,13 +2,17 @@
 
 """
 EDSI Veterinary Management System - Financial Controller
-Version: 2.6.0
+Version: 2.6.1
 Purpose: Handles business logic for financial operations like creating invoices and recording payments.
          Now refactored to remove direct Stripe API key storage, receiving it per request.
-Last Updated: June 28, 2025
+Last Updated: July 1, 2025
 Author: Gemini
 
 Changelog:
+- v2.6.1 (2025-07-01):
+    - **BUG FIX**: Modified `get_transaction_by_id` to eagerly load the `charge_code`
+      relationship using `joinedload(Transaction.charge_code)` to prevent
+      `DetachedInstanceError` when accessing `transaction.charge_code` in the UI.
 - v2.6.0 (2025-06-28):
     - Modified `generate_invoices_from_transactions` to calculate and assign
       `invoice_period_ym` and `monthly_sequence_number` for new `Invoice` records.
@@ -64,7 +68,7 @@ from collections import defaultdict
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload, selectinload
-from sqlalchemy import func, desc  # Added func for max, desc for ordering
+from sqlalchemy import func, desc
 
 from config.database_config import db_manager
 from models import (
@@ -90,7 +94,7 @@ class FinancialController:
         # IMPORTANT: Replace this with your ngrok HTTPS URL for local testing,
         # then with your permanent VPS URL when deployed.
         self.backend_api_base_url = (
-            "https://b3d1-73-10-116-104.ngrok-free.app"  # REPLACE WITH YOUR NGROK URL!
+            "https://3474-109-169-39-102.ngrok-free.app"  # REPLACE WITH YOUR NGROK URL!
         )
 
         # REMOVED: self.stripe_secret_key = "sk_test_YOUR_STRIPE_SECRET_KEY"
@@ -363,7 +367,7 @@ class FinancialController:
                         status="Unpaid",
                     )
                     session.add(owner_invoice)
-                    session.flush()  # Flush to get owner_invoice.invoice_id immediately
+                    session.flush()
 
                     invoice_total = Decimal("0.00")
 
@@ -405,7 +409,7 @@ class FinancialController:
 
                     history_entry = OwnerBillingHistory(
                         owner_id=owner.owner_id,
-                        description=f"Invoice #{owner_invoice.display_invoice_id} generated for {horse.horse_name}.",  # Updated to use display_invoice_id
+                        description=f"Invoice #{owner_invoice.display_invoice_id} generated for {horse.horse_name}.",
                         amount_change=invoice_total,
                         new_balance=owner.balance,
                         created_by=current_user_id,
@@ -488,7 +492,7 @@ class FinancialController:
             # Create billing history log for the payment
             history_entry = OwnerBillingHistory(
                 owner_id=owner.owner_id,
-                description=f"Payment received for Invoice #{invoice.display_invoice_id}. Ref: {new_payment.reference_number or new_payment.payment_method}",  # Updated to use display_invoice_id
+                description=f"Payment received for Invoice #{invoice.display_invoice_id}. Ref: {new_payment.reference_number or new_payment.payment_method}",
                 amount_change=-amount,
                 new_balance=owner.balance,
                 created_by=current_user_id,
@@ -673,6 +677,9 @@ class FinancialController:
         try:
             transaction = (
                 session.query(Transaction)
+                .options(
+                    joinedload(Transaction.charge_code)
+                )  # NEW: Eager load charge_code
                 .filter(Transaction.transaction_id == transaction_id)
                 .first()
             )
@@ -718,7 +725,7 @@ class FinancialController:
             reversal_amount = invoice_to_delete.grand_total
 
             self.logger.info(
-                f"Deleting Invoice #{invoice_to_delete.display_invoice_id} for owner '{owner.owner_id}'. "  # Updated to use display_invoice_id
+                f"Deleting Invoice #{invoice_to_delete.display_invoice_id} for owner '{owner.owner_id}'. "
                 f"Reversing balance by ${reversal_amount}."
             )
 
@@ -726,7 +733,7 @@ class FinancialController:
 
             history_entry = OwnerBillingHistory(
                 owner_id=owner.owner_id,
-                description=f"Invoice #{invoice_to_delete.display_invoice_id} deleted by user. Reversal of charges.",  # Updated to use display_invoice_id
+                description=f"Invoice #{invoice_to_delete.display_invoice_id} deleted by user. Reversal of charges.",
                 amount_change=-reversal_amount,
                 new_balance=owner.balance,
                 created_by=current_user_id,
@@ -737,12 +744,12 @@ class FinancialController:
             session.commit()
 
             self.logger.info(
-                f"Successfully deleted Invoice #{invoice_to_delete.display_invoice_id} and adjusted owner balance."  # Updated to use display_invoice_id
+                f"Successfully deleted Invoice #{invoice_to_delete.display_invoice_id} and adjusted owner balance."
             )
             return (
                 True,
                 f"Invoice #{invoice_to_delete.display_invoice_id} has been deleted.",
-            )  # Updated to use display_invoice_id
+            )
 
         except SQLAlchemyError as e:
             session.rollback()

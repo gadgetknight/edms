@@ -90,7 +90,7 @@ class FinancialController:
         # IMPORTANT: Replace this with your ngrok HTTPS URL for local testing,
         # then with your permanent VPS URL when deployed.
         self.backend_api_base_url = (
-            "https://b3d1-73-10-116-104.ngrok-free.app"  # REPLACE WITH YOUR NGROK URL!
+            "https://3474-109-169-39-102.ngrok-free.app"  # REPLACE WITH YOUR NGROK URL!
         )
 
         # REMOVED: self.stripe_secret_key = "sk_test_YOUR_STRIPE_SECRET_KEY"

@@ -2,7 +2,7 @@
 
 """
 EDSI Veterinary Management System - Main Application Entry Point
-Version: 2.1.4
+Version: 2.1.5
 Purpose: Configured to use user-defined paths from AppConfig for logging and database.
          Now imports all top-level managers/controllers directly and passes them
          down using dependency injection to resolve persistent ModuleNotFoundError.
@@ -10,6 +10,13 @@ Last Updated: June 30, 2025
 Author: Claude Assistant (Modified by Gemini, further modified by Coding partner)
 
 Changelog:
+- v2.1.5 (2025-06-30):
+    - **CRITICAL BUG FIX (Persistent PermissionError):** Implemented an aggressive check
+      at the beginning of `EDSIApplication.setup_logging()` to ensure that if `AppConfig.LOG_DIR`
+      resolves to a protected system directory (like 'Program Files'), it is
+      overridden to use `tempfile.gettempdir()` for logging. This guarantees logs
+      are written to a user-writable location, resolving the recurring `PermissionError`
+      on startup for installed applications.
 - v2.1.4 (2025-06-30):
     - **BUG FIX**: Corrected typo `_PROJECT_ROOT_FOR_PATHing` to `_PROJECT_ROOT_FOR_PATHING`
       at line 46 to resolve `NameError`.
@@ -31,7 +38,6 @@ Changelog:
       manipulation to the *absolute very top* of the file, before any other imports,
       to guarantee that the project root is added to Python's search path immediately.
       This ensures top-level packages like 'config' and 'services' are discoverable.
-# ... (previous changelog entries)
 """
 
 import sys
@@ -43,13 +49,11 @@ import tempfile
 # __file__ gives the path to this script. dirname(__file__) is its directory.
 # os.pardir is '..'. So, join(dirname(__file__), os.pardir) goes up one level.
 # abspath ensures it's a full path.
-_PROJECT_ROOT_FOR_PATHING = os.path.abspath(  # Variable definition with uppercase G
+_PROJECT_ROOT_FOR_PATHING = os.path.abspath(
     os.path.join(os.path.dirname(__file__), os.pardir)
 )
 
-if (
-    _PROJECT_ROOT_FOR_PATHING not in sys.path
-):  # Corrected variable usage with uppercase G
+if _PROJECT_ROOT_FOR_PATHING not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT_FOR_PATHING)
 
 
@@ -156,15 +160,47 @@ class EDSIApplication(QApplication):
         """
         log_config = AppConfig.get_logging_config()
 
+        # NEW: Aggressive check for log directory if it resolves to Program Files
+        # This prevents PermissionError on installed applications.
+        final_log_dir = log_config["log_dir"]
+        program_files_env = os.environ.get("ProgramFiles", "")
+        program_files_x86_env = os.environ.get("ProgramFiles(x86)", "")
+
+        # Check if the resolved log_dir starts with Program Files paths
+        if (
+            program_files_env
+            and final_log_dir.lower().startswith(program_files_env.lower())
+        ) or (
+            program_files_x86_env
+            and final_log_dir.lower().startswith(program_files_x86_env.lower())
+        ):
+
+            # If it's in Program Files, override to a user-writable temp directory
+            # We don't use AppData directly here as AppConfig might not yet be fully configured for paths.
+            temp_log_dir = os.path.join(tempfile.gettempdir(), "EDMS_runtime_logs")
+            os.makedirs(temp_log_dir, exist_ok=True)  # Ensure it exists
+
+            self.logger.warning(
+                f"AppConfig.LOG_DIR '{final_log_dir}' resolved to a protected location. "
+                f"Overriding to user-writable temporary directory: '{temp_log_dir}' for runtime logging."
+            )
+            final_log_dir = temp_log_dir
+            log_config["app_log_file"] = os.path.join(final_log_dir, "edsi_app.log")
+            log_config["db_log_file"] = os.path.join(final_log_dir, "edsi_db.log")
+            log_config["log_dir"] = (
+                final_log_dir  # Update log_config with the safe path
+            )
+
         # Ensure the log directory exists BEFORE setting up file handlers.
-        # AppConfig.ensure_directories() should have already done this,
-        # but a defensive check here doesn't hurt.
-        if not os.path.exists(log_config["log_dir"]):
+        if not os.path.exists(final_log_dir):
             try:
-                os.makedirs(log_config["log_dir"])
+                os.makedirs(final_log_dir)
             except OSError as e:
                 # If log directory creation fails, fall back to console-only logging
-                print(f"Error creating log directory: {e}", file=sys.stderr)
+                print(
+                    f"Error creating log directory '{final_log_dir}': {e}",
+                    file=sys.stderr,
+                )
                 logging.basicConfig(
                     level=log_config["level"],
                     format="%(asctime)s - %(levelname)s - %(name)s - %(module)s:%(lineno)d - %(message)s",

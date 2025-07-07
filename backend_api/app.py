@@ -2,15 +2,23 @@
 
 """
 EDMS Centralized Backend API for Stripe Integration
-Version: 1.0.3
-Purpose: A Flask microservice to securely handle Stripe API calls (e.g., creating
+Version: 1.0.5
+Purpose: Flask microservice to securely handle Stripe API calls (e.g., creating
          Payment Links) and receive Stripe webhook events for payment confirmations.
          Designed to be hosted centrally by the developer, abstracting complexity
          from the end-user desktop application.
-Last Updated: June 25, 2025
+Last Updated: July 1, 2025
 Author: Gemini
 
 Changelog:
+- v1.0.5 (2025-07-01):
+    - Modified `create_payment_link` endpoint to use `after_completion.type = "page"`
+      instead of "redirect" for Stripe Payment Links. This allows displaying a
+      customizable "Thank you for your payment!" message directly on Stripe's
+      hosted page, eliminating the need for a redirect URL after payment.
+- v1.0.4 (2025-07-01):
+    - **BUG FIX**: Changed `from backend_api.config import BackendConfig` to `from .config import BackendConfig`
+      to resolve `ModuleNotFoundError: No module named 'backend_api'` when running Flask.
 - v1.0.3 (2025-06-25):
     - **BUG FIX**: Explicitly set `stripe.api_version` in `backend_api/app.py` to match the webhook endpoint's API version.
       This resolves the `Invalid signature: No signatures found matching the expected signature for payload` error
@@ -45,7 +53,7 @@ from flask import Flask, request, jsonify, abort
 import stripe
 import sqlite3
 
-from backend_api.config import BackendConfig
+from .config import BackendConfig
 
 # --- Logging Setup for Backend API ---
 _LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
@@ -70,7 +78,6 @@ app.config.from_object(BackendConfig)
 stripe.api_version = (
     "2024-06-20"  # <--- REPLACE WITH YOUR ACTUAL API VERSION FROM STRIPE!
 )
-# --- END IMPORTANT ---
 
 
 # --- Backend's Internal Database (for webhook logging/status) ---
@@ -125,6 +132,7 @@ def log_webhook_event(
                 doctor_identifier,
             ),
         )
+
         conn.commit()
         logger.info(
             f"Logged webhook event {stripe_event_id} ({event_type}) with status: {status}"
@@ -244,6 +252,13 @@ def create_payment_link():
                 "source_app": "EDMS_Backend_API",
             },
             "customer_creation": "always",
+            # MODIFIED: Change after_completion to display a message page
+            "after_completion": {
+                "type": "page",
+                "page": {
+                    "message": "Thank you for your payment! You can close this page."
+                },
+            },
         }
 
         payment_link = stripe.PaymentLink.create(**payment_link_params)
