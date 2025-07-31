@@ -2,13 +2,18 @@
 
 """
 EDSI Veterinary Management System - Application Configuration
-Version: 2.2.2
+Version: 2.2.3
 Purpose: Centralized configuration for application settings, paths, and constants.
-         Now includes configurable path for accounting reports.
-Last Updated: June 29, 2025
+         Now uses a fixed, common data directory (C:\EDMS_Data) for installed applications.
+Last Updated: July 1, 2025
 Author: Gemini
 
 Changelog:
+- v2.2.3 (2025-07-01):
+    - **FEATURE**: Modified default data paths (`DATABASE_URL`, `LOG_DIR`, `INVOICES_DIR`,
+      `STATEMENTS_DIR`, `ACCOUNTING_REPORTS_DIR`) to use a new `_DEFAULT_BASE_DATA_DIR`
+      set to `C:\EDMS_Data`. This standardizes the data location for installed applications.
+    - Updated `ensure_directories()` to ensure the base `C:\EDMS_Data` directory is created.
 - v2.2.2 (2025-06-29):
     - Added `ACCOUNTING_REPORTS_DIR` constant, using `ConfigManager` for a user-configurable path
       with a fallback to a default project subdirectory.
@@ -49,36 +54,47 @@ from config.config_manager import config_manager, ConfigManager
 # This remains the absolute base for default fallbacks
 _BASE_PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
+# --- NEW: Define a fixed base directory for all application data ---
+# This directory will house the database, logs, invoices, statements, etc.
+_DEFAULT_BASE_DATA_DIR = (
+    r"C:\EDMS_Data"  # Use raw string to avoid issues with backslashes
+)
+
 # --- Application Information ---
 APP_NAME = "EDSI Veterinary Management System"
 APP_VERSION = "2.0.3"
 APP_AUTHOR = "EDSI"
 
 # --- Database Configuration ---
-# Prioritize user-defined DB path, fallback to project root default
-_DEFAULT_DB_PATH = os.path.join(_BASE_PROJECT_ROOT, "edsi_database.db")
+# Prioritize user-defined DB path, fallback to fixed data dir default
+_DEFAULT_DB_PATH = os.path.join(_DEFAULT_BASE_DATA_DIR, "edsi_database.db")
 DATABASE_URL = f"sqlite:///{config_manager.get_path(ConfigManager.DB_PATH_KEY) or _DEFAULT_DB_PATH}"
 
-# --- Paths (User-configurable with fallbacks) ---
-# Prioritize user-defined paths, fallback to project root defaults
-PROJECT_ROOT = _BASE_PROJECT_ROOT  # This refers to the application's installed root
+# --- Paths (User-configurable with fallbacks to fixed data dir) ---
+# PROJECT_ROOT refers to the application's installed binary root, which is different from data root
+PROJECT_ROOT = _BASE_PROJECT_ROOT
+
 LOG_DIR = config_manager.get_path(ConfigManager.LOG_DIR_KEY) or os.path.join(
-    _BASE_PROJECT_ROOT, "logs"
+    _DEFAULT_BASE_DATA_DIR, "Logs"  # Match requested folder name
 )
 ASSETS_DIR = config_manager.get_path(ConfigManager.ASSETS_DIR_KEY) or os.path.join(
-    _BASE_PROJECT_ROOT, "assets"
+    _BASE_PROJECT_ROOT, "assets"  # Assets remain relative to app install, not data dir
 )
 INVOICES_DIR = config_manager.get_path(ConfigManager.INVOICES_DIR_KEY) or os.path.join(
-    _BASE_PROJECT_ROOT, "invoices"
+    _DEFAULT_BASE_DATA_DIR, "Invoices"  # Match requested folder name
 )
 STATEMENTS_DIR = config_manager.get_path(
     ConfigManager.STATEMENTS_DIR_KEY
-) or os.path.join(_BASE_PROJECT_ROOT, "statements")
+) or os.path.join(
+    _DEFAULT_BASE_DATA_DIR, "Statements"
+)  # Match requested folder name
 
-# NEW: Accounting Reports Directory
+# Accounting Reports Directory
 ACCOUNTING_REPORTS_DIR = config_manager.get_path(
     ConfigManager.ACCOUNTING_REPORTS_DIR_KEY
-) or os.path.join(_BASE_PROJECT_ROOT, "reports", "accounting")
+) or os.path.join(
+    _DEFAULT_BASE_DATA_DIR, "Reports", "Accounting"
+)  # Match requested folder name
 
 
 # --- Logging Configuration (uses LOG_DIR defined above) ---
@@ -114,12 +130,7 @@ DARK_HIGHLIGHT_BG = "#3182CE"
 DARK_HIGHLIGHT_TEXT = "#FFFFFF"
 DARK_INPUT_FIELD_BACKGROUND = "#222B38"
 
-# --- NEW: Stripe API Keys for Doctor's Payments (PLACEHOLDERS) ---
-# These keys are specific to the doctor's Stripe account (your end-user).
-# They will be read by the desktop application and sent to your centralized backend API.
-# REPLACE THESE WITH YOUR ACTUAL TEST KEYS FOR TESTING,
-# but in a production environment, these should be securely configurable by the user (doctor)
-# within the app's settings, and persisted (e.g., in the database for their user account).
+# --- Stripe API Keys for Doctor's Payments (PLACEHOLDERS) ---
 DOCTOR_STRIPE_PUBLISHABLE_KEY = "pk_test_51Rc7TLBAHovgkmZiZaCPLCiludBNc4NI8ZmQqlEpyeXNgJ0Vndnla7mXcie7HLxeEyrmBRz4CrjiUcXYlFuFOLDR00k4nIZjGr"
 DOCTOR_STRIPE_SECRET_KEY = "sk_test_51Rc7TLBAHovgkmZipgbbrO3O8xg1HwhIxzNSmhlH8tP76L04TTBv4JURXf5jyJceNQGrtSz88zzeafwnmzdW04Jr000oPQqWuc"
 
@@ -141,7 +152,7 @@ class AppConfig:
     ASSETS_DIR = ASSETS_DIR
     INVOICES_DIR = INVOICES_DIR
     STATEMENTS_DIR = STATEMENTS_DIR
-    ACCOUNTING_REPORTS_DIR = ACCOUNTING_REPORTS_DIR  # NEW: Added to AppConfig class
+    ACCOUNTING_REPORTS_DIR = ACCOUNTING_REPORTS_DIR
 
     # Database
     DATABASE_URL = DATABASE_URL
@@ -179,7 +190,7 @@ class AppConfig:
     DARK_HIGHLIGHT_TEXT = DARK_HIGHLIGHT_TEXT
     DARK_INPUT_FIELD_BACKGROUND = DARK_INPUT_FIELD_BACKGROUND
 
-    # NEW: Doctor's Stripe API Keys
+    # Doctor's Stripe API Keys
     DOCTOR_STRIPE_PUBLISHABLE_KEY = DOCTOR_STRIPE_PUBLISHABLE_KEY
     DOCTOR_STRIPE_SECRET_KEY = DOCTOR_STRIPE_SECRET_KEY
 
@@ -204,9 +215,7 @@ class AppConfig:
         return cls.STATEMENTS_DIR
 
     @classmethod
-    def get_accounting_reports_dir(
-        cls,
-    ) -> str:  # NEW: Getter for accounting reports directory
+    def get_accounting_reports_dir(cls) -> str:
         return cls.ACCOUNTING_REPORTS_DIR
 
     @classmethod
@@ -256,12 +265,23 @@ class AppConfig:
     @classmethod
     def ensure_directories(cls) -> None:
         """Ensure required directories exist, including user-configurable ones."""
+        # Ensure the base data directory exists first
+        if not os.path.exists(_DEFAULT_BASE_DATA_DIR):
+            try:
+                os.makedirs(_DEFAULT_BASE_DATA_DIR, exist_ok=True)
+                logging.info(f"Created base data directory: {_DEFAULT_BASE_DATA_DIR}")
+            except OSError as e:
+                logging.error(
+                    f"Failed to create base data directory {_DEFAULT_BASE_DATA_DIR}: {e}"
+                )
+                # Critical error, but app might still run if DB is elsewhere or already exists
+
         directories = [
             cls.LOG_DIR,
-            cls.ASSETS_DIR,
+            cls.ASSETS_DIR,  # Assets remain relative to app install, not data dir
             cls.INVOICES_DIR,
             cls.STATEMENTS_DIR,
-            cls.ACCOUNTING_REPORTS_DIR,  # NEW: Ensure accounting reports directory exists
+            cls.ACCOUNTING_REPORTS_DIR,
         ]
 
         for directory in directories:

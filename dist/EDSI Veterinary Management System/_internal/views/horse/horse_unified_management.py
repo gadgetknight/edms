@@ -1,12 +1,16 @@
 # views/horse/horse_unified_management.py
 """
 EDSI Veterinary Management System - Unified Horse Management Screen (Dark Theme)
-Version: 1.13.3
+Version: 1.13.4
 Purpose: Unified interface for horse management, including invoice history.
-Last Updated: June 13, 2025
+Last Updated: July 17, 2025
 Author: Gemini
 
 Changelog:
+- v1.13.4 (2025-07-17):
+    - **UI Enhancement**: Moved the search input field in the action bar to the
+      left side, before the filter radio buttons, for improved user flow and
+      consistency.
 - v1.13.3 (2025-06-13):
     - Fixed vertical text cutoff in the horse list by setting an explicit item
       size hint in the populate_horse_list method, overriding the incorrect
@@ -103,7 +107,7 @@ from .tabs.owners_tab import OwnersTab
 from .tabs.location_tab import LocationTab
 from .tabs.billing_tab import BillingTab
 from .tabs.invoice_history_tab import InvoiceHistoryTab
-from .tabs.reports_tab import ReportsTab  # ADDED
+from .tabs.reports_tab import ReportsTab
 
 
 class HorseUnifiedManagement(BaseView):
@@ -129,7 +133,7 @@ class HorseUnifiedManagement(BaseView):
         self.location_tab: Optional[LocationTab] = None
         self.billing_tab: Optional[BillingTab] = None
         self.invoice_history_tab: Optional[InvoiceHistoryTab] = None
-        self.reports_tab: Optional[ReportsTab] = None  # ADDED
+        self.reports_tab: Optional[ReportsTab] = None
 
         self.horse_list: Optional[QWidget] = None
         self.empty_frame: Optional[QFrame] = None
@@ -708,6 +712,18 @@ class HorseUnifiedManagement(BaseView):
         action_bar_layout.setContentsMargins(0, 0, 0, 0)
         action_bar_layout.setSpacing(12)
         action_bar_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+
+        # Moved search input to the left
+        self.search_input = QLineEdit()
+        if self.search_input:
+            self.search_input.setPlaceholderText("🔍 Search...")
+            self.search_input.setFixedHeight(30)
+            self.search_input.setFixedWidth(220)
+            self.search_input.setStyleSheet(
+                self.get_form_input_style(base_bg=DARK_HEADER_FOOTER)
+            )
+        action_bar_layout.addWidget(self.search_input)
+
         self.add_horse_btn = QPushButton("➕ Add Horse")
         self.edit_horse_btn = QPushButton("✓ Edit Selected")
         action_button_style_str = self.get_generic_button_style()
@@ -724,6 +740,7 @@ class HorseUnifiedManagement(BaseView):
             self.edit_horse_btn.setStyleSheet(action_button_style_str)
         action_bar_layout.addWidget(self.add_horse_btn)
         action_bar_layout.addWidget(self.edit_horse_btn)
+
         self.filter_group = QButtonGroup(self)
         self.active_only_radio = QRadioButton("Active Only")
         self.all_horses_radio = QRadioButton("All Horses")
@@ -738,16 +755,8 @@ class HorseUnifiedManagement(BaseView):
                 action_bar_layout.addWidget(btn)
         if self.active_only_radio:
             self.active_only_radio.setChecked(True)
-        action_bar_layout.addStretch()
-        self.search_input = QLineEdit()
-        if self.search_input:
-            self.search_input.setPlaceholderText("🔍 Search...")
-            self.search_input.setFixedHeight(30)
-            self.search_input.setFixedWidth(220)
-            self.search_input.setStyleSheet(
-                self.get_form_input_style(base_bg=DARK_HEADER_FOOTER)
-            )
-        action_bar_layout.addWidget(self.search_input)
+        action_bar_layout.addStretch()  # This stretch will push the filter radios to the right
+
         if self.edit_horse_btn:
             self.edit_horse_btn.setEnabled(False)
         parent_layout.addWidget(action_bar_frame)
@@ -895,7 +904,7 @@ class HorseUnifiedManagement(BaseView):
             self.tab_widget.addTab(self.invoice_history_tab, "🧾 Invoice History")
             self.logger.info("InvoiceHistoryTab created.")
 
-            # MODIFIED: Add ReportsTab
+            # Add ReportsTab
             self.reports_tab = ReportsTab(parent=self)
             self.tab_widget.addTab(self.reports_tab, "📊 Reports")
             self.logger.info("ReportsTab created.")
@@ -912,7 +921,7 @@ class HorseUnifiedManagement(BaseView):
             self.location_tab = None
             self.billing_tab = None
             self.invoice_history_tab = None
-            self.reports_tab = None  # ADDED
+            self.reports_tab = None
 
     def _handle_location_assignment_change(self, location_data: Dict):
         self.logger.info(f"Received location_assignment_changed: {location_data}")
@@ -1117,20 +1126,23 @@ class HorseUnifiedManagement(BaseView):
         self.update_status("Enter details for new horse.")
         self.logger.info("add_new_horse: FINISHED")
 
-    def _on_tab_data_modified(self):
+    def _on_tab_data_modified(self, *args):
+        # This slot is connected to dataChanged or textChanged signals of input fields.
+        # It should only set the _has_unsaved_changes flag if the form is currently editable.
         if (
             self.basic_info_tab
             and hasattr(self.basic_info_tab, "horse_name_input")
             and self.basic_info_tab.horse_name_input
             and not self.basic_info_tab.horse_name_input.isReadOnly()
         ):
-            if not self._has_changes_in_active_tab:
-                self._has_changes_in_active_tab = True
+            if not self._has_unsaved_changes:
+                self._has_unsaved_changes = True
                 self.logger.debug("Data modified. Flag set.")
+                self.data_modified.emit()  # Emit the signal to the parent (HorseUnifiedManagement)
             self.update_main_action_buttons_state()
         else:
             self.logger.debug(
-                "_on_tab_data_modified: Signal received, but form read-only or input missing."
+                "_on_tab_data_modified: Signal received, but form read-only or input missing. Not setting _has_unsaved_changes."
             )
 
     def _on_owner_association_changed(self, message: str):

@@ -1,0 +1,14 @@
+📞 CONTACT PAGE CONTENT
+
+Questions? We’re here to help.
+
+Use the form below or reach us directly at:
+support@edmsvet.com
+
+Form Fields:
+- Name (required)
+- Email (required)
+- Phone (optional)
+- Message (required)
+
+[Send Message]

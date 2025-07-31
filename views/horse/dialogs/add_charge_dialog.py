@@ -1,12 +1,17 @@
 # views/horse/dialogs/add_charge_dialog.py
 """
 EDSI Veterinary Management System - Add Charge Dialog
-Version: 3.4.0
+Version: 3.4.1
 Purpose: Dialog for entering multiple charge transactions for a horse using a table.
-Last Updated: June 9, 2025
+         Switched the display order of 'Code' and 'Alt. Code' fields.
+Last Updated: July 3, 2025
 Author: Gemini
 
 Changelog:
+- v3.4.1 (2025-07-03):
+    - **UI Enhancement**: Switched the display order of 'Code' and 'Alt. Code' fields
+      in the charges table header and row widgets for better user flow.
+    - Adjusted `_setup_row_widgets` to reflect the new order.
 - v3.4.0 (2025-06-09):
     - Refactored to use ChargeCodeController instead of FinancialController to
       fetch the list of charge codes, resolving an AttributeError.
@@ -272,9 +277,10 @@ class AddChargeDialog(QDialog):
             f"color:{AppConfig.DARK_TEXT_SECONDARY}; font-size: 11px;"
         )
 
+        # MODIFIED: Switched order of Code and Alt. Code in header labels
         self.charges_table.setColumnCount(7)
         self.charges_table.setHorizontalHeaderLabels(
-            ["Code", "Alt. Code", "Description", "Qty", "Unit Price", "Tax", "Total"]
+            ["Alt. Code", "Code", "Description", "Qty", "Unit Price", "Tax", "Total"]
         )
         self.charges_table.verticalHeader().setVisible(False)
         self.charges_table.setItemDelegate(BoxedCellDelegate(self))
@@ -311,24 +317,8 @@ class AddChargeDialog(QDialog):
         self.save_button.setMinimumSize(120, 40)
         self.cancel_button.setMinimumSize(120, 40)
 
-        save_button_style = f"""
-            QPushButton {{
-                background-color: {AppConfig.DARK_SUCCESS_ACTION};
-                color: white;
-                border: 1px solid {QColor(AppConfig.DARK_SUCCESS_ACTION).darker(120).name()};
-                border-radius: 4px;
-            }}
-            QPushButton:hover {{ background-color: {QColor(AppConfig.DARK_SUCCESS_ACTION).lighter(115).name()}; }}
-        """
-        cancel_button_style = f"""
-            QPushButton {{
-                background-color: {AppConfig.DARK_BUTTON_BG};
-                color: {AppConfig.DARK_TEXT_PRIMARY};
-                border: 1px solid {AppConfig.DARK_BORDER};
-                border-radius: 4px;
-            }}
-            QPushButton:hover {{ background-color: {AppConfig.DARK_BUTTON_HOVER}; }}
-        """
+        save_button_style = f"""QPushButton {{ background-color: {AppConfig.DARK_SUCCESS_ACTION}; color: white; border: 1px solid {QColor(AppConfig.DARK_SUCCESS_ACTION).darker(120).name()}; border-radius: 4px; }} QPushButton:hover {{ background-color: {QColor(AppConfig.DARK_SUCCESS_ACTION).lighter(115).name()}; }}"""
+        cancel_button_style = f"""QPushButton {{ background-color: {AppConfig.DARK_BUTTON_BG}; color: {AppConfig.DARK_TEXT_PRIMARY}; border: 1px solid {AppConfig.DARK_BORDER}; border-radius: 4px; }} QPushButton:hover {{ background-color: {AppConfig.DARK_BUTTON_HOVER}; }}"""
         self.save_button.setStyleSheet(save_button_style)
         self.cancel_button.setStyleSheet(cancel_button_style)
 
@@ -381,18 +371,7 @@ class AddChargeDialog(QDialog):
         """Places the appropriate widgets into the cells of a given row."""
         field_style = self._get_input_field_style()
 
-        # Code
-        code_edit = EnterKeyLineEdit()
-        code_edit.setStyleSheet(field_style)
-        code_completer = QCompleter([cc.code for cc in self._charge_codes_list])
-        code_completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
-        code_completer.popup().setStyleSheet(field_style)
-        code_edit.setCompleter(code_completer)
-        code_edit.editingFinished.connect(lambda r=row: self._on_code_entered(r))
-        code_edit.enter_pressed.connect(lambda r=row: self._handle_enter_in_row(r))
-        self.charges_table.setCellWidget(row, 0, code_edit)
-
-        # Alt Code
+        # Alt Code (now column 0)
         alt_code_edit = EnterKeyLineEdit()
         alt_code_edit.setStyleSheet(field_style)
         alt_code_completer = QCompleter(
@@ -405,14 +384,25 @@ class AddChargeDialog(QDialog):
             lambda r=row: self._on_alt_code_entered(r)
         )
         alt_code_edit.enter_pressed.connect(lambda r=row: self._handle_enter_in_row(r))
-        self.charges_table.setCellWidget(row, 1, alt_code_edit)
+        self.charges_table.setCellWidget(row, 0, alt_code_edit)  # Column 0
 
-        # Description (read-only)
+        # Code (now column 1)
+        code_edit = EnterKeyLineEdit()
+        code_edit.setStyleSheet(field_style)
+        code_completer = QCompleter([cc.code for cc in self._charge_codes_list])
+        code_completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        code_completer.popup().setStyleSheet(field_style)
+        code_edit.setCompleter(code_completer)
+        code_edit.editingFinished.connect(lambda r=row: self._on_code_entered(r))
+        code_edit.enter_pressed.connect(lambda r=row: self._handle_enter_in_row(r))
+        self.charges_table.setCellWidget(row, 1, code_edit)  # Column 1
+
+        # Description (read-only, column 2)
         desc_item = QTableWidgetItem()
         desc_item.setFlags(desc_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         self.charges_table.setItem(row, 2, desc_item)
 
-        # Qty
+        # Qty (column 3)
         qty_spinbox = QDoubleSpinBox()
         qty_spinbox.setStyleSheet(field_style)
         qty_spinbox.setDecimals(3)
@@ -421,7 +411,7 @@ class AddChargeDialog(QDialog):
         qty_spinbox.valueChanged.connect(self._update_totals)
         self.charges_table.setCellWidget(row, 3, qty_spinbox)
 
-        # Unit Price
+        # Unit Price (column 4)
         price_spinbox = QDoubleSpinBox()
         price_spinbox.setStyleSheet(field_style)
         price_spinbox.setDecimals(2)
@@ -430,7 +420,7 @@ class AddChargeDialog(QDialog):
         price_spinbox.valueChanged.connect(self._update_totals)
         self.charges_table.setCellWidget(row, 4, price_spinbox)
 
-        # Taxable
+        # Taxable (column 5)
         tax_checkbox = QCheckBox()
         tax_checkbox.setStyleSheet(field_style)
         tax_checkbox.stateChanged.connect(self._update_totals)
@@ -441,7 +431,7 @@ class AddChargeDialog(QDialog):
         chk_layout.setContentsMargins(0, 0, 0, 0)
         self.charges_table.setCellWidget(row, 5, chk_widget)
 
-        # Total
+        # Total (column 6)
         total_item = QTableWidgetItem("$0.00")
         total_item.setTextAlignment(
             Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
@@ -450,14 +440,16 @@ class AddChargeDialog(QDialog):
         self.charges_table.setItem(row, 6, total_item)
 
     def _on_code_entered(self, row: int):
-        code_widget = self.charges_table.cellWidget(row, 0)
+        # Code is now in column 1
+        code_widget = self.charges_table.cellWidget(row, 1)
         if isinstance(code_widget, QLineEdit):
             code = code_widget.text().upper()
             charge_code = self._charge_code_lookup.get(code)
             self._populate_row_from_charge_code(row, charge_code)
 
     def _on_alt_code_entered(self, row: int):
-        alt_code_widget = self.charges_table.cellWidget(row, 1)
+        # Alt Code is now in column 0
+        alt_code_widget = self.charges_table.cellWidget(row, 0)
         if isinstance(alt_code_widget, QLineEdit):
             alt_code = alt_code_widget.text().upper()
             charge_code = self._alt_code_lookup.get(alt_code)
@@ -467,17 +459,26 @@ class AddChargeDialog(QDialog):
         self, row: int, charge_code: Optional[ChargeCode]
     ):
         if charge_code:
-            code_widget = self.charges_table.cellWidget(row, 0)
-            if isinstance(code_widget, QLineEdit):
-                code_widget.setText(charge_code.code)
-            alt_code_widget = self.charges_table.cellWidget(row, 1)
+            # Populate Alt Code (column 0)
+            alt_code_widget = self.charges_table.cellWidget(row, 0)
             if isinstance(alt_code_widget, QLineEdit):
                 alt_code_widget.setText(charge_code.alternate_code or "")
-            self.charges_table.item(row, 2).setText(charge_code.description)
-            price_widget = self.charges_table.cellWidget(row, 4)
+            # Populate Code (column 1)
+            code_widget = self.charges_table.cellWidget(row, 1)
+            if isinstance(code_widget, QLineEdit):
+                code_widget.setText(charge_code.code)
+
+            self.charges_table.item(row, 2).setText(
+                charge_code.description
+            )  # Description (column 2)
+            price_widget = self.charges_table.cellWidget(
+                row, 4
+            )  # Unit Price (column 4)
             if isinstance(price_widget, QDoubleSpinBox):
                 price_widget.setValue(float(charge_code.standard_charge))
-            tax_widget_container = self.charges_table.cellWidget(row, 5)
+            tax_widget_container = self.charges_table.cellWidget(
+                row, 5
+            )  # Taxable (column 5)
             if tax_widget_container:
                 tax_checkbox = tax_widget_container.findChild(QCheckBox)
                 if tax_checkbox:
@@ -541,7 +542,6 @@ class AddChargeDialog(QDialog):
 
         manual_tax = Decimal(self.tax_amount_input.value())
         grand_total = subtotal + manual_tax
-
         self.subtotal_label.setText(f"${subtotal:.2f}")
         self.taxable_subtotal_label.setText(f"${self._taxable_subtotal:.2f}")
         self.grand_total_label.setText(f"${grand_total:.2f}")
@@ -561,9 +561,6 @@ class AddChargeDialog(QDialog):
         self.tax_rate_input.blockSignals(True)
         self.tax_rate_input.setValue(0.0)
         self.tax_rate_input.blockSignals(False)
-        # We don't call _update_totals here, as this is the primary signal source for totals when edited manually.
-        # The valueChanged on this spinbox will trigger a separate totals update.
-        # To be safe, we'll call it.
         self._update_totals()
 
     def get_data_from_table(self) -> List[Dict[str, Any]]:
@@ -571,7 +568,9 @@ class AddChargeDialog(QDialog):
         charges_to_save = []
         for row in range(self.charges_table.rowCount()):
             try:
-                code_widget = self.charges_table.cellWidget(row, 0)
+                code_widget = self.charges_table.cellWidget(
+                    row, 1
+                )  # Code is now in column 1
                 desc_item = self.charges_table.item(row, 2)
                 qty_widget = self.charges_table.cellWidget(row, 3)
                 price_widget = self.charges_table.cellWidget(row, 4)
@@ -615,6 +614,13 @@ class AddChargeDialog(QDialog):
                 "This horse has no owner assigned and cannot be billed.",
             )
             return
+
+        current_user_id = (
+            self.parent_view.current_user
+            if hasattr(self.parent_view, "current_user")
+            else "Unknown"
+        )
+        owner_count = len(self.horse.owner_associations)
 
         success, message, new_transactions = (
             self.financial_controller.add_charge_batch_to_horse(
